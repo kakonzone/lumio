@@ -1,0 +1,332 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../core/shell_scope.dart';
+import '../provider/app_provider.dart';
+import '../screens/favorites_screen.dart';
+import '../theme/app_theme.dart';
+import '../utils/responsive.dart';
+
+/// Fixed top bar: drawer/back, logo, theme, favourites, notifications.
+class ShellAppBar extends StatelessWidget {
+  final String? title;
+  final String? subtitle;
+  final bool showBack;
+  /// Home screen: LUMIO+TV brand dead-center on the bar.
+  final bool centerLumioTvBrand;
+
+  const ShellAppBar({
+    super.key,
+    this.title,
+    this.subtitle,
+    this.showBack = false,
+    this.centerLumioTvBrand = false,
+  });
+
+  void _openFavorites(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const FavoritesScreen()),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final prov = context.watch<AppProvider>();
+    final favCount = prov.favoriteCount;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: context.cardSurface,
+        border: Border(bottom: BorderSide(color: context.brd)),
+        boxShadow: [
+          BoxShadow(
+            color: context.shadowColor,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildTopRow(context, prov, favCount),
+            if (subtitle != null && showBack) ...[
+              const SizedBox(height: 8),
+              OverflowSafeText(
+                subtitle!,
+                style: TextStyle(fontSize: 12, color: context.txt3),
+                maxLines: 2,
+              ),
+            ] else if (subtitle != null && !showBack && !centerLumioTvBrand) ...[
+              const SizedBox(height: 12),
+              if (title != null)
+                OverflowSafeText(
+                  title!,
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800,
+                    color: context.txt,
+                  ),
+                  maxLines: 1,
+                ),
+              const SizedBox(height: 4),
+              OverflowSafeText(
+                subtitle!,
+                style: TextStyle(fontSize: 12, color: context.txt3),
+                maxLines: 2,
+              ),
+            ],
+          ],
+        ),
+      ),
+      ),
+    );
+  }
+
+  Widget _buildTopRow(BuildContext context, AppProvider prov, int favCount) {
+    final narrow = MediaQuery.sizeOf(context).width < 400;
+    final sideSlot = Responsive.shellSideSlot(context);
+    final left = showBack
+        ? IconButton(
+            icon: Icon(Icons.arrow_back, color: context.txt),
+            onPressed: () => Navigator.maybePop(context),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+          )
+        : GestureDetector(
+            onTap: () => ShellScope.of(context).openDrawer(),
+            child: SizedBox(
+              width: 28,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _bar(context.txt, 22),
+                  const SizedBox(height: 5),
+                  _bar(context.txt, 14),
+                  const SizedBox(height: 5),
+                  _bar(context.txt, 22),
+                ],
+              ),
+            ),
+          );
+
+    final right = _buildRightActions(context, prov, favCount, compact: narrow);
+
+    final Widget centerBrand;
+    if (showBack && title != null && !centerLumioTvBrand) {
+      centerBrand = OverflowSafeText(
+        title!,
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w800,
+          color: context.txt,
+        ),
+        textAlign: TextAlign.center,
+        scaleDown: true,
+      );
+    } else if (centerLumioTvBrand) {
+      centerBrand = _lumioTvBrand(context);
+    } else {
+      centerBrand = _lumioBrand(context);
+    }
+
+    return SizedBox(
+      height: 40,
+      width: double.infinity,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Row(
+            children: [
+              SizedBox(
+                width: sideSlot,
+                child: Align(alignment: Alignment.centerLeft, child: left),
+              ),
+              const Spacer(),
+              SizedBox(
+                width: sideSlot,
+                child: Align(alignment: Alignment.centerRight, child: right),
+              ),
+            ],
+          ),
+          centerBrand,
+        ],
+      ),
+    );
+  }
+
+  Widget _lumioBrand(BuildContext context) => Text(
+        'LUMIO',
+        style: TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.w800,
+          color: context.txt,
+          letterSpacing: 0.6,
+        ),
+      );
+
+  Widget _lumioTvBrand(BuildContext context) => RichText(
+        textAlign: TextAlign.center,
+        text: TextSpan(
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.5,
+          ),
+          children: [
+            TextSpan(text: 'LUMIO', style: TextStyle(color: context.txt)),
+            const TextSpan(
+              text: 'TV',
+              style: TextStyle(color: AppColors.accent),
+            ),
+          ],
+        ),
+      );
+
+  Widget _buildRightActions(
+    BuildContext context,
+    AppProvider prov,
+    int favCount, {
+    bool compact = false,
+  }) {
+    final gap = compact ? 4.0 : 8.0;
+    final toggleW = compact ? 44.0 : 52.0;
+    final iconBox = compact ? 28.0 : 32.0;
+    final knob = compact ? 18.0 : 22.0;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        GestureDetector(
+          onTap: prov.toggleTheme,
+          child: Container(
+            width: toggleW,
+            height: 26,
+            decoration: BoxDecoration(
+              color: context.bg3,
+              borderRadius: BorderRadius.circular(13),
+              border: Border.all(color: context.brd),
+            ),
+            child: Stack(
+              children: [
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 250),
+                  left: prov.isDark ? 2 : (toggleW - knob - 2),
+                  top: 2,
+                  child: Container(
+                    width: knob,
+                    height: knob,
+                    decoration: const BoxDecoration(
+                      color: AppColors.accent,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        prov.isDark ? '🌙' : '☀️',
+                        style: const TextStyle(fontSize: 11),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        SizedBox(width: gap),
+        GestureDetector(
+          onTap: () => _openFavorites(context),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: iconBox,
+                height: iconBox,
+                decoration: BoxDecoration(
+                  color: context.bg3,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: context.brd),
+                ),
+                child: Icon(
+                  favCount > 0 ? Icons.favorite : Icons.favorite_border,
+                  size: 16,
+                  color:
+                      favCount > 0 ? AppColors.accent : context.txt2,
+                ),
+              ),
+              if (favCount > 0)
+                Positioned(
+                  top: -2,
+                  right: -2,
+                  child: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: const BoxDecoration(
+                      color: AppColors.accent,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 14,
+                      minHeight: 14,
+                    ),
+                    child: Text(
+                      favCount > 9 ? '9+' : '$favCount',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 8,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        SizedBox(width: gap),
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              width: iconBox,
+              height: iconBox,
+              decoration: BoxDecoration(
+                color: context.bg3,
+                shape: BoxShape.circle,
+                border: Border.all(color: context.brd),
+              ),
+              child: Icon(
+                Icons.notifications_none,
+                size: 16,
+                color: context.txt2,
+              ),
+            ),
+            Positioned(
+              top: 5,
+              right: 5,
+              child: Container(
+                width: 6,
+                height: 6,
+                decoration: const BoxDecoration(
+                  color: AppColors.accent,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _bar(Color color, double width) => Container(
+        width: width,
+        height: 2,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(2),
+        ),
+      );
+}

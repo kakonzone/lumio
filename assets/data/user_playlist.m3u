@@ -1,0 +1,41 @@
+#EXTM3U
+#EXTINF:-1 ,CNBC TV18 Prime
+https://n18syndication.akamaized.net/bpk-tv/CNBC_Tv18_Prime_HD_NW18_MOB/output01/index.m3u8
+#EXTINF:-1 ,Colors HD
+http://149.71.34.166:8000/play/a00c/index.m3u8
+#EXTINF:-1 ,History TV18 HD
+http://149.71.34.166:8002/play/a017/index.m3u8
+#EXTINF:-1 ,Movies Now HD
+http://149.71.34.166:8002/play/a01b/index.m3u8
+#EXTINF:-1 ,Star Gold HD
+http://149.71.34.166:8000/play/a01b/index.m3u8
+#EXTINF:-1 ,Travelxp HD
+http://103.159.180.34:5001/live/164.m3u8
+#EXTINF:-1 ,Zee Cinema HD
+http://103.159.180.34:5001/live/165.m3u8
+#EXTINF:-1 ,Cartoon Network Telugu
+http://103.159.180.34:5001/live/166.m3u8
+#EXTINF:-1 ,Zee TV HD
+http://103.159.180.34:5001/live/167.m3u8
+#EXTINF:-1 ,Aaj Tak
+https://feeds.intoday.in/aajtak/api/master.m3u8
+#EXTINF:-1 ,DD National
+https://d3qs3d2rkhfqrt.cloudfront.net/out/v1/40492a64c1db4a1385ba1a397d357d3a/index.m3u8
+#EXTINF:-1 ,DD Sports
+https://d3qs3d2rkhfqrt.cloudfront.net/out/v1/b17adfe543354fdd8d189b110617cddd/index.m3u8
+#EXTINF:-1 ,NDTV 24x7
+https://ndtv24x7elemarchana.akamaized.net/hls/live/2003678/ndtv24x7/master.m3u8
+#EXTINF:-1 ,Republic TV
+https://samsung-republictv.amagi.tv/ts-ap-s1-n1/playlist/samsungin-republictv-samsungindia/playlist.m3u8
+#EXTINF:-1 ,Star Sports 1 HD
+http://149.71.34.166:8000/play/a01k/index.m3u8
+#EXTINF:-1 ,Eurosport HD
+http://103.159.180.34:5001/live/875.m3u8
+#EXTINF:-1 ,Sony MAX HD
+http://103.159.180.34:5001/live/1322.m3u8
+#EXTINF:-1 ,Zee News
+https://dt3lrqnyx3dks.cloudfront.net/index.m3u8
+#EXTINF:-1 ,Times NOW
+https://pubads.g.doubleclick.net/ssai/event/1mR1QUQ3Tg-VuKfiyjwNuA/master.m3u8
+#EXTINF:-1 ,Wion
+https://raw.githubusercontent.com/Alstruit/adaptive-streams/alstruit-10_23_in/streams/in/WION.in.m3u8

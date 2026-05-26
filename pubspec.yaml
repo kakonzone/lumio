@@ -11,50 +11,65 @@ dependencies:
     sdk: flutter
 
   # HTTP & Networking
-  http: ^1.2.1
-  dio: ^5.4.3+1
-  connectivity_plus: ^6.0.3
+  http: 1.6.0
+  dio: 5.9.2
+  encrypt: 5.0.3
+  crypto: 3.0.7
+  connectivity_plus: 7.1.1
 
   # State Management
-  provider: ^6.1.2
+  provider: 6.1.5+1
 
-  # Video Player
-  audio_service: ^0.18.18
-  audio_session: ^0.2.3
-  media_kit: ^1.1.10
-  media_kit_video: ^1.2.4
-  media_kit_libs_video: ^1.0.5
-  video_player: ^2.9.2
-  screen_brightness: ^0.2.2+1
+  # Video Player (media_kit + Android-only native libs)
+  audio_service: 0.18.18
+  audio_session: 0.2.3
+  media_kit: 1.2.6
+  media_kit_video: 2.0.1
+  media_kit_libs_android_video: 1.3.8
+  screen_brightness: 2.1.8
 
   # Images & UI
-  cached_network_image: ^3.3.1
-  flutter_svg: ^2.0.10+1
-  google_fonts: ^6.2.1
-  shimmer: ^3.0.0
-  lottie: ^3.1.0
-  pull_to_refresh: ^2.0.0
+  cached_network_image: 3.4.1
+  flutter_svg: 2.2.4
+  shimmer: 3.0.0
+  lottie: 3.3.3
+  pull_to_refresh: 2.0.0
 
   # Storage
-  shared_preferences: ^2.2.3
+  shared_preferences: 2.5.5
+  path_provider: 2.1.5
 
   # Utilities
-  url_launcher: ^6.3.0
-  floating: ^6.0.0
+  url_launcher: 6.3.2
+  floating: 6.0.0
 
-  # Backend — Dart Shelf (used by bin/server.dart)
-  shelf: ^1.4.2
-  shelf_router: ^1.1.4
-  shelf_cors_headers: ^0.1.5
-  workmanager: ^0.9.0+3
-  firebase_messaging: ^16.2.2
-  flutter_local_notifications: ^21.0.0
+  # Backend — Dart Shelf (dev only: bin/dev_server.dart)
+  shelf: 1.4.2
+  shelf_router: 1.1.4
+  shelf_cors_headers: 0.1.5
+  workmanager: 0.9.0+3
+  firebase_messaging: 16.2.2
+  firebase_core: 4.9.0
+  firebase_analytics: 12.4.1
+  firebase_remote_config: 6.5.1
+  flutter_local_notifications: 21.0.0
+
+  # Ads monetization (Unity Ads via LevelPlay mediation)
+  unity_levelplay_mediation: 9.2.0
+  webview_flutter: 4.13.1
+  # flutter_inappwebview removed (Task 11) — unused; re-add for deferred headless background ads
+  # Pinned together: device_info_plus 13.x + package_info_plus 10.x share win32 5.x
+  device_info_plus: 13.1.0
+  package_info_plus: 10.1.0
+  firebase_crashlytics: 5.2.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^4.0.0
-  flutter_launcher_icons: ^0.14.3
+  integration_test:
+    sdk: flutter
+  flutter_lints: 6.0.0
+  flutter_launcher_icons: 0.14.4
 
 flutter_launcher_icons:
   android: true

@@ -1,0 +1,137 @@
+lib/data/extra_channels.dart:9:  static const _ip = 'http://198.195.239.50:8095';
+lib/data/extra_channels.dart:11:      'http://mag.king-4k.cc:80/live/C1645263A1D245C/1sFTVBSVCP';
+lib/data/extra_channels.dart:47:http://212.102.34.8:9080/AndFlixHD/video.m3u8
+lib/data/extra_channels.dart:48:http://103.159.180.34:5001/live/562.m3u8
+lib/data/extra_channels.dart:49:http://63.141.239.226:81/live/cctv1md.m3u8?tm=1779280800&key=c6e9fb42092f7494c6e8142d46271002
+lib/data/extra_channels.dart:50:http://149.71.34.166:8002/play/a01b/index.m3u8
+lib/data/extra_channels.dart:51:http://149.71.34.166:8002/play/a017/index.m3u8
+lib/data/extra_channels.dart:108:              url: 'http://103.161.153.165:8000/play/stp1h/index.m3u8',
+lib/data/extra_channels.dart:112:              url: 'http://149.71.34.166:8000/play/a01k/index.m3u8',
+lib/data/extra_channels.dart:122:          'http://149.71.34.166:8000/play/a01k/index.m3u8',
+lib/data/extra_channels.dart:138:          'http://103.159.180.34:5001/live/875.m3u8\n'
+lib/data/extra_channels.dart:139:          'http://151.80.18.177:86/Eurosport_HD/index.m3u8',
+lib/data/extra_channels.dart:321:            'http://alvetv.com/moviebanglatv/8080/index.m3u8'),
+lib/data/extra_channels.dart:323:            'http://103.159.180.34:5001/live/165.m3u8',
+lib/data/extra_channels.dart:326:            'http://103.159.180.34:5001/live/185.m3u8',
+lib/data/extra_channels.dart:329:            'http://103.159.180.34:5001/live/166.m3u8',
+lib/data/extra_channels.dart:332:            'http://103.159.180.34:5001/live/625.m3u8',
+lib/data/extra_channels.dart:335:            'http://103.159.180.34:5001/live/3476.m3u8',
+lib/data/extra_channels.dart:342:            'http://103.159.180.34:5001/live/573.m3u8'),
+lib/data/extra_channels.dart:344:            'http://103.159.180.34:5001/live/286.m3u8',
+lib/data/extra_channels.dart:347:            'http://103.159.180.34:5001/live/566.m3u8',
+lib/data/extra_channels.dart:350:            'http://103.159.180.34:5001/live/164.m3u8',
+lib/data/extra_channels.dart:353:            'http://103.159.180.34:5001/live/167.m3u8',
+lib/data/extra_channels.dart:356:            'http://103.159.180.34:5001/live/250.m3u8',
+lib/data/extra_channels.dart:359:            'http://103.159.180.34:5001/live/585.m3u8',
+lib/data/user_paste_channels.dart:8:  static const _ip = 'http://198.195.239.50:8095';
+lib/data/user_paste_channels.dart:78:http://151.80.18.177:86/Eurosport_HD/index.m3u8
+lib/data/user_paste_channels.dart:79:http://103.159.180.34:5001/live/875.m3u8
+lib/data/user_paste_channels.dart:230:http://151.80.18.177:86/National_Geo_HD/index.m3u8
+lib/data/user_paste_channels.dart:263:http://99.27.51.147:8080/BeinSport/index.m3u8
+lib/data/user_paste_channels.dart:264:http://99.27.51.147:8080/BeinSport3/index.m3u8
+lib/data/user_paste_channels.dart:275:http://41.205.93.154/STARSPORTS1/index.m3u8
+lib/data/user_paste_channels.dart:276:http://149.71.34.166:8000/play/a01k/index.m3u8
+lib/data/user_paste_channels.dart:297:http://88.212.15.19/live/test_arenasport/playlist.m3u8
+lib/data/user_paste_channels.dart:298:http://88.212.15.19/live/test_arenasport_dva/playlist.m3u8
+lib/data/user_paste_channels.dart:299:http://88.212.15.19/live/test_sport1_25p/playlist.m3u8
+lib/data/user_paste_channels.dart:300:http://88.212.15.19/live/test_sport_2/playlist.m3u8
+lib/data/user_paste_channels.dart:301:http://88.212.15.19/live/test_ctsport_25p/playlist.m3u8
+lib/data/user_paste_channels.dart:311:http://185.132.134.159:80/sport1/index.m3u8
+lib/data/user_paste_channels.dart:312:http://185.132.134.159:80/sport2/index.m3u8
+lib/data/user_paste_channels.dart:313:http://185.132.134.159:80/sport3/index.m3u8
+lib/data/user_paste_channels.dart:314:http://185.132.134.159:80/sport4/index.m3u8
+lib/data/user_paste_channels.dart:315:http://185.132.134.159:80/sport5/index.m3u8
+lib/data/user_paste_channels.dart:316:http://185.132.134.159:80/sport6/index.m3u8
+lib/data/user_paste_channels.dart:317:http://185.46.48.18:80/match/tracks-v1a1/mono.m3u8
+lib/data/user_paste_channels.dart:318:http://212.102.60.80/Infosport/index.m3u8
+lib/data/user_paste_channels.dart:319:http://151.80.18.177:86/Canal+_sport_HD/index.m3u8
+lib/data/user_paste_channels.dart:320:http://tv.tuva.ru/machtv/index.m3u8
+lib/data/user_paste_channels.dart:322:http://unlimited6-cl.dps.live/sportinghd/sportinghd.smil/playlist.m3u8
+lib/provider/app_provider.dart:827:      streamUrl: 'http://198.195.239.50:8095/Tsports/tracks-v1a1/mono.m3u8',
+lib/provider/app_provider.dart:839:          url: 'http://198.195.239.50:8095/WiLLow/index.m3u8',
+lib/provider/app_provider.dart:852:      streamUrl: 'http://198.195.239.50:8095/WiLLow/index.m3u8',
+lib/provider/app_provider.dart:862:      streamUrl: 'http://198.195.239.50:8095/PTV-kutta/video.m3u8',
+lib/provider/app_provider.dart:938:      streamUrl: 'http://Rochdi@starshare.net:80/live/Suryaaa/SURYAAAA/211.ts',
+lib/provider/app_provider.dart:949:      streamUrl: 'http://103.161.153.165:8000/play/a04m/index.m3u8',
+lib/provider/app_provider.dart:960:      streamUrl: 'http://103.161.153.165:8000/play/stp1h/index.m3u8',
+lib/provider/app_provider.dart:971:      streamUrl: 'http://103.161.153.165:8000/play/stp2h/index.m3u8',
+lib/provider/app_provider.dart:982:      streamUrl: 'http://Rochdi@starshare.net:80/live/Suryaaa/SURYAAAA/1080.ts',
+lib/provider/app_provider.dart:993:      streamUrl: 'http://103.161.153.165:8000/play/starspsl1hd/index.m3u8',
+lib/provider/app_provider.dart:1004:      streamUrl: 'http://103.161.153.165:8000/play/starspsel2/index.m3u8',
+lib/provider/app_provider.dart:1015:      streamUrl: 'http://103.175.73.12:8080/live/151/151_0.m3u8',
+lib/provider/app_provider.dart:1056:      streamUrl: 'http://6zirt9yx.otttv.pw/iptv/HEGN4VXXQQSYCA/9258/index.m3u8',
+lib/provider/app_provider.dart:1067:      streamUrl: 'http://6zirt9yx.otttv.pw/iptv/HEGN4VXXQQSYCA/9289/index.m3u8',
+lib/provider/app_provider.dart:1078:      streamUrl: 'http://6zirt9yx.otttv.pw/iptv/HEGN4VXXQQSYCA/7337/index.m3u8',
+lib/provider/app_provider.dart:1089:      streamUrl: 'http://6zirt9yx.otttv.pw/iptv/HEGN4VXXQQSYCA/9334/index.m3u8',
+lib/provider/app_provider.dart:1100:      streamUrl: 'http://6zirt9yx.otttv.pw/iptv/HEGN4VXXQQSYCA/9155/index.m3u8',
+lib/provider/app_provider.dart:1111:      streamUrl: 'http://6zirt9yx.otttv.pw/iptv/HEGN4VXXQQSYCA/9293/index.m3u8',
+lib/provider/app_provider.dart:1122:      streamUrl: 'http://6zirt9yx.otttv.pw/iptv/HEGN4VXXQQSYCA/9310/index.m3u8',
+lib/provider/app_provider.dart:1133:      streamUrl: 'http://6zirt9yx.otttv.pw/iptv/HEGN4VXXQQSYCA/9314/index.m3u8',
+lib/provider/app_provider.dart:1144:      streamUrl: 'http://6zirt9yx.otttv.pw/iptv/HEGN4VXXQQSYCA/6546/index.m3u8',
+lib/provider/app_provider.dart:1155:      streamUrl: 'http://46.225.94.157/hls/tnt/index.m3u8',
+lib/provider/app_provider.dart:1167:          'http://qe7abbli.megatv.fun/iptv/LBHN7YM3AWPMFD8DNH6SD3GR/6566/index.m3u8',
+lib/provider/app_provider.dart:1179:          'http://qe7abbli.megatv.fun/iptv/LBHN7YM3AWPMFD8DNH6SD3GR/2506/index.m3u8',
+lib/provider/app_provider.dart:1191:          'http://qe7abbli.megatv.fun/iptv/LBHN7YM3AWPMFD8DNH6SD3GR/6564/index.m3u8',
+lib/provider/app_provider.dart:1203:          'http://75be7132.rostelekom.xyz/iptv/R3A7B6MZZFDCUL/19054/index.m3u8',
+lib/provider/app_provider.dart:1214:      streamUrl: 'http://Rochdi@starshare.net:80/live/Suryaaa/SURYAAAA/215.ts',
+lib/provider/app_provider.dart:1226:          'http://Rochdi@starshare.net:80/live/Suryaaa/SURYAAAA/675820.ts',
+lib/provider/app_provider.dart:1238:          'http://y3fqd48g.megatv.fun/iptv/NRLXRWSBWBPLN4/19146/index.m3u8',
+lib/provider/app_provider.dart:1249:      streamUrl: 'http://46.225.94.157/hls/espn/index.m3u8',
+lib/provider/app_provider.dart:1261:          'http://Rochdi@starshare.net:80/live/Suryaaa/SURYAAAA/652310.ts',
+lib/provider/app_provider.dart:1273:          'http://Rochdi@starshare.net:80/live/Suryaaa/SURYAAAA/652311.ts',
+lib/provider/app_provider.dart:1285:          'http://Rochdi@starshare.net:80/live/Suryaaa/SURYAAAA/652312.ts',
+lib/provider/app_provider.dart:1297:          'http://Rochdi@starshare.net:80/live/Suryaaa/SURYAAAA/652313.ts',
+lib/provider/app_provider.dart:1309:          'http://Rochdi@starshare.net:80/live/Suryaaa/SURYAAAA/652314.ts',
+lib/provider/app_provider.dart:1321:          'http://Rochdi@starshare.net:80/live/Suryaaa/SURYAAAA/652315.ts',
+lib/provider/app_provider.dart:1333:          'http://Rochdi@starshare.net:80/live/Suryaaa/SURYAAAA/652316.ts',
+lib/provider/app_provider.dart:1345:          'http://Rochdi@starshare.net:80/live/Suryaaa/SURYAAAA/652317.ts',
+lib/provider/app_provider.dart:1357:          'http://Rochdi@starshare.net:80/live/Suryaaa/SURYAAAA/652318.ts',
+lib/provider/app_provider.dart:1368:      streamUrl: 'http://151.80.18.177:86/Eurosport_HD/index.m3u8',
+lib/provider/app_provider.dart:1379:      streamUrl: 'http://151.80.18.177:86/Eurosport_2_HD/index.m3u8',
+lib/provider/app_provider.dart:1391:          'http://Rochdi@starshare.net:80/live/Suryaaa/SURYAAAA/415625.ts',
+lib/provider/app_provider.dart:1403:          'http://Rochdi@starshare.net:80/live/Suryaaa/SURYAAAA/415626.ts',
+lib/provider/app_provider.dart:1415:          'http://Rochdi@starshare.net:80/live/Suryaaa/SURYAAAA/415627.ts',
+lib/provider/app_provider.dart:1637:      streamUrl: 'http://198.195.239.50:8095/nagorik/tracks-v1a1/mono.m3u8',
+lib/provider/app_provider.dart:1653:      streamUrl: 'http://198.195.239.50:8095/News24/tracks-v1a1/mono.m3u8',
+lib/provider/app_provider.dart:1666:          url: 'http://198.195.239.50:8095/BTV/tracks-v1a1/mono.m3u8',
+lib/provider/app_provider.dart:1856:      streamUrl: 'http://Rochdi@starshare.net:80/live/Suryaaa/SURYAAAA/972.ts',
+lib/provider/app_provider.dart:1867:      streamUrl: 'http://iptvcasomsapi.jprdigital.in/x-media/C0390/master.m3u8',
+lib/provider/app_provider.dart:1879:          'http://Rochdi@starshare.net:80/live/Suryaaa/SURYAAAA/157081.ts',
+lib/provider/app_provider.dart:1890:      streamUrl: 'http://103.161.153.165:8000/play/a05b/index.m3u8',
+lib/provider/app_provider.dart:1901:      streamUrl: 'http://103.161.153.165:8000/play/a00s/index.m3u8',
+lib/provider/app_provider.dart:1912:      streamUrl: 'http://103.161.153.165:8000/play/a00r/index.m3u8',
+lib/provider/app_provider.dart:1923:      streamUrl: 'http://103.175.73.12:8080/live/12/12_0.m3u8',
+lib/provider/app_provider.dart:2004:      streamUrl: 'http://93.184.10.248/MBCBollywood/index.m3u8',
+lib/provider/app_provider.dart:2058:          'http://206.212.244.71:8080/BRIDGITS@YAHOO.COM/BRIDGITS@2022/125809',
+lib/provider/app_provider.dart:2069:      streamUrl: 'http://nocable.cc:8080/789588/114528/125814',
+lib/provider/app_provider.dart:2081:          'http://fortv.cc:8080/futrellconsulting@gmail.com/9u3djjNr02/125795',
+lib/provider/app_provider.dart:2092:      streamUrl: 'http://nocable.cc:8080/789588/114528/125807',
+lib/provider/app_provider.dart:2103:      streamUrl: 'http://ahostingportal.com:8000/62664054820/5271593547/3018',
+lib/provider/app_provider.dart:2208:      streamUrl: 'http://alvetv.com/moviebanglatv/8080/index.m3u8',
+lib/provider/app_provider.dart:2218:      streamUrl: 'http://103.175.73.12:8080/live/42/42_0.m3u8',
+lib/provider/app_provider.dart:2229:      streamUrl: 'http://103.175.242.10:8080/starmovies/index.m3u8',
+lib/provider/app_provider.dart:2241:          'http://Rochdi@starshare.net:80/live/Suryaaa/SURYAAAA/98843.ts',
+lib/provider/app_provider.dart:2252:      streamUrl: 'http://103.175.73.12:8080/live/437/437_0.m3u8',
+lib/provider/app_provider.dart:2263:      streamUrl: 'http://103.161.153.165:8000/play/a05e/index.m3u8',
+lib/provider/app_provider.dart:2274:      streamUrl: 'http://103.175.73.12:8080/live/14/14_0.m3u8',
+lib/provider/app_provider.dart:2285:      streamUrl: 'http://103.180.212.191:3500/live/1657.m3u8',
+lib/provider/app_provider.dart:2338:      streamUrl: 'http://103.180.212.191:3500/live/3418.m3u8',
+lib/provider/app_provider.dart:2496:      streamUrl: 'http://198.195.239.50:8095/SonyAath/tracks-v1a1/mono.m3u8',
+lib/provider/app_provider.dart:3052:      streamUrl: 'http://198.195.239.50:8095/Tsports/tracks-v1a1/mono.m3u8',
+lib/provider/app_provider.dart:3100:      streamUrl: 'http://198.195.239.50:8095/WiLLow/index.m3u8',
+lib/provider/app_provider.dart:3136:      streamUrl: 'http://198.195.239.50:8095/PTV-kutta/video.m3u8',
+lib/provider/app_provider.dart:3187:      streamUrl: 'http://198.195.239.50:8095/Tsports/tracks-v1a1/mono.m3u8',
+lib/screens/player_screen.dart:2968:      streamUrl: 'http://198.195.239.50:8095/Tsports/tracks-v1a1/mono.m3u8',
+lib/screens/player_screen.dart:2978:      streamUrl: 'http://198.195.239.50:8095/WiLLow/index.m3u8',
+lib/screens/player_screen.dart:2988:      streamUrl: 'http://198.195.239.50:8095/PTV-kutta/video.m3u8',
+lib/screens/player_screen.dart:3001:      streamUrl: 'http://198.195.239.50:8095/nagorik/tracks-v1a1/mono.m3u8',
+lib/screens/player_screen.dart:3011:      streamUrl: 'http://198.195.239.50:8095/News24/tracks-v1a1/mono.m3u8',
+lib/server/server.dart:50:  final androidUrl = 'http://10.0.2.2:$port';
+lib/server/server.dart:51:  final localUrl = 'http://localhost:$port';
+lib/services/api_service.dart:14:    if (envHost.isNotEmpty) return 'http://$envHost:8080';
+lib/services/api_service.dart:15:    if (!kIsWeb && Platform.isAndroid) return 'http://10.0.2.2:8080';
+lib/services/api_service.dart:16:    return 'http://localhost:8080';
+lib/services/background_service.dart:681:  const fallback = 'http://10.0.2.2:8080'; // Android emulator safe default
+lib/services/background_service.dart:709:      return prefs.getString(_baseUrlKey) ?? 'http://10.0.2.2:8080';
+lib/services/background_service.dart:711:      return 'http://10.0.2.2:8080';
+lib/utils/channel_hub_processor.dart:304:              'http://127.0.0.1:7565/ingest/8d2958d0-1eca-4a72-8ddc-9189dbc995b7',

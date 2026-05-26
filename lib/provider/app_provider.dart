@@ -825,7 +825,7 @@ class AppProvider extends ChangeNotifier {
       viewers: 22000,
       currentShow: 'Live Cricket',
       streamUrl: 'http://198.195.239.50:8095/Tsports/tracks-v1a1/mono.m3u8',
-      alternateStreams: const [
+      alternateStreams: [
         StreamLink(
           url: 'https://bldcmprod-cdn.toffeelive.com/cdn/live/ten_cricket/playlist.m3u8',
           label: 'Toffee',

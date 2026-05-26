@@ -1,22 +1,65 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:media_kit/media_kit.dart';
+import 'config/ad_config.dart';
+import 'ads/ad_manager.dart';
+import 'widgets/ad_banner_widget.dart';
+import 'widgets/adsterra_overlay_widget.dart';
+import 'ads/adsterra/adsterra_popunder.dart';
 import 'core/shell_scope.dart';
 import 'theme/app_theme.dart';
 import 'screens/tv_screen.dart';
+import 'screens/news_screen.dart';
 import 'screens/other_screens.dart';
 import 'screens/player_screen.dart';
+import 'screens/ads_privacy_screen.dart';
+import 'screens/dev_diagnostics_screen.dart';
+import 'ads/adsterra/adsterra_native_cache.dart';
+import 'services/ironsource_service.dart';
+import 'screens/category_channels_screen.dart';
 import 'screens/splash_screen.dart';
+import 'widgets/app_drawer.dart';
 import 'provider/app_provider.dart';
 import 'utils/debug_log.dart';
 import 'services/lumio_audio_service.dart';
+import 'services/user_preferences.dart';
+import 'security/security_manager.dart';
+import 'services/ad_safety_service.dart';
+import 'services/firebase_bootstrap.dart';
+import 'services/notification_service.dart';
 import 'widgets/main_shell_bottom_nav.dart';
+import 'widgets/ads_debug_banner.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  debugPrint(AdConfig.dumpRedacted());
+  if (!kReleaseMode && AdConfig.blockAdsInThisBuild) {
+    debugPrint(
+      '[AdConfig] ⚠️  WARNING: no dart-defines detected. Ads will not load.',
+    );
+    debugPrint('[AdConfig] ⚠️  Run via: ./scripts/flutter_run_with_ads.sh');
+    debugPrint(
+      '[AdConfig] ⚠️  Or: flutter run --dart-define-from-file=secrets.json',
+    );
+  }
   MediaKit.ensureInitialized();
+  await SecurityManager.instance.initialize();
   await ensureLumioAudioService();
+  await FirebaseBootstrap.initialize();
+  AdsterraNativeCache.registerConsentListener();
+  if (FirebaseBootstrap.isInitialized) {
+    await AdSafetyService.instance.prefetchRemoteConfig();
+  }
+  await NotificationService.initialize();
+  if (Platform.isAndroid) {
+    await NotificationService.requestPermissions();
+  }
+  await UserPreferences.ensureInit();
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   runApp(
     ChangeNotifierProvider(
@@ -41,6 +84,20 @@ class LumioApp extends StatelessWidget {
       title: 'Lumio',
       debugShowCheckedModeBanner: false,
       theme: prov.isDark ? AppTheme.dark : AppTheme.light,
+      builder: (context, child) {
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            if (child != null) child,
+            const Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: AdsDebugBanner(),
+            ),
+          ],
+        );
+      },
       initialRoute: '/',
       onGenerateRoute: (settings) {
         switch (settings.name) {
@@ -94,10 +151,23 @@ class MainShell extends StatefulWidget {
   State<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends State<MainShell> {
+class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   int _navIdx = 0;
-  int _drawerSelected = 0;
+  /// Index into [AppDrawerDestination] (int avoids hot-reload type mismatch after drawer refactor).
+  int _drawerSelectedIndex = 0;
+  int _lastNavIdx = 0;
+
+  AppDrawerDestination get _drawerSelected {
+    final values = AppDrawerDestination.values;
+    final i = _drawerSelectedIndex;
+    if (i >= 0 && i < values.length) return values[i];
+    return AppDrawerDestination.allChannels;
+  }
+
+  void _setDrawerSelected(AppDrawerDestination dest) {
+    _drawerSelectedIndex = dest.index;
+  }
 
   static const _screens = [
     TvScreen(),
@@ -106,27 +176,6 @@ class _MainShellState extends State<MainShell> {
     NewsScreen(),
     CategoriesScreen(),
   ];
-
-  static const _drawerItems = [
-    {'icon': '📺', 'name': 'All Channels', 'count': '2.4k'},
-    {'icon': '⚽', 'name': 'Sports', 'count': '142'},
-    {'icon': '🇧🇩', 'name': 'Bangladesh', 'count': '38'},
-    {'icon': '🇮🇳', 'name': 'India', 'count': '215'},
-    {'icon': '🎬', 'name': 'Movies', 'count': '56'},
-    {'icon': '🎭', 'name': 'Entertainment', 'count': '89'},
-    {'icon': '🇰🇷', 'name': 'KDrama', 'count': '44'},
-    {'icon': '🧒', 'name': 'Kids', 'count': '31'},
-    {'icon': '🏙️', 'name': 'Kolkata', 'count': '27'},
-    {'icon': '🇮🇳', 'name': 'Hindi', 'count': '96'},
-    {'icon': '🇵🇰', 'name': 'Pakistan', 'count': '27'},
-  ];
-
-  /// Drawer tap → bottom nav index (Sports=1, Categories=4, else TV=0).
-  static int _drawerNavIndex(int i) {
-    if (i == 1) return 1;
-    if (i >= 2) return 4;
-    return 0;
-  }
 
   void _openDrawer() {
     // #region agent log
@@ -143,12 +192,73 @@ class _MainShellState extends State<MainShell> {
     _scaffoldKey.currentState?.openDrawer();
   }
 
-  void _onDrawerItem(int index) {
-    setState(() {
-      _drawerSelected = index;
-      _navIdx = _drawerNavIndex(index);
-    });
+  void _onDrawerDestination(AppDrawerDestination dest) {
     Navigator.pop(context);
+    setState(() => _setDrawerSelected(dest));
+
+    switch (dest) {
+      case AppDrawerDestination.allChannels:
+        setState(() => _navIdx = 0);
+        return;
+      case AppDrawerDestination.sports:
+        setState(() => _navIdx = 1);
+        unawaited(AdManager.instance.onSportsTabSelected());
+        return;
+      case AppDrawerDestination.entertainment:
+      case AppDrawerDestination.kDrama:
+      case AppDrawerDestination.movies:
+        final cat = dest.categoryName!;
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => CategoryChannelsScreen(
+              categoryName: cat,
+              categoryIcon: _categoryDrawerEmoji(cat),
+            ),
+          ),
+        );
+        return;
+    }
+  }
+
+  static String _categoryDrawerEmoji(String cat) => switch (cat) {
+        'Entertainment' => '🎭',
+        'KDrama' => '🇰🇷',
+        'Movies' => '🎬',
+        _ => '📺',
+      };
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(AdManager.instance.maybeShowPopunder());
+      if (!AdManager.instance.adsEnabled && AdConfig.hasMonetizationConfig) {
+        unawaited(AdManager.instance.init());
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      LevelPlayAdService.instance.onAppForeground();
+    }
+  }
+
+  Future<bool> _onWillPop() async {
+    if (_navIdx != 0) {
+      setState(() => _navIdx = 0);
+      return false;
+    }
+    final shown = await AdManager.instance.onExitIntent();
+    return !shown;
   }
 
   @override
@@ -157,135 +267,86 @@ class _MainShellState extends State<MainShell> {
     return ShellScope(
       scaffoldKey: _scaffoldKey,
       openDrawer: _openDrawer,
-      child: Scaffold(
-        key: _scaffoldKey,
-        backgroundColor: context.bg,
-        drawer: _buildDrawer(context),
-        body: IndexedStack(index: _navIdx, children: _screens),
-        bottomNavigationBar: MainShellBottomNav(
-          currentIndex: _navIdx,
-          liveChannelCount: prov.liveChannels.length,
-          onTap: (idx) {
-            setState(() => _navIdx = idx);
-            if (idx == 3) prov.ensureMatchesLoaded();
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDrawer(BuildContext context) {
-    return Drawer(
-      backgroundColor: context.bg2,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-      child: SafeArea(
-        child: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
-              decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: context.brd)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  RichText(
-                    text: TextSpan(
-                      style: const TextStyle(
-                        fontFamily: 'BarlowCondensed',
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) async {
+          if (didPop) return;
+          final exit = await _onWillPop();
+          if (exit && context.mounted) {
+            SystemNavigator.pop();
+          }
+        },
+        child: Scaffold(
+          key: _scaffoldKey,
+          backgroundColor: context.bg,
+          drawer: LumioAppDrawer(
+            selected: _drawerSelected,
+            onDestinationSelected: _onDrawerDestination,
+            onPrivacyTap: () {
+              Navigator.pop(context);
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const AdsPrivacyScreen(),
+                ),
+              );
+            },
+            onToggleTheme: () {
+              Navigator.pop(context);
+              context.read<AppProvider>().toggleTheme();
+            },
+            onDiagnosticsTap: AdConfig.diagnosticsEnabled
+                ? () {
+                    Navigator.pop(context);
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const DevDiagnosticsScreen(),
                       ),
-                      children: [
-                        TextSpan(
-                          text: 'LUMIO',
-                          style: TextStyle(color: context.txt),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'All Channels • Live Streaming',
-                    style: TextStyle(fontSize: 11, color: context.txt3),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView.separated(
-                itemCount: _drawerItems.length,
-                separatorBuilder: (_, __) =>
-                    Divider(height: 1, color: context.brd),
-                itemBuilder: (ctx, i) {
-                  final item = _drawerItems[i];
-                  final isSelected = i == _drawerSelected;
-                  return ListTile(
-                    dense: true,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 2,
-                    ),
-                    leading: Text(
-                      item['icon']!,
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                    title: Text(
-                      item['name']!,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: isSelected ? AppColors.accent : context.txt2,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: context.bg3,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        item['count']!,
-                        style: TextStyle(fontSize: 11, color: context.txt3),
-                      ),
-                    ),
-                    onTap: () => _onDrawerItem(i),
-                  );
+                    );
+                  }
+                : null,
+          ),
+          body: Stack(
+            children: [
+              IndexedStack(index: _navIdx, children: _screens),
+              if (AdManager.instance.adsEnabled)
+                const Positioned(
+                  left: 0,
+                  bottom: 0,
+                  width: 1,
+                  height: 1,
+                  child: AdsterraPopunderHost(),
+                ),
+            ],
+          ),
+          bottomNavigationBar: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (AdManager.instance.adsEnabled) ...[
+                if (_navIdx == 0 && AdManager.instance.levelPlayReady)
+                  const AdBannerWidget(placementName: 'home_bottom'),
+                const AdsterraOverlayWidget(),
+              ],
+              MainShellBottomNav(
+                currentIndex: _navIdx,
+                liveChannelCount: prov.liveChannels.length,
+                onTap: (idx) {
+                  if (idx == 1 && _lastNavIdx != 1) {
+                    unawaited(AdManager.instance.onSportsTabSelected());
+                  }
+                  setState(() {
+                    _lastNavIdx = _navIdx;
+                    _navIdx = idx;
+                    if (idx == 0) {
+                      _setDrawerSelected(AppDrawerDestination.allChannels);
+                    } else if (idx == 1) {
+                      _setDrawerSelected(AppDrawerDestination.sports);
+                    }
+                  });
+                  if (idx == 3) prov.ensureMatchesLoaded();
                 },
               ),
-            ),
-            Container(
-              decoration: BoxDecoration(
-                border: Border(top: BorderSide(color: context.brd)),
-              ),
-              child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-                leading: Icon(
-                  context.watch<AppProvider>().isDark
-                      ? Icons.light_mode_outlined
-                      : Icons.dark_mode_outlined,
-                  color: context.txt3,
-                  size: 20,
-                ),
-                title: Text(
-                  context.watch<AppProvider>().isDark
-                      ? 'Light Mode'
-                      : 'Dark Mode',
-                  style: TextStyle(fontSize: 14, color: context.txt2),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  context.read<AppProvider>().toggleTheme();
-                },
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

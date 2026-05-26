@@ -10,6 +10,16 @@ class AdConfig {
     defaultValue: false,
   );
 
+  /// `--dart-define=ALLOW_SILENT_DEBUG_ADS=true` — hide the debug ads-disabled overlay.
+  static const bool allowSilentDebugAds = bool.fromEnvironment(
+    'ALLOW_SILENT_DEBUG_ADS',
+    defaultValue: false,
+  );
+
+  /// Debug overlay when plain `flutter run` leaves ads off (R10).
+  static bool get shouldShowAdsDisabledBanner =>
+      kDebugMode && !adsEnabledDefine && !allowSilentDebugAds;
+
   /// `--dart-define=DIAGNOSTICS_ENABLED=true` — unlock in-app ad diagnostics screen.
   static const bool diagnosticsEnabledDefine = bool.fromEnvironment(
     'DIAGNOSTICS_ENABLED',

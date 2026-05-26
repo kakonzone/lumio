@@ -24,10 +24,10 @@ class Responsive {
   /// Shell app bar side slots — shrink on narrow phones to avoid action overflow.
   static double shellSideSlot(BuildContext context) {
     final w = MediaQuery.sizeOf(context).width;
-    // Right actions need ~100–118px; keep slots wide enough to avoid overflow.
-    if (w < 340) return 100;
-    if (w < 400) return 108;
-    return 118;
+    // Right actions ~108–132px; FittedBox scales down if still tight.
+    if (w < 340) return 104;
+    if (w < 400) return 112;
+    return 120;
   }
 
   static EdgeInsets screenPadding(BuildContext context) {

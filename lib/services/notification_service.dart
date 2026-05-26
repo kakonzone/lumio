@@ -7,6 +7,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/model.dart';
+import 'firebase_bootstrap.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -78,7 +79,10 @@ class NotificationService {
 
   static final FlutterLocalNotificationsPlugin _local =
       FlutterLocalNotificationsPlugin();
-  static final FirebaseMessaging _fcm = FirebaseMessaging.instance;
+
+  /// Only valid after [FirebaseBootstrap.initialize] succeeds.
+  static FirebaseMessaging? get _fcm =>
+      FirebaseBootstrap.isInitialized ? FirebaseMessaging.instance : null;
 
   static bool _initialized = false;
   static void Function(NotificationPayload payload)? _onTap;
@@ -111,22 +115,34 @@ class NotificationService {
     );
 
     await _local.initialize(
-      const InitializationSettings(android: androidSettings, iOS: iosSettings),
+      settings: const InitializationSettings(
+        android: androidSettings,
+        iOS: iosSettings,
+      ),
       onDidReceiveNotificationResponse: _onLocalTap,
       onDidReceiveBackgroundNotificationResponse: _onLocalBackgroundTap,
     );
   }
 
   static Future<void> _initFCM() async {
+    final fcm = _fcm;
+    if (fcm == null) {
+      if (kDebugMode) {
+        debugPrint(
+          '[NotificationService] FCM skipped — add android/app/google-services.json',
+        );
+      }
+      return;
+    }
     FirebaseMessaging.onMessage.listen(_onForegroundMessage);
     FirebaseMessaging.onMessageOpenedApp.listen(_onMessageOpenedApp);
-    final initial = await _fcm.getInitialMessage();
+    final initial = await fcm.getInitialMessage();
     if (initial != null) _onMessageOpenedApp(initial);
   }
 
   static Future<void> _registerAndroidChannels() async {
     if (!Platform.isAndroid) return;
-    final plugin = _local.resolvePlatformSpecificImplementation
+    final plugin = _local.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
     if (plugin == null) return;
 
@@ -143,7 +159,9 @@ class NotificationService {
   static Future<bool> requestPermissions() async {
     try {
       if (Platform.isIOS) {
-        final settings = await _fcm.requestPermission(
+        final fcm = _fcm;
+        if (fcm == null) return false;
+        final settings = await fcm.requestPermission(
           alert: true,
           badge: true,
           sound: true,
@@ -152,7 +170,7 @@ class NotificationService {
         return settings.authorizationStatus == AuthorizationStatus.authorized;
       }
       if (Platform.isAndroid) {
-        final plugin = _local.resolvePlatformSpecificImplementation
+        final plugin = _local.resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
         final granted = await plugin?.requestNotificationsPermission() ?? false;
         return granted;
@@ -167,7 +185,9 @@ class NotificationService {
   static Future<NotificationPermissionStatus> getPermissionStatus() async {
     try {
       if (Platform.isIOS) {
-        final settings = await _fcm.getNotificationSettings();
+        final fcm = _fcm;
+        if (fcm == null) return NotificationPermissionStatus.denied;
+        final settings = await fcm.getNotificationSettings();
         switch (settings.authorizationStatus) {
           case AuthorizationStatus.authorized:
             return NotificationPermissionStatus.granted;
@@ -180,7 +200,7 @@ class NotificationService {
         }
       }
       if (Platform.isAndroid) {
-        final plugin = _local.resolvePlatformSpecificImplementation
+        final plugin = _local.resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
         final granted = await plugin?.areNotificationsEnabled() ?? false;
         return granted
@@ -200,14 +220,17 @@ class NotificationService {
 
   static Future<String?> getToken() async {
     try {
-      return await _fcm.getToken();
+      final fcm = _fcm;
+      if (fcm == null) return null;
+      return await fcm.getToken();
     } catch (e) {
       _log('getToken failed: $e');
       return null;
     }
   }
 
-  static Stream<String> get onTokenRefresh => _fcm.onTokenRefresh;
+  static Stream<String> get onTokenRefresh =>
+      _fcm?.onTokenRefresh ?? const Stream<String>.empty();
 
   // ===========================================================================
   // TOPIC SUBSCRIPTIONS
@@ -215,8 +238,10 @@ class NotificationService {
 
   static Future<void> subscribeToMatch(MatchModel match) async {
     try {
+      final fcm = _fcm;
+      if (fcm == null) return;
       final topic = _matchTopic(match.id);
-      await _fcm.subscribeToTopic(topic);
+      await fcm.subscribeToTopic(topic);
       await _persistSubscription(_Prefs.subscribedMatches, match.id);
       _log('Subscribed to match topic: $topic');
     } catch (e) {
@@ -226,8 +251,10 @@ class NotificationService {
 
   static Future<void> unsubscribeFromMatch(MatchModel match) async {
     try {
+      final fcm = _fcm;
+      if (fcm == null) return;
       final topic = _matchTopic(match.id);
-      await _fcm.unsubscribeFromTopic(topic);
+      await fcm.unsubscribeFromTopic(topic);
       await _removeSubscription(_Prefs.subscribedMatches, match.id);
       _log('Unsubscribed from match topic: $topic');
     } catch (e) {
@@ -238,8 +265,10 @@ class NotificationService {
   // FIX: Channel → ChannelModel
   static Future<void> subscribeToChannel(ChannelModel channel) async {
     try {
+      final fcm = _fcm;
+      if (fcm == null) return;
       final topic = _channelTopic(channel.id);
-      await _fcm.subscribeToTopic(topic);
+      await fcm.subscribeToTopic(topic);
       await _persistSubscription(_Prefs.subscribedChannels, channel.id);
       _log('Subscribed to channel topic: $topic');
     } catch (e) {
@@ -250,8 +279,10 @@ class NotificationService {
   // FIX: Channel → ChannelModel
   static Future<void> unsubscribeFromChannel(ChannelModel channel) async {
     try {
+      final fcm = _fcm;
+      if (fcm == null) return;
       final topic = _channelTopic(channel.id);
-      await _fcm.unsubscribeFromTopic(topic);
+      await fcm.unsubscribeFromTopic(topic);
       await _removeSubscription(_Prefs.subscribedChannels, channel.id);
       _log('Unsubscribed from channel topic: $topic');
     } catch (e) {
@@ -308,10 +339,10 @@ class NotificationService {
     if (!await isLiveAlertsEnabled()) return;
 
     await _local.show(
-      _NotifId.fromString(match.id),
-      '🔴 Live Now',
-      '${match.teamA} vs ${match.teamB} has kicked off!',
-      NotificationDetails(
+      id: _NotifId.fromString(match.id),
+      title: '🔴 Live Now',
+      body: '${match.teamA} vs ${match.teamB} has kicked off!',
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           _Channel.liveMatches.id,
           _Channel.liveMatches.name,
@@ -347,10 +378,10 @@ class NotificationService {
     if (!await isScoreUpdatesEnabled()) return;
 
     await _local.show(
-      _NotifId.scoreUpdate,
-      '⚽ Score Update',
-      updateText,
-      NotificationDetails(
+      id: _NotifId.scoreUpdate,
+      title: '⚽ Score Update',
+      body: updateText,
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           _Channel.scoreUpdates.id,
           _Channel.scoreUpdates.name,
@@ -387,10 +418,10 @@ class NotificationService {
         : 'in $minutesUntilStart minutes';
 
     await _local.show(
-      _NotifId.fromString(channel.id),
-      '📺 ${channel.name}',
-      '$programmeName $timeLabel',
-      NotificationDetails(
+      id: _NotifId.fromString(channel.id),
+      title: '📺 ${channel.name}',
+      body: '$programmeName $timeLabel',
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           _Channel.channelReminders.id,
           _Channel.channelReminders.name,
@@ -418,10 +449,10 @@ class NotificationService {
     if (!await isNewsAlertsEnabled()) return;
 
     await _local.show(
-      _NotifId.newsBreaking,
-      '📰 ${article.category}',
-      article.title,
-      NotificationDetails(
+      id: _NotifId.newsBreaking,
+      title: '📰 ${article.category}',
+      body: article.title,
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           _Channel.breakingNews.id,
           _Channel.breakingNews.name,
@@ -443,7 +474,7 @@ class NotificationService {
 
   static Future<void> cancelNotification(int notifId) async {
     try {
-      await _local.cancel(notifId);
+      await _local.cancel(id: notifId);
     } catch (e) {
       _log('cancelNotification($notifId) failed: $e');
     }
@@ -489,10 +520,10 @@ class NotificationService {
     try {
       final plugin = FlutterLocalNotificationsPlugin();
       await plugin.show(
-        notifId,
-        title,
-        body,
-        NotificationDetails(
+        id: notifId,
+        title: title,
+        body: body,
+        notificationDetails: NotificationDetails(
           android: AndroidNotificationDetails(
             channelId,
             channelId,

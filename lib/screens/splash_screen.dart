@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../ads/ad_manager.dart';
 import '../provider/app_provider.dart';
+import '../services/ad_consent_service.dart';
+import '../services/ad_trigger_manager.dart';
+import '../widgets/ad_consent_dialog.dart';
 import '../theme/app_theme.dart';
 import '../utils/responsive.dart';
 
-/// Facebook-style splash: centered logo + loading, then fade to home.
+/// Facebook-style splash: consent gate → branding load → ad preload.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -23,9 +27,36 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _start() async {
     final prov = context.read<AppProvider>();
+
+    // 1. Consent before any ad SDK init or splash ad timer.
+    await AdConsentService.instance.load();
+    await AdConsentService.instance.applyStoredConsentToSdk();
+    AdConsentService.instance.markSplashConsentGateSatisfied();
+    if (!mounted) return;
+    if (AdConsentService.instance.needsConsentPrompt) {
+      // ignore: avoid_print
+      print('[AdConsent] showing first-launch dialog');
+    }
+    await AdConsentDialog.showIfNeeded(context);
+    if (!mounted) return;
+
+    // 2. Branding + initial data (parallel).
     final minWait = Future.delayed(const Duration(milliseconds: 2400));
     final dataWait = _waitForInitialLoad(prov);
     await Future.wait([minWait, dataWait]);
+    if (!mounted) return;
+
+    // 3. splashMinMsBeforeAds from consent resolution (see markConsentResolved).
+    await AdTriggerManager.instance.waitUntilAdsEligible();
+    if (!mounted) return;
+    // ignore: avoid_print
+    print('[AdConsent] splash ad gate open — preload may call LevelPlay.init');
+
+    await AdManager.instance.preloadFromSplash();
+    if (!mounted) return;
+    await AdManager.instance.showColdStartAppOpen();
+    if (!mounted) return;
+    await AdManager.instance.showSplashDirectLinkIfAllowed();
     if (!mounted) return;
     Navigator.of(context).pushReplacementNamed('/home');
   }

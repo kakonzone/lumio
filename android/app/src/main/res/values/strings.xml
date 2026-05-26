@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Overridden at build time by app/build.gradle.kts resValue from LEVELPLAY_APP_KEY -->
+    <string name="levelplay_app_key" translatable="false"></string>
+</resources>

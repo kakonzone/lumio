@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
-import '../theme/app_theme.dart';
+import 'package:lumio_tv/theme/app_theme.dart';
 
 /// Horizontal pill navigation — theme-aware for Sports, News, and similar screens.
 class SectionNavBar extends StatelessWidget {
@@ -79,7 +78,7 @@ class SectionNavBar extends StatelessWidget {
               ),
               child: Text(
                 label,
-                style: GoogleFonts.barlow(
+                style: GF.body(
                   fontSize: 12,
                   fontWeight: active ? FontWeight.w700 : FontWeight.w600,
                   color: active
@@ -139,7 +138,7 @@ class _StatChip extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             label,
-            style: GoogleFonts.barlow(
+            style: GF.body(
               fontSize: 12,
               fontWeight: FontWeight.w700,
               color: context.txt2,
@@ -198,7 +197,7 @@ class SectionScreenHeader extends StatelessWidget {
           ],
           Text(
             title,
-            style: GoogleFonts.barlowCondensed(
+            style: GF.head(
               fontSize: 28,
               fontWeight: FontWeight.w800,
               color: context.txt,

@@ -1,0 +1,7 @@
+# Copy secrets here as android/local.properties (gitignored).
+# Flutter SDK paths are usually written by `flutter pub get`:
+# sdk.dir=...
+# flutter.sdk=...
+
+# IronSource LevelPlay — synced to Dart via --dart-define and Gradle resValue
+LEVELPLAY_APP_KEY=

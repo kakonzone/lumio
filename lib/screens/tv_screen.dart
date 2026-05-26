@@ -13,7 +13,8 @@ import 'package:lumio_tv/widgets/shell_app_bar.dart';
 import 'package:lumio_tv/utils/bdt_time.dart';
 import 'package:lumio_tv/utils/debug_log.dart';
 import 'package:lumio_tv/widgets/team_avatar.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:lumio_tv/ads/ad_manager.dart';
+import 'package:lumio_tv/ads/adsterra/adsterra_native.dart';
 
 class TvScreen extends StatefulWidget {
   const TvScreen({super.key});
@@ -282,7 +283,7 @@ class TvScreenState extends State<TvScreen> with SingleTickerProviderStateMixin 
                         ),
                         child: Text(
                           labels[i],
-                          style: GoogleFonts.barlow(
+                          style: GF.body(
                             fontSize: 11,
                             fontWeight:
                                 active ? FontWeight.w800 : FontWeight.w600,
@@ -340,6 +341,15 @@ class _HomeTab extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.only(top: 14, bottom: 24),
         children: [
+          if (AdManager.instance.adsEnabled) ...[
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 0, 16, 10),
+              child: AdsterraNativeBanner(
+                height: 100,
+                placement: 'home_native_top',
+              ),
+            ),
+          ],
           const _SectionHeader(title: 'Categories'),
           const SizedBox(height: 10),
           Padding(
@@ -376,7 +386,7 @@ class _HomeTab extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                'ESPN football & Cricbuzz cricket — tap a match for channels',
+                'Men\'s cricket & football — World Cup, IPL, BPL, top leagues',
                 style: TextStyle(fontSize: 11, color: context.txt3),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -1243,7 +1253,7 @@ class _LiveEventTeamRow extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: Text(
                 score,
-                style: GoogleFonts.barlowCondensed(
+                style: GF.head(
                   fontSize: emphasizeScore ? 22 : 18,
                   fontWeight: FontWeight.w800,
                   color: emphasizeScore ? context.scoreLive : context.txt,
@@ -1326,7 +1336,7 @@ class _LiveEventCardFooterState extends State<_LiveEventCardFooter> {
         children: [
           Text(
             BdtTime.formatCountdownLabel(widget.match.matchDate),
-            style: GoogleFonts.barlowCondensed(
+            style: GF.head(
               fontSize: 15,
               fontWeight: FontWeight.w700,
               color: context.txt2,

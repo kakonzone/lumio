@@ -1,6 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:lumio_tv/theme/app_theme.dart';
 import '../theme/app_theme.dart';
 
 /// Team crest: network logo, else colored initials + sport hint.
@@ -75,7 +75,7 @@ class TeamAvatar extends StatelessWidget {
           Center(
             child: Text(
               label,
-              style: GoogleFonts.barlowCondensed(
+              style: GF.head(
                 fontSize: size * 0.38,
                 fontWeight: FontWeight.w800,
                 color: Colors.white.withValues(alpha: 0.95),

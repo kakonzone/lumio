@@ -1,4 +1,5 @@
 import '../models/model.dart';
+import 'user_paste_channels.dart';
 
 /// Extra / updated channels with multi-link (SD + FHD) from user m3u8 list.
 class ExtraChannels {
@@ -95,6 +96,7 @@ http://149.71.34.166:8002/play/a017/index.m3u8
 
   static List<ChannelModel> get all => [
         ...userChannels,
+        ...UserPasteChannels.all,
         // ── Star Sports / Sony ─────────────────────────────────────
         _ch(
           'xs1',

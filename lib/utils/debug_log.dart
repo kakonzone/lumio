@@ -1,5 +1,4 @@
-import 'dart:convert';
-import 'dart:io';
+import 'package:lumio_tv/utils/ad_debug_log.dart';
 
 // #region agent log
 void agentDebugLog({
@@ -9,20 +8,14 @@ void agentDebugLog({
   Map<String, dynamic>? data,
   String runId = 'pre-fix',
 }) {
-  const path =
-      '/home/kakonzone/Downloads/FlutterProject/lumio/.cursor/debug-24c6ca.log';
-  try {
-    final payload = <String, dynamic>{
-      'sessionId': '24c6ca',
-      'timestamp': DateTime.now().millisecondsSinceEpoch,
-      'location': location,
-      'message': message,
-      'hypothesisId': hypothesisId,
-      'runId': runId,
-      if (data != null) 'data': data,
-    };
-    File(path).writeAsStringSync('${jsonEncode(payload)}\n',
-        mode: FileMode.append, flush: true);
-  } catch (_) {}
+  agentDebugLogToFile(
+    sessionId: '24c6ca',
+    fileName: 'debug-24c6ca.log',
+    location: location,
+    message: message,
+    hypothesisId: hypothesisId,
+    data: data,
+    runId: runId,
+  );
 }
 // #endregion

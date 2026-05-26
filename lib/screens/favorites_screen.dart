@@ -5,6 +5,8 @@ import '../provider/app_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/channel_player.dart';
 import '../widgets/shell_app_bar.dart';
+import '../ads/ad_placement_config.dart';
+import '../widgets/ad_list_injector.dart';
 import '../widgets/channel_list_tile.dart';
 
 class FavoritesScreen extends StatelessWidget {
@@ -65,10 +67,10 @@ class FavoritesScreen extends StatelessWidget {
                       ),
                     ),
                   )
-                : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                : AdListInjector.buildSeparatedChannelList(
                     itemCount: favorites.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    interval: AdPlacementConfig.channelListNativeInterval,
+                    placementPrefix: 'favorites_list',
                     itemBuilder: (ctx, i) {
                       final ch = favorites[i];
                       return ChannelListTile(

@@ -24,15 +24,19 @@ class ChannelListTile extends StatelessWidget {
     final prov = context.watch<AppProvider>();
     final showLive = prov.isStreamLive(channel);
     final checking = prov.isStreamHealthPending(channel);
+    final isPendingTap = prov.isPendingChannelTapChannel(channel);
     return GestureDetector(
       onTap: onTap,
       onLongPress: onLongPress,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: context.bg2,
+          color: isPendingTap ? AppColors.accentDim : context.bg2,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: context.brd),
+          border: Border.all(
+            color: isPendingTap ? AppColors.accent : context.brd,
+            width: isPendingTap ? 2 : 1,
+          ),
         ),
         child: Row(children: [
           ChannelAvatar(channel: channel),
@@ -46,7 +50,7 @@ class ChannelListTile extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: context.txt,
+                    color: isPendingTap ? AppColors.accent : context.txt,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

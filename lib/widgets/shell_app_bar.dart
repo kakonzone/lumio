@@ -8,6 +8,8 @@ import '../utils/responsive.dart';
 
 /// Fixed top bar: drawer/back, logo, theme, favourites, notifications.
 class ShellAppBar extends StatelessWidget {
+  static const double _topBarHeight = 40;
+
   final String? title;
   final String? subtitle;
   final bool showBack;
@@ -51,6 +53,7 @@ class ShellAppBar extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildTopRow(context, prov, favCount),
@@ -101,17 +104,8 @@ class ShellAppBar extends StatelessWidget {
             onTap: () => ShellScope.of(context).openDrawer(),
             child: SizedBox(
               width: 28,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _bar(context.txt, 22),
-                  const SizedBox(height: 5),
-                  _bar(context.txt, 14),
-                  const SizedBox(height: 5),
-                  _bar(context.txt, 22),
-                ],
-              ),
+              height: _topBarHeight,
+              child: Icon(Icons.menu_rounded, color: context.txt, size: 24),
             ),
           );
 
@@ -136,7 +130,7 @@ class ShellAppBar extends StatelessWidget {
     }
 
     return SizedBox(
-      height: 40,
+      height: _topBarHeight,
       width: double.infinity,
       child: Stack(
         alignment: Alignment.center,
@@ -145,22 +139,38 @@ class ShellAppBar extends StatelessWidget {
             children: [
               SizedBox(
                 width: sideSlot,
+                height: _topBarHeight,
                 child: Align(alignment: Alignment.centerLeft, child: left),
               ),
               const Spacer(),
               SizedBox(
                 width: sideSlot,
-                child: Align(alignment: Alignment.centerRight, child: right),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: _fitRightActions(right),
+                ),
               ),
             ],
           ),
-          centerBrand,
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: sideSlot + 4),
+            child: Center(child: centerBrand),
+          ),
         ],
       ),
     );
   }
 
-  Widget _lumioBrand(BuildContext context) => Text(
+  /// Scales action row down on narrow widths instead of overflowing [sideSlot].
+  Widget _fitRightActions(Widget actions) {
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerRight,
+      child: actions,
+    );
+  }
+
+  Widget _lumioBrand(BuildContext context) => OverflowSafeText(
         'LUMIO',
         style: TextStyle(
           fontSize: 22,
@@ -168,23 +178,31 @@ class ShellAppBar extends StatelessWidget {
           color: context.txt,
           letterSpacing: 0.6,
         ),
+        maxLines: 1,
+        textAlign: TextAlign.center,
+        scaleDown: true,
       );
 
-  Widget _lumioTvBrand(BuildContext context) => RichText(
-        textAlign: TextAlign.center,
-        text: TextSpan(
-          style: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.5,
-          ),
-          children: [
-            TextSpan(text: 'LUMIO', style: TextStyle(color: context.txt)),
-            const TextSpan(
-              text: 'TV',
-              style: TextStyle(color: AppColors.accent),
+  Widget _lumioTvBrand(BuildContext context) => FittedBox(
+        fit: BoxFit.scaleDown,
+        child: RichText(
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          text: TextSpan(
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.5,
             ),
-          ],
+            children: [
+              TextSpan(text: 'LUMIO', style: TextStyle(color: context.txt)),
+              const TextSpan(
+                text: 'TV',
+                style: TextStyle(color: AppColors.accent),
+              ),
+            ],
+          ),
         ),
       );
 
@@ -274,6 +292,8 @@ class ShellAppBar extends StatelessWidget {
                     child: Text(
                       favCount > 9 ? '9+' : '$favCount',
                       textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 8,
@@ -321,12 +341,4 @@ class ShellAppBar extends StatelessWidget {
     );
   }
 
-  Widget _bar(Color color, double width) => Container(
-        width: width,
-        height: 2,
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(2),
-        ),
-      );
 }

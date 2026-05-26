@@ -1,6 +1,5 @@
 // lib/theme/app_theme.dart
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
   // Dark mode
@@ -34,10 +33,6 @@ class AppColors {
   static const red = Color(0xFFE53935);
 }
 
-// ── Barlow font helpers ──────────────────────────────────────
-// Body text → GoogleFonts.barlow(...)
-// Headings/numbers → GoogleFonts.barlowCondensed(...)
-
 class AppTheme {
   static ThemeData get dark {
     final base = ThemeData.dark();
@@ -45,8 +40,8 @@ class AppTheme {
       brightness: Brightness.dark,
       scaffoldBackgroundColor: AppColors.bgDark,
       primaryColor: AppColors.accent,
-      // Apply Barlow as default text theme
-      textTheme: GoogleFonts.barlowTextTheme(base.textTheme).apply(
+      textTheme: base.textTheme.apply(
+        fontFamily: 'Barlow',
         bodyColor: AppColors.txtDark,
         displayColor: AppColors.txtDark,
       ),
@@ -59,7 +54,7 @@ class AppTheme {
         backgroundColor: AppColors.bgDark,
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.txtDark),
-        titleTextStyle: GoogleFonts.barlowCondensed(
+        titleTextStyle: GF.head(
           fontSize: 22,
           fontWeight: FontWeight.w800,
           color: AppColors.txtDark,
@@ -77,11 +72,11 @@ class AppTheme {
         labelColor: AppColors.accent,
         unselectedLabelColor: AppColors.txt3Dark,
         indicatorColor: AppColors.accent,
-        labelStyle: GoogleFonts.barlow(
+        labelStyle: GF.body(
           fontWeight: FontWeight.w600,
           fontSize: 13,
         ),
-        unselectedLabelStyle: GoogleFonts.barlow(
+        unselectedLabelStyle: GF.body(
           fontWeight: FontWeight.w600,
           fontSize: 13,
         ),
@@ -95,7 +90,8 @@ class AppTheme {
       brightness: Brightness.light,
       scaffoldBackgroundColor: AppColors.bgLight,
       primaryColor: AppColors.accent,
-      textTheme: GoogleFonts.barlowTextTheme(base.textTheme).apply(
+      textTheme: base.textTheme.apply(
+        fontFamily: 'Barlow',
         bodyColor: AppColors.txtLight,
         displayColor: AppColors.txtLight,
       ),
@@ -118,7 +114,7 @@ class AppTheme {
         backgroundColor: AppColors.bgLight,
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.txtLight),
-        titleTextStyle: GoogleFonts.barlowCondensed(
+        titleTextStyle: GF.head(
           fontSize: 22,
           fontWeight: FontWeight.w800,
           color: AppColors.txtLight,
@@ -135,11 +131,11 @@ class AppTheme {
         labelColor: AppColors.accent,
         unselectedLabelColor: AppColors.txt3Light,
         indicatorColor: AppColors.accent,
-        labelStyle: GoogleFonts.barlow(
+        labelStyle: GF.body(
           fontWeight: FontWeight.w600,
           fontSize: 13,
         ),
-        unselectedLabelStyle: GoogleFonts.barlow(
+        unselectedLabelStyle: GF.body(
           fontWeight: FontWeight.w600,
           fontSize: 13,
         ),
@@ -148,7 +144,6 @@ class AppTheme {
   }
 }
 
-// ── Theme Extension ──────────────────────────────────────────
 extension ThemeX on BuildContext {
   bool get isDark => Theme.of(this).brightness == Brightness.dark;
   Color get bg => isDark ? AppColors.bgDark : AppColors.bgLight;
@@ -160,19 +155,15 @@ extension ThemeX on BuildContext {
   Color get txt3 => isDark ? AppColors.txt3Dark : AppColors.txt3Light;
   Color get brd => isDark ? AppColors.borderDark : AppColors.borderLight;
 
-  /// Card / sheet surface — always opaque, theme-correct.
   Color get cardSurface => bg2;
 
-  /// Soft elevation shadow (never harsh black in light mode).
   Color get shadowColor => isDark
       ? Colors.black.withValues(alpha: 0.4)
       : const Color(0xFF12141C).withValues(alpha: 0.07);
 
-  /// Nav / chip active pill background.
   Color get navActiveBg =>
       isDark ? AppColors.accent.withValues(alpha: 0.16) : AppColors.accentLight;
 
-  /// Live match card — subtle tint, no dark gradient bleed in light mode.
   Color get liveCardTint =>
       isDark ? const Color(0xFF1A1216) : const Color(0xFFFFF6F3);
 
@@ -183,19 +174,22 @@ extension ThemeX on BuildContext {
   Color get scoreLive => isDark ? AppColors.accent : const Color(0xFFD84315);
 }
 
-// ── Font shortcuts (use anywhere in the app) ─────────────────
-// Regular body text:         GF.body(fontSize: 13)
-// Bold heading/numbers:      GF.head(fontSize: 28)
+/// Bundled Barlow fonts (assets/fonts) — no runtime google_fonts download.
 class GF {
   static TextStyle body({
     double fontSize = 14,
     FontWeight fontWeight = FontWeight.w400,
     Color? color,
+    double? letterSpacing,
+    double? height,
   }) =>
-      GoogleFonts.barlow(
+      TextStyle(
+        fontFamily: 'Barlow',
         fontSize: fontSize,
         fontWeight: fontWeight,
         color: color,
+        letterSpacing: letterSpacing,
+        height: height,
       );
 
   static TextStyle head({
@@ -203,11 +197,14 @@ class GF {
     FontWeight fontWeight = FontWeight.w800,
     Color? color,
     double? letterSpacing,
+    double? height,
   }) =>
-      GoogleFonts.barlowCondensed(
+      TextStyle(
+        fontFamily: 'BarlowCondensed',
         fontSize: fontSize,
         fontWeight: fontWeight,
         color: color,
         letterSpacing: letterSpacing,
+        height: height,
       );
 }

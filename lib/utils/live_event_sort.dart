@@ -1,7 +1,8 @@
 import '../models/live_event_match.dart';
 import '../models/model.dart';
+import 'live_event_priority.dart';
 
-/// Live first, then scheduled by kickoff, then finished.
+/// Priority tier → live → upcoming → finished → kickoff.
 class LiveEventSort {
   static List<LiveEventMatch> sort(List<LiveEventMatch> events) {
     final copy = List<LiveEventMatch>.from(events);
@@ -18,6 +19,13 @@ class LiveEventSort {
   static int _compare(LiveEventMatch a, LiveEventMatch b) {
     final ma = a.match;
     final mb = b.match;
+    final pa = LiveEventPriority.rank(ma);
+    final pb = LiveEventPriority.rank(mb);
+    if (pa != pb) return pa.compareTo(pb);
+    // Cricket before football within the same priority tier.
+    final sa = ma.sport.toLowerCase() == 'cricket' ? 0 : 1;
+    final sb = mb.sport.toLowerCase() == 'cricket' ? 0 : 1;
+    if (sa != sb) return sa.compareTo(sb);
     final ba = _bucket(ma);
     final bb = _bucket(mb);
     if (ba != bb) return ba.compareTo(bb);

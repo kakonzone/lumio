@@ -114,7 +114,7 @@ Future<LumioAudioHandler> ensureLumioAudioService() async {
   _cachedHandler = await AudioService.init(
     builder: () => LumioAudioHandler(),
     config: const AudioServiceConfig(
-      androidNotificationChannelId: 'com.example.lumio.playback',
+      androidNotificationChannelId: 'com.kakonzone.lumio.playback',
       androidNotificationChannelName: 'Lumio Playback',
       androidStopForegroundOnPause: false,
     ),

@@ -3,14 +3,46 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+  <!-- Mediation / network classification (LevelPlay adapters). -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+  <!--
+    Advertising ID (Android 13+): declared for mediation. Users who opt out in system
+    Settings → Privacy → Ads see a zeroed/limited ID; mediation SDKs must respect limitAdTracking.
+    Lumio does not request AD_ID at runtime beyond what LevelPlay pulls via GMS.
+  -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- url_launcher: Adsterra direct link in external browser (Android 11+) -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="http" />
+        </intent>
+        <package android:name="com.android.chrome" />
+        <package android:name="com.mi.globalbrowser" />
+        <package android:name="com.android.browser" />
+        <package android:name="com.brave.browser" />
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" android:host="www.effectivecpmnetwork.com" />
+        </intent>
+    </queries>
 
    <application
     android:label="Lumio"
     android:name="${applicationName}"
     android:icon="@mipmap/ic_launcher"
-    android:usesCleartextTraffic="true">  
+    android:allowBackup="false"
+    android:fullBackupContent="false"
+    android:usesCleartextTraffic="false"
+    android:networkSecurityConfig="@xml/network_security_config">
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -50,5 +82,9 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- Must match Dart LevelPlay.init app key (LEVELPLAY_APP_KEY dart-define). -->
+        <meta-data
+            android:name="com.ironsource.sdk.ApplicationKey"
+            android:value="@string/levelplay_app_key" />
     </application>
 </manifest>

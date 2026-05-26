@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 import '../models/model.dart';
+import '../utils/ad_debug_log.dart';
 
 /// Result of probing one stream URL with HTTP HEAD.
 class StreamLinkProbe {
@@ -112,20 +113,15 @@ class StreamLinkRankerService {
     Map<String, dynamic>? data,
     String runId = 'pre-fix',
   }) {
-    const path = '/home/kakonzone/.cursor/debug-logs/debug-5c7b93.log';
-    try {
-      final payload = <String, dynamic>{
-        'sessionId': '5c7b93',
-        'timestamp': DateTime.now().millisecondsSinceEpoch,
-        'location': location,
-        'message': message,
-        'hypothesisId': hypothesisId,
-        'runId': runId,
-        if (data != null) 'data': data,
-      };
-      File(path).writeAsStringSync('${jsonEncode(payload)}\n',
-          mode: FileMode.append, flush: true);
-    } catch (_) {}
+    agentDebugLogToFile(
+      sessionId: '5c7b93',
+      fileName: 'debug-5c7b93.log',
+      location: location,
+      message: message,
+      hypothesisId: hypothesisId,
+      data: data,
+      runId: runId,
+    );
   }
   // #endregion
 }

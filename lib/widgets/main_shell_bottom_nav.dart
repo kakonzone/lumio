@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
-import '../theme/app_theme.dart';
+import 'package:lumio_tv/theme/app_theme.dart';
 
 /// Bottom navigation for Home · Sports · Live · News · Categories.
 class MainShellBottomNav extends StatelessWidget {
@@ -45,7 +44,7 @@ class MainShellBottomNav extends StatelessWidget {
           builder: (context, constraints) {
             final compact = constraints.maxWidth < 360;
             return SizedBox(
-              height: compact ? 60 : 64,
+              height: compact ? 62 : 66,
               child: Row(
                 children: List.generate(_items.length, (i) {
                   final spec = _items[i];
@@ -190,7 +189,7 @@ class _NavTile extends StatelessWidget {
               fit: BoxFit.scaleDown,
               child: Text(
                 spec.label,
-                style: GoogleFonts.barlow(
+                style: GF.body(
                   fontSize: compact ? 9 : 10,
                   fontWeight: active ? FontWeight.w800 : FontWeight.w600,
                   color: active ? AppColors.accent : context.txt3,

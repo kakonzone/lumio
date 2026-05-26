@@ -6,6 +6,8 @@ import '../theme/app_theme.dart';
 import '../utils/channel_player.dart';
 import '../widgets/add_favorite_dialog.dart';
 import '../widgets/shell_app_bar.dart';
+import '../ads/ad_placement_config.dart';
+import '../widgets/ad_list_injector.dart';
 import '../widgets/channel_list_tile.dart';
 
 /// Channel list for a category (Sports, Bangla, Movies, …).
@@ -23,13 +25,28 @@ class CategoryChannelsScreen extends StatefulWidget {
   State<CategoryChannelsScreen> createState() => _CategoryChannelsScreenState();
 }
 
+int _hubAwareSort(ChannelModel a, ChannelModel b) {
+  final ha = a.hubGroupId;
+  final hb = b.hubGroupId;
+  if (ha != null && ha == hb) {
+    if (a.isHubParent != b.isHubParent) {
+      return a.isHubParent ? -1 : 1;
+    }
+    return a.name.compareTo(b.name);
+  }
+  if (a.isHubParent != b.isHubParent) {
+    return a.isHubParent ? -1 : 1;
+  }
+  return a.name.compareTo(b.name);
+}
+
 class _CategoryChannelsScreenState extends State<CategoryChannelsScreen> {
   List<ChannelModel> _channelsFor(AppProvider prov) {
     final list = prov
         .byCategory(widget.categoryName)
         .where((c) => c.streamUrl.isNotEmpty)
         .toList();
-    list.sort((a, b) => a.name.compareTo(b.name));
+    list.sort(_hubAwareSort);
     return list;
   }
 
@@ -40,7 +57,7 @@ class _CategoryChannelsScreenState extends State<CategoryChannelsScreen> {
         .byCategory(widget.categoryName)
         .where((c) => c.streamUrl.isNotEmpty)
         .toList()
-      ..sort((a, b) => a.name.compareTo(b.name));
+      ..sort(_hubAwareSort);
 
     return Scaffold(
       backgroundColor: context.bg,
@@ -62,10 +79,10 @@ class _CategoryChannelsScreenState extends State<CategoryChannelsScreen> {
                       style: TextStyle(color: context.txt3),
                     ),
                   )
-                : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                : AdListInjector.buildSeparatedChannelList(
                     itemCount: channels.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    interval: AdPlacementConfig.channelListNativeInterval,
+                    placementPrefix: 'category_list',
                     itemBuilder: (ctx, i) {
                       final ch = channels[i];
                       return ChannelListTile(

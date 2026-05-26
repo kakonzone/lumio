@@ -1149,10 +1149,3 @@ class _WinChanceBar extends StatelessWidget {
       );
 }
 
-// ═══════════════════════════════════════════════════════════════
-// THEME EXTENSION HELPERS
-// (app_theme.dart must define these on BuildContext)
-// ═══════════════════════════════════════════════════════════════
-extension _ThemeX on BuildContext {
-  bool get isDark => Theme.of(this).brightness == Brightness.dark;
-}

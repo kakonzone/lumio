@@ -6,7 +6,6 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:floating/floating.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:screen_brightness/screen_brightness.dart';
@@ -18,8 +17,15 @@ import '../provider/app_provider.dart';
 import '../services/hls_quality_service.dart';
 import '../services/stream_link_ranker_service.dart';
 import '../widgets/channel_avatar.dart';
+import '../utils/ad_debug_log.dart';
 import '../utils/debug_log.dart';
 import '../services/lumio_audio_service.dart';
+import '../ads/ad_manager.dart';
+import '../ads/ad_placement_config.dart';
+import '../config/ad_config.dart';
+import '../services/user_preferences.dart';
+import '../widgets/player_ad_slot.dart';
+import '../widgets/player_video_ad_overlay.dart';
 
 // #region agent log
 void _debugSessionLog({
@@ -29,20 +35,15 @@ void _debugSessionLog({
   Map<String, dynamic>? data,
   String runId = 'verify',
 }) {
-  try {
-    const path =
-        '/home/kakonzone/Downloads/FlutterProject/lumio/.cursor/debug-6f9d36.log';
-    final line = jsonEncode({
-      'sessionId': '6f9d36',
-      'timestamp': DateTime.now().millisecondsSinceEpoch,
-      'location': location,
-      'message': message,
-      'hypothesisId': hypothesisId,
-      'runId': runId,
-      if (data != null) 'data': data,
-    });
-    File(path).writeAsStringSync('$line\n', mode: FileMode.append, flush: true);
-  } catch (_) {}
+  agentDebugLogToFile(
+    sessionId: '6f9d36',
+    fileName: 'debug-6f9d36.log',
+    location: location,
+    message: message,
+    hypothesisId: hypothesisId,
+    data: data,
+    runId: runId,
+  );
 }
 // #endregion
 
@@ -110,6 +111,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
   bool _isFullscreen = false;
   bool _showControls = false;
   bool _isBuffering = false;
+  final ValueNotifier<bool> _bufferingVisible = ValueNotifier(false);
   BoxFit _videoFit = BoxFit.contain;
 
   double _volume = 1.0;
@@ -166,7 +168,10 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
   Timer? _hideTimer;
   Timer? _indicatorTimer;
   Timer? _autoQualityTimer;
+  Timer? _midRollTimer;
   Timer? _channelSwitchDebounce;
+  bool _showVideoAdOverlay = false;
+  Completer<void>? _videoAdCompleter;
   ChannelModel? _debouncedChannel;
 
   // ── Vertical drag (volume / brightness) ───────────────
@@ -211,9 +216,12 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     _loadPreferredQuality();
     _attachListeners();
     unawaited(_bindBackgroundPlayback());
-    if (_currentUrl != null && _currentUrl!.isNotEmpty) {
-      unawaited(_prepareLinksAndPlay());
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_runPreRollThenPlay());
+      if (UserPreferences.hasActiveHd) {
+        unawaited(_applyHdFromReward());
+      }
+    });
     _startAutoQualityTimer();
     _pipStatusSub = _floating.pipStatusStream.listen((status) {
       // #region agent log
@@ -231,6 +239,35 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
         if (mounted) _probeRelatedChannels();
       });
     });
+  }
+
+  Future<void> _applyHdFromReward() async {
+    if (!mounted) return;
+    var targetH = 720;
+    var label = '720p';
+    if (_hlsVariants.isNotEmpty) {
+      final heights = _hlsVariants.map((v) => v.height).where((h) => h > 0);
+      if (heights.isNotEmpty) {
+        final best = heights.reduce((a, b) => a > b ? a : b);
+        if (best >= 1080) {
+          targetH = 1080;
+          label = '1080p';
+        } else if (best >= 720) {
+          targetH = 720;
+          label = '720p';
+        } else {
+          targetH = best;
+          label = '${best}p';
+        }
+      }
+    } else {
+      _refreshSourceHeight();
+      if (_sourceHeight >= 1080) {
+        targetH = 1080;
+        label = '1080p';
+      }
+    }
+    await _applyQuality(label, targetH);
   }
 
   Future<void> _loadPreferredQuality() async {
@@ -541,7 +578,10 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
   void _attachListeners() {
     _bufferingSub = _player.stream.buffering.listen((isBuffering) {
       if (!mounted) return;
-      setState(() => _isBuffering = isBuffering);
+      _isBuffering = isBuffering;
+      if (_bufferingVisible.value != isBuffering) {
+        _bufferingVisible.value = isBuffering;
+      }
       if (isBuffering) {
         if (!_canRunFailover) {
           _resetBufferingWatchdog();
@@ -576,7 +616,6 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     });
     _playingSub = _player.stream.playing.listen((playing) {
       if (!mounted) return;
-      setState(() {});
       if (playing) {
         _resetBufferingWatchdog();
         _stablePlaybackTicks++;
@@ -1405,10 +1444,69 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     super.didChangeAppLifecycleState(state);
   }
 
+  Future<void> _runPreRollThenPlay() async {
+    if (AdManager.instance.canShowPlayerVideoAd()) {
+      await _presentPlayerVideoAd(isMidRoll: false);
+    }
+    if (!mounted) return;
+    AdManager.instance.setStreaming(true);
+    if (_currentUrl != null && _currentUrl!.isNotEmpty) {
+      await _prepareLinksAndPlay();
+    }
+    _startMidRollTimer();
+  }
+
+  Future<void> _presentPlayerVideoAd({required bool isMidRoll}) async {
+    if (!mounted) return;
+    if (!AdManager.instance.canShowPlayerVideoAd(isMidRoll: isMidRoll)) {
+      return;
+    }
+    AdManager.instance.recordPlayerVideoAdShown();
+
+    _videoAdCompleter = Completer<void>();
+    try {
+      await _player.pause();
+    } catch (_) {}
+    if (!mounted) return;
+    setState(() => _showVideoAdOverlay = true);
+    await _videoAdCompleter!.future;
+  }
+
+  void _dismissPlayerVideoAd() {
+    if (!mounted) return;
+    setState(() => _showVideoAdOverlay = false);
+    _videoAdCompleter?.complete();
+    _videoAdCompleter = null;
+    if (_initialized && !_hasError) {
+      unawaited(_player.play());
+    }
+  }
+
+  void _startMidRollTimer() {
+    _midRollTimer?.cancel();
+    if (!AdManager.instance.adsEnabled) return;
+    _midRollTimer = Timer.periodic(
+      AdPlacementConfig.playerMidRollPeriod,
+      (_) {
+        if (!mounted ||
+            _showVideoAdOverlay ||
+            _hasError ||
+            !_initialized ||
+            !AdManager.instance.canShowPlayerVideoAd(isMidRoll: true)) {
+          return;
+        }
+        unawaited(_presentPlayerVideoAd(isMidRoll: true));
+      },
+    );
+  }
+
   // ── Lifecycle ──────────────────────────────────────────
 
   @override
   void dispose() {
+    AdManager.instance.setStreaming(false);
+    _midRollTimer?.cancel();
+    _videoAdCompleter?.complete();
     WidgetsBinding.instance.removeObserver(this);
     lumioAudioHandlerOrNull?.detachPlayer();
     if (_pipAvailable || _pipConfigured) {
@@ -1428,6 +1526,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     _heightSub?.cancel();
     _tracksSub?.cancel();
     _pipStatusSub?.cancel();
+    _bufferingVisible.dispose();
     _player.dispose();
     try {
       ScreenBrightness().resetScreenBrightness();
@@ -1477,6 +1576,10 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
   }
 
   Widget _buildFullPlayerUi(BuildContext context) {
+    assert(() {
+      debugPrint('[PlayerScreen] rebuild reason: full_player_ui');
+      return true;
+    }());
     return PopScope(
       canPop: !_isFullscreen,
       onPopInvokedWithResult: (didPop, _) {
@@ -1554,8 +1657,15 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
             ),
 
           // ── Buffering spinner ──
-          if (_isBuffering && !_hasError && _initialized)
-            const Center(child: _Spinner()),
+          ValueListenableBuilder<bool>(
+            valueListenable: _bufferingVisible,
+            builder: (context, buffering, _) {
+              if (!buffering || _hasError || !_initialized) {
+                return const SizedBox.shrink();
+              }
+              return const Center(child: _Spinner());
+            },
+          ),
 
           if (_seekOverlayLabel != null && _seekOverlayOpacity > 0)
             _buildSeekOverlay(),
@@ -1570,6 +1680,14 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
 
           // ── Drag indicator ──
           if (_indicatorOpacity > 0) _buildDragIndicator(),
+
+          // ── In-player video ad (YouTube-style skip after 10s) ──
+          if (_showVideoAdOverlay)
+            Positioned.fill(
+              child: PlayerVideoAdOverlay(
+                onDismiss: _dismissPlayerVideoAd,
+              ),
+            ),
         ]),
       ),
     );
@@ -1630,7 +1748,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
                 children: [
                   Text(
                     _currentTitle,
-                    style: GoogleFonts.barlowCondensed(
+                    style: GF.head(
                       color: Colors.white,
                       fontSize: 17,
                       fontWeight: FontWeight.w800,
@@ -1642,7 +1760,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
                   if (widget.subtitle.isNotEmpty)
                     Text(
                       widget.subtitle,
-                      style: GoogleFonts.barlow(
+                      style: GF.body(
                         color: Colors.white.withValues(alpha: 0.65),
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
@@ -1672,7 +1790,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
                 child: _playerOverlayChip(
                   child: Text(
                     _qualityBadge,
-                    style: GoogleFonts.barlow(
+                    style: GF.body(
                       color: Colors.white,
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
@@ -1689,7 +1807,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
                   const SizedBox(width: 5),
                   Text(
                     'LIVE',
-                    style: GoogleFonts.barlowCondensed(
+                    style: GF.head(
                       color: Colors.white,
                       fontSize: 11,
                       fontWeight: FontWeight.w800,
@@ -1837,7 +1955,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
                   alignment: Alignment.center,
                   child: Text(
                     link.label.toUpperCase(),
-                    style: GoogleFonts.barlow(
+                    style: GF.body(
                       color: active
                           ? Colors.white
                           : Colors.white.withValues(alpha: 0.55),
@@ -2175,7 +2293,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
                 children: [
                   Text(
                     _currentTitle,
-                    style: GoogleFonts.barlowCondensed(
+                    style: GF.head(
                       color: Colors.white,
                       fontSize: 17,
                       fontWeight: FontWeight.w800,
@@ -2186,7 +2304,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
                   if (widget.subtitle.isNotEmpty)
                     Text(
                       widget.subtitle,
-                      style: GoogleFonts.barlow(
+                      style: GF.body(
                         color: AppColors.txt2Dark,
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
@@ -2218,7 +2336,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
                       const SizedBox(width: 5),
                       Text(
                         'LIVE',
-                        style: GoogleFonts.barlowCondensed(
+                        style: GF.head(
                           color: AppColors.accent,
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
@@ -2235,7 +2353,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
                       : _hasError
                           ? 'Unavailable'
                           : 'Connecting…',
-                  style: GoogleFonts.barlow(
+                  style: GF.body(
                     color: _initialized
                         ? AppColors.green
                         : _hasError
@@ -2249,12 +2367,19 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
             ),
           ]),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 12),
+        PlayerAdSlot(
+          onHdUnlocked: () {
+            if (!mounted) return;
+            setState(() {});
+            unawaited(_applyHdFromReward());
+          },
+        ),
 
         // ── Related channels header ──
         Text(
           relatedTitle,
-          style: GoogleFonts.barlowCondensed(
+          style: GF.head(
             color: AppColors.txt3Dark,
             fontSize: 12,
             fontWeight: FontWeight.w800,
@@ -2988,7 +3113,7 @@ class _RelatedCard extends StatelessWidget {
                 children: [
                   Text(
                     channel.name,
-                    style: GoogleFonts.barlow(
+                    style: GF.body(
                       color: Colors.white,
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
@@ -3001,7 +3126,7 @@ class _RelatedCard extends StatelessWidget {
                     channel.currentShow.isEmpty
                         ? channel.category
                         : channel.currentShow,
-                    style: GoogleFonts.barlow(
+                    style: GF.body(
                       color: AppColors.txt3Dark,
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
@@ -3022,7 +3147,7 @@ class _RelatedCard extends StatelessWidget {
                 ),
                 child: Text(
                   'PLAYING',
-                  style: GoogleFonts.barlowCondensed(
+                  style: GF.head(
                     color: AppColors.accent,
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
@@ -3053,7 +3178,7 @@ class _RelatedCard extends StatelessWidget {
                     const SizedBox(width: 4),
                     Text(
                       'LIVE',
-                      style: GoogleFonts.barlowCondensed(
+                      style: GF.head(
                         color: AppColors.accent,
                         fontSize: 9,
                         fontWeight: FontWeight.w800,

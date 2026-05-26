@@ -1,5 +1,6 @@
 import '../models/live_event_match.dart';
 import '../models/model.dart';
+import '../utils/live_event_priority.dart';
 import '../utils/live_event_sort.dart';
 import 'match_channel_matcher.dart';
 import 'score_service.dart';
@@ -31,9 +32,16 @@ class LiveEventsService {
       }
     }
 
+    final football = LiveEventSort.sort(
+      LiveEventPriority.filterAndSort(_wrap(footballRaw, channels)),
+    );
+    final cricket = LiveEventSort.sort(
+      LiveEventPriority.filterAndSort(_wrap(cricketRaw, channels)),
+    );
+
     return LiveEventsBundle(
-      football: LiveEventSort.sort(_wrap(footballRaw, channels)),
-      cricket: LiveEventSort.sort(_wrap(cricketRaw, channels)),
+      football: football,
+      cricket: cricket,
     );
   }
 

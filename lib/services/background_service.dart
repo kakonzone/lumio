@@ -191,7 +191,7 @@ class BackgroundService {
           networkType: NetworkType.connected,
           requiresBatteryNotLow: false, // scores are time-sensitive
         ),
-        existingWorkPolicy: ExistingWorkPolicy.keep,
+        existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
         backoffPolicy: BackoffPolicy.linear,
         backoffPolicyDelay: const Duration(minutes: 2),
       );
@@ -287,7 +287,7 @@ class BackgroundService {
         BackgroundTask.channelReminderCheck,
         frequency: _channelReminderInterval,
         constraints: Constraints(networkType: NetworkType.connected),
-        existingWorkPolicy: ExistingWorkPolicy.keep,
+        existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
       );
       _bgLog('Channel reminder check registered');
     } catch (e) {
@@ -319,7 +319,7 @@ class BackgroundService {
         BackgroundTask.cacheCleanupUnique,
         BackgroundTask.cacheCleanup,
         frequency: _cacheCleanupInterval,
-        existingWorkPolicy: ExistingWorkPolicy.keep,
+        existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
       );
       _bgLog('Cache cleanup task registered');
     } catch (e) {
@@ -594,7 +594,7 @@ class _ChannelReminderTask {
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       final rawList = data['channels'] as List<dynamic>? ?? [];
       final channels = rawList
-          .map((j) => Channel.fromJson(j as Map<String, dynamic>))
+          .map((j) => ChannelModel.fromJson(j as Map<String, dynamic>))
           .where((c) => subscribedIds.contains(c.id))
           .toList();
 

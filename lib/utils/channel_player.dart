@@ -2,9 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../ads/ad_manager.dart';
+import 'ad_debug_log.dart';
 import '../models/model.dart';
 import '../provider/app_provider.dart';
 import '../screens/player_screen.dart';
+import 'channel_tap_key.dart';
+
+String? _lastChannelTapKey;
+DateTime? _lastChannelTapAt;
 
 /// Opens [PlayerScreen] with multi-link support when channel has backups.
 void openChannelPlayer(
@@ -52,20 +58,76 @@ void openChannelPlayer(
   unawaited(
     prov.ensureStreamHealth(moreChannels, priority: true),
   );
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => PlayerScreen(
-        streamUrl: startUrl,
-        title: channel.name,
-        subtitle: subtitle ?? channel.currentShow,
-        category: relatedCategory,
-        headers: startLink.headers,
-        streamLinks: links,
-        relatedChannels: moreChannels,
+
+  void pushPlayer() {
+    // #region agent log
+    adDebugLog(
+      location: 'channel_player.dart:pushPlayer',
+      message: 'navigator push PlayerScreen',
+      hypothesisId: 'H-player-open',
+      data: {
+        'channel': channel.name,
+        'channelId': channel.id,
+      },
+    );
+    // #endregion
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PlayerScreen(
+          streamUrl: startUrl,
+          title: channel.name,
+          subtitle: subtitle ?? channel.currentShow,
+          category: relatedCategory,
+          headers: startLink.headers,
+          streamLinks: links,
+          relatedChannels: moreChannels,
+        ),
       ),
-    ),
+    );
+  }
+
+  unawaited(_runChannelTapWithAds(
+    context,
+    channel: channel,
+    onPlay: pushPlayer,
+  ));
+}
+
+Future<void> _runChannelTapWithAds(
+  BuildContext context, {
+  required ChannelModel channel,
+  required VoidCallback onPlay,
+}) async {
+  final key = channelTapKey(channel);
+  final now = DateTime.now();
+  if (_lastChannelTapKey == key &&
+      _lastChannelTapAt != null &&
+      now.difference(_lastChannelTapAt!) < const Duration(milliseconds: 700)) {
+    return;
+  }
+  _lastChannelTapKey = key;
+  _lastChannelTapAt = now;
+
+  final prov = context.read<AppProvider>();
+  prov.setPendingChannelTap(key);
+
+  final result = await AdManager.instance.handleChannelTap(
+    context: context,
+    channel: channel,
+    onPlay: () async {
+      prov.setPendingChannelTap(null);
+      onPlay();
+    },
   );
+  if (!context.mounted) return;
+  if (result.played) {
+    prov.setPendingChannelTap(null);
+    return;
+  }
+  if (!result.showTapAgainHint) {
+    prov.setPendingChannelTap(null);
+  }
 }
 
 /// Opens player from a raw URL; resolves [ChannelModel] for multi-links.
@@ -121,18 +183,53 @@ void openStreamPlayer(
     prov.ensureStreamHealth(moreChannels, priority: true),
   );
 
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => PlayerScreen(
-        streamUrl: links.first.url,
-        title: title,
-        subtitle: subtitle,
-        category: relatedCategory ?? channel?.category ?? category,
-        headers: links.first.headers,
-        streamLinks: links,
-        relatedChannels: moreChannels,
+  void pushPlayer() {
+    // #region agent log
+    adDebugLog(
+      location: 'channel_player.dart:pushPlayer',
+      message: 'navigator push PlayerScreen',
+      hypothesisId: 'H-player-open',
+      data: {
+        'channel': channel?.name ?? title,
+        'channelId': channel?.id ?? '',
+      },
+    );
+    // #endregion
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PlayerScreen(
+          streamUrl: links.first.url,
+          title: title,
+          subtitle: subtitle,
+          category: relatedCategory ?? channel?.category ?? category,
+          headers: links.first.headers,
+          streamLinks: links,
+          relatedChannels: moreChannels,
+        ),
       ),
-    ),
-  );
+    );
+  }
+
+  if (channel != null) {
+    unawaited(_runChannelTapWithAds(
+      context,
+      channel: channel,
+      onPlay: pushPlayer,
+    ));
+  } else {
+    unawaited(
+      AdManager.instance.handleChannelTap(
+        context: context,
+        channel: ChannelModel(
+          id: title,
+          name: title,
+          category: category,
+          country: '',
+          streamUrl: url,
+        ),
+        onPlay: () async => pushPlayer(),
+      ),
+    );
+  }
 }

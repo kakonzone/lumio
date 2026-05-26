@@ -43,3 +43,24 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Firebase (API keys in JSON — keep local / CI only; never commit)
+android/app/google-services.json
+
+# Local monetization env (from .env.example)
+.env
+.env.local
+
+# Flutter dart-define secrets (local / per-dev; never commit)
+secrets.json
+secrets.*.json
+
+# Device test log captures (scripts/capture_logcat.sh)
+device_test_*.log
+device_test_results/
+logs/device_smoke_*.log
+
+# Android signing (never commit)
+key.properties
+*.keystore
+android/app/release.keystore

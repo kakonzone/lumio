@@ -1,0 +1,82 @@
+name: Release APK (manual)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-signed-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+          cache: true
+
+      - name: Decode keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
+
+      - name: Write key.properties
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          cat > android/key.properties <<EOF
+          storePassword=${KEYSTORE_PASSWORD}
+          keyPassword=${KEY_PASSWORD}
+          keyAlias=${KEY_ALIAS}
+          storeFile=app/release.keystore
+          EOF
+
+      - name: Write google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            echo "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+          fi
+
+      - name: Build secrets.json from CI secrets
+        env:
+          LEVELPLAY_APP_KEY: ${{ secrets.LEVELPLAY_APP_KEY }}
+          ADSTERRA_DIRECT_LINK: ${{ secrets.ADSTERRA_DIRECT_LINK }}
+          ADSTERRA_NATIVE_INVOKE_URL: ${{ secrets.ADSTERRA_NATIVE_INVOKE_URL }}
+          ADSTERRA_NATIVE_BASE_URL: ${{ secrets.ADSTERRA_NATIVE_BASE_URL }}
+          CAP_BASE_URL: ${{ secrets.CAP_BASE_URL }}
+          CAP_HMAC_KEY: ${{ secrets.CAP_HMAC_KEY }}
+          TOFFEE_SUBSCRIBER_TOKEN: ${{ secrets.TOFFEE_SUBSCRIBER_TOKEN }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          keys = [
+            "LEVELPLAY_APP_KEY", "ADSTERRA_DIRECT_LINK",
+            "ADSTERRA_NATIVE_INVOKE_URL", "ADSTERRA_NATIVE_BASE_URL",
+            "CAP_BASE_URL", "CAP_HMAC_KEY", "TOFFEE_SUBSCRIBER_TOKEN",
+          ]
+          data = {"ADS_ENABLED": "true"}
+          for k in keys:
+            v = os.environ.get(k, "")
+            if v:
+              data[k] = v
+          with open("secrets.json", "w") as f:
+            json.dump(data, f)
+          PY
+
+      - run: flutter pub get
+
+      - name: Build release APK
+        run: |
+          flutter build apk --release \
+            --dart-define-from-file=secrets.json
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumio-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk

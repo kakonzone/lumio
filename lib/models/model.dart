@@ -3,12 +3,10 @@
 // alongside these inline definitions — that causes duplicate class errors.
 // Every screen/service imports only this one file.
 
+
 // ── Header Constants ──────────────────────────────────────────────────────────
-// Toffee cookie — toffeelive.com থেকে login করে নিজের cookie নাও
-// Browser > F12 > Network > playlist.m3u8 > Request Headers > Cookie
-const String toffeeCookie = 'YOUR_TOFFEE_COOKIE_HERE';
-const String toffeeUA =
-    'Toffee (Linux;Android 14) AndroidXMedia3/1.1.1/64103898/4d2ec9b8c7534adc';
+// Toffee auth: [ToffeeHeaders] + `--dart-define=TOFFEE_SUBSCRIBER_TOKEN`
+// (see lib/network/toffee_headers.dart, docs/SECRETS.md).
 const String mozillaUA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
     'AppleWebKit/537.36 (KHTML, like Gecko) '
     'Chrome/124.0.0.0 Safari/537.36';
@@ -47,6 +45,10 @@ class ChannelModel {
   final String currentShow;
   final Map<String, String> headers;
   final List<StreamLink> alternateStreams;
+  /// Groups sub-channels under a hub (e.g. Akash TV family).
+  final String? hubGroupId;
+  /// True for folder-style hub rows (children listed separately).
+  final bool isHubParent;
 
   const ChannelModel({
     required this.id,
@@ -60,6 +62,8 @@ class ChannelModel {
     this.currentShow = '',
     this.headers = const {'User-Agent': mozillaUA},
     this.alternateStreams = const [],
+    this.hubGroupId,
+    this.isHubParent = false,
   });
 
   factory ChannelModel.fromJson(Map<String, dynamic> j) => ChannelModel(
@@ -78,6 +82,8 @@ class ChannelModel {
         alternateStreams: (j['alternateStreams'] as List? ?? [])
             .map((e) => StreamLink.fromJson(e as Map<String, dynamic>))
             .toList(),
+        hubGroupId: j['hubGroupId'] as String?,
+        isHubParent: j['isHubParent'] as bool? ?? false,
       );
 
   /// Primary + backup links (deduped by URL).
@@ -122,6 +128,8 @@ class ChannelModel {
               'label': e.label,
               'headers': e.headers,
             }).toList(),
+        if (hubGroupId != null) 'hubGroupId': hubGroupId,
+        'isHubParent': isHubParent,
       };
 
   ChannelModel copyWith({
@@ -136,6 +144,8 @@ class ChannelModel {
     String? currentShow,
     Map<String, String>? headers,
     List<StreamLink>? alternateStreams,
+    String? hubGroupId,
+    bool? isHubParent,
   }) =>
       ChannelModel(
         id: id ?? this.id,
@@ -149,6 +159,8 @@ class ChannelModel {
         currentShow: currentShow ?? this.currentShow,
         headers: headers ?? this.headers,
         alternateStreams: alternateStreams ?? this.alternateStreams,
+        hubGroupId: hubGroupId ?? this.hubGroupId,
+        isHubParent: isHubParent ?? this.isHubParent,
       );
 
   @override
@@ -332,6 +344,12 @@ class MatchModel {
   bool get isUpcoming => status == 'upcoming';
   bool get isFinished => status == 'finished';
 
+  /// Display date for match cards (e.g. "24/5").
+  String get formattedDate {
+    final d = matchDate.toLocal();
+    return '${d.day}/${d.month}';
+  }
+
   String get sportEmoji {
     switch (sport.toLowerCase()) {
       case 'cricket':
@@ -364,6 +382,7 @@ class NewsModel {
   final String source;
   final String imageUrl;
   final String url;
+  final String summary;
   final DateTime publishedAt;
 
   const NewsModel({
@@ -373,6 +392,7 @@ class NewsModel {
     required this.source,
     this.imageUrl = '',
     this.url = '',
+    this.summary = '',
     required this.publishedAt,
   });
 
@@ -383,6 +403,7 @@ class NewsModel {
         source: j['source'] as String? ?? '',
         imageUrl: j['imageUrl'] as String? ?? '',
         url: j['url'] as String? ?? '',
+        summary: j['summary'] as String? ?? '',
         publishedAt: DateTime.tryParse(j['publishedAt'] as String? ?? '') ??
             DateTime.now(),
       );
@@ -394,6 +415,7 @@ class NewsModel {
         'source': source,
         'imageUrl': imageUrl,
         'url': url,
+        'summary': summary,
         'publishedAt': publishedAt.toIso8601String(),
       };
 
@@ -404,6 +426,7 @@ class NewsModel {
     String? source,
     String? imageUrl,
     String? url,
+    String? summary,
     DateTime? publishedAt,
   }) =>
       NewsModel(
@@ -413,6 +436,7 @@ class NewsModel {
         source: source ?? this.source,
         imageUrl: imageUrl ?? this.imageUrl,
         url: url ?? this.url,
+        summary: summary ?? this.summary,
         publishedAt: publishedAt ?? this.publishedAt,
       );
 
@@ -440,8 +464,13 @@ class NewsModel {
         return '🏏';
       case 'football':
         return '⚽';
+      case 'nba':
       case 'basketball':
         return '🏀';
+      case 'nfl':
+        return '🏈';
+      case 'top stories':
+        return '📰';
       case 'tennis':
         return '🎾';
       case 'formula 1':

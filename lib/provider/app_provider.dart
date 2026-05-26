@@ -16,26 +16,8 @@ import '../utils/live_event_sort.dart';
 import '../utils/match_grouping.dart';
 import '../utils/debug_log.dart';
 import '../utils/m3u_merge_parser.dart';
-
-// ─────────────────────────────────────────────────────────────
-// User-Agent & Cookie constants (top-level so static fields
-// inside the class can reference them at compile time)
-// mozillaUA lives in model.dart (imported above).
-// ─────────────────────────────────────────────────────────────
-const String toffeeUA = 'Mozilla/5.0 (Linux; Android 10; K) '
-    'AppleWebKit/537.36 (KHTML, like Gecko) '
-    'Chrome/124.0.0.0 Mobile Safari/537.36';
-
-const String toffeeCookie = 'preferredLanguage=en; '
-    '__uzma=bab6b073-2e6e-4929-8c3d-a5a8e41b44cf; '
-    '__uzmb=1714992554; '
-    '__uzme=2416; '
-    'subscriberToken=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.'
-    'eyJzdWIiOiI4Yjk3NDRkYS1lMzdhLTQxZDEtYjQ3OS0zMWE2NGNhMTU2YjciL'
-    'CJuYW1lIjoiR3Vlc3QiLCJpYXQiOjE3MTQ5OTI1NTQsImV4cCI6MTcxNTU5Nz'
-    'M1NCwiaXNzIjoiY29tLnRvZmZlZS5hcHAifQ.signature';
-
-// ─────────────────────────────────────────────────────────────
+import '../utils/channel_hub_processor.dart';
+import '../network/toffee_headers.dart';
 
 class AppProvider extends ChangeNotifier {
   // ── M3U source ────────────────────────────────────────────
@@ -48,6 +30,36 @@ class AppProvider extends ChangeNotifier {
   int get favoriteCount => _favoriteIds.length;
 
   bool isFavorite(String channelId) => _favoriteIds.contains(channelId);
+
+  /// Channel user tapped before first-tap ad; highlighted until they tap again to play.
+  String? _pendingChannelTapId;
+
+  String? get pendingChannelTapId => _pendingChannelTapId;
+
+  bool isPendingChannelTap(String channelKey) =>
+      channelKey.isNotEmpty && _pendingChannelTapId == channelKey;
+
+  bool isPendingChannelTapChannel(ChannelModel channel) =>
+      isPendingChannelTap(
+        channel.id.isNotEmpty ? channel.id : channel.name,
+      );
+
+  void setPendingChannelTap(String? channelId) {
+    if (_pendingChannelTapId == channelId) return;
+    _pendingChannelTapId = channelId;
+    notifyListeners();
+  }
+
+  String? _pendingNewsArticleId;
+
+  bool isPendingNewsArticle(String articleId) =>
+      articleId.isNotEmpty && _pendingNewsArticleId == articleId;
+
+  void setPendingNewsArticle(String? articleId) {
+    if (_pendingNewsArticleId == articleId) return;
+    _pendingNewsArticleId = articleId;
+    notifyListeners();
+  }
 
   List<ChannelModel> get favoriteChannels {
     final list = _channels.where((c) => _favoriteIds.contains(c.id)).toList();
@@ -159,6 +171,17 @@ class AppProvider extends ChangeNotifier {
     required String relatedCategory,
     List<ChannelModel>? fallback,
   }) {
+    final current = channelForStream(currentUrl ?? '') ??
+        findChannel(name: currentTitle);
+    final hubRelated = ChannelHubProcessor.relatedForChannel(
+      current,
+      _channels,
+      excludeUrl: currentUrl,
+    );
+    if (hubRelated.isNotEmpty) {
+      return hubRelated;
+    }
+
     final related = recommendedChannels(
       excludeStreamUrl: currentUrl,
       category: relatedCategory,
@@ -438,7 +461,7 @@ class AppProvider extends ChangeNotifier {
       ),
       m3uChannels,
     );
-    final all = ChannelCatalog.normalizeAll(merged);
+    final all = ChannelHubProcessor.expand(ChannelCatalog.normalizeAll(merged));
     _channels = all;
     _liveChannels = all.where((c) => c.streamUrl.isNotEmpty).toList();
     _channelsLoading = false;
@@ -807,8 +830,8 @@ class AppProvider extends ChangeNotifier {
           url: 'https://bldcmprod-cdn.toffeelive.com/cdn/live/ten_cricket/playlist.m3u8',
           label: 'Toffee',
           headers: {
-            'User-Agent': toffeeUA,
-            'Cookie': toffeeCookie,
+            'User-Agent': ToffeeHeaders.userAgent,
+            'Cookie': ToffeeHeaders.cookieHeader,
             'Referer': 'https://toffeelive.com/',
           },
         ),
@@ -1516,8 +1539,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/sony_sports_1_hd/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -1532,8 +1555,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/sony_sports_2_hd/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -1548,8 +1571,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/sony_sports_5_hd/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -1564,8 +1587,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/ten_cricket/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -1580,8 +1603,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/euro_sports_hd/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -1596,8 +1619,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/sports_highlights/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2092,8 +2115,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/sonyentertainmnt_hd/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2108,8 +2131,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/sonysab_hd/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2124,8 +2147,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/zee_tv_hd/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2140,8 +2163,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/and_tv_hd/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2156,8 +2179,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/sony_entertainment/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2327,8 +2350,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/sony_max_hd/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2343,8 +2366,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/sony_max/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2359,8 +2382,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/sonypix_hd/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2375,8 +2398,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/sonymax_2/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2391,8 +2414,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/zee_cinema_hd/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2407,8 +2430,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/b4u_movies/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2423,8 +2446,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/andpicture_hd/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2439,8 +2462,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/toffee_movie/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2455,8 +2478,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/zee_bangla_cinema/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2497,8 +2520,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/toffee_drama/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2513,8 +2536,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/sonyaath/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2529,8 +2552,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/b4u_music/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2545,8 +2568,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/zee_bangla/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2577,8 +2600,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/hum_tv/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2593,8 +2616,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/hum_masala/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2609,8 +2632,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/hum_sitaray/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2627,8 +2650,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/cartoon_network_hd/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2643,8 +2666,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/cartoon_network_sd/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2659,8 +2682,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/pogo_sd/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2675,8 +2698,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/discovery_kids/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2691,8 +2714,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/sonyyay/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2719,8 +2742,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/cnn/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2735,8 +2758,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/tlc_hd/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2751,8 +2774,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/animal_planet_hd/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2767,8 +2790,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/discovery_hd/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2783,8 +2806,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/discovery_science/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2799,8 +2822,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/sonybbc_earth_hd/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2815,8 +2838,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/discovary_investigation_hd/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2831,8 +2854,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/tlc_sd/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2847,8 +2870,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/animal_planet_sd/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2863,8 +2886,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/discovery_sd/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),
@@ -2879,8 +2902,8 @@ class AppProvider extends ChangeNotifier {
       streamUrl:
           'https://bldcmprod-cdn.toffeelive.com/cdn/live/discovery_turbo/playlist.m3u8',
       headers: {
-        'User-Agent': toffeeUA,
-        'Cookie': toffeeCookie,
+        'User-Agent': ToffeeHeaders.userAgent,
+        'Cookie': ToffeeHeaders.cookieHeader,
         'Referer': 'https://toffeelive.com/',
       },
     ),

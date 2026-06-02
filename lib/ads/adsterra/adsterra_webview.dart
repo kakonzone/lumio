@@ -5,7 +5,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 import '../ad_log.dart';
 import '../ad_manager.dart';
-import '../utils/ad_webview_navigation_policy.dart';
+import '../../core/ads/webview_ad_host.dart';
 import '../utils/lumio_webview_config.dart';
 import '../../utils/ad_debug_log.dart';
 import 'adsterra_html.dart';
@@ -87,7 +87,7 @@ class _AdsterraWebViewState extends State<AdsterraWebView> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onNavigationRequest: (request) {
-            final decision = AdWebViewNavigationPolicy.evaluate(request.url);
+            final decision = WebViewAdHost.evaluateNavigation(request.url);
             if (decision == NavigationDecision.navigate) {
               _maybeLogAdsterraClick(request.url);
             }

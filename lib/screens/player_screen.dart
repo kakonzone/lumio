@@ -23,6 +23,7 @@ import '../utils/ad_debug_log.dart';
 import '../utils/debug_log.dart';
 import '../core/performance_tuning.dart';
 import '../services/lumio_audio_service.dart';
+import '../services/lumio_window_secure.dart';
 import '../services/firebase_bootstrap.dart';
 import '../ads/ad_manager.dart';
 import '../ads/interstitial_placement.dart';
@@ -115,6 +116,8 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
   late final VideoController _videoCtrl;
   final Floating _floating = Floating();
   bool _pipAvailable = false;
+  /// After a failed PiP setup, skip further native calls (stops log spam).
+  bool _pipBlocked = false;
 
   bool _initialized = false;
   bool _hasError = false;
@@ -241,19 +244,23 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
       unawaited(_runPreRollThenPlay());
     });
     _startAutoQualityTimer();
-    _pipStatusSub = _floating.pipStatusStream.listen((status) {
-      // #region agent log
-      _debugSessionLog(
-        location: 'player_screen.dart:pipStatusStream',
-        message: 'pip status',
-        hypothesisId: 'H-pip',
-        data: {'status': status.name},
-      );
-      // #endregion
-    });
+    _pipStatusSub = _floating.pipStatusStream.listen(
+      (status) {
+        // #region agent log
+        _debugSessionLog(
+          location: 'player_screen.dart:pipStatusStream',
+          message: 'pip status',
+          hypothesisId: 'H-pip',
+          data: {'status': status.name},
+        );
+        // #endregion
+      },
+      onError: (_) {},
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(LumioWindowSecure.setSecure(false));
       unawaited(_enableLeavePiP());
-      _refreshRelatedDisplay();
+      unawaited(_ensureRelatedChannelsReady());
       Future.delayed(const Duration(seconds: 3), () {
         if (mounted) _probeRelatedChannels();
       });
@@ -280,6 +287,14 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
         data: {'err': e.toString()},
       );
     }
+  }
+
+  Future<void> _ensureRelatedChannelsReady() async {
+    if (_relatedCategory.toUpperCase() == 'GITUN') {
+      await context.read<AppProvider>().ensureGitunChannelsLoaded();
+    }
+    if (!mounted) return;
+    _refreshRelatedDisplay();
   }
 
   void _refreshRelatedDisplay() {
@@ -311,20 +326,30 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
   }
 
   Future<void> _enableLeavePiP() async {
+    if (_pipBlocked) return;
     try {
-      _pipAvailable = await _floating.isPipAvailable;
-      if (_pipAvailable) {
-        await _floating.enable(
-          const OnLeavePiP(aspectRatio: Rational(16, 9)),
-        );
-        agentDebugLog(
-          location: 'player_screen.dart:_enableLeavePiP',
-          message: 'PiP on-leave enabled',
-          hypothesisId: 'H-pip',
-        );
+      await LumioWindowSecure.setSecure(false);
+      final available = await _floating.isPipAvailable;
+      if (!available) {
+        _pipAvailable = false;
+        _pipBlocked = true;
+        if (mounted) setState(() {});
+        return;
       }
+      await _floating.enable(
+        const OnLeavePiP(aspectRatio: Rational(16, 9)),
+      );
+      _pipAvailable = true;
+      _pipConfigured = true;
+      agentDebugLog(
+        location: 'player_screen.dart:_enableLeavePiP',
+        message: 'PiP on-leave enabled',
+        hypothesisId: 'H-pip',
+      );
     } catch (e) {
       _pipAvailable = false;
+      _pipConfigured = false;
+      _pipBlocked = true;
       agentDebugLog(
         location: 'player_screen.dart:_enableLeavePiP',
         message: 'PiP enable failed',
@@ -336,8 +361,9 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
   }
 
   Future<void> _enterPipNow() async {
-    if (!_pipAvailable || !_initialized || _hasError) return;
+    if (_pipBlocked || !_pipAvailable || !_initialized || _hasError) return;
     try {
+      await LumioWindowSecure.setSecure(false);
       final status = await _floating.enable(
         const ImmediatePiP(aspectRatio: Rational(16, 9)),
       );
@@ -350,6 +376,9 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
       );
       // #endregion
     } catch (e) {
+      _pipBlocked = true;
+      _pipAvailable = false;
+      if (mounted) setState(() {});
       _debugSessionLog(
         location: 'player_screen.dart:_enterPipNow',
         message: 'immediate pip failed',
@@ -642,7 +671,6 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
         _resetBufferingWatchdog();
         _stablePlaybackTicks++;
         if (_initialized && !_pipConfigured) {
-          _pipConfigured = true;
           unawaited(_enableLeavePiP());
         }
       } else {
@@ -1322,7 +1350,11 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
         _masterUrl = first.url;
         _currentUrl = first.url;
         _currentTitle = ch.name;
-        _relatedCategory = context.read<AppProvider>().categoryForRelated(ch);
+        _relatedCategory = context.read<AppProvider>().categoryForRelated(
+              ch,
+              browseCategory:
+                  _relatedCategory.toUpperCase() == 'GITUN' ? 'GITUN' : null,
+            );
         _relatedDisplay = const [];
         _initialized = false;
         _hasError = false;
@@ -1540,7 +1572,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
       case AppLifecycleState.paused:
         _suppressFailoverFor(const Duration(seconds: 30));
         unawaited(_keepPlaybackAliveInBackground());
-        if (_pipAvailable && _initialized && !_hasError) {
+        if (!_pipBlocked && _pipAvailable && _initialized && !_hasError) {
           unawaited(_enterPipNow());
         }
         break;
@@ -1652,9 +1684,13 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     _videoAdCompleter?.complete();
     WidgetsBinding.instance.removeObserver(this);
     lumioAudioHandlerOrNull?.detachPlayer();
-    if (_pipAvailable || _pipConfigured) {
-      _floating.cancelOnLeavePiP();
+    if (_pipConfigured) {
+      try {
+        _floating.cancelOnLeavePiP();
+      } catch (_) {}
+      _pipConfigured = false;
     }
+    unawaited(LumioWindowSecure.setSecure(true));
     _hideTimer?.cancel();
     _indicatorTimer?.cancel();
     _autoQualityTimer?.cancel();
@@ -3118,7 +3154,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
       name: 'T Sports',
       category: 'Sports',
       country: 'BD',
-      streamUrl: 'http://198.195.239.50:8095/Tsports/tracks-v1a1/mono.m3u8',
+      streamUrl: 'https://198.195.239.50:8095/Tsports/tracks-v1a1/mono.m3u8',
       isLive: true,
       viewers: 22000,
       currentShow: 'Live Cricket',
@@ -3128,7 +3164,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
       name: 'Willow HD',
       category: 'Sports',
       country: 'US',
-      streamUrl: 'http://198.195.239.50:8095/WiLLow/index.m3u8',
+      streamUrl: 'https://198.195.239.50:8095/WiLLow/index.m3u8',
       isLive: true,
       viewers: 18500,
       currentShow: 'Cricket Live',
@@ -3138,7 +3174,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
       name: 'PTV Sports',
       category: 'Sports',
       country: 'PK',
-      streamUrl: 'http://198.195.239.50:8095/PTV-kutta/video.m3u8',
+      streamUrl: 'https://198.195.239.50:8095/PTV-kutta/video.m3u8',
       isLive: true,
       viewers: 9200,
       currentShow: 'PSL Live',
@@ -3151,7 +3187,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
       name: 'Nagorik TV',
       category: 'Bangladesh',
       country: 'BD',
-      streamUrl: 'http://198.195.239.50:8095/nagorik/tracks-v1a1/mono.m3u8',
+      streamUrl: 'https://198.195.239.50:8095/nagorik/tracks-v1a1/mono.m3u8',
       isLive: true,
       viewers: 4100,
       currentShow: 'Bangla Program',
@@ -3161,7 +3197,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
       name: 'News24 Bangladesh',
       category: 'Bangladesh',
       country: 'BD',
-      streamUrl: 'http://198.195.239.50:8095/News24/tracks-v1a1/mono.m3u8',
+      streamUrl: 'https://198.195.239.50:8095/News24/tracks-v1a1/mono.m3u8',
       isLive: true,
       viewers: 6300,
       currentShow: 'News Live',

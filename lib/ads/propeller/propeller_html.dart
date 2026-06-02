@@ -9,7 +9,7 @@ class PropellerHtml {
   /// OnClick / popunder loader (shell 1×1 host).
   static String onclick() => _wrap(
         body: '''
-<script>(function(s){s.dataset.zone='${MonetagConfig.onclickZoneId}',s.src='${MonetagConfig.onclickScriptHost}/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+<script>(function(s){s.dataset.zone='${MonetagConfig.effectiveOnclickZoneId}',s.src='${MonetagConfig.onclickScriptHost}/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
 ''',
         minHeight: 1,
       );
@@ -17,7 +17,7 @@ class PropellerHtml {
   /// Vignette interstitial (tab switch / exit fallback).
   static String vignette() => _wrap(
         body: '''
-<script>(function(s){s.dataset.zone='${MonetagConfig.vignetteZoneId}',s.src='${MonetagConfig.vignetteScriptHost}/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+<script>(function(s){s.dataset.zone='${MonetagConfig.effectiveVignetteZoneId}',s.src='${MonetagConfig.vignetteScriptHost}/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
 ''',
         minHeight: 400,
         fullViewport: true,
@@ -34,7 +34,7 @@ class PropellerHtml {
   /// In-page push / native banner strip.
   static String inPagePush({double minHeight = 50}) => _wrap(
         body: '''
-<script>(function(s){s.dataset.zone='${MonetagConfig.inPagePushZoneId}',s.src='${MonetagConfig.inPagePushHost}/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+<script>(function(s){s.dataset.zone='${MonetagConfig.effectiveInPagePushZoneId}',s.src='${MonetagConfig.inPagePushHost}/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
 ''',
         minHeight: minHeight,
       );

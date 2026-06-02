@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../core/ads/monetag_config.dart';
+
 /// Monetag (PropellerAds-family) zone IDs — **CI dart-define only** (no defaults in release).
 class MonetagConfig {
   MonetagConfig._();
@@ -12,6 +14,28 @@ class MonetagConfig {
   static const String inPagePushZoneId = String.fromEnvironment('MONETAG_INPAGE_ZONE');
   static const String directLinkZoneId = String.fromEnvironment('MONETAG_DIRECT_ZONE');
 
+  /// rc1 aliases (preferred in CI) with legacy fallbacks.
+  static String get effectiveOnclickZoneId => MonetagZoneConfig.resolve(
+        MonetagZoneConfig.zoneNative,
+        onclickZoneId,
+      );
+  static String get effectiveVignetteZoneId => MonetagZoneConfig.resolve(
+        MonetagZoneConfig.zoneInterstitial,
+        vignetteZoneId,
+      );
+  static String get effectivePushZoneId => MonetagZoneConfig.resolve(
+        MonetagZoneConfig.zoneBanner,
+        pushZoneId,
+      );
+  static String get effectiveInPagePushZoneId => MonetagZoneConfig.resolve(
+        MonetagZoneConfig.zoneBanner,
+        inPagePushZoneId,
+      );
+  static String get effectiveDirectLinkZoneId => MonetagZoneConfig.resolve(
+        MonetagZoneConfig.zoneRewarded,
+        directLinkZoneId,
+      );
+
   static const String onclickScriptHost = String.fromEnvironment('MONETAG_ONCLICK_HOST');
   static const String vignetteScriptHost = String.fromEnvironment('MONETAG_VIGNETTE_HOST');
   static const String pushScriptUrl = String.fromEnvironment('MONETAG_PUSH_SCRIPT');
@@ -22,11 +46,11 @@ class MonetagConfig {
       v.trim().isNotEmpty && v.trim() != _missing;
 
   static bool get isConfigured =>
-      _isSet(onclickZoneId) &&
-      _isSet(vignetteZoneId) &&
-      _isSet(pushZoneId) &&
-      _isSet(inPagePushZoneId) &&
-      _isSet(directLinkZoneId) &&
+      _isSet(effectiveOnclickZoneId) &&
+      _isSet(effectiveVignetteZoneId) &&
+      _isSet(effectivePushZoneId) &&
+      _isSet(effectiveInPagePushZoneId) &&
+      _isSet(effectiveDirectLinkZoneId) &&
       _isSet(directLinkUrl);
 
   /// True when any Monetag define was provided (partial CI must not ship).

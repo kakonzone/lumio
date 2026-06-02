@@ -5,10 +5,10 @@ import 'propeller_html.dart';
 class PropellerAdsService {
   PropellerAdsService._();
 
-  static String get onclickZoneId => MonetagConfig.onclickZoneId;
-  static String get interstitialZoneId => MonetagConfig.vignetteZoneId;
-  static String get pushZoneId => MonetagConfig.pushZoneId;
-  static String get inPagePushZoneId => MonetagConfig.inPagePushZoneId;
+  static String get onclickZoneId => MonetagConfig.effectiveOnclickZoneId;
+  static String get interstitialZoneId => MonetagConfig.effectiveVignetteZoneId;
+  static String get pushZoneId => MonetagConfig.effectivePushZoneId;
+  static String get inPagePushZoneId => MonetagConfig.effectiveInPagePushZoneId;
 
   static String onclickHtml() => PropellerHtml.onclick();
 

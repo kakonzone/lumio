@@ -37,16 +37,13 @@ class SslPinning {
 
     final primary = SecurityConfig.sslPinPrimary;
     final backup = SecurityConfig.sslPinBackup;
-    if (primary.isEmpty || primary == '__MISSING__') {
-      AdDebugLog.info(
-        'SslPinning.assertReleaseConfiguration',
-        '[SSL] warning: SSL_PIN_PRIMARY not set — backup-only or per-host pins',
-      );
-    }
-    if (backup.isEmpty || backup == '__MISSING__') {
-      AdDebugLog.info(
-        'SslPinning.assertReleaseConfiguration',
-        '[SSL] warning: SSL_PIN_BACKUP not set — rotate backup pin before cert expiry',
+    final missingPrimary = primary.isEmpty || primary == '__MISSING__';
+    final missingBackup = backup.isEmpty || backup == '__MISSING__';
+    if (SecurityConfig.sideloadDevBuild) return;
+    if (missingPrimary || missingBackup) {
+      throw StateError(
+        'Release requires SSL_PIN_PRIMARY and SSL_PIN_BACKUP dart-defines. '
+        'See docs/security/ssl_pinning.md',
       );
     }
   }

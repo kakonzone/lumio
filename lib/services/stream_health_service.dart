@@ -4,23 +4,31 @@ import '../models/model.dart';
 /// Parallel m3u8 reachability checks for LIVE badges.
 class StreamHealthService {
   static const _timeout = Duration(seconds: 5);
+  static const _playerProbeTimeout = Duration(seconds: 2);
   static const _ua =
       'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/124.0.0.0';
 
   /// Returns channel id → any stream URL reachable (HTTP 200/206).
   static Future<Map<String, bool>> checkChannels(
-    List<ChannelModel> channels,
-  ) async {
+    List<ChannelModel> channels, {
+    Duration timeout = _timeout,
+  }) async {
     if (channels.isEmpty) return {};
 
     final results = await Future.wait(
       channels.map((ch) async {
-        final ok = await isChannelActive(ch);
+        final ok = await isChannelActive(ch, timeout: timeout);
         return MapEntry(ch.id, ok);
       }),
     );
     return Map.fromEntries(results);
   }
+
+  /// Lighter checks for player "related" list (shorter timeout).
+  static Future<Map<String, bool>> checkChannelsForPlayer(
+    List<ChannelModel> channels,
+  ) =>
+      checkChannels(channels, timeout: _playerProbeTimeout);
 
   /// True if primary or any alternate m3u8 responds.
   static Future<bool> isChannelActive(

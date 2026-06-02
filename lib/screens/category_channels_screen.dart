@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../config/channel_categories.dart';
 import '../models/model.dart';
+import '../utils/priority_broadcasters.dart';
+import '../utils/sports_channel_priority.dart';
 import '../provider/app_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/channel_player.dart';
 import '../widgets/add_favorite_dialog.dart';
 import '../widgets/shell_app_bar.dart';
-import '../ads/ad_placement_config.dart';
+import '../config/ad_config.dart';
 import '../widgets/ad_list_injector.dart';
 import '../widgets/channel_list_tile.dart';
+import '../widgets/list_skeletons.dart';
 
 /// Channel list for a category (Sports, Bangla, Movies, …).
 class CategoryChannelsScreen extends StatefulWidget {
@@ -32,11 +36,21 @@ int _hubAwareSort(ChannelModel a, ChannelModel b) {
     if (a.isHubParent != b.isHubParent) {
       return a.isHubParent ? -1 : 1;
     }
-    return a.name.compareTo(b.name);
+    return _channelListCompare(a, b);
   }
   if (a.isHubParent != b.isHubParent) {
     return a.isHubParent ? -1 : 1;
   }
+  return _channelListCompare(a, b);
+}
+
+int _channelListCompare(ChannelModel a, ChannelModel b) {
+  if (a.category == 'Sports' || b.category == 'Sports') {
+    return SportsChannelPriority.compare(a, b);
+  }
+  final pa = PriorityBroadcasters.rank(a);
+  final pb = PriorityBroadcasters.rank(b);
+  if (pa != pb) return pa.compareTo(pb);
   return a.name.compareTo(b.name);
 }
 
@@ -66,22 +80,37 @@ class _CategoryChannelsScreenState extends State<CategoryChannelsScreen> {
         children: [
           ShellAppBar(
             showBack: true,
-            title: widget.categoryName,
+            title: ChannelCategoryRegistry.defFor(widget.categoryName)?.label ??
+                widget.categoryName,
             subtitle: channels.isEmpty
                 ? 'No live channels'
                 : '${channels.length} channels • Hold to add favourite',
           ),
           Expanded(
-            child: channels.isEmpty
-                ? Center(
-                    child: Text(
-                      'No channels in ${widget.categoryName}',
-                      style: TextStyle(color: context.txt3),
-                    ),
-                  )
-                : AdListInjector.buildSeparatedChannelList(
+            child: RefreshIndicator(
+              color: AppColors.accent,
+              onRefresh: prov.refresh,
+              child: channels.isEmpty
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        if (prov.channelsLoading)
+                          const ChannelListSkeleton()
+                        else
+                          SizedBox(
+                            height: MediaQuery.sizeOf(context).height * 0.4,
+                            child: Center(
+                              child: Text(
+                                'No channels in ${widget.categoryName}',
+                                style: TextStyle(color: context.txt3),
+                              ),
+                            ),
+                          ),
+                      ],
+                    )
+                  : AdListInjector.buildSeparatedChannelList(
                     itemCount: channels.length,
-                    interval: AdPlacementConfig.channelListNativeInterval,
+                    screen: AdListScreen.categoryDrilldown,
                     placementPrefix: 'category_list',
                     itemBuilder: (ctx, i) {
                       final ch = channels[i];
@@ -103,6 +132,7 @@ class _CategoryChannelsScreenState extends State<CategoryChannelsScreen> {
                       );
                     },
                   ),
+            ),
           ),
         ],
       ),

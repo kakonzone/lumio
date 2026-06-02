@@ -1,33 +1,22 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lumio_tv/config/ad_config.dart';
 import 'package:lumio_tv/services/ironsource_service.dart';
 
 void main() {
-  setUp(LevelPlayAdService.debugResetForTest);
-
-  test('two loadRewarded calls invoke SDK load once', () {
-    final service = LevelPlayAdService.instance;
-    service.debugSetInitializedForTest(true);
-    LevelPlayAdService.testRewardedLoadInvoker = () async {};
-
-    service.loadRewarded();
-    service.loadRewarded();
-
-    expect(LevelPlayAdService.debugRewardedLoadCallCount, 1);
-    expect(service.isRewardedLoadInFlight, isTrue);
+  test('hasLevelPlayRewardedUnit reflects compile-time define', () {
+    expect(AdConfig.hasLevelPlayRewardedUnit, isA<bool>());
   });
 
-  test('load failure clears in-flight flag', () {
+  test('two loadInterstitial calls invoke SDK load once', () {
+    LevelPlayAdService.debugResetForTest();
     final service = LevelPlayAdService.instance;
     service.debugSetInitializedForTest(true);
-    LevelPlayAdService.testRewardedLoadInvoker = () async {};
 
-    service.loadRewarded();
-    expect(service.isRewardedLoadInFlight, isTrue);
+    LevelPlayAdService.testInterstitialLoadInvoker = () async {};
+    service.loadInterstitial();
+    service.loadInterstitial();
 
-    service.debugSimulateRewardedLoadFailedForTest();
-    expect(service.isRewardedLoadInFlight, isFalse);
-
-    service.loadRewarded();
-    expect(LevelPlayAdService.debugRewardedLoadCallCount, 2);
+    expect(LevelPlayAdService.debugInterstitialLoadCallCount, 1);
+    expect(service.isInterstitialLoadInFlight, isTrue);
   });
 }

@@ -8,8 +8,8 @@ class AdsterraNativeCache {
   AdsterraNativeCache._();
   static final AdsterraNativeCache instance = AdsterraNativeCache._();
 
-  static const Duration _ttl = Duration(minutes: 5);
-  static const int _maxEntries = 20;
+  static const Duration _ttl = Duration(minutes: 3);
+  static const int _maxEntries = 8;
 
   final LinkedHashMap<String, _CachedAd> _entries = LinkedHashMap();
   int _hits = 0;

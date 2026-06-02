@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 import '../models/model.dart';
+import '../utils/news_priority.dart';
 
 /// Sports headlines from ESPN public API (+ BBC Sport RSS fallback).
 class NewsService {
@@ -15,7 +16,7 @@ class NewsService {
   static const _espnFeeds = <String, String>{
     'Top Stories': 'https://site.api.espn.com/apis/site/v2/sports/news?limit=20',
     'Cricket':
-        'https://site.api.espn.com/apis/site/v2/sports/cricket/news?limit=15',
+        'https://site.api.espn.com/apis/site/v2/sports/cricket/news?limit=22',
     'Football':
         'https://site.api.espn.com/apis/site/v2/sports/soccer/news?limit=15',
     'NBA': 'https://site.api.espn.com/apis/site/v2/sports/nba/news?limit=12',
@@ -40,8 +41,7 @@ class NewsService {
         if (seen.add(n.id)) out.add(n);
       }
     }
-    out.sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
-    return out.take(40).toList();
+    return NewsPriority.sort(out).take(48).toList();
   }
 
   static Future<List<NewsModel>> _fetchEspnFeed(
@@ -75,12 +75,15 @@ class NewsService {
 
     final images = raw['images'] as List? ?? [];
     var imageUrl = '';
+    var bestW = 0;
     for (final img in images) {
       if (img is! Map) continue;
       final url = img['url'] as String? ?? '';
-      if (url.isNotEmpty) {
+      if (url.isEmpty) continue;
+      final w = (img['width'] as num?)?.toInt() ?? 0;
+      if (w >= bestW || imageUrl.isEmpty) {
+        bestW = w;
         imageUrl = url;
-        break;
       }
     }
 
@@ -139,12 +142,21 @@ class NewsService {
       var summary = desc;
       if (summary.length > 220) summary = '${summary.substring(0, 217)}…';
       final pub = _rssTag(item, 'pubDate');
+      final imageUrl = _rssImageUrl(item);
+      var category = 'Sports';
+      final lower = '$title $summary'.toLowerCase();
+      if (lower.contains('cricket') || lower.contains('ipl')) {
+        category = 'Cricket';
+      } else if (lower.contains('football') || lower.contains('soccer')) {
+        category = 'Football';
+      }
       out.add(
         NewsModel(
           id: '${idPrefix}_${title.hashCode}',
           title: title,
-          category: 'Sports',
+          category: category,
           source: source,
+          imageUrl: imageUrl,
           url: link,
           summary: summary,
           publishedAt: _parseRssDate(pub) ?? DateTime.now(),
@@ -179,6 +191,35 @@ class NewsService {
     } catch (_) {
       return null;
     }
+  }
+
+  static String _rssImageUrl(String item) {
+    final patterns = [
+      RegExp(
+        r'<media:thumbnail[^>]+url="([^"]+)"',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'<media:content[^>]+url="([^"]+\.(?:jpg|jpeg|png|webp)[^"]*)"',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'<enclosure[^>]+url="([^"]+\.(?:jpg|jpeg|png|webp)[^"]*)"',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'<img[^>]+src="([^"]+\.(?:jpg|jpeg|png|webp)[^"]*)"',
+        caseSensitive: false,
+      ),
+    ];
+    for (final p in patterns) {
+      final m = p.firstMatch(item);
+      if (m != null) {
+        final url = m.group(1)?.trim() ?? '';
+        if (url.startsWith('http')) return url;
+      }
+    }
+    return '';
   }
 
   static String _stripHtml(String html) {

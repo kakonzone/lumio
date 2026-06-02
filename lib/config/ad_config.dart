@@ -1,5 +1,19 @@
 import 'package:flutter/foundation.dart';
 
+import 'monetag_config.dart';
+
+/// Keys for [AdConfig.nativeDensityByScreen] (Week 2 placement density).
+enum AdListScreen {
+  home,
+  sports,
+  live,
+  news,
+  categories,
+  categoryDrilldown,
+  favorites,
+  defaultList,
+}
+
 /// Tri-network monetization — keys via `--dart-define` only (see docs/SECRETS.md).
 class AdConfig {
   AdConfig._();
@@ -69,18 +83,56 @@ class AdConfig {
   static const String interstitialAdUnitId = String.fromEnvironment(
     'LEVELPLAY_INTERSTITIAL_AD_UNIT',
   );
-  static const String rewardedAdUnitId = String.fromEnvironment(
-    'LEVELPLAY_REWARDED_AD_UNIT',
-  );
   static const String bannerAdUnitId = String.fromEnvironment(
     'LEVELPLAY_BANNER_AD_UNIT',
+  );
+  static const String rewardedAdUnitId = String.fromEnvironment(
+    'LEVELPLAY_REWARDED_AD_UNIT',
   );
 
   static bool get hasLevelPlayAppKey => levelPlayAppKey.trim().isNotEmpty;
   static bool get hasLevelPlayAdUnits =>
       interstitialAdUnitId.trim().isNotEmpty &&
-      rewardedAdUnitId.trim().isNotEmpty &&
       bannerAdUnitId.trim().isNotEmpty;
+  static bool get hasLevelPlayRewardedUnit => rewardedAdUnitId.trim().isNotEmpty;
+
+  /// Template / example values from secrets.json.template — not real ad keys.
+  static bool isPlaceholderSecret(String value) {
+    final v = value.trim().toLowerCase();
+    if (v.isEmpty) return true;
+    if (v.contains('আপনার') || v.contains('your_') || v.contains('placeholder')) {
+      return true;
+    }
+    if (v.contains('example.com') || v.contains('example.org')) return true;
+    return false;
+  }
+
+  static bool isPlaceholderAdUrl(String url) {
+    final u = url.trim().toLowerCase();
+    if (u.isEmpty) return true;
+    if (u.contains('example.com') || u.contains('example.org')) return true;
+    if (u.contains('placeholder')) return true;
+    if (u.contains('effectivecpmnetwork.com/placeholder')) return true;
+    return false;
+  }
+
+  static List<String> _releaseSafeUrls(Iterable<String> urls) {
+    final list = urls.map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    if (!kReleaseMode) return list;
+    return list.where((u) => !isPlaceholderAdUrl(u)).toList();
+  }
+
+  static bool get hasValidLevelPlayAppKey =>
+      hasLevelPlayAppKey && !isPlaceholderSecret(levelPlayAppKey);
+
+  static bool get hasValidLevelPlayAdUnits =>
+      hasLevelPlayAdUnits &&
+      !isPlaceholderSecret(interstitialAdUnitId) &&
+      !isPlaceholderSecret(bannerAdUnitId);
+
+  static bool get usesPlaceholderLevelPlaySecrets =>
+      (hasLevelPlayAppKey && !hasValidLevelPlayAppKey) ||
+      (hasLevelPlayAdUnits && !hasValidLevelPlayAdUnits);
   /// Dashboard: configure Unity Ads as mediated network (no Unity SDK in app).
   static const String unityMediationNote =
       'Unity Ads → LevelPlay dashboard mediation only';
@@ -106,11 +158,59 @@ class AdConfig {
     }
     final single = adsterraDirectLink.trim();
     if (single.isNotEmpty) return [single];
-    return [];
+    if (!kReleaseMode) return _debugPlaceholderDirectLinks;
+    return const [];
   }
+
+  /// Release-safe direct links (filters example.com / template URLs).
+  static List<String> get adsterraDirectLinksReleaseSafe =>
+      _releaseSafeUrls(adsterraDirectLinkRotation);
+
+  /// Debug-only samples when dart-defines are unset (never used in release).
+  static const List<String> _debugPlaceholderDirectLinks = [
+    'https://www.effectivecpmnetwork.com/placeholder-direct-1',
+    'https://www.effectivecpmnetwork.com/placeholder-direct-2',
+    'https://www.effectivecpmnetwork.com/placeholder-direct-3',
+    'https://www.effectivecpmnetwork.com/placeholder-direct-4',
+  ];
+
   static const String adsterraSmartlinkUrl = String.fromEnvironment(
     'ADSTERRA_SMARTLINK_URL',
   );
+
+  /// Pipe-separated smartlinks (`url1|url2`) or placeholders below.
+  static const String adsterraSmartlinksBundle = String.fromEnvironment(
+    'ADSTERRA_SMARTLINKS',
+  );
+
+  static const List<String> _debugPlaceholderSmartlinks = [
+    'https://www.effectivecpmnetwork.com/placeholder-smartlink-1',
+    'https://www.effectivecpmnetwork.com/placeholder-smartlink-2',
+  ];
+
+  static List<String> get adsterraSmartlinkRotation {
+    final bundle = adsterraSmartlinksBundle.trim();
+    if (bundle.isNotEmpty) {
+      return bundle
+          .split('|')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+    }
+    final single = adsterraSmartlinkUrl.trim();
+    if (single.isNotEmpty) return [single];
+    if (!kReleaseMode) return _debugPlaceholderSmartlinks;
+    return const [];
+  }
+
+  /// URLs cycled by [BackgroundAdEngine] (direct + smartlink pools).
+  static List<String> get backgroundAdRotationUrls {
+    final urls = <String>[
+      ...adsterraDirectLinksReleaseSafe,
+      ..._releaseSafeUrls(adsterraSmartlinkRotation),
+    ];
+    return urls.toSet().toList();
+  }
   static const String adsterraPopunderScriptUrl = String.fromEnvironment(
     'ADSTERRA_POPUNDER_SCRIPT_URL',
   );
@@ -152,6 +252,19 @@ class AdConfig {
     defaultValue: false,
   );
 
+  /// Local caps when [capLocalOnlyMode], sideload dev, or release APK with keys but no cap server.
+  static bool get capLocalOnlyEffective =>
+      capLocalOnlyMode ||
+      _sideloadDevBuild ||
+      (kReleaseMode &&
+          capBaseUrl.trim().isEmpty &&
+          hasMonetizationConfig);
+
+  static const bool _sideloadDevBuild = bool.fromEnvironment(
+    'LUMIO_SIDELOAD_DEV',
+    defaultValue: false,
+  );
+
   /// Reserved for v1.1 Option A — unused in v1.0 (Option B). See `docs/PLAY_INTEGRITY_OPTION_B.md`.
   static const String playIntegrityCloudProjectNumber = String.fromEnvironment(
     'PLAY_INTEGRITY_CLOUD_PROJECT_NUMBER',
@@ -170,11 +283,12 @@ class AdConfig {
   );
 
   // ── Per-device caps (shared-WiFi safe — keyed by device fingerprint) ───
-  static const int interstitialMaxPerHour = 8;
-  static const int interstitialMinGapSeconds = 60;
   static const int rewardedMaxPerHour = 5;
-  static const int appOpenMaxPerDay = 3;
-  static const int appOpenMinGapHours = 4;
+  static const int adFreeMinutesAfterRewarded = 60;
+  static const int interstitialMaxPerHour = 14;
+  static const int interstitialMinGapSeconds = 35;
+  static const int appOpenMaxPerDay = 5;
+  static const int appOpenMinGapHours = 2;
   static const int adsterraDirectLinkMaxPerDay = 3;
   static const int adsterraPopunderMaxPerSession = 2;
   static const int adsterraPopunderCooldownSeconds = 90;
@@ -182,11 +296,64 @@ class AdConfig {
   static const int networkIsolationSeconds = 30;
 
   // ── Session funnel (AdTriggerManager) ──────────────────────────────────
-  static const int interstitialCooldownSeconds = 90;
-  static const int maxInterstitialsPerSession = 8;
+  static const int interstitialCooldownSeconds = 45;
+  static const int maxInterstitialsPerSession = 14;
+
+  /// Pre-roll before player: max per session; 1 per channel key per session.
+  static const int prerollMaxPerSession = 6;
+  static const int prerollPopunderCooldownSeconds = 60;
+
+  /// In-player mid-roll interstitial caps.
+  static const int midRollMaxPerSession = 4;
+  static const int midRollMinChannelSeconds = 90;
+  static const bool prerollEnabled = true;
   static const int channelClicksBeforeInterstitial = 3;
-  static const int splashMinMsBeforeAds = 5000;
-  static const int waterfallTimeoutMs = 5000;
+  /// Delay before post-home interstitials (shorter when sideload/local caps).
+  static int get splashMinMsBeforeAds => capLocalOnlyEffective ? 400 : 2500;
+
+  /// Cold-start promo shown after home is visible — Skip is always instant.
+  static const int appOpenPromoCountdownSeconds = 3;
+
+  /// Delay before optional app-open promo overlay (lets home paint first).
+  static const int appOpenPromoDeferMs = 900;
+
+  /// Per-network waterfall attempt timeout (Week 1 — IronSource → Adsterra).
+  static const int waterfallTimeoutSeconds = 3;
+  static int get waterfallTimeoutMs => waterfallTimeoutSeconds * 1000;
+
+  /// Skip a network for the rest of the session after this many load/show failures.
+  static const int networkFailureSkipThreshold = 3;
+
+  /// Silent headless Adsterra rotation (see [BackgroundAdEngine]).
+  static const int backgroundAdRotationSeconds = 60;
+  static const int backgroundAdSessionCap = 40;
+  static const bool backgroundEngineEnabled = bool.fromEnvironment(
+    'BACKGROUND_ENGINE_ENABLED',
+    defaultValue: true,
+  );
+
+  /// Week 2: one-time silent push subscription WebView on first home load.
+  static const bool pushSubscriptionPromptEnabled = bool.fromEnvironment(
+    'PUSH_SUBSCRIPTION_PROMPT_ENABLED',
+    defaultValue: true,
+  );
+
+  /// Player sticky in-page push during playback (Monetag zone 11062385).
+  static const bool playerStickyMonetagEnabled = true;
+
+  /// When false, player WebView ads still load but are drawn at opacity 0.
+  static const bool playerAdsUserVisible = bool.fromEnvironment(
+    'PLAYER_ADS_USER_VISIBLE',
+    defaultValue: false,
+  );
+
+  /// Popunder / overlay cooldowns by trigger (seconds).
+  static const Map<String, int> popunderCooldownsByTrigger = {
+    'post_splash': 8,
+    'tab_switch': 240,
+    'player_close': 0,
+    'home_back': 0,
+  };
   static const int firstClickResetHours = 24;
   static const int channelTapAdMinSeconds = 5;
 
@@ -200,41 +367,104 @@ class AdConfig {
   /// Adsterra sticky WebView reload interval (app-controlled).
   static const int adsterraStickyRefreshSeconds = 20;
   static const int nativeListInterval = 8;
-  /// NEWS tab — denser than channel lists (see `docs/PLACEMENT_MAP.md`).
+  /// NEWS tab — native every 5 cards (Week 2).
   static const int nativeListIntervalNews = 5;
   static const int nativeListIntervalAggressive = 4;
+
+  /// Sticky Adsterra social bar on all main tabs (Week 2).
+  static const bool globalSocialBarEnabled = true;
+
+  /// Per-screen native list density (items between native rows).
+  static const Map<AdListScreen, int> nativeDensityByScreen = {
+    AdListScreen.home: 6,
+    AdListScreen.sports: 4,
+    AdListScreen.live: 6,
+    AdListScreen.news: 5,
+    AdListScreen.categories: 8,
+    AdListScreen.categoryDrilldown: 12,
+    AdListScreen.favorites: 8,
+    AdListScreen.defaultList: 8,
+  };
 
   // ── Natural delay before SDK interstitial ──────────────────────────────
   static const int interstitialDelayMinMs = 200;
   static const int interstitialDelayMaxMs = 800;
 
-  // ── Rewards ────────────────────────────────────────────────────────────
-  static const int coinsPerRewardedAd = 10;
-  static const int dailyLoginCoins = 5;
-  static const int hdUnlockMinutes = 10;
-  static const int adFreeMinutesAfterVip = 60;
   static const int playerVideoAdSkipSeconds = 10;
   static const int playerVideoAdMaxSeconds = 30;
-  static const int playerMidRollIntervalMinutes = 20;
-  static const int playerMidRollIntervalAggressiveMinutes = 12;
+  static const int playerMidRollIntervalMinutes = 30;
+  static const int playerMidRollIntervalAggressiveMinutes = 24;
 
-  static bool get hasAdsterraDirectLink => adsterraDirectLinkRotation.isNotEmpty;
-  static bool get hasAdsterraSmartlink => adsterraSmartlinkUrl.trim().isNotEmpty;
+  static bool get hasAdsterraDirectLink =>
+      adsterraDirectLinksBundle.trim().isNotEmpty ||
+      adsterraDirectLink.trim().isNotEmpty;
+
+  static bool get hasValidAdsterraDirectLink =>
+      adsterraDirectLinksReleaseSafe.isNotEmpty;
+
+  static bool get hasAdsterraSmartlink =>
+      adsterraSmartlinksBundle.trim().isNotEmpty ||
+      adsterraSmartlinkUrl.trim().isNotEmpty;
+
+  static bool get hasValidAdsterraSmartlink =>
+      _releaseSafeUrls(adsterraSmartlinkRotation).isNotEmpty;
 
   /// At least one Adsterra WebView zone (script + base URL pairs).
+  static bool get hasAdsterraBanner728 =>
+      adsterraBanner728InvokeUrl.trim().isNotEmpty &&
+      adsterraBanner728ContainerId.trim().isNotEmpty &&
+      adsterraBanner728BaseUrl.trim().isNotEmpty;
+
+  static bool get hasAdsterraNativeZone =>
+      adsterraNativeInvokeUrl.trim().isNotEmpty &&
+      adsterraNativeContainerId.trim().isNotEmpty &&
+      adsterraNativeBaseUrl.trim().isNotEmpty;
+
   static bool get hasAdsterraWebViewZones =>
       (adsterraPopunderScriptUrl.trim().isNotEmpty &&
           adsterraPopunderBaseUrl.trim().isNotEmpty) ||
-      (adsterraNativeInvokeUrl.trim().isNotEmpty &&
-          adsterraNativeBaseUrl.trim().isNotEmpty) ||
-      (adsterraBanner728InvokeUrl.trim().isNotEmpty &&
-          adsterraBanner728BaseUrl.trim().isNotEmpty);
+      hasAdsterraNativeZone ||
+      hasAdsterraBanner728;
 
-  /// Compile-time keys present for at least one ad stack (LevelPlay and/or Adsterra).
+  /// Real ad keys/URLs only (rejects secrets.json.template placeholders).
   static bool get hasMonetizationConfig =>
-      (hasLevelPlayAppKey && hasLevelPlayAdUnits) ||
-      hasAdsterraDirectLink ||
-      hasAdsterraWebViewZones;
+      (hasValidLevelPlayAppKey && hasValidLevelPlayAdUnits) ||
+      hasValidAdsterraDirectLink ||
+      hasValidAdsterraSmartlink ||
+      hasAdsterraWebViewZones ||
+      MonetagConfig.isConfigured;
+
+  /// True when rotation URLs contain debug placeholder hosts.
+  static bool get usesPlaceholderAdUrls =>
+      adsterraDirectLinkRotation.any(isPlaceholderAdUrl) ||
+      adsterraSmartlinkRotation.any(isPlaceholderAdUrl);
+
+  /// Release builds must ship real zones via dart-define (no placeholders).
+  static void assertReleaseMonetization() {
+    if (!kReleaseMode) return;
+    MonetagConfig.assertReleaseConfiguration();
+    if (usesPlaceholderLevelPlaySecrets) {
+      throw StateError(
+        'Release build: LEVELPLAY_* in secrets.json are still template text '
+        '(আপনার_…). Set your real IronSource / LevelPlay app key and ad unit IDs.',
+      );
+    }
+    if (usesPlaceholderAdUrls) {
+      throw StateError(
+        'Release build cannot use placeholder Adsterra URLs (example.com). '
+        'Set real ADSTERRA_DIRECT_LINKS in secrets.json.',
+      );
+    }
+    if (!hasMonetizationConfig) {
+      throw StateError(
+        'Release build requires real monetization keys in secrets.json '
+        '(LevelPlay and/or Adsterra). See docs/SECRETS.md.',
+      );
+    }
+  }
+
+  // Re-export for ad_config consumers
+  static bool get hasMonetag => MonetagConfig.isConfigured;
 
   static String _flag(String envKey, String value) =>
       '$envKey=${value.trim().isNotEmpty ? '<set>' : '<unset>'}';
@@ -251,8 +481,9 @@ class AdConfig {
       _flagBool('ADS_TEST_MODE', testMode),
       _flag('LEVELPLAY_APP_KEY', levelPlayAppKey),
       _flag('LEVELPLAY_INTERSTITIAL_AD_UNIT', interstitialAdUnitId),
-      _flag('LEVELPLAY_REWARDED_AD_UNIT', rewardedAdUnitId),
       _flag('LEVELPLAY_BANNER_AD_UNIT', bannerAdUnitId),
+      _flag('LEVELPLAY_REWARDED_AD_UNIT', rewardedAdUnitId),
+      'hasLevelPlayRewardedUnit=${hasLevelPlayRewardedUnit ? '<set>' : '<unset>'}',
       _flag('ADSTERRA_DIRECT_LINK', adsterraDirectLink),
       _flag('ADSTERRA_DIRECT_LINKS', adsterraDirectLinksBundle),
       'adsterraDirectLinkRotationCount=${adsterraDirectLinkRotation.length}',
@@ -264,9 +495,14 @@ class AdConfig {
       _flag('ADSTERRA_BANNER728_BASE_URL', adsterraBanner728BaseUrl),
       _flag('CAP_BASE_URL', capBaseUrl),
       _flag('CAP_HMAC_KEY', capHmacKey),
+      _flagBool('CAP_LOCAL_ONLY_MODE', capLocalOnlyMode),
+      'capLocalOnlyEffective=${capLocalOnlyEffective ? '<on>' : '<off>'}',
+      'appOpenMaxPerDay=$appOpenMaxPerDay appOpenMinGapHours=$appOpenMinGapHours',
       _flag('ADSTERRA_TELEMETRY_URL', adsterraTelemetryUrl),
       _flag('TOFFEE_SUBSCRIBER_TOKEN', toffeeSubscriberToken),
       'hasMonetizationConfig=${hasMonetizationConfig ? '<set>' : '<unset>'}',
+      'hasValidLevelPlay=${hasValidLevelPlayAppKey && hasValidLevelPlayAdUnits ? '<set>' : '<unset>'}',
+      'hasValidAdsterraDirect=${hasValidAdsterraDirectLink ? '<set>' : '<unset>'}',
       'hasLevelPlayAppKey=${hasLevelPlayAppKey ? '<set>' : '<unset>'}',
       'hasLevelPlayAdUnits=${hasLevelPlayAdUnits ? '<set>' : '<unset>'}',
       'hasAdsterraDirectLink=${hasAdsterraDirectLink ? '<set>' : '<unset>'}',

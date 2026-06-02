@@ -70,7 +70,8 @@ void main() {
 
     await AdTriggerManager.instance.waitUntilAdsEligible();
     expect(AdTriggerManager.instance.debugIsAdsEligible, isTrue);
-    expect(AdConfig.splashMinMsBeforeAds, 5000);
+    // updated for rc1: splash delay follows capLocalOnlyEffective profile
+    expect(AdConfig.splashMinMsBeforeAds, AdConfig.capLocalOnlyEffective ? 400 : 2500);
   });
 
   test('markSplashConsentGateSatisfied marks ad eligibility', () async {

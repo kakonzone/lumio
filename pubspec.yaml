@@ -16,6 +16,7 @@ dependencies:
   encrypt: 5.0.3
   crypto: 3.0.7
   connectivity_plus: 7.1.1
+  battery_plus: 6.2.3
 
   # State Management
   provider: 6.1.5+1
@@ -30,9 +31,8 @@ dependencies:
 
   # Images & UI
   cached_network_image: 3.4.1
-  flutter_svg: 2.2.4
+  flutter_cache_manager: ^3.4.1
   shimmer: 3.0.0
-  lottie: 3.3.3
   pull_to_refresh: 2.0.0
 
   # Storage
@@ -43,25 +43,22 @@ dependencies:
   url_launcher: 6.3.2
   floating: 6.0.0
 
-  # Backend — Dart Shelf (dev only: bin/dev_server.dart)
-  shelf: 1.4.2
-  shelf_router: 1.1.4
-  shelf_cors_headers: 0.1.5
   workmanager: 0.9.0+3
+  # Firebase dependencies - can be disabled via FIREBASE_ENABLED=false for size optimization
   firebase_messaging: 16.2.2
   firebase_core: 4.9.0
   firebase_analytics: 12.4.1
   firebase_remote_config: 6.5.1
+  firebase_crashlytics: 5.2.2
   flutter_local_notifications: 21.0.0
 
   # Ads monetization (Unity Ads via LevelPlay mediation)
   unity_levelplay_mediation: 9.2.0
   webview_flutter: 4.13.1
-  # flutter_inappwebview removed (Task 11) — unused; re-add for deferred headless background ads
+  webview_flutter_android: 4.12.0
   # Pinned together: device_info_plus 13.x + package_info_plus 10.x share win32 5.x
   device_info_plus: 13.1.0
   package_info_plus: 10.1.0
-  firebase_crashlytics: 5.2.2
 
 dev_dependencies:
   flutter_test:
@@ -70,6 +67,10 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: 6.0.0
   flutter_launcher_icons: 0.14.4
+  # Local dev server only (bin/dev_server.dart)
+  shelf: 1.4.2
+  shelf_router: 1.1.4
+  shelf_cors_headers: 0.1.5
 
 flutter_launcher_icons:
   android: true
@@ -80,26 +81,28 @@ flutter_launcher_icons:
   remove_alpha_ios: true
 
 flutter:
+  generate: true
   uses-material-design: true
 
   assets:
-    - assets/images/
-    - assets/icons/
-    - assets/data/
+    - assets/images/app_icon.png
+    - assets/images/cricket_icon.webp
+    - assets/images/football_icon.webp
+    - assets/images/lumio_sports_logo.webp
+    - assets/images/fifa_wc26_banner_1.png
+    - assets/images/fifa_wc26_banner_2.png
+    - assets/data/vpn_asn_catalog.json
+    - assets/data/featured_live_events.json
+    - assets/legal/privacy_policy_template.md
+    - assets/legal/terms_template.md
 
   fonts:
     - family: Barlow
       fonts:
         - asset: assets/fonts/Barlow-Regular.ttf
-        - asset: assets/fonts/Barlow-Medium.ttf
-          weight: 500
         - asset: assets/fonts/Barlow-Bold.ttf
           weight: 700
-        - asset: assets/fonts/Barlow-ExtraBold.ttf
-          weight: 800
     - family: BarlowCondensed
       fonts:
         - asset: assets/fonts/BarlowCondensed-Bold.ttf
           weight: 700
-        - asset: assets/fonts/BarlowCondensed-ExtraBold.ttf
-          weight: 800

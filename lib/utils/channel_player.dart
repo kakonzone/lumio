@@ -7,13 +7,15 @@ import 'ad_debug_log.dart';
 import '../models/model.dart';
 import '../provider/app_provider.dart';
 import '../screens/player_screen.dart';
+import '../services/ad_trigger_manager.dart';
+import '../services/channel_resolver.dart';
 import 'channel_tap_key.dart';
 
 String? _lastChannelTapKey;
 DateTime? _lastChannelTapAt;
 
 /// Opens [PlayerScreen] with multi-link support when channel has backups.
-void openChannelPlayer(
+Future<void> openChannelPlayer(
   BuildContext context, {
   required ChannelModel channel,
   String? subtitle,
@@ -21,8 +23,8 @@ void openChannelPlayer(
   String? browseCategory,
   /// Open a specific backup link (live-event popup per-link tap).
   String? initialStreamUrl,
-}) {
-  final links = channel.allStreams;
+}) async {
+  final links = channel.userStreamLinks;
   if (links.isEmpty || links.first.url.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -34,32 +36,27 @@ void openChannelPlayer(
     return;
   }
 
-  final startUrl = initialStreamUrl != null && initialStreamUrl.isNotEmpty
-      ? initialStreamUrl
-      : links.first.url;
-  final startLink = links.firstWhere(
-    (l) => l.url == startUrl,
-    orElse: () => links.first,
-  );
-
   final prov = context.read<AppProvider>();
   final relatedCategory =
       prov.categoryForRelated(channel, browseCategory: browseCategory);
-  final related = prov.recommendedChannels(
-    excludeStreamUrl: startUrl,
-    category: relatedCategory,
-  );
-  final moreChannels = prov.playerRelatedChannels(
-    currentTitle: channel.name,
-    currentUrl: startUrl,
-    relatedCategory: relatedCategory,
-    fallback: related,
-  );
-  unawaited(
-    prov.ensureStreamHealth(moreChannels, priority: true),
-  );
 
-  void pushPlayer() {
+  Future<void> pushPlayer() async {
+    var startUrl = initialStreamUrl != null && initialStreamUrl.isNotEmpty
+        ? initialStreamUrl
+        : links.first.url;
+
+    final resolution = await ChannelResolver.instance.resolveForPlayback(
+      channel: channel,
+      embeddedUrl: startUrl,
+      tokenTimeout: const Duration(seconds: 2),
+    );
+    if (!context.mounted) return;
+    startUrl = resolution.url;
+    final startLink = links.firstWhere(
+      (l) => l.url == startUrl,
+      orElse: () => links.first,
+    );
+
     // #region agent log
     adDebugLog(
       location: 'channel_player.dart:pushPlayer',
@@ -81,43 +78,52 @@ void openChannelPlayer(
           category: relatedCategory,
           headers: startLink.headers,
           streamLinks: links,
-          relatedChannels: moreChannels,
+          relatedChannels: null,
         ),
       ),
     );
   }
 
-  unawaited(_runChannelTapWithAds(
+  await _runChannelTapWithAds(
     context,
     channel: channel,
     onPlay: pushPlayer,
-  ));
+  );
 }
 
 Future<void> _runChannelTapWithAds(
   BuildContext context, {
   required ChannelModel channel,
-  required VoidCallback onPlay,
+  required Future<void> Function() onPlay,
 }) async {
   final key = channelTapKey(channel);
-  final now = DateTime.now();
-  if (_lastChannelTapKey == key &&
-      _lastChannelTapAt != null &&
-      now.difference(_lastChannelTapAt!) < const Duration(milliseconds: 700)) {
-    return;
+  final readyForPlayer =
+      AdTriggerManager.instance.hasChannelTapBrowserShown(key);
+
+  // Debounce only duplicate first-tap spam — never block the 2nd "play" tap.
+  if (!readyForPlayer) {
+    final now = DateTime.now();
+    if (_lastChannelTapKey == key &&
+        _lastChannelTapAt != null &&
+        now.difference(_lastChannelTapAt!) <
+            const Duration(milliseconds: 400)) {
+      return;
+    }
+    _lastChannelTapKey = key;
+    _lastChannelTapAt = now;
   }
-  _lastChannelTapKey = key;
-  _lastChannelTapAt = now;
 
   final prov = context.read<AppProvider>();
-  prov.setPendingChannelTap(key);
+  if (!readyForPlayer) {
+    prov.setPendingChannelTap(key);
+  }
 
   final result = await AdManager.instance.handleChannelTap(
     context: context,
     channel: channel,
     onPlay: () async {
       prov.setPendingChannelTap(null);
-      onPlay();
+      await onPlay();
     },
   );
   if (!context.mounted) return;
@@ -125,9 +131,17 @@ Future<void> _runChannelTapWithAds(
     prov.setPendingChannelTap(null);
     return;
   }
-  if (!result.showTapAgainHint) {
-    prov.setPendingChannelTap(null);
+  if (result.showTapAgainHint) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Tap again to watch'),
+        duration: Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+    return;
   }
+  prov.setPendingChannelTap(null);
 }
 
 /// Opens player from a raw URL; resolves [ChannelModel] for multi-links.
@@ -159,7 +173,7 @@ void openStreamPlayer(
           browseCategory: category.isNotEmpty ? category : null,
         )
       : (category.isNotEmpty ? category : null);
-  final links = channel?.allStreams ??
+  final links = channel?.userStreamLinks ??
       [
         StreamLink(
           url: url,
@@ -168,22 +182,18 @@ void openStreamPlayer(
         ),
       ];
 
-  final relatedList = related ??
-      prov.recommendedChannels(
-        excludeStreamUrl: url,
-        category: relatedCategory,
+  Future<void> pushPlayer() async {
+    var playUrl = links.first.url;
+    if (channel != null) {
+      final resolution = await ChannelResolver.instance.resolveForPlayback(
+        channel: channel,
+        embeddedUrl: playUrl,
+        tokenTimeout: const Duration(seconds: 2),
       );
-  final moreChannels = prov.playerRelatedChannels(
-    currentTitle: title,
-    currentUrl: url,
-    relatedCategory: relatedCategory ?? channel?.category ?? category,
-    fallback: relatedList,
-  );
-  unawaited(
-    prov.ensureStreamHealth(moreChannels, priority: true),
-  );
+      if (!context.mounted) return;
+      playUrl = resolution.url;
+    }
 
-  void pushPlayer() {
     // #region agent log
     adDebugLog(
       location: 'channel_player.dart:pushPlayer',
@@ -199,13 +209,13 @@ void openStreamPlayer(
       context,
       MaterialPageRoute(
         builder: (_) => PlayerScreen(
-          streamUrl: links.first.url,
+          streamUrl: playUrl,
           title: title,
           subtitle: subtitle,
           category: relatedCategory ?? channel?.category ?? category,
           headers: links.first.headers,
           streamLinks: links,
-          relatedChannels: moreChannels,
+          relatedChannels: null,
         ),
       ),
     );
@@ -228,7 +238,7 @@ void openStreamPlayer(
           country: '',
           streamUrl: url,
         ),
-        onPlay: () async => pushPlayer(),
+        onPlay: pushPlayer,
       ),
     );
   }

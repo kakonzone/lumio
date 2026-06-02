@@ -5,10 +5,12 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.app.ActivityManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
+import android.webkit.WebView
 import android.view.WindowManager
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
@@ -19,9 +21,14 @@ import java.security.MessageDigest
 
 class MainActivity : AudioServiceActivity() {
 
+    private var pendingDeepLink: String? = null
+
     companion object {
         private const val CHANNEL = "com.lumio.security/native"
         private const val ADS_CHANNEL = "com.kakonzone.lumio/ads"
+        private const val DEEPLINK_CHANNEL = "com.kakonzone.lumio/deeplink"
+        private const val STORAGE_CHANNEL = "com.kakonzone.lumio/storage"
+        private const val MONETAG_PUSH_CHANNEL = "com.kakonzone.lumio/monetag_push"
         private const val ENCRYPTED_INSTALL_PREFS = "lumio_encrypted_install"
         private const val ENCRYPTED_INSTALL_KEY = "lumio_install_id"
 
@@ -52,10 +59,17 @@ class MainActivity : AudioServiceActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        pendingDeepLink = intent?.data?.toString()
         window.setFlags(
             WindowManager.LayoutParams.FLAG_SECURE,
             WindowManager.LayoutParams.FLAG_SECURE,
         )
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        pendingDeepLink = intent.data?.toString()
     }
 
     override fun onPictureInPictureModeChanged(
@@ -82,6 +96,54 @@ class MainActivity : AudioServiceActivity() {
                             Log.e("LumioAds", "openUrlInBrowser channel error: ${e.message}")
                             result.success(false)
                         }
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, STORAGE_CHANNEL)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "getAppDataBytes" -> result.success(getDirectorySizeBytes(filesDir))
+                    "getCacheBytes" -> result.success(getDirectorySizeBytes(cacheDir))
+                    "clearWebViewCache" -> {
+                        clearWebViewDiskCache()
+                        result.success(null)
+                    }
+                    "trimCacheDir" -> {
+                        val maxBytes = call.argument<Number>("maxBytes")?.toLong()
+                            ?: (32L * 1024L * 1024L)
+                        trimDirectory(cacheDir, maxBytes)
+                        result.success(null)
+                    }
+                    "trimAppDataDir" -> {
+                        val maxBytes = call.argument<Number>("maxBytes")?.toLong()
+                            ?: (22L * 1024L * 1024L)
+                        trimDirectory(filesDir, maxBytes)
+                        result.success(null)
+                    }
+                    "getDeviceProfile" -> result.success(readDeviceProfile())
+                    else -> result.notImplemented()
+                }
+            }
+
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, MONETAG_PUSH_CHANNEL)
+            .setMethodCallHandler { call, result ->
+                MonetagPushBridge.handle(call, result, this)
+            }
+
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, DEEPLINK_CHANNEL)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "getInitialLink" -> {
+                        val link = pendingDeepLink ?: intent?.data?.toString()
+                        pendingDeepLink = null
+                        result.success(link)
+                    }
+                    "pollPendingLink" -> {
+                        val link = pendingDeepLink
+                        pendingDeepLink = null
+                        result.success(link)
                     }
                     else -> result.notImplemented()
                 }
@@ -191,20 +253,26 @@ class MainActivity : AudioServiceActivity() {
         }
     }
 
-    private fun encryptedInstallPrefs() = try {
-        val masterKey = MasterKey.Builder(this)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-        EncryptedSharedPreferences.create(
-            this,
-            ENCRYPTED_INSTALL_PREFS,
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
-        )
-    } catch (_: Exception) {
-        null
-    }
+    private fun encryptedInstallPrefs() =
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            // Android 5.0–5.1 (API 21–22): EncryptedSharedPreferences needs API 23+.
+            null
+        } else {
+            try {
+                val masterKey = MasterKey.Builder(this)
+                    .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                    .build()
+                EncryptedSharedPreferences.create(
+                    this,
+                    ENCRYPTED_INSTALL_PREFS,
+                    masterKey,
+                    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
+                )
+            } catch (_: Exception) {
+                null
+            }
+        }
 
     private fun readEncryptedInstallId(): String? {
         return try {
@@ -292,6 +360,58 @@ class MainActivity : AudioServiceActivity() {
             Log.w("LumioAds", "launchViewIntent $label err=${e.message}")
             false
         }
+    }
+
+    private fun clearWebViewDiskCache() {
+        try {
+            WebView(applicationContext).apply {
+                clearCache(true)
+                clearHistory()
+                destroy()
+            }
+        } catch (e: Exception) {
+            Log.w("LumioStorage", "clearWebViewDiskCache: ${e.message}")
+        }
+    }
+
+    /** RAM tier for Flutter — smaller image/player buffers on low-memory devices. */
+    private fun readDeviceProfile(): Map<String, Any> {
+        val am = getSystemService(ACTIVITY_SERVICE) as ActivityManager
+        val info = ActivityManager.MemoryInfo()
+        am.getMemoryInfo(info)
+        val totalMb = (info.totalMem / (1024L * 1024L)).toInt().coerceAtLeast(1)
+        val availMb = (info.availMem / (1024L * 1024L)).toInt().coerceAtLeast(0)
+        val lowRam = info.lowMemory || totalMb < 2800
+        return mapOf(
+            "totalRamMb" to totalMb,
+            "availRamMb" to availMb,
+            "lowMemoryDevice" to lowRam,
+            "sdkInt" to Build.VERSION.SDK_INT,
+        )
+    }
+
+    private fun getDirectorySizeBytes(dir: java.io.File?): Long {
+        if (dir == null || !dir.exists()) return 0L
+        var total = 0L
+        dir.walkTopDown().forEach { file ->
+            if (file.isFile) total += file.length()
+        }
+        return total
+    }
+
+    /** Deletes oldest files in [dir] until total size is under [maxBytes]. */
+    private fun trimDirectory(dir: java.io.File?, maxBytes: Long) {
+        if (dir == null || !dir.exists() || maxBytes <= 0L) return
+        val files = dir.walkTopDown().filter { it.isFile }.toList()
+        var total = files.sumOf { it.length() }
+        if (total <= maxBytes) return
+        val sorted = files.sortedBy { it.lastModified() }
+        for (file in sorted) {
+            if (total <= maxBytes) break
+            val len = file.length()
+            if (file.delete()) total -= len
+        }
+        Log.i("LumioStorage", "trimCacheDir → ${total / 1024}KB (max=${maxBytes / 1024}KB)")
     }
 
     private fun getInstallerPackageName(): String? {

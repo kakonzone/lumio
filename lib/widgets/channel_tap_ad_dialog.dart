@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 
 import '../ads/ad_manager.dart';
 import '../ads/adsterra/adsterra_html.dart';
+import '../ads/adsterra/adsterra_webview.dart';
 import '../config/ad_config.dart';
 import '../theme/app_theme.dart';
 
@@ -26,7 +26,6 @@ class ChannelTapAdDialog extends StatefulWidget {
 }
 
 class _ChannelTapAdDialogState extends State<ChannelTapAdDialog> {
-  late final WebViewController _web;
   Timer? _tick;
   int _elapsed = 0;
   bool _canClose = false;
@@ -34,20 +33,11 @@ class _ChannelTapAdDialogState extends State<ChannelTapAdDialog> {
   @override
   void initState() {
     super.initState();
-    _web = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(Colors.black)
-      ..loadHtmlString(
-        AdsterraHtml.channelTapFullscreen(),
-        baseUrl: AdsterraHtml.baseUrlForPlacement('channel_tap'),
-      );
-
     unawaited(
       AdManager.instance.analytics.logAdsterraNativeLoaded(
         placement: 'channel_tap',
       ),
     );
-
     _tick = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
       setState(() {
@@ -73,12 +63,19 @@ class _ChannelTapAdDialogState extends State<ChannelTapAdDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final h = MediaQuery.sizeOf(context).height;
+
     return Dialog.fullscreen(
       backgroundColor: Colors.black,
       child: Stack(
         fit: StackFit.expand,
         children: [
-          WebViewWidget(controller: _web),
+          AdsterraWebView(
+            html: AdsterraHtml.channelTapFullscreen(),
+            height: h,
+            placement: 'channel_tap',
+            userVisible: true,
+          ),
           Positioned(
             top: MediaQuery.paddingOf(context).top + 8,
             left: 12,

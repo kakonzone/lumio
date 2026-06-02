@@ -12,57 +12,44 @@ import 'ad_health_monitor.dart';
 import 'ad_safety_service.dart';
 import 'ad_trigger_manager.dart';
 
-/// LevelPlay (IronSource) + Unity (mediated). [setDynamicUserId] before [init].
+/// LevelPlay (IronSource) interstitial + banner. Unity Ads via dashboard mediation.
 class LevelPlayAdService implements LevelPlayInitListener {
   LevelPlayAdService._();
   static final LevelPlayAdService instance = LevelPlayAdService._();
 
   AdAnalytics? _analytics;
   String _interstitialTrigger = 'unknown';
-  String _rewardedPlacement = 'rewarded';
 
   bool _initialized = false;
   bool _interstitialReady = false;
-  bool _rewardedReady = false;
-  bool _rewardEarned = false;
-  bool _rewardedLoadInFlight = false;
   bool _interstitialLoadInFlight = false;
+  bool _rewardedReady = false;
+  bool _rewardedLoadInFlight = false;
+  bool _rewardedEarnedThisShow = false;
+  String _rewardedTrigger = 'unknown';
   DateTime? _initCompletedAt;
   String? _lastInitError;
   LevelPlayAdError? _lastLoadError;
 
-  int _rewardedNoFillStreak = 0;
   int _interstitialNoFillStreak = 0;
-  DateTime? _rewardedLoadBlockedUntil;
   DateTime? _interstitialLoadBlockedUntil;
 
   @visibleForTesting
-  static int debugRewardedLoadCallCount = 0;
-
-  @visibleForTesting
   static int debugInterstitialLoadCallCount = 0;
-
-  @visibleForTesting
-  static Future<void> Function()? testRewardedLoadInvoker;
 
   @visibleForTesting
   static Future<void> Function()? testInterstitialLoadInvoker;
 
   @visibleForTesting
   static void debugResetForTest() {
-    debugRewardedLoadCallCount = 0;
     debugInterstitialLoadCallCount = 0;
-    testRewardedLoadInvoker = null;
     testInterstitialLoadInvoker = null;
     final s = instance;
-    s._rewardedLoadInFlight = false;
     s._interstitialLoadInFlight = false;
-    s._rewardedLoadBlockedUntil = null;
     s._interstitialLoadBlockedUntil = null;
     s._initialized = false;
   }
 
-  bool get isRewardedLoadInFlight => _rewardedLoadInFlight;
   bool get isInterstitialLoadInFlight => _interstitialLoadInFlight;
   String? get lastInitError => _lastInitError;
   LevelPlayAdError? get lastLoadError => _lastLoadError;
@@ -72,27 +59,26 @@ class LevelPlayAdService implements LevelPlayInitListener {
   bool _interstitialDisplayedThisShow = false;
   bool _pendingRecordAsAppOpen = false;
   bool _capRecordedThisShow = false;
-  Completer<bool>? _rewardedCompleter;
-  Completer<bool>? _rewardedLoadWaiter;
   Completer<bool>? _interstitialLoadWaiter;
+  Completer<bool>? _rewardedLoadWaiter;
+  Completer<bool>? _rewardedCloseCompleter;
   Completer<bool>? _initCompleter;
 
   late final LevelPlayInterstitialAd _interstitial = LevelPlayInterstitialAd(
     adUnitId: AdConfig.interstitialAdUnitId,
   );
-  late final LevelPlayRewardedAd _rewarded = LevelPlayRewardedAd(
-    adUnitId: AdConfig.rewardedAdUnitId,
-  );
+  LevelPlayRewardedAd? _rewarded;
 
   bool get isInitialized => _initialized;
   bool get isInterstitialReady => _interstitialReady;
   bool get isRewardedReady => _rewardedReady;
+  bool get isRewardedLoadInFlight => _rewardedLoadInFlight;
 
   void attachAnalytics(AdAnalytics analytics) => _analytics = analytics;
 
   void setInterstitialTrigger(String trigger) => _interstitialTrigger = trigger;
 
-  void setRewardedPlacement(String placement) => _rewardedPlacement = placement;
+  void setRewardedTrigger(String trigger) => _rewardedTrigger = trigger;
 
   static const _initTimeout = Duration(seconds: 8);
   static const _retryBackoff = Duration(seconds: 2);
@@ -104,13 +90,13 @@ class LevelPlayAdService implements LevelPlayInitListener {
       adLog('[LevelPlay] init skipped — pass --dart-define=ADS_ENABLED=true');
       return false;
     }
-    if (!AdConfig.hasLevelPlayAppKey) {
+    if (!AdConfig.hasValidLevelPlayAppKey) {
       adLog(
-        '[LevelPlay] init skipped — LEVELPLAY_APP_KEY empty (pass --dart-define)',
+        '[LevelPlay] init skipped — LEVELPLAY_* missing or still template text in secrets.json',
       );
       return false;
     }
-    if (!AdConfig.hasLevelPlayAdUnits) {
+    if (!AdConfig.hasValidLevelPlayAdUnits) {
       adLog(
         '[LevelPlay] init skipped — LEVELPLAY_*_AD_UNIT dart-defines missing',
       );
@@ -141,7 +127,10 @@ class LevelPlayAdService implements LevelPlayInitListener {
     await AdConsentService.instance.applyToLevelPlaySdk();
 
     _interstitial.setListener(_InterstitialBridge(this));
-    _rewarded.setListener(_RewardedBridge(this));
+    if (AdConfig.hasLevelPlayRewardedUnit) {
+      _rewarded = LevelPlayRewardedAd(adUnitId: AdConfig.rewardedAdUnitId);
+      _rewarded!.setListener(_RewardedBridge(this));
+    }
 
     final request = LevelPlayInitRequest.builder(AdConfig.levelPlayAppKey)
         .withUserId(userId)
@@ -188,26 +177,14 @@ class LevelPlayAdService implements LevelPlayInitListener {
 
   /// Resets no-fill backoff when app returns to foreground.
   void onAppForeground() {
-    _rewardedNoFillStreak = 0;
     _interstitialNoFillStreak = 0;
-    _rewardedLoadBlockedUntil = null;
     _interstitialLoadBlockedUntil = null;
+    _rewardedLoadInFlight = false;
     adLog('[LevelPlay] backoff reset — app foreground');
   }
 
   @visibleForTesting
   void debugSetInitializedForTest(bool value) => _initialized = value;
-
-  @visibleForTesting
-  void debugSimulateRewardedLoadFailedForTest() {
-    _onRewardedLoadFailed(
-      LevelPlayAdError(
-        errorMessage: 'test',
-        errorCode: 627,
-        adUnitId: null,
-      ),
-    );
-  }
 
   @override
   void onInitSuccess(LevelPlayConfiguration configuration) {
@@ -240,63 +217,33 @@ class LevelPlayAdService implements LevelPlayInitListener {
     Duration(seconds: 300),
   ];
 
-  void loadInterstitial() => _loadFormat(
-        format: 'interstitial',
-        inFlight: () => _interstitialLoadInFlight,
-        setInFlight: (v) => _interstitialLoadInFlight = v,
-        blockedUntil: () => _interstitialLoadBlockedUntil,
-        invokeLoad: _invokeInterstitialLoad,
-      );
-
-  void loadRewarded() => _loadFormat(
-        format: 'rewarded',
-        inFlight: () => _rewardedLoadInFlight,
-        setInFlight: (v) => _rewardedLoadInFlight = v,
-        blockedUntil: () => _rewardedLoadBlockedUntil,
-        invokeLoad: _invokeRewardedLoad,
-      );
-
-  void _loadFormat({
-    required String format,
-    required bool Function() inFlight,
-    required void Function(bool) setInFlight,
-    required DateTime? Function() blockedUntil,
-    required Future<void> Function() invokeLoad,
-  }) {
+  void loadInterstitial() {
     if (!_initialized) return;
-    final blocked = blockedUntil();
+    final blocked = _interstitialLoadBlockedUntil;
     if (blocked != null && DateTime.now().isBefore(blocked)) {
-      adLog(
-        '[LevelPlay] $format load skipped — backoff until $blocked',
-      );
+      adLog('[LevelPlay] interstitial load skipped — backoff until $blocked');
       return;
     }
-    if (inFlight()) {
-      adLog('[LevelPlay] $format load skipped — already in flight');
+    if (_interstitialLoadInFlight) {
+      adLog('[LevelPlay] interstitial load skipped — already in flight');
       return;
     }
-    setInFlight(true);
-    debugPrint('[LevelPlay] $format loading...');
+    _interstitialLoadInFlight = true;
+    debugPrint('[LevelPlay] interstitial loading...');
     unawaited(() async {
       try {
-        await invokeLoad();
+        await _invokeInterstitialLoad();
       } catch (e) {
-        adLog('[LevelPlay] $format loadAd exception: $e');
-        setInFlight(false);
+        adLog('[LevelPlay] interstitial loadAd exception: $e');
+        _interstitialLoadInFlight = false;
       }
     }());
-    _emitFillAttempt(format: format, result: 'loading', errorCode: null);
+    _emitFillAttempt(format: 'interstitial', result: 'loading', errorCode: null);
   }
 
   Future<void> _invokeInterstitialLoad() async {
     debugInterstitialLoadCallCount++;
     final invoker = testInterstitialLoadInvoker ?? () => _interstitial.loadAd();
-    await invoker();
-  }
-
-  Future<void> _invokeRewardedLoad() async {
-    debugRewardedLoadCallCount++;
-    final invoker = testRewardedLoadInvoker ?? () => _rewarded.loadAd();
     await invoker();
   }
 
@@ -306,29 +253,19 @@ class LevelPlayAdService implements LevelPlayInitListener {
     return _backoffSteps[idx];
   }
 
-  void _scheduleNoFillBackoff(String format, int streak) {
+  void _scheduleNoFillBackoff(int streak) {
     final delay = _backoffForStreak(streak);
     if (delay <= Duration.zero) return;
-    final until = DateTime.now().add(delay);
-    if (format == 'rewarded') {
-      _rewardedLoadBlockedUntil = until;
-    } else {
-      _interstitialLoadBlockedUntil = until;
-    }
+    _interstitialLoadBlockedUntil = DateTime.now().add(delay);
     adLog(
-      '[LevelPlay] $format no-fill backoff ${delay.inSeconds}s '
+      '[LevelPlay] interstitial no-fill backoff ${delay.inSeconds}s '
       '(streak=$streak)',
     );
   }
 
-  void _resetNoFillBackoff(String format) {
-    if (format == 'rewarded') {
-      _rewardedNoFillStreak = 0;
-      _rewardedLoadBlockedUntil = null;
-    } else {
-      _interstitialNoFillStreak = 0;
-      _interstitialLoadBlockedUntil = null;
-    }
+  void _resetNoFillBackoff() {
+    _interstitialNoFillStreak = 0;
+    _interstitialLoadBlockedUntil = null;
   }
 
   int _msSinceInit() {
@@ -361,37 +298,30 @@ class LevelPlayAdService implements LevelPlayInitListener {
     );
   }
 
-  void _onLoadFailed(String format, LevelPlayAdError error) {
+  void _onLoadFailed(LevelPlayAdError error) {
     _lastLoadError = error;
     final code = error.errorCode;
     if (code == _noFillCode) {
-      if (format == 'rewarded') {
-        _rewardedNoFillStreak++;
-        _scheduleNoFillBackoff(format, _rewardedNoFillStreak);
-      } else {
-        _interstitialNoFillStreak++;
-        _scheduleNoFillBackoff(format, _interstitialNoFillStreak);
-      }
+      _interstitialNoFillStreak++;
+      _scheduleNoFillBackoff(_interstitialNoFillStreak);
       _emitFillAttempt(
-        format: format,
+        format: 'interstitial',
         result: 'no_fill',
         errorCode: code,
-        attemptN: format == 'rewarded'
-            ? _rewardedNoFillStreak
-            : _interstitialNoFillStreak,
+        attemptN: _interstitialNoFillStreak,
       );
     } else {
       _emitFillAttempt(
-        format: format,
+        format: 'interstitial',
         result: 'error',
         errorCode: code,
       );
     }
   }
 
-  void _onLoadSuccess(String format) {
-    _resetNoFillBackoff(format);
-    _emitFillAttempt(format: format, result: 'filled', errorCode: null);
+  void _onLoadSuccess() {
+    _resetNoFillBackoff();
+    _emitFillAttempt(format: 'interstitial', result: 'filled', errorCode: null);
   }
 
   Future<bool> ensureInterstitialReady({
@@ -417,44 +347,17 @@ class LevelPlayAdService implements LevelPlayInitListener {
     }
   }
 
-  Future<bool> ensureRewardedReady({
-    Duration timeout = const Duration(seconds: 12),
-  }) async {
-    if (_rewardedReady) return true;
-    if (!_initialized) {
-      final ok = await init();
-      if (!ok || !_initialized) return false;
-    }
-    final waiter = Completer<bool>();
-    _rewardedLoadWaiter = waiter;
-    loadRewarded();
-    try {
-      return await waiter.future.timeout(
-        timeout,
-        onTimeout: () => _rewardedReady,
-      );
-    } finally {
-      if (identical(_rewardedLoadWaiter, waiter)) {
-        _rewardedLoadWaiter = null;
-      }
-    }
-  }
-
-  /// Cold-start "app open" — **not** a native App Open ad unit.
-  ///
-  /// LevelPlay Flutter 9.2.0 exposes interstitial/rewarded/banner only (no App Open API).
-  /// This shows a capped interstitial after splash via [showInterstitial] + [AdTriggerManager].
+  /// Cold-start "app open" — interstitial substitute (no native App Open API).
   Future<bool> showAppOpenSubstitute({required bool removeAds}) async {
     if (!await AdTriggerManager.instance
         .canShowAppOpenSubstitute(removeAds: removeAds)) {
       return false;
     }
     setInterstitialTrigger('app_open_substitute');
-    final shown = await showInterstitial(
+    return showInterstitial(
       bypassHourlyGate: true,
       recordAsAppOpen: true,
     );
-    return shown;
   }
 
   Future<bool> showInterstitial({
@@ -529,37 +432,6 @@ class LevelPlayAdService implements LevelPlayInitListener {
     _logCapShown();
   }
 
-  Future<bool> showRewarded() async {
-    if (!_initialized) return false;
-    if (!_rewardedReady) {
-      final ready = await ensureRewardedReady();
-      if (!ready) return false;
-    }
-    _rewardEarned = false;
-    _rewardedCompleter = Completer<bool>();
-    try {
-      debugPrint('[LevelPlay] rewarded show called');
-      await _rewarded.showAd();
-      final ok = await _rewardedCompleter!.future.timeout(
-        const Duration(seconds: 120),
-        onTimeout: () {
-          adLog(
-            '[Cap] timeout_no_show placement=rewarded trigger=$_rewardedPlacement',
-          );
-          return false;
-        },
-      );
-      return ok && _rewardEarned;
-    } catch (e) {
-      adLog('[LevelPlay] show rewarded: $e');
-      return false;
-    } finally {
-      _rewardedCompleter = null;
-      _rewardEarned = false;
-      loadRewarded();
-    }
-  }
-
   void _logImpression(LevelPlayAdInfo adInfo) {
     final a = _analytics;
     if (a == null) return;
@@ -569,7 +441,7 @@ class LevelPlayAdService implements LevelPlayInitListener {
   void _onInterstitialLoaded() {
     _interstitialLoadInFlight = false;
     _interstitialReady = true;
-    _onLoadSuccess('interstitial');
+    _onLoadSuccess();
     debugPrint('[LevelPlay] interstitial loaded');
     _interstitialLoadWaiter?.complete(true);
     _interstitialLoadWaiter = null;
@@ -578,7 +450,7 @@ class LevelPlayAdService implements LevelPlayInitListener {
   void _onInterstitialLoadFailed(LevelPlayAdError error) {
     _interstitialLoadInFlight = false;
     _interstitialReady = false;
-    _onLoadFailed('interstitial', error);
+    _onLoadFailed(error);
     debugPrint('[LevelPlay] interstitial load FAILED: $error');
     _interstitialLoadWaiter?.complete(false);
     _interstitialLoadWaiter = null;
@@ -613,10 +485,81 @@ class LevelPlayAdService implements LevelPlayInitListener {
     }
   }
 
+  // ── Rewarded ───────────────────────────────────────────────────────────
+
+  void loadRewarded() {
+    final ad = _rewarded;
+    if (!_initialized || ad == null) return;
+    if (_rewardedLoadInFlight) {
+      adLog('[LevelPlay] rewarded load skipped — already in flight');
+      return;
+    }
+    _rewardedLoadInFlight = true;
+    debugPrint('[LevelPlay] rewarded loading...');
+    unawaited(() async {
+      try {
+        await ad.loadAd();
+      } catch (e) {
+        adLog('[LevelPlay] rewarded loadAd exception: $e');
+        _rewardedLoadInFlight = false;
+      }
+    }());
+    _emitFillAttempt(format: 'rewarded', result: 'loading', errorCode: null);
+  }
+
+  Future<bool> ensureRewardedReady({
+    Duration timeout = const Duration(seconds: 12),
+  }) async {
+    if (_rewardedReady) return true;
+    if (_rewarded == null || !_initialized) {
+      final ok = await init();
+      if (!ok || _rewarded == null) return false;
+    }
+    final waiter = Completer<bool>();
+    _rewardedLoadWaiter = waiter;
+    loadRewarded();
+    try {
+      return await waiter.future.timeout(
+        timeout,
+        onTimeout: () => _rewardedReady,
+      );
+    } finally {
+      if (identical(_rewardedLoadWaiter, waiter)) {
+        _rewardedLoadWaiter = null;
+      }
+    }
+  }
+
+  /// Returns true when the user earned the reward ([LevelPlayRewardedAdListener.onAdRewarded]).
+  Future<bool> showRewarded({String? placementName}) async {
+    final ad = _rewarded;
+    if (ad == null || !_initialized) return false;
+    if (!_rewardedReady) {
+      final ready = await ensureRewardedReady();
+      if (!ready) return false;
+    }
+    _rewardedEarnedThisShow = false;
+    _rewardedCloseCompleter = Completer<bool>();
+    try {
+      debugPrint('[LevelPlay] rewarded show called trigger=$_rewardedTrigger');
+      await ad.showAd(placementName: placementName ?? _rewardedTrigger);
+      return await _rewardedCloseCompleter!.future.timeout(
+        const Duration(seconds: 180),
+        onTimeout: () => _rewardedEarnedThisShow,
+      );
+    } catch (e) {
+      adLog('[LevelPlay] show rewarded: $e');
+      return false;
+    } finally {
+      _rewardedCloseCompleter = null;
+      loadRewarded();
+    }
+  }
+
   void _onRewardedLoaded() {
     _rewardedLoadInFlight = false;
     _rewardedReady = true;
-    _onLoadSuccess('rewarded');
+    _emitFillAttempt(format: 'rewarded', result: 'filled', errorCode: null);
     debugPrint('[LevelPlay] rewarded loaded');
     _rewardedLoadWaiter?.complete(true);
     _rewardedLoadWaiter = null;
@@ -625,7 +568,12 @@ class LevelPlayAdService implements LevelPlayInitListener {
   void _onRewardedLoadFailed(LevelPlayAdError error) {
     _rewardedLoadInFlight = false;
     _rewardedReady = false;
-    _onLoadFailed('rewarded', error);
+    final code = error.errorCode;
+    _emitFillAttempt(
+      format: 'rewarded',
+      result: code == _noFillCode ? 'no_fill' : 'error',
+      errorCode: code,
+    );
     debugPrint('[LevelPlay] rewarded load FAILED: $error');
     _rewardedLoadWaiter?.complete(false);
     _rewardedLoadWaiter = null;
@@ -634,30 +582,82 @@ class LevelPlayAdService implements LevelPlayInitListener {
   void _onRewardedDisplayed(LevelPlayAdInfo adInfo) {
     debugPrint('[LevelPlay] rewarded displayed');
     _logImpression(adInfo);
-  }
-
-  void _onRewardedGranted() {
-    _rewardEarned = true;
-    unawaited(AdTriggerManager.instance.recordRewardedShown());
-    adLog('[Cap] shown placement=rewarded trigger=$_rewardedPlacement');
     final a = _analytics;
     if (a != null) {
-      unawaited(a.logRewardedComplete(placement: _rewardedPlacement));
+      unawaited(a.logRewardedShown(trigger: _rewardedTrigger));
     }
-    if (!(_rewardedCompleter?.isCompleted ?? true)) {
-      _rewardedCompleter?.complete(true);
+  }
+
+  void _onRewardedRewarded(LevelPlayReward reward, LevelPlayAdInfo adInfo) {
+    _rewardedEarnedThisShow = true;
+    debugPrint('[LevelPlay] rewarded earned amount=${reward.amount}');
+    final a = _analytics;
+    if (a != null) {
+      unawaited(
+        a.logRewardedComplete(
+          trigger: _rewardedTrigger,
+          rewardName: reward.name,
+        ),
+      );
     }
   }
 
   void _onRewardedClosed() {
     _rewardedReady = false;
-    debugPrint('[LevelPlay] rewarded dismissed');
-    Future<void>.delayed(const Duration(milliseconds: 300), () {
-      if (!(_rewardedCompleter?.isCompleted ?? true)) {
-        _rewardedCompleter?.complete(_rewardEarned);
-      }
-      _rewardEarned = false;
-    });
+    debugPrint('[LevelPlay] rewarded dismissed earned=$_rewardedEarnedThisShow');
+    if (!(_rewardedCloseCompleter?.isCompleted ?? true)) {
+      _rewardedCloseCompleter?.complete(_rewardedEarnedThisShow);
+    }
+  }
+
+  void _onRewardedDisplayFailed(LevelPlayAdError error) {
+    adLog('[LevelPlay] rewarded display_failed reason=${error.errorMessage}');
+    if (!(_rewardedCloseCompleter?.isCompleted ?? true)) {
+      _rewardedCloseCompleter?.complete(false);
+    }
+  }
+}
+
+class _RewardedBridge with LevelPlayRewardedAdListener {
+  _RewardedBridge(this._host);
+  final LevelPlayAdService _host;
+
+  @override
+  void onAdLoaded(LevelPlayAdInfo adInfo) => _host._onRewardedLoaded();
+
+  @override
+  void onAdLoadFailed(LevelPlayAdError error) => _host._onRewardedLoadFailed(error);
+
+  @override
+  void onAdDisplayed(LevelPlayAdInfo adInfo) => _host._onRewardedDisplayed(adInfo);
+
+  @override
+  void onAdDisplayFailed(LevelPlayAdError error, LevelPlayAdInfo adInfo) {
+    _host._onRewardedDisplayFailed(error);
+  }
+
+  @override
+  void onAdClicked(LevelPlayAdInfo adInfo) {
+    final a = _host._analytics;
+    if (a == null) return;
+    unawaited(
+      a.logClick(
+        network: 'levelplay',
+        format: 'rewarded',
+        placement: _host._rewardedTrigger,
+      ),
+    );
+  }
+
+  @override
+  void onAdClosed(LevelPlayAdInfo adInfo) => _host._onRewardedClosed();
+
+  @override
+  void onAdInfoChanged(LevelPlayAdInfo adInfo) {}
+
+  @override
+  void onAdRewarded(LevelPlayReward reward, LevelPlayAdInfo adInfo) {
+    _host._onRewardedRewarded(reward, adInfo);
   }
 }
 
@@ -701,49 +701,4 @@ class _InterstitialBridge with LevelPlayInterstitialAdListener {
 
   @override
   void onAdInfoChanged(LevelPlayAdInfo adInfo) {}
-}
-
-class _RewardedBridge with LevelPlayRewardedAdListener {
-  _RewardedBridge(this._host);
-  final LevelPlayAdService _host;
-
-  @override
-  void onAdLoaded(LevelPlayAdInfo adInfo) => _host._onRewardedLoaded();
-
-  @override
-  void onAdLoadFailed(LevelPlayAdError error) => _host._onRewardedLoadFailed(error);
-
-  @override
-  void onAdDisplayed(LevelPlayAdInfo adInfo) =>
-      _host._onRewardedDisplayed(adInfo);
-
-  @override
-  void onAdDisplayFailed(LevelPlayAdError error, LevelPlayAdInfo adInfo) {
-    _host._rewardedCompleter?.complete(false);
-  }
-
-  @override
-  void onAdClicked(LevelPlayAdInfo adInfo) {
-    debugPrint('[LevelPlay] rewarded clicked');
-    final a = _host._analytics;
-    if (a == null) return;
-    unawaited(
-      a.logClick(
-        network: 'levelplay',
-        format: 'rewarded',
-        placement: _host._rewardedPlacement,
-      ),
-    );
-  }
-
-  @override
-  void onAdClosed(LevelPlayAdInfo adInfo) => _host._onRewardedClosed();
-
-  @override
-  void onAdInfoChanged(LevelPlayAdInfo adInfo) {}
-
-  @override
-  void onAdRewarded(LevelPlayReward reward, LevelPlayAdInfo adInfo) {
-    _host._onRewardedGranted();
-  }
 }

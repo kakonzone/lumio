@@ -4,6 +4,7 @@ import 'package:shimmer/shimmer.dart';
 import '../../models/model.dart';
 import '../../provider/app_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/channel_list_style.dart';
 
 // ═══════════════════════════════════════════════════════════════
 // SCORE CARD — horizontal scroll live match card
@@ -198,10 +199,10 @@ class ChannelCard extends StatelessWidget {
       onTap: onPlay,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: context.bg2,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: context.brd),
+        decoration: ChannelListStyle.card(
+          context: context,
+          showLive: showLive,
+          isPendingTap: false,
         ),
         child: Row(
           children: [
@@ -244,19 +245,17 @@ class ChannelCard extends StatelessWidget {
                 if (showLive)
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
+                      horizontal: 8,
+                      vertical: 4,
                     ),
-                    decoration: BoxDecoration(
-                      color: AppColors.accentDim,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                    decoration: ChannelListStyle.liveBadge(),
                     child: const Text(
-                      '● LIVE',
+                      'LIVE',
                       style: TextStyle(
                         fontSize: 9,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.accent,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: 0.3,
                       ),
                     ),
                   ),

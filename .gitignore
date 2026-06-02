@@ -62,5 +62,11 @@ logs/device_smoke_*.log
 
 # Android signing (never commit)
 key.properties
+android/key.properties
+android/upload-keystore.jks
 *.keystore
+*.jks
 android/app/release.keystore
+android/local.properties
+gitleaks_report.json
+secrets_audit.txt

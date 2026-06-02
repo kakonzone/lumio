@@ -15,15 +15,15 @@ void main() {
     AdPlacementConfig.debugAggressiveModeOverride = false;
     expect(AdPlacementConfig.newsNativeInterval, 5);
     expect(AdPlacementConfig.channelListNativeInterval, 8);
-    expect(AdPlacementConfig.playerMidRollPeriod.inMinutes, 20);
-    expect(AdPlacementConfig.showGlobalSocialBarOverlay, isFalse);
+    expect(AdPlacementConfig.playerMidRollPeriod.inMinutes, 30);
+    expect(AdPlacementConfig.showGlobalSocialBarOverlay, isTrue);
   });
 
   test('aggressive intervals when aggressive_mode true', () {
     AdPlacementConfig.debugAggressiveModeOverride = true;
     expect(AdPlacementConfig.newsNativeInterval, 4);
     expect(AdPlacementConfig.channelListNativeInterval, 4);
-    expect(AdPlacementConfig.playerMidRollPeriod.inMinutes, 12);
+    expect(AdPlacementConfig.playerMidRollPeriod.inMinutes, 24);
     expect(AdPlacementConfig.showGlobalSocialBarOverlay, isTrue);
   });
 }

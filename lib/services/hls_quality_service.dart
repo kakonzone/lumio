@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:http/http.dart' as http;
 
 /// Parsed HLS variant from a master playlist.
@@ -41,6 +43,27 @@ class HlsQualityService {
   static const _ua =
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
       '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+
+  /// Quick master parse for fast first frame (does not block long on slow CDN).
+  static Future<List<HlsVariant>> fetchVariantsFast(
+    String streamUrl, {
+    Map<String, String>? headers,
+    Duration timeout = const Duration(seconds: 2),
+  }) async {
+    try {
+      return await fetchVariants(streamUrl, headers: headers).timeout(timeout);
+    } on TimeoutException {
+      return [];
+    }
+  }
+
+  /// Lowest-bandwidth variant for instant HLS start.
+  static HlsVariant? lowestVariant(List<HlsVariant> variants) {
+    if (variants.isEmpty) return null;
+    return variants.reduce(
+      (a, b) => a.bandwidth < b.bandwidth ? a : b,
+    );
+  }
 
   /// Fetches variants from master (or parent) playlist.
   static Future<List<HlsVariant>> fetchVariants(

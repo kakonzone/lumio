@@ -1,0 +1,10 @@
+{
+  "@@locale": "en",
+  "appTitle": "Lumio",
+  "@appTitle": {
+    "description": "Application title"
+  },
+  "adsPrivacyTitle": "Ads & privacy",
+  "acceptAds": "Accept",
+  "limitedAdsOnly": "Limited ads only"
+}

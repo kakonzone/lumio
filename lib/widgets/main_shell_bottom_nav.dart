@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lumio_tv/theme/app_theme.dart';
 
-/// Bottom navigation for Home · Sports · Live · News · Categories.
+/// Bottom navigation for Home · Sports · Live · News · Browse.
 class MainShellBottomNav extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
@@ -16,11 +16,41 @@ class MainShellBottomNav extends StatelessWidget {
   });
 
   static const _items = [
-    _NavSpec(Icons.home_rounded, Icons.home_filled, 'Home', false),
-    _NavSpec(Icons.sports_soccer_rounded, Icons.sports_soccer, 'Sports', true),
-    _NavSpec(Icons.sensors_rounded, Icons.sensors, 'Live', true),
-    _NavSpec(Icons.newspaper_rounded, Icons.newspaper, 'News', false),
-    _NavSpec(Icons.grid_view_rounded, Icons.grid_view, 'Browse', false),
+    _NavSpec(
+      Icons.home_rounded,
+      Icons.home_filled,
+      'Home',
+      false,
+      [Color(0xFF3949AB), Color(0xFF5C6BC0)],
+    ),
+    _NavSpec(
+      Icons.sports_soccer_rounded,
+      Icons.sports_soccer,
+      'Sports',
+      true,
+      [Color(0xFF1B5E20), Color(0xFF43A047)],
+    ),
+    _NavSpec(
+      Icons.sensors_rounded,
+      Icons.sensors,
+      'Live',
+      true,
+      [Color(0xFFB71C1C), Color(0xFFE53935)],
+    ),
+    _NavSpec(
+      Icons.newspaper_rounded,
+      Icons.newspaper,
+      'News',
+      false,
+      [Color(0xFF4A148C), Color(0xFF8E24AA)],
+    ),
+    _NavSpec(
+      Icons.grid_view_rounded,
+      Icons.grid_view,
+      'Browse',
+      false,
+      [Color(0xFFE65100), Color(0xFFFF6F00)],
+    ),
   ];
 
   @override
@@ -81,8 +111,15 @@ class _NavSpec {
   final IconData activeIcon;
   final String label;
   final bool liveHint;
+  final List<Color> accentGradient;
 
-  const _NavSpec(this.icon, this.activeIcon, this.label, this.liveHint);
+  const _NavSpec(
+    this.icon,
+    this.activeIcon,
+    this.label,
+    this.liveHint,
+    this.accentGradient,
+  );
 }
 
 class _NavTile extends StatelessWidget {
@@ -102,6 +139,8 @@ class _NavTile extends StatelessWidget {
     required this.isDark,
   });
 
+  Color get _activeColor => spec.accentGradient.last;
+
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -109,8 +148,8 @@ class _NavTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
-        splashColor: AppColors.accent.withValues(alpha: 0.12),
-        highlightColor: AppColors.accent.withValues(alpha: 0.06),
+        splashColor: _activeColor.withValues(alpha: 0.15),
+        highlightColor: _activeColor.withValues(alpha: 0.08),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
@@ -125,32 +164,26 @@ class _NavTile extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: active
                     ? LinearGradient(
-                        colors: isDark
-                            ? [
-                                AppColors.accent.withValues(alpha: 0.35),
-                                AppColors.accent.withValues(alpha: 0.12),
-                              ]
-                            : [
-                                AppColors.accent.withValues(alpha: 0.22),
-                                AppColors.accentLight,
-                              ],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
+                        colors: spec.accentGradient
+                            .map((c) => c.withValues(alpha: isDark ? 0.55 : 0.35))
+                            .toList(),
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       )
                     : null,
                 color: active ? null : Colors.transparent,
                 borderRadius: BorderRadius.circular(14),
                 border: active
                     ? Border.all(
-                        color: AppColors.accent.withValues(alpha: 0.45),
+                        color: _activeColor.withValues(alpha: 0.5),
                         width: 1,
                       )
                     : null,
                 boxShadow: active
                     ? [
                         BoxShadow(
-                          color: AppColors.accent.withValues(alpha: 0.25),
-                          blurRadius: 10,
+                          color: _activeColor.withValues(alpha: 0.35),
+                          blurRadius: 12,
                           offset: const Offset(0, 3),
                         ),
                       ]
@@ -162,7 +195,7 @@ class _NavTile extends StatelessWidget {
                   Icon(
                     active ? spec.activeIcon : spec.icon,
                     size: active ? 26 : 24,
-                    color: active ? AppColors.accent : context.txt3,
+                    color: active ? _activeColor : context.txt3,
                   ),
                   if (showLiveBadge)
                     Positioned(
@@ -178,6 +211,12 @@ class _NavTile extends StatelessWidget {
                             color: context.cardSurface,
                             width: 1.5,
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.liveRed.withValues(alpha: 0.5),
+                              blurRadius: 4,
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -192,20 +231,20 @@ class _NavTile extends StatelessWidget {
                 style: GF.body(
                   fontSize: compact ? 9 : 10,
                   fontWeight: active ? FontWeight.w800 : FontWeight.w600,
-                  color: active ? AppColors.accent : context.txt3,
+                  color: active ? _activeColor : context.txt3,
                   letterSpacing: 0.1,
                 ),
                 maxLines: 1,
               ),
             ),
             SizedBox(
-              height: active ? 3 : 3,
+              height: 3,
               child: active
                   ? Container(
-                      width: 16,
+                      width: 18,
                       height: 2.5,
                       decoration: BoxDecoration(
-                        color: AppColors.accent,
+                        gradient: LinearGradient(colors: spec.accentGradient),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     )

@@ -1,3 +1,9 @@
 {
-    "cmake.sourceDirectory": "/home/kakonzone/Downloads/FlutterProject/lumio/linux"
+  "dart.flutterRunAdditionalArgs": [
+    "--dart-define-from-file=secrets.json"
+  ],
+  "dart.flutterTestAdditionalArgs": [
+    "--dart-define-from-file=secrets.json"
+  ],
+  "cmake.sourceDirectory": "/home/kakonzone/Downloads/FlutterProject/lumio/linux"
 }

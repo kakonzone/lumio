@@ -1,9 +1,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- API 21+; security-crypto needs 23 at runtime — we skip it below 23 in MainActivity -->
+    <uses-sdk
+        android:minSdkVersion="21"
+        tools:overrideLibrary="androidx.security.crypto" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
   <!-- Mediation / network classification (LevelPlay adapters). -->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
@@ -13,7 +19,10 @@
     Lumio does not request AD_ID at runtime beyond what LevelPlay pulls via GMS.
   -->
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- API 33+ only; ignored on Android 5–12 at install time -->
+    <uses-permission
+        android:name="android.permission.POST_NOTIFICATIONS"
+        tools:targetApi="33" />
 
     <!-- url_launcher: Adsterra direct link in external browser (Android 11+) -->
     <queries>
@@ -48,7 +57,6 @@
             android:exported="true"
             android:launchMode="singleTop"
             android:theme="@style/LaunchTheme"
-            android:supportsPictureInPicture="true"
             android:resizeableActivity="true"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
@@ -58,11 +66,33 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+
+            <!-- World Cup campaign deep links (Facebook / WhatsApp / Telegram). -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="lumio" android:host="open"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="lumio" android:host="channel"/>
+            </intent-filter>
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data
+                    android:scheme="https"
+                    android:host="lumio.app"
+                    android:pathPrefix="/open"/>
+            </intent-filter>
         </activity>
 
         <service
             android:name="com.ryanheise.audioservice.AudioService"
-            android:foregroundServiceType="mediaPlayback"
             android:exported="true"
             tools:ignore="Instantiatable">
             <intent-filter>
@@ -86,5 +116,10 @@
         <meta-data
             android:name="com.ironsource.sdk.ApplicationKey"
             android:value="@string/levelplay_app_key" />
+
+        <!-- Monetag push (WebView registration — separate from FCM match alerts). -->
+        <meta-data
+            android:name="lumio.monetag.push.channel"
+            android:value="lumio_monetag_push" />
     </application>
 </manifest>

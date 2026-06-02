@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <service
+            android:name="com.ryanheise.audioservice.AudioService"
+            android:foregroundServiceType="mediaPlayback" />
+        <activity
+            android:name=".MainActivity"
+            android:supportsPictureInPicture="true" />
+    </application>
+</manifest>

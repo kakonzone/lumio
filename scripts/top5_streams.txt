@@ -1,0 +1,5 @@
+https://d3qs3d2rkhfqrt.cloudfront.net/out/v1/b17adfe543354fdd8d189b110617cddd/index.m3u8
+http://198.195.239.50:8095/SonyTenSports5/tracks-v1a1/mono.m3u8
+http://103.161.153.165:8000/play/stp1h/index.m3u8
+http://149.71.34.166:8000/play/a01k/index.m3u8
+http://103.159.180.34:5001/live/875.m3u8

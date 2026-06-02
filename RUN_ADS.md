@@ -1,41 +1,50 @@
-# Run Lumio with ads (required for debug)
+# Run Lumio — `flutter run` with ads (একবার সেটআপ)
 
-**Do not use plain `flutter run`.** Keys are compile-time; without defines every ad key is `<unset>`.
+## একবার করুন (টার্মিনাল)
 
-## Correct command
-
-```bash
-./scripts/flutter_run_with_ads.sh
-```
-
-Same as:
+`~/.bashrc`-এর শেষে যোগ করুন:
 
 ```bash
-flutter run --dart-define-from-file=secrets.json
+source ~/Downloads/FlutterProject/lumio/scripts/flutter_env.sh
 ```
 
-## VS Code / Cursor
+তারপর:
 
-Choose launch config: **「Lumio (debug + ads)」** — not 「Lumio (debug, no ads)」.
+```bash
+source ~/.bashrc
+cd ~/Downloads/FlutterProject/lumio
+flutter run
+```
 
-## First-time setup
+এখন **সাধারণ `flutter run`**-ই `secrets.json` (ads, LevelPlay, Toffee, …) লোড করবে — `./scripts/flutter_run_with_ads.sh` বা `./run` আর বাধ্য নয়।
+
+## Cursor / VS Code
+
+`.vscode/settings.json` ইতিমধ্যে সেট — **Run → Lumio (debug + ads)** বা টার্মিনালে `flutter run` (উপরের bashrc সোর্স থাকলে)।
+
+## `secrets.json` নেই?
 
 ```bash
 cp secrets.json.template secrets.json
-# fill keys (never commit secrets.json)
+# keys ভরুন (কমিট করবেন না)
 ```
 
-## Success log (first 30s)
+## যাচাই
+
+লগে:
 
 ```text
-[AdConfig] … LEVELPLAY_APP_KEY=<set> … hasMonetizationConfig=<set>
-(no ⚠️ WARNING: no dart-defines detected)
-[AdConsent] stored consent applied to LevelPlay (granted)
-LevelPlaySDK … LevelPlay=true
-[LevelPlay] setDynamicUserId before init
-[LevelPlay] init success
+[AdConfig] … ADS_ENABLED=<set> … hasMonetizationConfig=<set>
 ```
 
-## Hot reload does NOT apply secrets
+লাল **ADS DISABLED** ব্যানার থাকলে `secrets.json` নেই বা bashrc সোর্স হয়নি।
 
-After changing `secrets.json`, stop the app (`q`) and run the script again.
+## Ads ছাড়া UI
+
+```bash
+flutter run --dart-define=ALLOW_SILENT_DEBUG_ADS=true
+```
+
+## Hot reload
+
+`secrets.json` বদলালে **full restart** (R) — hot reload যথেষ্ট নয়।

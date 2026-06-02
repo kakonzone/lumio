@@ -86,6 +86,14 @@ class ChannelModel {
         isHubParent: j['isHubParent'] as bool? ?? false,
       );
 
+  /// Labels injected by app-side HTTP↔HTTPS logic — never shown in the player UI.
+  static bool isInternalStreamLabel(String label) {
+    final lab = label.trim().toLowerCase();
+    return lab == 'http fallback' ||
+        lab == 'https' ||
+        lab.endsWith(' backup');
+  }
+
   /// Primary + backup links (deduped by URL).
   List<StreamLink> get allStreams {
     final out = <StreamLink>[];
@@ -96,7 +104,12 @@ class ChannelModel {
       out.add(link);
     }
 
-    add(StreamLink(url: streamUrl, label: 'SD', headers: headers));
+    final multi = alternateStreams.any((a) => a.url.isNotEmpty);
+    add(StreamLink(
+      url: streamUrl,
+      label: multi ? 'Link 1' : 'SD',
+      headers: headers,
+    ));
     for (final alt in alternateStreams) {
       add(StreamLink(
         url: alt.url,
@@ -107,7 +120,13 @@ class ChannelModel {
     return out;
   }
 
+  /// Links the user configured (catalog / paste / Worker) — no auto HTTP backup rows.
+  List<StreamLink> get userStreamLinks =>
+      allStreams.where((l) => !isInternalStreamLabel(l.label)).toList();
+
   bool get hasMultipleStreams => allStreams.length > 1;
+
+  bool get hasMultipleUserStreams => userStreamLinks.length > 1;
 
   bool matchesStreamUrl(String url) =>
       streamUrl == url || alternateStreams.any((l) => l.url == url);

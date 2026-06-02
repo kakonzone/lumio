@@ -28,6 +28,7 @@ class AdBannerWidget extends StatefulWidget {
 class _AdBannerWidgetState extends State<AdBannerWidget>
     with WidgetsBindingObserver {
   final _bannerKey = GlobalKey<LevelPlayBannerAdViewState>();
+  bool _loadScheduled = false;
 
   late final LevelPlayBannerAdView _banner = LevelPlayBannerAdView(
     key: _bannerKey,
@@ -41,11 +42,21 @@ class _AdBannerWidgetState extends State<AdBannerWidget>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!AdSafetyService.instance.adsBlockedInDebug) {
-        debugPrint('[LevelPlay] banner loading...');
-        _banner.loadAd();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scheduleBannerLoad());
+  }
+
+  void _scheduleBannerLoad() {
+    if (_loadScheduled || AdSafetyService.instance.adsBlockedInDebug) return;
+    _loadScheduled = true;
+    Future<void>.delayed(const Duration(milliseconds: 600), () {
+      if (!mounted) return;
+      if (AdManager.instance.isStreaming) {
+        _loadScheduled = false;
+        _scheduleBannerLoad();
+        return;
       }
+      debugPrint('[LevelPlay] banner loading...');
+      _banner.loadAd();
     });
   }
 
@@ -64,11 +75,13 @@ class _AdBannerWidgetState extends State<AdBannerWidget>
       case AppLifecycleState.paused:
       case AppLifecycleState.detached:
       case AppLifecycleState.hidden:
-        // TODO(verify): API surface inferred, not confirmed against 9.2.0 changelog
+        // Pause refresh while app is backgrounded to reduce invalid requests.
         unawaited(banner.pauseAutoRefresh());
+        break;
       case AppLifecycleState.resumed:
-        // TODO(verify): API surface inferred, not confirmed against 9.2.0 changelog
+        // Resume refresh when app returns to foreground.
         unawaited(banner.resumeAutoRefresh());
+        break;
       case AppLifecycleState.inactive:
         break;
     }

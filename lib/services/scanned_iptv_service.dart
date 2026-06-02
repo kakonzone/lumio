@@ -1,0 +1,124 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+
+/// Fetches scanned IPTV playlists at runtime (not bundled) to keep APK small.
+class ScannedIptvService {
+  ScannedIptvService._();
+
+  static const _jioChannelsUrl = 'http://103.180.212.191:3500/channels';
+  static const _scanPlaylistUrl = 'http://202.70.146.135:8000/playlist.m3u8';
+  static const _jioStreamBase = 'http://103.180.212.191:3500/live/{id}.m3u8';
+
+  static const _timeout = Duration(seconds: 15);
+  static const _ua = 'Mozilla/5.0 Lumio/1.0';
+
+  static const _manualM3u = '''
+#EXTM3U
+#EXTINF:-1 group-title="English" ,National Geographic
+http://202.70.146.135:8000/play/a05o/index.m3u8
+#EXTINF:-1 group-title="Bangladesh" ,Discovery Bangla
+http://202.70.146.135:8000/play/a05z/index.m3u8
+#EXTINF:-1 group-title="Sports" ,Star Sports 1 Hindi
+http://202.70.146.135:8000/play/a01e/index.m3u8
+#EXTINF:-1 group-title="Sports" ,Star Sports Select 1 HD
+http://202.70.146.135:8000/play/a03c/index.m3u8
+#EXTINF:-1 group-title="Hindi" ,Zee Cafe HD
+http://202.70.146.135:8000/play/a04n/index.m3u8
+#EXTINF:-1 group-title="Movies" ,Colors Cineplex SD
+http://202.70.146.135:8000/play/a01b/index.m3u8
+#EXTINF:-1 group-title="Kids" ,Nick
+http://202.70.146.135:8000/play/a04c/index.m3u8
+''';
+
+  static String? _cachedBody;
+  static DateTime? _cachedAt;
+  static const _cacheTtl = Duration(hours: 6);
+
+  /// Combined M3U text from JioTV API + custom scan server (+ manual extras).
+  static Future<String?> fetchM3uBody({bool force = false}) async {
+    if (!force &&
+        _cachedBody != null &&
+        _cachedAt != null &&
+        DateTime.now().difference(_cachedAt!) < _cacheTtl) {
+      return _cachedBody;
+    }
+
+    final parts = <String>[_manualM3u.trim()];
+
+    try {
+      final scan = await http
+          .get(Uri.parse(_scanPlaylistUrl), headers: {'User-Agent': _ua})
+          .timeout(_timeout);
+      if (scan.statusCode == 200 && scan.body.contains('#EXTM3U')) {
+        parts.add(scan.body.trim());
+      }
+    } catch (_) {}
+
+    try {
+      final jio = await http
+          .get(Uri.parse(_jioChannelsUrl), headers: {'User-Agent': _ua})
+          .timeout(_timeout);
+      if (jio.statusCode == 200) {
+        final m3u = _jioJsonToM3u(jio.body);
+        if (m3u.isNotEmpty) parts.add(m3u);
+      }
+    } catch (_) {}
+
+    if (parts.length <= 1 && parts.first == _manualM3u.trim()) {
+      return null;
+    }
+
+    final body = parts.join('\n');
+    _cachedBody = body;
+    _cachedAt = DateTime.now();
+    return body;
+  }
+
+  static String _jioJsonToM3u(String raw) {
+    try {
+      final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      final rows = decoded['result'] as List<dynamic>? ?? [];
+      final lines = <String>['#EXTM3U'];
+      for (final row in rows) {
+        if (row is! Map<String, dynamic>) continue;
+        final name = _cleanName('${row['channel_name'] ?? ''}');
+        final id = '${row['channel_id'] ?? ''}'.trim();
+        if (name.isEmpty || id.isEmpty) continue;
+        final group = _jioCategory(row['channelCategoryId']);
+        final url = _jioStreamBase.replaceAll('{id}', id);
+        lines.add('#EXTINF:-1 group-title="$group" ,$name');
+        lines.add(url);
+      }
+      return lines.length > 1 ? lines.join('\n') : '';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  static String _cleanName(String raw) {
+    var name = raw.trim();
+    name = name.replaceAll(RegExp(r'\s*-\s*Rs\s+[\d.]+\s*$', caseSensitive: false), '');
+    if (name.startsWith(' ')) name = name.trimLeft();
+    return name.trim().replaceFirst(RegExp(r'^\s*&'), '&');
+  }
+
+  static String _jioCategory(dynamic catId) {
+    switch (catId) {
+      case 6:
+        return 'Movies';
+      case 7:
+        return 'Sports';
+      case 8:
+      case 16:
+        return 'News';
+      case 9:
+        return 'Kids';
+      case 12:
+        return 'Music';
+      default:
+        return 'Entertainment';
+    }
+  }
+}

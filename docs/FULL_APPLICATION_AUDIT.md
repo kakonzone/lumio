@@ -124,7 +124,7 @@ Lumio Sports TV is a Flutter IPTV/sports streaming client with a **tri-network a
 - Unused imports — `background_service.dart:5`, `stream_link_ranker_service.dart:1-2`, `waterfall_logic.dart:3`
 - `duplicate_import` — `lib/widgets/team_avatar.dart:4`
 
-**Maintainability:** `match_channel_matcher.dart` has **20+** `curly_braces_in_flow_control_structures` infos (analyzer tail). God-classes hinder review and test isolation.
+**Maintainability:** `match_channel_matcher.dart` (~876 LOC) — scoring model documented in root [`AUDIT_REPORT.md`](../AUDIT_REPORT.md) **§4.3 / §25**. `AppProvider` reduced (~939 LOC); catalog via GitHub M3U. Prefer **rev.5** canonical audit over this file for ship status.
 
 **Positive:** Ad-layer uses `adLog` / dart-define gating (`lib/ads/ad_log.dart:3`); dedicated test dirs under `test/ads/`, `test/security/`, `test/widget/`.
 

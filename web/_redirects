@@ -1,0 +1,6 @@
+# Cloudflare Pages — match app LegalConfig URLs (no trailing .html)
+/download             /index.html                      200
+/privacy              /legal/privacy.html              200
+/terms                /legal/terms.html                200
+/data-deletion        /legal/data-deletion.html        200
+/app-ads.txt          /app-ads.txt                     200

@@ -48,3 +48,27 @@ After install with valid `google-services.json`:
 - Remote Config consumed before ads (`AdSafetyService.prefetchRemoteConfig` in `main.dart`)
 
 Optional log improvement tracked as **P7-003** in `docs/PHASE7_BUGS.md` (`[RC] fetched keys=[...]` not emitted today).
+
+## Push notifications (Big Picture)
+
+Lumio shows **expanded image notifications** (SportzX-style) when FCM includes an image URL.
+
+**Recommended data payload** (works foreground + background):
+
+```json
+{
+  "data": {
+    "type": "promo",
+    "title": "UFC FIGHT NIGHT",
+    "body": "Watch UFC Fight Night: Song vs Figueiredo live on Lumio.",
+    "imageUrl": "https://example.com/banner.jpg",
+    "entityId": "ufc-song-figueiredo",
+    "streamUrl": ""
+  }
+}
+```
+
+Supported image keys: `imageUrl`, `image`, `image_url`, `big_picture`, `bigPicture`.  
+You can also set `notification.image` in the FCM console (Android / iOS).
+
+Dart API for local promos: `NotificationService.showPromoAlert(...)`.

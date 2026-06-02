@@ -1,0 +1,28 @@
+title = "Lumio gitleaks config"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "lumio-levelplay-key"
+description = "LevelPlay / IronSource app key pattern"
+regex = '''(?i)levelplay[_-]?app[_-]?key\s*[:=]\s*['\"]?[a-z0-9]{8,}'''
+tags = ["lumio", "ads"]
+
+[[rules]]
+id = "lumio-adsterra-zone"
+description = "Adsterra effectivecpmnetwork zone URL"
+regex = '''https://[a-z0-9]+\.effectivecpmnetwork\.com/'''
+tags = ["lumio", "ads"]
+
+[[rules]]
+id = "lumio-monetag-zone"
+description = "Monetag zone script host"
+regex = '''dataset\.zone=['\"]11\d{5,}['\"]'''
+tags = ["lumio", "ads"]
+
+[[rules]]
+id = "lumio-stream-credential-url"
+description = "Credentialed stream URL"
+regex = '''https?://[^/\s]+:[^@\s]+@'''
+tags = ["lumio", "stream"]

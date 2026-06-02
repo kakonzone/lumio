@@ -1,69 +1,86 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import '../ads/ad_manager.dart';
 import '../ads/adsterra/adsterra_banner.dart';
-import '../services/user_preferences.dart';
-import '../theme/app_theme.dart';
-import 'rewarded_button.dart';
+import '../ads/adsterra/adsterra_social_bar.dart';
+import '../ads/propeller/propeller_webview.dart';
+import '../config/ad_config.dart';
+import '../config/monetag_config.dart';
 
-/// Below-player ad strip — isolated rebuilds from [PlayerScreen] video tree.
-class PlayerAdSlot extends StatefulWidget {
-  const PlayerAdSlot({
-    super.key,
-    required this.onHdUnlocked,
-  });
+/// Below-player ad strip — WebViews stay mounted; hidden at opacity 0 by default.
+class PlayerAdSlot extends StatelessWidget {
+  const PlayerAdSlot({super.key});
 
-  final VoidCallback onHdUnlocked;
-
-  @override
-  State<PlayerAdSlot> createState() => _PlayerAdSlotState();
-}
-
-class _PlayerAdSlotState extends State<PlayerAdSlot> {
-  @override
-  void initState() {
-    super.initState();
-    unawaited(AdManager.instance.preloadRewarded());
-  }
+  static const double _bannerHeight = 90;
+  static const double _stickyHeight = 50;
 
   @override
   Widget build(BuildContext context) {
     if (!AdManager.instance.adsEnabled) {
       return const SizedBox(height: 8);
     }
+
+    final visible = AdConfig.playerAdsUserVisible;
+    final children = <Widget>[];
+
+    if (AdConfig.hasAdsterraBanner728) {
+      children.add(
+        AdsterraBanner728(
+          placement: 'player_below',
+          userVisible: visible,
+        ),
+      );
+    } else if (MonetagConfig.isConfigured) {
+      children.add(
+        PropellerInPagePushBanner(
+          placement: 'player_below_monetag',
+          height: _bannerHeight,
+          userVisible: visible,
+        ),
+      );
+    }
+
+    if (children.isEmpty) {
+      return const SizedBox(height: 8);
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (UserPreferences.hasActiveHd)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
-              children: [
-                Icon(Icons.hd, color: AppColors.accent, size: 18),
-                const SizedBox(width: 6),
-                Text(
-                  'HD active',
-                  style: GF.body(
-                    color: AppColors.accent,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          )
-        else
-          RewardedButton(
-            label: 'Watch in HD',
-            trigger: 'hd',
-            onSuccess: widget.onHdUnlocked,
-          ),
-        const SizedBox(height: 10),
-        const AdsterraBanner728(placement: 'player_below'),
+        ...children,
         const SizedBox(height: 16),
       ],
     );
+  }
+}
+
+/// In-player sticky strip (over video) — Monetag or Adsterra social fallback.
+class PlayerStickyAdStrip extends StatelessWidget {
+  const PlayerStickyAdStrip({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    if (!AdManager.instance.adsEnabled) return const SizedBox.shrink();
+
+    final visible = AdConfig.playerAdsUserVisible;
+    const h = 50.0;
+
+    if (MonetagConfig.isConfigured) {
+      return PropellerInPagePushBanner(
+        placement: 'monetag_player_sticky_social',
+        height: h,
+        userVisible: visible,
+      );
+    }
+
+    if (AdConfig.adsterraSocialScriptUrl.trim().isNotEmpty &&
+        AdConfig.adsterraSocialBaseUrl.trim().isNotEmpty) {
+      return AdsterraSocialBar(
+        placement: 'player_sticky_social',
+        userVisible: visible,
+      );
+    }
+
+    return const SizedBox.shrink();
   }
 }

@@ -8,7 +8,6 @@ Never commit real keys. Use `~/.gradle/gradle.properties`, `android/local.proper
 |----------|-------------------|-------------|
 | `LEVELPLAY_APP_KEY` | `abc123...` | `LEVELPLAY_APP_KEY` |
 | `LEVELPLAY_INTERSTITIAL_AD_UNIT` | `DefaultInterstitial` | `LEVELPLAY_INTERSTITIAL_AD_UNIT` |
-| `LEVELPLAY_REWARDED_AD_UNIT` | `DefaultRewardedVideo` | `LEVELPLAY_REWARDED_AD_UNIT` |
 | `LEVELPLAY_BANNER_AD_UNIT` | `DefaultBanner` | `LEVELPLAY_BANNER_AD_UNIT` |
 | `CAP_BASE_URL` | `https://api.example.com` | `CAP_BASE_URL` |
 | `CAP_HMAC_KEY` | `hex-or-base64-secret` | `CAP_HMAC_KEY` |
@@ -50,7 +49,6 @@ Place `android/app/google-services.json` from Firebase Console (gitignored in CI
 ```bash
 export LEVELPLAY_APP_KEY='YOUR_KEY'
 export LEVELPLAY_INTERSTITIAL_AD_UNIT='DefaultInterstitial'
-export LEVELPLAY_REWARDED_AD_UNIT='DefaultRewardedVideo'
 export LEVELPLAY_BANNER_AD_UNIT='DefaultBanner'
 export CAP_BASE_URL='https://your-cap-host.example'
 export CAP_HMAC_KEY='your-hmac-secret'

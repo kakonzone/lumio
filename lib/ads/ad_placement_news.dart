@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'ad_manager.dart';
 import 'ad_placement_config.dart';
+import 'adsterra/adsterra_banner.dart';
 import '../widgets/ad_list_injector.dart';
 
 /// Injects Adsterra natives into NEWS article list (every 5, or 4 aggressive).
@@ -42,6 +43,14 @@ class AdPlacementNews {
     final adsOn = AdManager.instance.adsEnabled;
     final out = <Widget>[];
     for (var i = 0; i < articleCount; i++) {
+      if (adsOn && i == 2) {
+        out.add(
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 0, 16, 10),
+            child: AdsterraBanner728(placement: 'news_mid_banner'),
+          ),
+        );
+      }
       if (shouldInjectAdAt(i, interval, adsOn: adsOn)) {
         final slot = (i + 1) ~/ interval;
         out.add(
@@ -49,7 +58,7 @@ class AdPlacementNews {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
             child: AdListInjector.nativeAd(
               key: ValueKey('news_native_$slot'),
-              placement: 'news_native_$slot',
+              placement: 'news_inline_$slot',
             ),
           ),
         );

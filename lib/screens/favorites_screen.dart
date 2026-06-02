@@ -5,7 +5,6 @@ import '../provider/app_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/channel_player.dart';
 import '../widgets/shell_app_bar.dart';
-import '../ads/ad_placement_config.dart';
 import '../widgets/ad_list_injector.dart';
 import '../widgets/channel_list_tile.dart';
 
@@ -69,7 +68,7 @@ class FavoritesScreen extends StatelessWidget {
                   )
                 : AdListInjector.buildSeparatedChannelList(
                     itemCount: favorites.length,
-                    interval: AdPlacementConfig.channelListNativeInterval,
+                    screen: AdListScreen.favorites,
                     placementPrefix: 'favorites_list',
                     itemBuilder: (ctx, i) {
                       final ch = favorites[i];

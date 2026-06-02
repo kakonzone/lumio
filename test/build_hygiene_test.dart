@@ -2,18 +2,19 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-/// Task 11 — `flutter_inappwebview` must not be a dependency.
+/// Single WebView stack (smaller APK than dual webview + inappwebview).
 void main() {
-  test('pubspec does not depend on flutter_inappwebview', () {
+  test('pubspec uses webview_flutter only (no flutter_inappwebview)', () {
     final pubspec = File('pubspec.yaml').readAsStringSync();
-    expect(pubspec.contains('flutter_inappwebview:'), isFalse);
     expect(pubspec.contains('webview_flutter:'), isTrue);
+    expect(pubspec.contains('flutter_inappwebview:'), isFalse);
   });
 
-  test('pubspec.lock does not resolve flutter_inappwebview', () {
+  test('pubspec.lock resolves webview_flutter when lock present', () {
     final lock = File('pubspec.lock');
     if (!lock.existsSync()) return;
     final text = lock.readAsStringSync();
+    expect(text.contains('webview_flutter'), isTrue);
     expect(text.contains('flutter_inappwebview'), isFalse);
   });
 }

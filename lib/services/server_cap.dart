@@ -29,7 +29,9 @@ class ServerCap {
   static bool debugTreatAsConfigured = false;
 
   bool get _usesLocalOnlyCaps =>
-      AdConfig.capLocalOnlyMode && AdConfig.capBaseUrl.trim().isEmpty;
+      !debugTreatAsConfigured &&
+      AdConfig.capLocalOnlyEffective &&
+      AdConfig.capBaseUrl.trim().isEmpty;
 
   bool get isConfigured =>
       debugTreatAsConfigured || AdConfig.capBaseUrl.trim().isNotEmpty;
@@ -39,9 +41,11 @@ class ServerCap {
 
   int get cachedPlacementCount => _limits.length;
 
-  /// Release builds without [AdConfig.capBaseUrl] must block ads (no silent skip).
+  /// Release builds without [AdConfig.capBaseUrl] block ads unless local/sideload caps.
   bool get blocksAdsInRelease =>
-      kReleaseMode && AdConfig.capBaseUrl.trim().isEmpty && !AdConfig.capLocalOnlyMode;
+      kReleaseMode &&
+      AdConfig.capBaseUrl.trim().isEmpty &&
+      !AdConfig.capLocalOnlyEffective;
 
   /// Logs once per process when URL unset.
   void logConfigurationOnce() {
@@ -190,7 +194,6 @@ class ServerCap {
 
   static Future<int> _hourlyUsageForPlacement(String placement) async {
     final prefix = switch (placement) {
-      'rewarded' => 'lumio_is_rewarded',
       'app_open_substitute' => 'lumio_is_inter',
       _ => 'lumio_is_inter',
     };

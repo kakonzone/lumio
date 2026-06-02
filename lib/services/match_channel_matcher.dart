@@ -1,4 +1,5 @@
 import '../models/model.dart';
+import '../utils/priority_broadcasters.dart';
 
 /// Maps live API matches to channels in the app catalog.
 ///
@@ -250,19 +251,44 @@ class MatchChannelMatcher {
   // ══════════════════════════════════════════════════════════════════════════
   // PUBLIC API
   // ══════════════════════════════════════════════════════════════════════════
+  /// Channels to score for a fixture (Sports + regional cats for intl teams).
+  static List<ChannelModel> channelPoolFor(
+    List<ChannelModel> all,
+    MatchModel match,
+  ) {
+    final blob = '${match.teamA} ${match.teamB} ${match.channel}'.toLowerCase();
+    final cats = <String>{'Sports'};
+    if (_hasTeam(blob, 'bangladesh')) cats.add('Bangladesh');
+    if (_hasTeam(blob, 'pakistan')) cats.add('Pakistan');
+    if (_hasTeam(blob, 'india')) cats.add('India');
+    if (_hasTeam(blob, 'england') ||
+        blob.contains('premier') ||
+        blob.contains('epl')) {
+      cats.add('English');
+    }
+    final seen = <String>{};
+    final out = <ChannelModel>[];
+    for (final c in all) {
+      if (c.streamUrl.isEmpty) continue;
+      if (!cats.contains(c.category)) continue;
+      if (seen.add(c.id)) out.add(c);
+    }
+    return out;
+  }
+
   static List<ChannelModel> findRelated(
     MatchModel match,
     List<ChannelModel> channels, {
-    int limit = 12,
+    int limit = 16,
+    String? tournamentLabel,
   }) {
     final sport = match.sport.toLowerCase().trim();
     final teamA = match.teamA.toLowerCase().trim();
     final teamB = match.teamB.toLowerCase().trim();
     final teamBlob = '$teamA $teamB';
 
-    // match.channel = broadcaster hint from API e.g. "T Sports", "beIN Sports"
-    // NOT a tournament name — this was the root bug in the old code.
     final broadcasterHint = match.channel.toLowerCase().trim();
+    final extraTournament = (tournamentLabel ?? '').toLowerCase().trim();
 
     // ── Sport flags ────────────────────────────────────────────────────────
     final isCricket = sport.contains('cricket');
@@ -296,7 +322,7 @@ class MatchChannelMatcher {
 
     // ── Detect tournament from hint + teams ────────────────────────────────
     final tournament = _detectTournament(
-      broadcasterHint,
+      '$broadcasterHint $extraTournament',
       teamBlob,
       isCricket: isCricket,
       isFootball: isFootball,
@@ -316,6 +342,9 @@ class MatchChannelMatcher {
       final blob = '$name $show $cat $country';
 
       var score = 0;
+
+      // ── Rule 0 : User priority broadcasters (FIFA, Sony, T Sports, beIN) ─
+      score += PriorityBroadcasters.matchScoreBoost(blob);
 
       // ── Rule 1 : Fixture-named channel (highest priority) ────────────────
       // Channel literally named "Bangladesh vs Pakistan"
@@ -477,19 +506,22 @@ class MatchChannelMatcher {
         if (blob.contains('fox sports')) score += 40;
       }
 
-      // ── Rule 6 : Player-name channel boost ────────────────────────────────
-      // e.g. teamA = "Djokovic", teamB = "Alcaraz" → Eurosport boost
+      // ── Rule 6 : Team name in channel title / show ───────────────────────
+      score += _scoreTeamInMetadata(name, show, match.teamA);
+      score += _scoreTeamInMetadata(name, show, match.teamB);
+
+      // ── Rule 7 : Player-name channel boost ────────────────────────────────
       score += _scorePlayerChannels(blob, teamA);
       score += _scorePlayerChannels(blob, teamB);
 
-      // ── Rule 7 : BD channels cross-category bonus ─────────────────────────
+      // ── Rule 8 : BD channels cross-category bonus ─────────────────────────
       // Nagorik TV (category: Bangladesh) sometimes airs cricket.
       // Without this rule it gets score 0 because it has no sport keywords.
       if ((isCricket && hasBD) || (isFootball && hasBD)) {
         score += _bdCrossCategory(blob);
       }
 
-      // ── Rule 8 : Country boost ────────────────────────────────────────────
+      // ── Rule 9 : Country boost ────────────────────────────────────────────
       if (hasBD && country == 'bangladesh') score += 18;
       if (hasPak && country == 'pakistan') score += 12;
       if (hasIndia && country == 'india') score += 10;
@@ -731,6 +763,20 @@ class MatchChannelMatcher {
   // PLAYER-NAME CHANNEL BOOST
   // When teamA/teamB is a player name (tennis, boxing, solo events).
   // ══════════════════════════════════════════════════════════════════════════
+  static int _scoreTeamInMetadata(String name, String show, String team) {
+    final t = team.toLowerCase().trim();
+    if (t.length < 3) return 0;
+    var score = 0;
+    if (name.contains(t)) score += 35;
+    if (show.contains(t)) score += 28;
+    for (final token in _expandTokens(t)) {
+      if (token.length < 4) continue;
+      if (name.contains(token)) score += 22;
+      if (show.contains(token)) score += 18;
+    }
+    return score > 0 ? score : 0;
+  }
+
   static int _scorePlayerChannels(String blob, String nameOrTeam) {
     for (final entry in _playerChannels.entries) {
       if (!nameOrTeam.contains(entry.key)) continue;

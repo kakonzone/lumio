@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lumio_tv/provider/app_provider.dart';
+import 'package:lumio_tv/provider/user_state_provider.dart';
 import 'package:lumio_tv/widgets/shell_app_bar.dart';
 import 'package:provider/provider.dart';
 
@@ -10,8 +11,13 @@ Widget _wrapShellAppBar({
 }) {
   return MediaQuery(
     data: MediaQueryData(size: Size(width, 800)),
-    child: ChangeNotifierProvider(
-      create: (_) => AppProvider(),
+    child: MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => UserStateProvider()),
+        ChangeNotifierProvider(
+          create: (ctx) => AppProvider(ctx.read<UserStateProvider>()),
+        ),
+      ],
       child: MaterialApp(home: Scaffold(body: child)),
     ),
   );
@@ -33,8 +39,13 @@ void main() {
     await tester.pumpWidget(
       MediaQuery(
         data: const MediaQueryData(size: Size(320, 640)),
-        child: ChangeNotifierProvider(
-          create: (_) => AppProvider(),
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider(create: (_) => UserStateProvider()),
+            ChangeNotifierProvider(
+              create: (ctx) => AppProvider(ctx.read<UserStateProvider>()),
+            ),
+          ],
           child: const MaterialApp(
             home: Scaffold(
               body: Column(

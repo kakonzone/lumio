@@ -6,15 +6,19 @@ import 'package:provider/provider.dart';
 import 'package:lumio_tv/models/model.dart';
 import 'package:lumio_tv/provider/app_provider.dart';
 import 'package:lumio_tv/theme/app_theme.dart';
-import 'package:lumio_tv/screens/category_channels_screen.dart';
 import 'package:lumio_tv/models/live_event_match.dart';
 import 'package:lumio_tv/utils/channel_player.dart';
 import 'package:lumio_tv/widgets/shell_app_bar.dart';
 import 'package:lumio_tv/utils/bdt_time.dart';
-import 'package:lumio_tv/utils/debug_log.dart';
 import 'package:lumio_tv/widgets/team_avatar.dart';
 import 'package:lumio_tv/ads/ad_manager.dart';
+import 'package:lumio_tv/ads/adsterra/adsterra_banner.dart';
 import 'package:lumio_tv/ads/adsterra/adsterra_native.dart';
+import 'package:lumio_tv/ads/widgets/floating_native_card.dart';
+import 'package:lumio_tv/widgets/list_skeletons.dart';
+import 'package:lumio_tv/widgets/home_promo_carousel.dart';
+import 'package:lumio_tv/widgets/home_category_grid.dart';
+import 'package:lumio_tv/core/performance_tuning.dart';
 
 class TvScreen extends StatefulWidget {
   const TvScreen({super.key});
@@ -98,29 +102,42 @@ class TvScreenState extends State<TvScreen> with SingleTickerProviderStateMixin 
   @override
   Widget build(BuildContext context) {
     final prov = context.watch<AppProvider>();
-    return ColoredBox(
-      color: context.bg,
-      child: Column(children: [
-        const ShellAppBar(centerLumioTvBrand: true),
-        _searchBar(context, prov),
-        _tabBar(context),
-        Expanded(
-          child: TabBarView(
-            controller: _tabs,
-            children: [
-              _HomeTab(
-                prov: prov,
-                onPlay: _openPlayer,
-                highlightCategory: _highlightCategory,
-                onCategoryTap: (cat) => setState(() => _highlightCategory = cat),
-              ),
-              _LiveNowTab(prov: prov, onPlay: _openPlayer),
-              _TodayTab(prov: prov, onPlay: _openPlayer),
-              _UpcomingTab(prov: prov, onPlay: _openPlayer),
-            ],
+    return TabAdOverlay(
+      showFloatingCard: true,
+      floatingPlacement: 'home_floating_native',
+      child: ColoredBox(
+        color: context.bg,
+        child: Column(children: [
+          const ShellAppBar(centerLumioTvBrand: true),
+          _searchBar(context, prov),
+          HomePromoCarousel(
+            onLiveTabTap: () {
+              if (_tabs.index != 1) {
+                _tabs.animateTo(1);
+                setState(() {});
+              }
+            },
           ),
-        ),
-      ]),
+          _tabBar(context),
+          Expanded(
+            child: TabBarView(
+              controller: _tabs,
+              children: [
+                _HomeTab(
+                  prov: prov,
+                  onPlay: _openPlayer,
+                  highlightCategory: _highlightCategory,
+                  onCategoryTap: (cat) =>
+                      setState(() => _highlightCategory = cat),
+                ),
+                _LiveNowTab(prov: prov, onPlay: _openPlayer),
+                _TodayTab(prov: prov, onPlay: _openPlayer),
+                _UpcomingTab(prov: prov, onPlay: _openPlayer),
+              ],
+            ),
+          ),
+        ]),
+      ),
     );
   }
 
@@ -232,20 +249,35 @@ class TvScreenState extends State<TvScreen> with SingleTickerProviderStateMixin 
   }
 
   Widget _tabBar(BuildContext context) {
-    const labels = ['Home', 'Live', 'Today', 'Soon'];
+    const tabs = [
+      (Icons.home_rounded, 'Home', [Color(0xFF3949AB), Color(0xFF5C6BC0)]),
+      (Icons.sensors_rounded, 'Live', [Color(0xFFB71C1C), Color(0xFFE53935)]),
+      (Icons.today_rounded, 'Today', [Color(0xFF00695C), Color(0xFF00897B)]),
+      (Icons.schedule_rounded, 'Soon', [Color(0xFF6A1B9A), Color(0xFF8E24AA)]),
+    ];
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
       child: Container(
-        height: 44,
+        height: 46,
         padding: const EdgeInsets.all(3),
         decoration: BoxDecoration(
-          color: context.bg3,
+          color: context.isDark
+              ? context.bg3.withValues(alpha: 0.9)
+              : context.bg2,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: context.brd),
+          boxShadow: [
+            BoxShadow(
+              color: context.shadowColor,
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
-          children: List.generate(labels.length, (i) {
+          children: List.generate(tabs.length, (i) {
             final active = _tabs.index == i;
+            final (icon, label, grad) = tabs[i];
             return Expanded(
               child: Material(
                 color: Colors.transparent,
@@ -258,17 +290,23 @@ class TvScreenState extends State<TvScreen> with SingleTickerProviderStateMixin 
                   },
                   borderRadius: BorderRadius.circular(11),
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOutCubic,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: active ? AppColors.accent : Colors.transparent,
+                      gradient: active
+                          ? LinearGradient(
+                              colors: grad,
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            )
+                          : null,
                       borderRadius: BorderRadius.circular(11),
                       boxShadow: active
                           ? [
                               BoxShadow(
-                                color:
-                                    AppColors.accent.withValues(alpha: 0.35),
-                                blurRadius: 8,
+                                color: grad.last.withValues(alpha: 0.4),
+                                blurRadius: 10,
                                 offset: const Offset(0, 2),
                               ),
                             ]
@@ -278,17 +316,29 @@ class TvScreenState extends State<TvScreen> with SingleTickerProviderStateMixin 
                       fit: BoxFit.scaleDown,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 8,
+                          horizontal: 4,
+                          vertical: 7,
                         ),
-                        child: Text(
-                          labels[i],
-                          style: GF.body(
-                            fontSize: 11,
-                            fontWeight:
-                                active ? FontWeight.w800 : FontWeight.w600,
-                            color: active ? Colors.white : context.txt3,
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              icon,
+                              size: 15,
+                              color: active ? Colors.white : context.txt3,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              label,
+                              style: GF.body(
+                                fontSize: 11,
+                                fontWeight: active
+                                    ? FontWeight.w800
+                                    : FontWeight.w600,
+                                color: active ? Colors.white : context.txt3,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -331,16 +381,27 @@ class _HomeTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final liveEvents = prov.sortedLiveEvents;
+    final featuredEvents = prov.featuredLiveEvents;
+    final showFeaturedSection = prov.featuredLiveEventsLoading ||
+        featuredEvents.isNotEmpty;
     final showLiveEventsSection =
         prov.liveEventsLoading || liveEvents.isNotEmpty;
-    final cats = AppProvider.homeCategories;
+    final cats = prov.homeCategoryTiles.isNotEmpty
+        ? prov.homeCategoryTiles
+        : AppProvider.homeCategories;
 
     return RefreshIndicator(
       color: AppColors.accent,
       onRefresh: prov.refresh,
       child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        cacheExtent: PerformanceTuning.listCacheExtent,
+        addAutomaticKeepAlives: false,
+        addRepaintBoundaries: true,
         padding: const EdgeInsets.only(top: 14, bottom: 24),
         children: [
+          if (prov.channelsLoading && prov.channels.isEmpty)
+            const ChannelListSkeleton(count: 5),
           if (AdManager.instance.adsEnabled) ...[
             const Padding(
               padding: EdgeInsets.fromLTRB(16, 0, 16, 10),
@@ -350,27 +411,75 @@ class _HomeTab extends StatelessWidget {
               ),
             ),
           ],
-          const _SectionHeader(title: 'Categories'),
-          const SizedBox(height: 10),
+          const HomeSectionHeader(
+            title: 'Browse',
+            subtitle: 'Tap a category to explore live channels',
+          ),
+          const SizedBox(height: 12),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: LayoutBuilder(
-              builder: (ctx, constraints) {
-                return _HomeCategoryGrid(
-                  width: constraints.maxWidth,
-                  prov: prov,
-                  cats: cats,
-                  highlightCategory: highlightCategory,
-                  onCategoryTap: onCategoryTap,
-                  onPlay: onPlay,
-                );
-              },
+            child: HomeCategoryGrid(
+              prov: prov,
+              categories: cats,
+              highlightCategory: highlightCategory,
+              onCategoryTap: onCategoryTap,
             ),
           ),
+          if (showFeaturedSection) ...[
+            const SizedBox(height: 16),
+            _SectionHeader(
+              title: prov.featuredLiveEventsSectionTitle,
+              trailing: prov.featuredLiveEventsLoading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.accent,
+                      ),
+                    )
+                  : _LiveBadge(label: '${featuredEvents.length} featured'),
+            ),
+            if (prov.featuredLiveEventsSectionSubtitle.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  prov.featuredLiveEventsSectionSubtitle,
+                  style: TextStyle(fontSize: 11, color: context.txt3),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+            const SizedBox(height: 10),
+            if (prov.featuredLiveEventsLoading &&
+                !prov.hasFeaturedLiveEventsData &&
+                featuredEvents.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'Loading featured matches…',
+                  style: TextStyle(fontSize: 12, color: context.txt3),
+                ),
+              )
+            else
+              ...featuredEvents.map(
+                (e) => RepaintBoundary(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: _LiveEventCard(event: e),
+                  ),
+                ),
+              ),
+          ],
           if (showLiveEventsSection) ...[
             const SizedBox(height: 16),
             _SectionHeader(
-              title: 'Live Events',
+              title: 'All Live Events',
               trailing: prov.liveEventsLoading
                   ? const SizedBox(
                       width: 16,
@@ -386,7 +495,7 @@ class _HomeTab extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                'Men\'s cricket & football — World Cup, IPL, BPL, top leagues',
+                'FootyStream + ESPN/Cricbuzz — same match shown once',
                 style: TextStyle(fontSize: 11, color: context.txt3),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -416,174 +525,15 @@ class _HomeTab extends StatelessWidget {
                 ),
               ),
           ],
-        ],
-      ),
-    );
-  }
-}
-
-/// Fixed 2×3 category grid — explicit cell widths prevent right-edge clipping.
-class _HomeCategoryGrid extends StatelessWidget {
-  final double width;
-  final AppProvider prov;
-  final List<Map<String, String>> cats;
-  final String? highlightCategory;
-  final ValueChanged<String>? onCategoryTap;
-  final PlayerCallback onPlay;
-
-  static const _cols = 3;
-  static const _rows = 2;
-  static const _gap = 8.0;
-
-  const _HomeCategoryGrid({
-    required this.width,
-    required this.prov,
-    required this.cats,
-    this.highlightCategory,
-    this.onCategoryTap,
-    required this.onPlay,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final itemCount = cats.length + 1;
-    // Floor widths so 3 cells + 2 gaps never exceed available width.
-    final cellW = ((width - _gap * (_cols - 1)) / _cols).floorToDouble();
-    final cellH = (cellW / 1.08).floorToDouble();
-    final gridH = cellH * _rows + _gap;
-
-    Widget cellAt(int index) {
-      if (index >= itemCount) return const SizedBox.shrink();
-      if (index == cats.length) {
-        return _CategoryChip(
-          icon: '➕',
-          label: 'More',
-          selected: false,
-          onTap: () => onCategoryTap?.call('All'),
-        );
-      }
-      final cat = cats[index];
-      final label = cat['label']!;
-      final internal = cat['cat']!;
-      final selected =
-          highlightCategory == internal || highlightCategory == label;
-      return _CategoryChip(
-        icon: cat['icon']!,
-        label: label,
-        selected: selected,
-        onTap: () {
-          onCategoryTap?.call(internal);
-          final list = prov
-              .byCategory(internal)
-              .where((ch) => ch.streamUrl.isNotEmpty)
-              .toList();
-          if (list.isEmpty) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('$label এ কোনো live channel নেই'),
-                duration: const Duration(seconds: 2),
-              ),
-            );
-            return;
-          }
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => CategoryChannelsScreen(
-                categoryName: label,
-                categoryIcon: cat['icon']!,
-              ),
+          if (AdManager.instance.adsEnabled) ...[
+            const SizedBox(height: 8),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 0, 16, 10),
+              child: AdsterraBanner728(placement: 'home_bottom_banner'),
             ),
-          );
-        },
-      );
-    }
-
-    Widget rowAt(int row) {
-      return SizedBox(
-        width: width,
-        height: cellH,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: List.generate(_cols, (col) {
-            return SizedBox(
-              width: cellW,
-              height: cellH,
-              child: cellAt(row * _cols + col),
-            );
-          }),
-        ),
-      );
-    }
-
-    return SizedBox(
-      width: width,
-      height: gridH,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          rowAt(0),
-          SizedBox(height: _gap),
-          rowAt(1),
+          ],
+          const SizedBox(height: 72),
         ],
-      ),
-    );
-  }
-}
-
-class _CategoryChip extends StatelessWidget {
-  final String icon;
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _CategoryChip({
-    required this.icon,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          color: selected ? AppColors.accentDim : context.bg2,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: selected ? AppColors.accent : context.brd,
-            width: 1,
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(icon, style: const TextStyle(fontSize: 20)),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: selected ? AppColors.accent : context.txt2,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -668,17 +618,31 @@ class _TodayTab extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 14),
       children: [
         _SectionHeader(
-          title: "Today's Matches",
+          title: "Today's Schedule",
           trailing: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(
-                color: const Color(0xFF1A3A1A),
-                borderRadius: BorderRadius.circular(12)),
-            child: Text('March ${DateTime.now().day}',
-                style: const TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.green)),
+              gradient: const LinearGradient(
+                colors: [Color(0xFF1B5E20), Color(0xFF0D3D1A)],
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              'FootyStream · ${DateTime.now().day}/${DateTime.now().month}',
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: AppColors.green,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            'Today: FootyStream schedule merged with ESPN/Cricbuzz scores',
+            style: TextStyle(fontSize: 11, color: context.txt3),
           ),
         ),
         const SizedBox(height: 10),
@@ -972,6 +936,59 @@ class _ScoreCard extends StatelessWidget {
       );
 }
 
+List<Color> _liveEventCardGradient(MatchModel m, bool effectiveLive) {
+  final sport = m.sport.toLowerCase();
+  if (effectiveLive) {
+    return switch (sport) {
+      'cricket' => const [
+          Color(0xFF004D40),
+          Color(0xFF00897B),
+          Color(0xFF1B5E20),
+        ],
+      'football' => const [
+          Color(0xFF0D47A1),
+          Color(0xFF1976D2),
+          Color(0xFF00695C),
+        ],
+      'basketball' => const [
+          Color(0xFFE65100),
+          Color(0xFFFF6F00),
+          Color(0xFF4A148C),
+        ],
+      _ => const [
+          Color(0xFF4A148C),
+          Color(0xFF7B1FA2),
+          Color(0xFF1565C0),
+        ],
+    };
+  }
+  return switch (sport) {
+    'cricket' => const [
+        Color(0xFF1B4332),
+        Color(0xFF2D6A4F),
+        Color(0xFF081C15),
+      ],
+    'football' => const [
+        Color(0xFF0D1B2A),
+        Color(0xFF1B3A5C),
+        Color(0xFF081C15),
+      ],
+    _ => const [
+        Color(0xFF1A1A2E),
+        Color(0xFF2D2D44),
+        Color(0xFF0F0F1A),
+      ],
+  };
+}
+
+String _browseCategoryForMatch(MatchModel m) {
+  final blob = '${m.teamA} ${m.teamB} ${m.channel}'.toLowerCase();
+  if (blob.contains('bangladesh')) return 'Bangladesh';
+  if (blob.contains('pakistan')) return 'Pakistan';
+  if (blob.contains('india')) return 'India';
+  return 'Sports';
+}
+
 class _LiveEventCard extends StatefulWidget {
   final LiveEventMatch event;
 
@@ -1019,31 +1036,15 @@ class _LiveEventCardState extends State<_LiveEventCard> {
     super.dispose();
   }
 
-  bool _matchHasStarted(MatchModel m, bool effectiveLive) =>
-      effectiveLive || m.isFinished;
-
   void _openChannelsPopup(
     BuildContext context, {
     required LiveEventMatch event,
-    required bool matchStarted,
   }) {
-    // #region agent log
-    agentDebugLog(
-      location: 'tv_screen.dart:_openChannelsPopup',
-      message: 'popup open — no bulk health check',
-      hypothesisId: 'H1',
-      data: {
-        'channelCount': event.relatedChannels.length,
-        'matchStarted': matchStarted,
-      },
-    );
-    // #endregion
     showDialog<void>(
       context: context,
       barrierColor: Colors.black54,
       builder: (dialogCtx) => _LiveEventChannelsDialog(
         event: event,
-        matchStarted: matchStarted,
         parentContext: context,
       ),
     );
@@ -1065,46 +1066,85 @@ class _LiveEventCardState extends State<_LiveEventCard> {
     final finished = m.isFinished;
     final showFooter = _showScheduleFooter(m, effectiveLive, finished);
     final hasScores = m.scoreA.trim().isNotEmpty || m.scoreB.trim().isNotEmpty;
-    final matchStarted = _matchHasStarted(m, effectiveLive);
+    final gradient = _liveEventCardGradient(m, effectiveLive);
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => _openChannelsPopup(
-          context,
-          event: event,
-          matchStarted: matchStarted,
-        ),
+        onTap: () => _openChannelsPopup(context, event: event),
         borderRadius: BorderRadius.circular(18),
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
           decoration: BoxDecoration(
-            color: context.cardSurface,
             borderRadius: BorderRadius.circular(18),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: gradient,
+            ),
+            border: Border.all(
+              color: effectiveLive
+                  ? AppColors.accent.withValues(alpha: 0.55)
+                  : Colors.white.withValues(alpha: 0.12),
+              width: effectiveLive ? 1.4 : 1,
+            ),
             boxShadow: [
               BoxShadow(
-                color: context.shadowColor,
-                blurRadius: 8,
-                offset: const Offset(0, 3),
+                color: (effectiveLive ? AppColors.accent : gradient.first)
+                    .withValues(alpha: effectiveLive ? 0.28 : 0.18),
+                blurRadius: effectiveLive ? 16 : 10,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Stack(
+            clipBehavior: Clip.hardEdge,
             children: [
+              Positioned(
+                right: -28,
+                top: 8,
+                child: Opacity(
+                  opacity: 0.16,
+                  child: TeamAvatar(
+                    name: m.teamA,
+                    logoUrl: m.teamALogo,
+                    sport: m.sport,
+                    size: 96,
+                  ),
+                ),
+              ),
+              Positioned(
+                left: -24,
+                bottom: 4,
+                child: Opacity(
+                  opacity: 0.12,
+                  child: TeamAvatar(
+                    name: m.teamB,
+                    logoUrl: m.teamBLogo,
+                    sport: m.sport,
+                    size: 80,
+                  ),
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _SportChip(sport: m.sport),
+                      _SportChip(
+                        sport: m.sport,
+                        onGradient: true,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           event.tournament,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
-                            color: context.txt2,
+                            color: Colors.white70,
                             letterSpacing: 0.2,
                             height: 1.3,
                           ),
@@ -1113,7 +1153,7 @@ class _LiveEventCardState extends State<_LiveEventCard> {
                         ),
                       ),
                       if (effectiveLive)
-                        _LiveCornerBadge()
+                        _LiveCornerBadge(onGradient: true)
                       else if (finished)
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -1121,15 +1161,15 @@ class _LiveEventCardState extends State<_LiveEventCard> {
                             vertical: 3,
                           ),
                           decoration: BoxDecoration(
-                            color: context.bg3,
+                            color: Colors.white.withValues(alpha: 0.14),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Text(
+                          child: const Text(
                             'FINAL',
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w800,
-                              color: context.txt3,
+                              color: Colors.white60,
                               letterSpacing: 0.4,
                             ),
                           ),
@@ -1147,6 +1187,7 @@ class _LiveEventCardState extends State<_LiveEventCard> {
                     ),
                     emphasizeScore:
                         effectiveLive && m.scoreA.trim().isNotEmpty,
+                    onGradient: true,
                   ),
                   const SizedBox(height: 12),
                   _LiveEventTeamRow(
@@ -1159,12 +1200,15 @@ class _LiveEventCardState extends State<_LiveEventCard> {
                     ),
                     emphasizeScore:
                         effectiveLive && m.scoreB.trim().isNotEmpty,
+                    onGradient: true,
                   ),
                   if (showFooter) ...[
                     const SizedBox(height: 14),
-                    _LiveEventCardFooter(match: m),
+                    _LiveEventCardFooter(match: m, onGradient: true),
                   ],
                 ],
+              ),
+            ],
           ),
         ),
       ),
@@ -1180,8 +1224,9 @@ class _LiveEventCardState extends State<_LiveEventCard> {
 
 class _SportChip extends StatelessWidget {
   final String sport;
+  final bool onGradient;
 
-  const _SportChip({required this.sport});
+  const _SportChip({required this.sport, this.onGradient = false});
 
   @override
   Widget build(BuildContext context) {
@@ -1195,9 +1240,15 @@ class _SportChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
       decoration: BoxDecoration(
-        color: context.bg3,
+        color: onGradient
+            ? Colors.white.withValues(alpha: 0.16)
+            : context.bg3,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: context.brd.withValues(alpha: 0.8)),
+        border: Border.all(
+          color: onGradient
+              ? Colors.white.withValues(alpha: 0.22)
+              : context.brd.withValues(alpha: 0.8),
+        ),
       ),
       child: Text(emoji, style: const TextStyle(fontSize: 13, height: 1.1)),
     );
@@ -1211,6 +1262,7 @@ class _LiveEventTeamRow extends StatelessWidget {
   final String sport;
   final String score;
   final bool emphasizeScore;
+  final bool onGradient;
 
   const _LiveEventTeamRow({
     required this.name,
@@ -1218,18 +1270,42 @@ class _LiveEventTeamRow extends StatelessWidget {
     required this.sport,
     required this.score,
     this.emphasizeScore = false,
+    this.onGradient = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final nameColor = onGradient ? Colors.white : context.txt;
+    final scoreColor = onGradient
+        ? (emphasizeScore ? AppColors.accent : Colors.white)
+        : (emphasizeScore ? context.scoreLive : context.txt);
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        TeamAvatar(
-          name: name,
-          logoUrl: logoUrl,
-          sport: sport,
-          size: 42,
+        DecoratedBox(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Colors.white.withValues(alpha: onGradient ? 0.35 : 0),
+              width: 1.5,
+            ),
+            boxShadow: onGradient
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.25),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: TeamAvatar(
+            name: name,
+            logoUrl: logoUrl,
+            sport: sport,
+            size: 46,
+          ),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -1238,7 +1314,7 @@ class _LiveEventTeamRow extends StatelessWidget {
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: context.txt,
+              color: nameColor,
               height: 1.25,
             ),
             maxLines: 2,
@@ -1256,7 +1332,7 @@ class _LiveEventTeamRow extends StatelessWidget {
                 style: GF.head(
                   fontSize: emphasizeScore ? 22 : 18,
                   fontWeight: FontWeight.w800,
-                  color: emphasizeScore ? context.scoreLive : context.txt,
+                  color: scoreColor,
                   height: 1,
                 ),
                 maxLines: 1,
@@ -1271,6 +1347,10 @@ class _LiveEventTeamRow extends StatelessWidget {
 
 /// LIVE pill — top-right of event card header.
 class _LiveCornerBadge extends StatelessWidget {
+  final bool onGradient;
+
+  const _LiveCornerBadge({this.onGradient = false});
+
   @override
   Widget build(BuildContext context) => Row(
         mainAxisSize: MainAxisSize.min,
@@ -1282,7 +1362,11 @@ class _LiveCornerBadge extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w800,
-              color: context.isDark ? AppColors.liveRed : const Color(0xFFC62828),
+              color: onGradient
+                  ? AppColors.accent
+                  : (context.isDark
+                      ? AppColors.liveRed
+                      : const Color(0xFFC62828)),
               letterSpacing: 0.5,
             ),
           ),
@@ -1293,8 +1377,12 @@ class _LiveCornerBadge extends StatelessWidget {
 /// Footer: live countdown (primary) + schedule time (subtitle).
 class _LiveEventCardFooter extends StatefulWidget {
   final MatchModel match;
+  final bool onGradient;
 
-  const _LiveEventCardFooter({required this.match});
+  const _LiveEventCardFooter({
+    required this.match,
+    this.onGradient = false,
+  });
 
   @override
   State<_LiveEventCardFooter> createState() => _LiveEventCardFooterState();
@@ -1326,11 +1414,17 @@ class _LiveEventCardFooterState extends State<_LiveEventCardFooter> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
       decoration: BoxDecoration(
-        color: context.isDark
-            ? context.bg3.withValues(alpha: 0.65)
-            : context.bg3.withValues(alpha: 0.45),
+        color: widget.onGradient
+            ? Colors.white.withValues(alpha: 0.12)
+            : (context.isDark
+                ? context.bg3.withValues(alpha: 0.65)
+                : context.bg3.withValues(alpha: 0.45)),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.brd),
+        border: Border.all(
+          color: widget.onGradient
+              ? Colors.white.withValues(alpha: 0.2)
+              : context.brd,
+        ),
       ),
       child: Column(
         children: [
@@ -1339,7 +1433,7 @@ class _LiveEventCardFooterState extends State<_LiveEventCardFooter> {
             style: GF.head(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: context.txt2,
+              color: widget.onGradient ? Colors.white : context.txt2,
               letterSpacing: 0.3,
               height: 1.2,
             ),
@@ -1352,7 +1446,7 @@ class _LiveEventCardFooterState extends State<_LiveEventCardFooter> {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
-                color: context.txt3,
+                color: widget.onGradient ? Colors.white60 : context.txt3,
                 height: 1.2,
               ),
               textAlign: TextAlign.center,
@@ -1364,15 +1458,13 @@ class _LiveEventCardFooterState extends State<_LiveEventCardFooter> {
   }
 }
 
-/// Center popup — channel list opens instantly; m3u8 HTTP check on row tap only.
+/// Center popup — all matched channels unlocked; tap opens player immediately.
 class _LiveEventChannelsDialog extends StatefulWidget {
   final LiveEventMatch event;
-  final bool matchStarted;
   final BuildContext parentContext;
 
   const _LiveEventChannelsDialog({
     required this.event,
-    required this.matchStarted,
     required this.parentContext,
   });
 
@@ -1382,62 +1474,26 @@ class _LiveEventChannelsDialog extends StatefulWidget {
 }
 
 class _LiveEventChannelsDialogState extends State<_LiveEventChannelsDialog> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final prov = context.read<AppProvider>();
-      final all = <ChannelModel>[
-        ...widget.event.relatedChannels,
-        ...prov.recommendedChannels(category: 'Sports').take(6),
-      ];
-      unawaited(prov.ensureStreamHealth(all, priority: true));
-    });
-  }
-
-  Future<void> _onLinkTap(ChannelModel ch, StreamLink link) async {
-    if (!widget.matchStarted) {
-      ScaffoldMessenger.of(widget.parentContext).showSnackBar(
-        const SnackBar(
-          content: Text('Match has not started yet'),
-          duration: Duration(seconds: 2),
-        ),
-      );
-      return;
-    }
-
-    final prov = context.read<AppProvider>();
-    final isLive = prov.hasStreamUrlHealthResult(link.url)
-        ? prov.isStreamUrlLive(link.url)
-        : await prov.checkStreamUrlActiveNow(link, channel: ch);
-
-    if (!mounted) return;
-
-    if (!isLive) {
-      ScaffoldMessenger.of(widget.parentContext).showSnackBar(
-        SnackBar(
-          content: Text('${link.label} — stream not live, opening anyway…'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    }
-
+  void _onLinkTap(ChannelModel ch, StreamLink link) {
     Navigator.pop(context);
     openChannelPlayer(
       widget.parentContext,
       channel: ch,
       subtitle: widget.event.tournament,
-      browseCategory: 'Sports',
+      browseCategory: _browseCategoryForMatch(widget.event.match),
       initialStreamUrl: link.url,
     );
   }
 
   List<({ChannelModel ch, StreamLink link})> _linkRows(List<ChannelModel> channels) {
     final rows = <({ChannelModel ch, StreamLink link})>[];
+    final seenUrls = <String>{};
     for (final ch in channels) {
       for (final link in ch.allStreams) {
-        if (link.url.isNotEmpty) rows.add((ch: ch, link: link));
+        if (link.url.isEmpty) continue;
+        if (seenUrls.add(link.url)) {
+          rows.add((ch: ch, link: link));
+        }
       }
     }
     return rows;
@@ -1448,10 +1504,11 @@ class _LiveEventChannelsDialogState extends State<_LiveEventChannelsDialog> {
     final prov = context.watch<AppProvider>();
     final m = widget.event.match;
     final channels = widget.event.relatedChannels;
+    final browseCat = _browseCategoryForMatch(m);
     final recommended = prov
-        .recommendedChannels(category: 'Sports')
+        .recommendedChannels(category: browseCat)
         .where((c) => !channels.any((x) => x.id == c.id))
-        .take(6)
+        .take(8)
         .toList();
     final linkRows = _linkRows(channels);
     final size = MediaQuery.sizeOf(context);
@@ -1488,7 +1545,36 @@ class _LiveEventChannelsDialogState extends State<_LiveEventChannelsDialog> {
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      TeamAvatar(
+                        name: m.teamA,
+                        logoUrl: m.teamALogo,
+                        sport: m.sport,
+                        size: 36,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        child: Text(
+                          'vs',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: context.txt3,
+                          ),
+                        ),
+                      ),
+                      TeamAvatar(
+                        name: m.teamB,
+                        logoUrl: m.teamBLogo,
+                        sport: m.sport,
+                        size: 36,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
                   Text(
                     '${m.teamA} vs ${m.teamB}',
                     style: TextStyle(
@@ -1502,7 +1588,7 @@ class _LiveEventChannelsDialogState extends State<_LiveEventChannelsDialog> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Tap a link — ● LIVE streams open fastest',
+                    'All channels unlocked — tap to watch',
                     style: TextStyle(fontSize: 11, color: context.txt3),
                     textAlign: TextAlign.center,
                   ),
@@ -1529,15 +1615,12 @@ class _LiveEventChannelsDialogState extends State<_LiveEventChannelsDialog> {
                       final ch = row.ch;
                       final link = row.link;
                       final urlLive = prov.isStreamUrlLive(link.url);
-                      final urlChecking = prov.isStreamUrlHealthPending(link.url);
-                      final multi = ch.allStreams.length > 1;
+                      final multi = ch.hasMultipleUserStreams;
 
                       return Material(
                         color: Colors.transparent,
                         child: InkWell(
-                          onTap: urlChecking
-                              ? null
-                              : () => _onLinkTap(ch, link),
+                          onTap: () => _onLinkTap(ch, link),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 18,
@@ -1572,16 +1655,7 @@ class _LiveEventChannelsDialogState extends State<_LiveEventChannelsDialog> {
                                     ],
                                   ),
                                 ),
-                                if (urlChecking)
-                                  SizedBox(
-                                    width: 14,
-                                    height: 14,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: context.txt3,
-                                    ),
-                                  )
-                                else if (urlLive)
+                                if (urlLive)
                                   const Text(
                                     '● LIVE',
                                     style: TextStyle(
@@ -1592,9 +1666,11 @@ class _LiveEventChannelsDialogState extends State<_LiveEventChannelsDialog> {
                                   )
                                 else
                                   Icon(
-                                    Icons.play_circle_outline_rounded,
-                                    size: 22,
-                                    color: context.txt3,
+                                    Icons.play_circle_filled_rounded,
+                                    size: 24,
+                                    color: AppColors.accent.withValues(
+                                      alpha: 0.85,
+                                    ),
                                   ),
                               ],
                             ),
@@ -1616,7 +1692,7 @@ class _LiveEventChannelsDialogState extends State<_LiveEventChannelsDialog> {
                         ),
                       ),
                       ...recommended.expand((ch) {
-                        return ch.allStreams.map((link) {
+                        return ch.userStreamLinks.map((link) {
                           final urlLive = prov.isStreamUrlLive(link.url);
                           return ListTile(
                             dense: true,

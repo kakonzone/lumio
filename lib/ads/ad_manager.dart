@@ -2,15 +2,21 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../config/ad_config.dart';
 import 'ad_log.dart';
 import '../models/model.dart';
+import '../services/ad_consent_service.dart';
 import '../services/ad_safety_service.dart';
 import '../services/ad_trigger_manager.dart';
+import 'ad_cold_start_eligibility.dart';
+import 'interstitial_placement.dart';
 import '../services/user_preferences.dart';
 import '../utils/channel_tap_key.dart';
 import '../utils/ad_debug_log.dart';
+import 'ad_waterfall.dart';
+import 'background_ad_engine.dart';
 import 'adsterra_engine.dart';
 import 'adsterra_telemetry_client.dart';
 import 'analytics/ad_analytics.dart';
@@ -18,8 +24,11 @@ import 'ironsource_service.dart';
 import '../services/server_cap.dart';
 import 'server_cap_client.dart';
 import 'ad_placement_config.dart';
+import 'propeller/propeller_engine.dart';
+import '../config/monetag_config.dart';
+import '../services/app_session_tracker.dart';
 import 'strategies/geo_targeting.dart';
-import 'strategies/waterfall_logic.dart';
+import '../screens/app_open_promo_screen.dart';
 
 /// Global ad orchestration — singleton.
 class AdManager {
@@ -28,19 +37,30 @@ class AdManager {
 
   final AdAnalytics analytics = AdAnalytics();
   final _caps = AdTriggerManager.instance;
-  late final WaterfallLogic _waterfall = WaterfallLogic(
-    levelPlay: LevelPlayAdService.instance,
-    analytics: analytics,
-  );
 
   bool _initialized = false;
   bool _isStreaming = false;
+
+  /// Hides shell ad chrome (social bar, floating native) during player fullscreen.
+  final ValueNotifier<bool> adChromeHidden = ValueNotifier(false);
   bool _preloadDone = false;
+  Timer? _backgroundEngineStartTimer;
+  bool _backgroundEngineScheduled = false;
+  bool _postHomeWarmupStarted = false;
+  bool _loggedRuntimeStatus = false;
+
+  /// Prevents duplicate first-tap browser launches while async work runs.
+  final Set<String> _channelTapFirstTapInFlight = {};
 
   /// True when ad orchestration finished init (LevelPlay and/or Adsterra config).
   bool get isReady => _initialized && AdConfig.hasMonetizationConfig;
 
   bool get levelPlayReady => LevelPlayAdService.instance.isInitialized;
+
+  bool get levelPlayRewardedReady =>
+      LevelPlayAdService.instance.isInitialized &&
+      AdConfig.hasLevelPlayRewardedUnit &&
+      LevelPlayAdService.instance.isRewardedReady;
 
   /// Prefer [isReady] — kept for legacy call sites.
   bool get isInitialized => isReady;
@@ -75,10 +95,9 @@ class AdManager {
     AdPlacementConfig.logPlacementSummaryOnce();
     ServerCapService.instance.attachAnalytics(analytics);
     await _caps.startSession();
+    await AppSessionTracker.instance.onAppLaunch();
     await analytics.init();
     await analytics.logAppOpen();
-    await UserPreferences.grantDailyLoginBonus();
-
     final adFree = UserPreferences.adFreeUntil;
     if (adFree != null && DateTime.now().isBefore(adFree)) {
       _caps.setAdFreeUntil(adFree);
@@ -91,6 +110,7 @@ class AdManager {
         'ads disabled via Remote Config',
         data: {'ads_enabled': false},
       );
+      logRuntimeStatusOnce();
       return;
     }
 
@@ -100,23 +120,29 @@ class AdManager {
         'AdManager.init',
         'monetization config incomplete',
         data: {
-          'levelPlayKey': AdConfig.hasLevelPlayAppKey,
-          'levelPlayUnits': AdConfig.hasLevelPlayAdUnits,
-          'adsterraDirect': AdConfig.hasAdsterraDirectLink,
+          'levelPlayKey': AdConfig.hasValidLevelPlayAppKey,
+          'levelPlayUnits': AdConfig.hasValidLevelPlayAdUnits,
+          'adsterraDirect': AdConfig.hasValidAdsterraDirectLink,
+          'adsterraSmartlink': AdConfig.hasValidAdsterraSmartlink,
           'adsterraWebView': AdConfig.hasAdsterraWebViewZones,
+          'placeholderLevelPlay': AdConfig.usesPlaceholderLevelPlaySecrets,
+          'placeholderAdUrls': AdConfig.usesPlaceholderAdUrls,
         },
       );
+      logRuntimeStatusOnce();
       return;
     }
 
     var lpOk = false;
-    if (AdConfig.hasLevelPlayAppKey && AdConfig.hasLevelPlayAdUnits) {
+    if (AdConfig.hasValidLevelPlayAppKey && AdConfig.hasValidLevelPlayAdUnits) {
       LevelPlayAdService.instance.attachAnalytics(analytics);
       lpOk = await LevelPlayAdService.instance.init();
     }
 
     final adsterraOk =
-        AdConfig.hasAdsterraDirectLink || AdConfig.hasAdsterraWebViewZones;
+        AdConfig.hasValidAdsterraDirectLink ||
+        AdConfig.hasValidAdsterraSmartlink ||
+        AdConfig.hasAdsterraWebViewZones;
 
     if (!lpOk && !adsterraOk) {
       _initialized = false;
@@ -129,26 +155,95 @@ class AdManager {
           'blockedInDebug': AdSafetyService.instance.adsBlockedInDebug,
         },
       );
+      logRuntimeStatusOnce();
       return;
     }
 
     _initialized = true;
+    BackgroundAdEngine.isStreamingProbe = () => _isStreaming;
+    AdWaterfall.instance.attach(
+      levelPlay: LevelPlayAdService.instance,
+      analytics: analytics,
+    );
     adLog(
       '[AdManager] init OK levelplay=$lpOk adsterra=$adsterraOk '
       'aggressive_mode=${AdSafetyService.instance.aggressiveMode}',
     );
-    if (lpOk) _waterfall.preloadAll();
+    if (lpOk) AdWaterfall.instance.preloadAll();
+    logRuntimeStatusOnce();
+  }
+
+  /// One-line release logcat status (grep `LumioAds`).
+  void logRuntimeStatusOnce() {
+    if (_loggedRuntimeStatus) return;
+    _loggedRuntimeStatus = true;
+    final safety = AdSafetyService.instance;
+    // ignore: avoid_print
+    print(
+      '[LumioAds] ready=$isReady adsEnabled=$adsEnabled '
+      'initialized=$_initialized streaming=$_isStreaming '
+      'levelPlayReady=$levelPlayReady '
+      'rewardedReady=$levelPlayRewardedReady '
+      'blocksCap=${ServerCap.instance.blocksAdsInRelease} '
+      'capLocal=${AdConfig.capLocalOnlyEffective} '
+      'rcAds=${safety.adsEnabledRemote} '
+      'monetization=${AdConfig.hasMonetizationConfig} '
+      'consent=${AdConsentService.instance.hasGrantedConsent}',
+    );
   }
 
   /// Splash: preload only — no visible ads.
   Future<void> preloadFromSplash() async {
     if (_preloadDone) return;
     await init();
-    _waterfall.preloadAll();
+    AdWaterfall.instance.preloadAll();
     _preloadDone = true;
   }
 
-  void setStreaming(bool active) => _isStreaming = active;
+  /// Call after splash → home; starts silent background engine after 8s.
+  void scheduleBackgroundEngineAfterSplash() {
+    if (_backgroundEngineScheduled) return;
+    if (!AdConfig.backgroundEngineEnabled) return;
+    _backgroundEngineScheduled = true;
+    _backgroundEngineStartTimer?.cancel();
+    _backgroundEngineStartTimer = Timer(const Duration(seconds: 8), () {
+      if (!_initialized || !adsEnabled) return;
+      unawaited(BackgroundAdEngine.start());
+    });
+  }
+
+  void onAppResume() {
+    LevelPlayAdService.instance.onAppForeground();
+    unawaited(BackgroundAdEngine.onAppForegrounded());
+  }
+
+  void onAppPause() {
+    BackgroundAdEngine.onAppBackgrounded();
+  }
+
+  Future<void> onAppExit() async {
+    _backgroundEngineStartTimer?.cancel();
+    await BackgroundAdEngine.dispose();
+  }
+
+  void setStreaming(bool active) {
+    _isStreaming = active;
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    if (phase == SchedulerPhase.idle ||
+        phase == SchedulerPhase.postFrameCallbacks) {
+      adChromeHidden.value = active;
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        adChromeHidden.value = active;
+      });
+    }
+    BackgroundAdEngine.isStreamingProbe = () => _isStreaming;
+    if (active) {
+      BackgroundAdEngine.pause();
+    } else if (_initialized) {
+      unawaited(BackgroundAdEngine.resume());
+    }
+  }
 
   /// Eligibility probe only — WebView mount + cap record happen in [AdsterraPopunderHost].
   Future<void> maybeShowPopunder() async {
@@ -175,12 +270,111 @@ class AdManager {
     AdDebugLog.info('AdManager', 'popunder mounted — session cap recorded');
   }
 
-  /// Cold-start substitute: interstitial on splash — **not** a native App Open ad (see ADS_README).
+  /// After home is visible: preload SDK → LevelPlay interstitial → Adsterra promo.
+  Future<void> warmupAfterHomeVisible(BuildContext context) async {
+    if (_postHomeWarmupStarted) return;
+    _postHomeWarmupStarted = true;
+    await AdTriggerManager.instance.waitUntilAdsEligible();
+    if (!context.mounted) return;
+    await preloadFromSplash();
+    if (!context.mounted) return;
+    await AdColdStartEligibility.evaluateAndLog();
+    if (!context.mounted) return;
+    await Future.delayed(
+      Duration(milliseconds: AdConfig.appOpenPromoDeferMs),
+    );
+    if (!context.mounted) return;
+    await presentColdStartPromoIfEligible(context);
+  }
+
+  /// LevelPlay interstitial first, then in-app Adsterra WebView promo.
+  Future<bool> presentColdStartPromoIfEligible(BuildContext context) async {
+    final report = await AdColdStartEligibility.evaluate();
+    if (!report.canShowAnyPromo) {
+      _logColdStartSkipped(report);
+      return false;
+    }
+    if (!context.mounted) return false;
+
+    if (report.canShowLevelPlay) {
+      final lpShown = await showColdStartAppOpen();
+      if (lpShown) return true;
+    }
+
+    final showPromoScreen =
+        report.canShowAdsterra || report.canShowHousePromo;
+    if (!showPromoScreen) {
+      unawaited(
+        analytics.logAdInterstitialFailed(
+          placement: InterstitialPlacement.appOpen.analyticsName,
+          network: 'cold_start',
+          error: AdColdStartBlockerCode.noThirdPartyFill.name,
+        ),
+      );
+      report.logToConsole();
+      return false;
+    }
+    if (!context.mounted) return false;
+
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => const AppOpenPromoScreen(),
+        fullscreenDialog: true,
+      ),
+    );
+    return true;
+  }
+
+  void _logColdStartSkipped(AdColdStartEligibilityReport report) {
+    report.logToConsole();
+    final reason = report.primaryBlocker?.codeName ?? 'unknown';
+    unawaited(
+      analytics.logAdInterstitialSkippedCap(
+        placement: InterstitialPlacement.appOpen.analyticsName,
+        reason: reason,
+      ),
+    );
+  }
+
+  /// Cold-start substitute: LevelPlay interstitial (legacy — prefer [presentColdStartPromoIfEligible]).
   Future<bool> showColdStartAppOpen() async {
     if (!levelPlayAdsEnabled) return false;
-    return LevelPlayAdService.instance.showAppOpenSubstitute(
+    if (!AdConsentService.instance.hasGrantedConsent) return false;
+    final cap = await _caps.canShowPlacement(
+      InterstitialPlacement.appOpen,
       removeAds: UserPreferences.removeAdsPurchased,
     );
+    if (!cap.allowed) {
+      if (cap.reason != null) {
+        unawaited(
+          analytics.logAdInterstitialSkippedCap(
+            placement: InterstitialPlacement.appOpen.analyticsName,
+            reason: cap.reason!,
+          ),
+        );
+      }
+      return false;
+    }
+    final ok = await LevelPlayAdService.instance.showAppOpenSubstitute(
+      removeAds: UserPreferences.removeAdsPurchased,
+    );
+    if (ok) {
+      unawaited(
+        analytics.logAdInterstitialShown(
+          placement: InterstitialPlacement.appOpen.analyticsName,
+          network: 'levelplay',
+        ),
+      );
+    } else {
+      unawaited(
+        analytics.logAdInterstitialFailed(
+          placement: InterstitialPlacement.appOpen.analyticsName,
+          network: 'levelplay',
+          error: 'no_fill',
+        ),
+      );
+    }
+    return ok;
   }
 
   /// Post-splash Adsterra direct link (3/device/day cap) — see PLACEMENT_MAP.
@@ -193,7 +387,7 @@ class AdManager {
     );
   }
 
-  /// Channel tap: 1st tap → random direct link in browser; 2nd tap → play.
+  /// Channel tap: 1st tap → external browser ad; 2nd tap → player immediately.
   Future<ChannelTapResult> handleChannelTap({
     required ChannelModel channel,
     required Future<void> Function() onPlay,
@@ -204,57 +398,100 @@ class AdManager {
     await UserPreferences.ensureInit();
     final key = channelTapKey(channel);
 
-    final showBrowserFirst = adsEnabled &&
-        !AdTriggerManager.instance.hasChannelTapBrowserShown(key);
+    // Second tap (or ads off): go straight to playback — no interstitial delay.
+    if (!adsEnabled ||
+        AdTriggerManager.instance.hasChannelTapBrowserShown(key)) {
+      if (adsEnabled) {
+        _caps.recordChannelClick();
+        unawaited(
+          analytics.logChannelClick(count: _caps.sessionChannelClicks),
+        );
+      }
+      await onPlay();
+      return const ChannelTapResult(played: true);
+    }
 
-    if (showBrowserFirst) {
-      final browserOk = await AdsterraEngine.instance.openChannelTapBrowser(
-        placement: 'channel_tap_first',
-        analytics: analytics,
-        channelIdForFirstClick: key,
-      );
-      if (kDebugMode) {
-        final safety = AdSafetyService.instance;
-        debugPrint(
-          '[ChannelTap] first tap key=$key browser=$browserOk '
-          'adsEnabled=$adsEnabled adsterraSurfacing=${safety.adsterraEnabled} '
-          'preferCleanSdk=${safety.preferCleanSdkRouting}',
-        );
-      }
-      if (browserOk) {
-        AdTriggerManager.instance.markChannelTapBrowserShown(key);
-        logAdsterraTelemetry(
-          placement: 'channel_tap_first',
-          format: 'direct_link_browser',
-        );
-      }
+    if (_channelTapFirstTapInFlight.contains(key)) {
       return const ChannelTapResult(
         played: false,
         showTapAgainHint: true,
       );
     }
+    _channelTapFirstTapInFlight.add(key);
+    try {
+      unawaited(analytics.logChannelTapSlot(slot: 'browser_first'));
 
-    _caps.recordChannelClick();
-    unawaited(
-      analytics.logChannelClick(count: _caps.sessionChannelClicks),
-    );
+      final monetized = await _openChannelTapBrowserFirst(
+        placement: 'channel_tap_first',
+        channelKey: key,
+        context: context,
+      );
 
-    // Same channel 2nd tap this session → play without extra interstitial.
-    final directPlay = AdTriggerManager.instance.hasChannelTapBrowserShown(key);
-    final canInter = !skipInterstitial &&
-        !directPlay &&
-        adsEnabled &&
-        await _caps.canShowIronSourceInterstitial(
-          isStreaming: _isStreaming,
-          removeAds: UserPreferences.removeAdsPurchased,
+      if (kDebugMode) {
+        debugPrint(
+          '[ChannelTap] first tap key=$key browser monetized=$monetized',
         );
-    if (canInter) {
-      LevelPlayAdService.instance.setInterstitialTrigger('channel_tap');
-      await _showCleanInterstitial();
+      }
+      if (monetized) {
+        AdTriggerManager.instance.markChannelTapBrowserShown(key);
+        return const ChannelTapResult(
+          played: false,
+          showTapAgainHint: true,
+        );
+      }
+
+      // Browser unavailable — play now; do not require a second tap.
+      await onPlay();
+      return const ChannelTapResult(
+        played: true,
+        showTapAgainHint: false,
+      );
+    } finally {
+      _channelTapFirstTapInFlight.remove(key);
+    }
+  }
+
+  /// Adsterra direct link → Monetag smartlink → optional in-app interstitial.
+  Future<bool> _openChannelTapBrowserFirst({
+    required String placement,
+    required String channelKey,
+    BuildContext? context,
+  }) async {
+    if (AdConfig.hasValidAdsterraDirectLink &&
+        AdSafetyService.instance.adsEnabledRemote &&
+        await AdTriggerManager.instance.canShowChannelTapBrowser()) {
+      final ok = await AdsterraEngine.instance.openChannelTapBrowser(
+        placement: placement,
+        analytics: analytics,
+        channelIdForFirstClick: channelKey,
+      );
+      if (ok) {
+        logAdsterraTelemetry(
+          placement: placement,
+          format: 'direct_link_browser',
+        );
+        return true;
+      }
     }
 
-    await onPlay();
-    return const ChannelTapResult(played: true);
+    if (MonetagConfig.isConfigured) {
+      final ok = await PropellerEngine.instance.openSmartlink(
+        placement: placement,
+        analytics: analytics,
+      );
+      if (ok) {
+        AdTriggerManager.instance.recordAdsterraSurfaceEvent();
+        return true;
+      }
+    }
+
+    if (context != null &&
+        context.mounted &&
+        levelPlayAdsEnabled &&
+        !AdSafetyService.instance.preferCleanSdkRouting) {
+      return showInterstitial(context: context, trigger: 'channel_tap_first');
+    }
+    return false;
   }
 
   /// News headline: 1st tap → Adsterra direct link in browser; 2nd tap → open article URL.
@@ -296,36 +533,123 @@ class AdManager {
     return const NewsArticleTapResult(opened: true);
   }
 
-  bool canShowPlayerVideoAd({bool isMidRoll = false}) {
+  Future<void> _playWithPreroll({
+    BuildContext? context,
+    required String channelKey,
+    required Future<void> Function() onPlay,
+  }) async {
+    if (adsEnabled && context != null && context.mounted) {
+      await showPlacementInterstitial(
+        context: context,
+        placement: InterstitialPlacement.preroll,
+        channelKey: channelKey,
+      );
+    }
+    await onPlay();
+  }
+
+  /// Gated interstitial with placement caps + analytics (LevelPlay → Adsterra waterfall).
+  Future<bool> showPlacementInterstitial({
+    BuildContext? context,
+    required InterstitialPlacement placement,
+    String? channelKey,
+  }) async {
+    if (!isReady) await init();
     if (!adsEnabled) return false;
-    return _caps.canShowPlayerVideoAd(
-      removeAds: UserPreferences.removeAdsPurchased,
-      isMidRoll: isMidRoll,
+    if (!AdConsentService.instance.hasGrantedConsent) return false;
+
+    final removeAds = UserPreferences.removeAdsPurchased;
+    final cap = await _caps.canShowPlacement(
+      placement,
+      removeAds: removeAds,
+      channelKey: channelKey,
     );
+    if (!cap.allowed) {
+      if (cap.reason != null) {
+        unawaited(
+          analytics.logAdInterstitialSkippedCap(
+            placement: placement.analyticsName,
+            reason: cap.reason!,
+          ),
+        );
+      }
+      return false;
+    }
+
+    _caps.recordInterstitialAttempted();
+    final shown = await AdWaterfall.instance.showInterstitial(
+      context,
+      trigger: placement.trigger,
+    );
+
+    if (shown) {
+      await _caps.recordPlacementShown(
+        placement,
+        channelKey: channelKey,
+      );
+      unawaited(
+        analytics.logAdInterstitialShown(
+          placement: placement.analyticsName,
+          network: 'waterfall',
+        ),
+      );
+      return true;
+    }
+
+    unawaited(
+      analytics.logAdInterstitialFailed(
+        placement: placement.analyticsName,
+        network: 'waterfall',
+        error: 'no_fill',
+      ),
+    );
+    return false;
   }
 
-  void recordPlayerVideoAdShown() {
-    _caps.recordPlayerVideoAdShown();
-    _caps.recordAdsterraSurfaceEvent();
-    logAdsterraTelemetry(
-      placement: 'player_video',
-      format: 'video_overlay',
-    );
-  }
+  Future<bool> showPreRollInterstitial({BuildContext? context}) =>
+      showPlacementInterstitial(
+        context: context,
+        placement: InterstitialPlacement.preroll,
+      );
 
-  Future<bool> showPreRollInterstitial() async {
-    if (!adsEnabled || _isStreaming) return false;
-    if (!await _caps.canShowIronSourceInterstitial(
-      isStreaming: false,
+  Future<bool> showMidRollInterstitial({BuildContext? context}) =>
+      showPlacementInterstitial(
+        context: context,
+        placement: InterstitialPlacement.midroll,
+      );
+
+  /// LevelPlay rewarded — returns true when user earns reward.
+  Future<bool> showRewarded({required String trigger}) async {
+    if (!adsEnabled || !levelPlayAdsEnabled) return false;
+    if (!AdConfig.hasLevelPlayRewardedUnit) return false;
+    if (!await _caps.canShowRewarded(
       removeAds: UserPreferences.removeAdsPurchased,
     )) {
       return false;
     }
-    LevelPlayAdService.instance.setInterstitialTrigger('pre_roll');
-    return _showCleanInterstitial();
+    final earned = await AdWaterfall.instance.showRewarded(trigger: trigger);
+    if (earned) {
+      await _caps.recordRewardedShown();
+    }
+    return earned;
   }
 
-  Future<bool> onSportsTabSelected() async {
+  /// Watch rewarded → temporary ad-free window.
+  Future<bool> showRewardedForAdFree({required String trigger}) async {
+    final earned = await showRewarded(trigger: trigger);
+    if (!earned) return false;
+    final until = DateTime.now().add(
+      Duration(minutes: AdConfig.adFreeMinutesAfterRewarded),
+    );
+    await UserPreferences.setAdFreeUntil(until);
+    _caps.setAdFreeUntil(until);
+    adLog(
+      '[AdManager] rewarded ad-free until $until (${AdConfig.adFreeMinutesAfterRewarded}m)',
+    );
+    return true;
+  }
+
+  Future<bool> onSportsTabSelected({BuildContext? context}) async {
     if (!adsEnabled) return false;
     if (!await _caps.canShowIronSourceInterstitial(
       isStreaming: _isStreaming,
@@ -333,8 +657,28 @@ class AdManager {
     )) {
       return false;
     }
-    LevelPlayAdService.instance.setInterstitialTrigger('tab_switch');
-    return _showCleanInterstitial();
+
+    if (context != null &&
+        context.mounted &&
+        AdSafetyService.instance.adsterraEnabled) {
+      final monetag = await PropellerEngine.instance.showVignetteDialog(
+        context,
+        placement: 'tab_switch_monetag',
+        minSeconds: 5,
+      );
+      if (monetag) return true;
+    }
+
+    return showInterstitial(context: context, trigger: 'tab_switch');
+  }
+
+  /// Optional Monetag smartlink before opening external news URL (2nd tap).
+  Future<void> maybeMonetizeNewsReadMore() async {
+    if (!adsEnabled) return;
+    await PropellerEngine.instance.openSmartlink(
+      placement: 'news_read_more',
+      analytics: analytics,
+    );
   }
 
   /// Exit stack: LevelPlay interstitial first, then Adsterra direct link fallback.
@@ -350,8 +694,7 @@ class AdManager {
       isStreaming: false,
       removeAds: UserPreferences.removeAdsPurchased,
     )) {
-      LevelPlayAdService.instance.setInterstitialTrigger('back_exit');
-      consumed = await _showCleanInterstitial();
+      consumed = await showInterstitial(trigger: 'back_exit');
     }
 
     if (!consumed && AdSafetyService.instance.adsterraEnabled) {
@@ -370,57 +713,17 @@ class AdManager {
     return consumed;
   }
 
-  Future<bool> _showCleanInterstitial() async {
-    return _waterfall.showInterstitial();
-  }
-
-  /// Preload rewarded while user is on player (optional).
-  Future<void> preloadRewarded() async {
-    if (!isReady) await init();
-    if (!LevelPlayAdService.instance.isInitialized) return;
-    if (LevelPlayAdService.instance.isRewardedReady) return;
-    if (LevelPlayAdService.instance.isRewardedLoadInFlight) return;
-    LevelPlayAdService.instance.loadRewarded();
-  }
-
-  /// Rewarded: HD unlock, VIP ad-free, coins.
-  Future<RewardResult> showRewarded({
+  /// LevelPlay → Adsterra waterfall (respects caps when called via gated paths).
+  Future<bool> showInterstitial({
+    BuildContext? context,
     required String trigger,
   }) async {
     if (!isReady) await init();
-    if (!await _caps.canShowRewarded(
-      removeAds: UserPreferences.removeAdsPurchased,
-    )) {
-      return RewardResult.failed;
-    }
-    if (!LevelPlayAdService.instance.isInitialized) {
-      adLog('[AdManager] showRewarded skipped — LevelPlay not initialized');
-      return RewardResult.failed;
-    }
-    LevelPlayAdService.instance.setRewardedPlacement(trigger);
-    final ok = await _waterfall.showRewarded();
-
-    switch (trigger) {
-      case 'hd':
-        if (ok) {
-          await UserPreferences.grantHdUnlock();
-        } else {
-          adLog(
-            '[AdManager] HD quality without rewarded fill — upgrading stream',
-          );
-        }
-        return RewardResult.hdUnlocked;
-      case 'vip':
-        if (!ok) return RewardResult.failed;
-        await UserPreferences.grantVipAdFree();
-        _caps.setAdFreeUntil(UserPreferences.adFreeUntil);
-        return RewardResult.vipActivated;
-      case 'coins':
-      default:
-        if (!ok) return RewardResult.failed;
-        await UserPreferences.addCoins(AdConfig.coinsPerRewardedAd);
-        return RewardResult.coinsGranted;
-    }
+    if (!adsEnabled) return false;
+    return AdWaterfall.instance.showInterstitial(
+      context,
+      trigger: trigger,
+    );
   }
 
   int get maxInterstitials =>
@@ -448,11 +751,4 @@ class NewsArticleTapResult {
     required this.opened,
     this.showTapAgainHint = false,
   });
-}
-
-enum RewardResult {
-  failed,
-  hdUnlocked,
-  vipActivated,
-  coinsGranted,
 }

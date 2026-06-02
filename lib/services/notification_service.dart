@@ -2,30 +2,45 @@
 
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/foundation.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/model.dart';
 import 'firebase_bootstrap.dart';
+import 'notification_image_loader.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await FirebaseBootstrap.initialize();
+  await NotificationService._ensureBackgroundIsolateReady();
   await NotificationService._showFromRemoteMessage(message);
 }
 
 class _NotifId {
   _NotifId._();
   static int fromString(String id) => id.hashCode.abs() % 100000;
-  static const int liveAlert = 1;
   static const int scoreUpdate = 2;
-  static const int channelReminder = 3;
   static const int newsBreaking = 4;
   static const int generic = 99;
 }
 
 class _Channel {
   _Channel._();
+
+  static const AndroidNotificationChannel matchAlerts =
+      AndroidNotificationChannel(
+    'match_alerts',
+    'Match Alerts',
+    description: 'Live match reminders and re-engagement alerts',
+    importance: Importance.high,
+    playSound: true,
+    enableVibration: true,
+  );
 
   static const AndroidNotificationChannel liveMatches =
       AndroidNotificationChannel(
@@ -62,6 +77,17 @@ class _Channel {
     description: 'Major sports news alerts',
     importance: Importance.high,
   );
+
+  /// Big-picture promos (live events, UFC-style cards).
+  static const AndroidNotificationChannel promoAlerts =
+      AndroidNotificationChannel(
+    'lumio_promo_alerts',
+    'Event & Promo Alerts',
+    description: 'Rich alerts with large event images',
+    importance: Importance.high,
+    playSound: true,
+    enableVibration: true,
+  );
 }
 
 class _Prefs {
@@ -85,6 +111,7 @@ class NotificationService {
       FirebaseBootstrap.isInitialized ? FirebaseMessaging.instance : null;
 
   static bool _initialized = false;
+  static bool _backgroundReady = false;
   static void Function(NotificationPayload payload)? _onTap;
 
   // ===========================================================================
@@ -134,6 +161,7 @@ class NotificationService {
       }
       return;
     }
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
     FirebaseMessaging.onMessage.listen(_onForegroundMessage);
     FirebaseMessaging.onMessageOpenedApp.listen(_onMessageOpenedApp);
     final initial = await fcm.getInitialMessage();
@@ -150,6 +178,23 @@ class NotificationService {
     await plugin.createNotificationChannel(_Channel.scoreUpdates);
     await plugin.createNotificationChannel(_Channel.channelReminders);
     await plugin.createNotificationChannel(_Channel.breakingNews);
+    await plugin.createNotificationChannel(_Channel.matchAlerts);
+    await plugin.createNotificationChannel(_Channel.promoAlerts);
+  }
+
+  /// Minimal init for FCM background isolate (no tap handler).
+  static Future<void> _ensureBackgroundIsolateReady() async {
+    if (_backgroundReady) return;
+    const androidSettings =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    await _local.initialize(
+      settings: const InitializationSettings(
+        android: androidSettings,
+        iOS: DarwinInitializationSettings(),
+      ),
+    );
+    await _registerAndroidChannels();
+    _backgroundReady = true;
   }
 
   // ===========================================================================
@@ -170,10 +215,15 @@ class NotificationService {
         return settings.authorizationStatus == AuthorizationStatus.authorized;
       }
       if (Platform.isAndroid) {
+        // POST_NOTIFICATIONS runtime prompt is API 33+ only.
         final plugin = _local.resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
-        final granted = await plugin?.requestNotificationsPermission() ?? false;
-        return granted;
+        if (plugin == null) return true;
+        try {
+          return await plugin.requestNotificationsPermission() ?? true;
+        } catch (_) {
+          return true;
+        }
       }
       return false;
     } catch (e) {
@@ -334,38 +384,58 @@ class NotificationService {
   // LOCAL NOTIFICATION DISPLAY
   // ===========================================================================
 
-  static Future<void> showMatchLiveAlert(MatchModel match) async {
+  /// Rich promo / event alert (Big Picture on Android, image attachment on iOS).
+  static Future<void> showPromoAlert({
+    required String title,
+    required String body,
+    required String imageUrl,
+    String entityId = '',
+    String? streamUrl,
+    NotificationPayloadType type = NotificationPayloadType.promo,
+  }) async {
+    if (!await _shouldShow()) return;
+    await _showRichNotification(
+      id: entityId.isNotEmpty ? _NotifId.fromString(entityId) : _NotifId.generic,
+      title: title,
+      body: body,
+      imageUrl: imageUrl,
+      channel: _Channel.promoAlerts,
+      payload: NotificationPayload(
+        type: type,
+        entityId: entityId,
+        streamUrl: streamUrl,
+      ),
+    );
+    _log('showPromoAlert: $title');
+  }
+
+  static Future<void> showMatchLiveAlert(
+    MatchModel match, {
+    String? imageUrl,
+  }) async {
     if (!await _shouldShow()) return;
     if (!await isLiveAlertsEnabled()) return;
 
-    await _local.show(
+    final title = '🔴 Live Now';
+    final body = '${match.teamA} vs ${match.teamB} has kicked off!';
+    await _showRichNotification(
       id: _NotifId.fromString(match.id),
-      title: '🔴 Live Now',
-      body: '${match.teamA} vs ${match.teamB} has kicked off!',
-      notificationDetails: NotificationDetails(
-        android: AndroidNotificationDetails(
-          _Channel.liveMatches.id,
-          _Channel.liveMatches.name,
-          channelDescription: _Channel.liveMatches.description,
-          importance: Importance.high,
-          priority: Priority.high,
-          ticker: '${match.teamA} vs ${match.teamB}',
-          styleInformation: BigTextStyleInformation(
-            '${match.teamA} vs ${match.teamB} is live on ${match.channel}. '
-            'Tap to watch now.',
-          ),
-        ),
-        iOS: const DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-        ),
+      title: title,
+      body: body,
+      imageUrl: imageUrl,
+      channel: _Channel.liveMatches,
+      importance: Importance.high,
+      priority: Priority.high,
+      ticker: '${match.teamA} vs ${match.teamB}',
+      fallbackStyle: BigTextStyleInformation(
+        '$body Tap to watch on ${match.channel}.',
+        contentTitle: title,
       ),
       payload: NotificationPayload(
         type: NotificationPayloadType.matchLive,
         entityId: match.id,
         streamUrl: match.streamUrl,
-      ).toJsonString(),
+      ),
     );
     _log('showMatchLiveAlert: ${match.id}');
   }
@@ -448,28 +518,48 @@ class NotificationService {
     if (!await _shouldShow()) return;
     if (!await isNewsAlertsEnabled()) return;
 
-    await _local.show(
+    final title = '📰 ${article.category}';
+    final body = article.title;
+    await _showRichNotification(
       id: _NotifId.newsBreaking,
-      title: '📰 ${article.category}',
-      body: article.title,
-      notificationDetails: NotificationDetails(
-        android: AndroidNotificationDetails(
-          _Channel.breakingNews.id,
-          _Channel.breakingNews.name,
-          channelDescription: _Channel.breakingNews.description,
-          importance: Importance.high,
-        ),
-        iOS: const DarwinNotificationDetails(
-          presentAlert: true,
-          presentSound: true,
-        ),
-      ),
+      title: title,
+      body: body,
+      imageUrl: article.imageUrl.isNotEmpty ? article.imageUrl : null,
+      channel: _Channel.breakingNews,
+      importance: Importance.high,
       payload: NotificationPayload(
         type: NotificationPayloadType.breakingNews,
         entityId: article.id,
-      ).toJsonString(),
+      ),
     );
     _log('showBreakingNews: ${article.id}');
+  }
+
+  /// Schedules a generic match re-engagement notification [minutes] into future.
+  static Future<void> scheduleReengagementInMinutes(int minutes) async {
+    if (!await _shouldShow()) return;
+    if (minutes <= 0) minutes = 5;
+    Future.delayed(Duration(minutes: minutes), () async {
+      await _local.show(
+        id: _NotifId.generic,
+        title: '📺 Live match starting soon',
+        body: 'Tap to jump back into Lumio and catch the action.',
+        notificationDetails: NotificationDetails(
+          android: AndroidNotificationDetails(
+            _Channel.matchAlerts.id,
+            _Channel.matchAlerts.name,
+            channelDescription: _Channel.matchAlerts.description,
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+        ),
+        payload: NotificationPayload(
+          type: NotificationPayloadType.matchLive,
+          entityId: '',
+          streamUrl: null,
+        ).toJsonString(),
+      );
+    });
   }
 
   static Future<void> cancelNotification(int notifId) async {
@@ -504,6 +594,8 @@ class NotificationService {
   }
 
   static Future<void> _showFromRemoteMessage(RemoteMessage message) async {
+    if (!await _shouldShow()) return;
+
     final data = message.data;
     final type = data['type'] as String?;
     final entityId = data['entityId'] as String?;
@@ -511,42 +603,140 @@ class NotificationService {
         message.notification?.title ?? data['title'] as String? ?? 'Lumio';
     final body = message.notification?.body ?? data['body'] as String? ?? '';
     final streamUrl = data['streamUrl'] as String?;
+    final imageUrl = _extractImageUrl(message);
 
     final notifType = _parsePayloadType(type);
-    final channelId = _fcmChannelId(notifType);
+    final channel = _channelForType(notifType);
     final notifId =
         entityId != null ? _NotifId.fromString(entityId) : _NotifId.generic;
 
     try {
-      final plugin = FlutterLocalNotificationsPlugin();
-      await plugin.show(
+      await _showRichNotification(
         id: notifId,
         title: title,
         body: body,
-        notificationDetails: NotificationDetails(
-          android: AndroidNotificationDetails(
-            channelId,
-            channelId,
-            importance: Importance.high,
-            priority: Priority.high,
-          ),
-          iOS: const DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
-        ),
+        imageUrl: imageUrl,
+        channel: channel,
         payload: NotificationPayload(
           type: notifType,
           entityId: entityId ?? '',
           streamUrl: streamUrl,
-        ).toJsonString(),
+        ),
       );
     } catch (e) {
       if (kDebugMode) {
         print('[NotificationService] _showFromRemoteMessage failed: $e');
       }
     }
+  }
+
+  static String? _extractImageUrl(RemoteMessage message) {
+    final fromData = _imageUrlFromMap(message.data);
+    if (fromData != null) return fromData;
+    final androidImg = message.notification?.android?.imageUrl;
+    if (androidImg != null && androidImg.trim().isNotEmpty) {
+      return androidImg.trim();
+    }
+    final appleImg = message.notification?.apple?.imageUrl;
+    if (appleImg != null && appleImg.trim().isNotEmpty) {
+      return appleImg.trim();
+    }
+    return null;
+  }
+
+  static String? _imageUrlFromMap(Map<String, dynamic> data) {
+    for (final key in const [
+      'imageUrl',
+      'image',
+      'image_url',
+      'big_picture',
+      'bigPicture',
+    ]) {
+      final raw = data[key];
+      if (raw is String && raw.trim().isNotEmpty) return raw.trim();
+    }
+    return null;
+  }
+
+  static Future<void> _showRichNotification({
+    required int id,
+    required String title,
+    required String body,
+    required NotificationPayload payload,
+    required AndroidNotificationChannel channel,
+    String? imageUrl,
+    Importance importance = Importance.high,
+    Priority priority = Priority.high,
+    String? ticker,
+    StyleInformation? fallbackStyle,
+  }) async {
+    final details = await _buildNotificationDetails(
+      channel: channel,
+      title: title,
+      body: body,
+      imageUrl: imageUrl,
+      importance: importance,
+      priority: priority,
+      ticker: ticker,
+      fallbackStyle: fallbackStyle,
+    );
+    await _local.show(
+      id: id,
+      title: title,
+      body: body,
+      notificationDetails: details,
+      payload: payload.toJsonString(),
+    );
+  }
+
+  static Future<NotificationDetails> _buildNotificationDetails({
+    required AndroidNotificationChannel channel,
+    required String title,
+    required String body,
+    String? imageUrl,
+    Importance importance = Importance.high,
+    Priority priority = Priority.high,
+    String? ticker,
+    StyleInformation? fallbackStyle,
+  }) async {
+    StyleInformation? androidStyle = fallbackStyle;
+    List<DarwinNotificationAttachment>? iosAttachments;
+
+    final url = imageUrl?.trim();
+    if (url != null && url.isNotEmpty) {
+      final path = await NotificationImageLoader.downloadToCache(url);
+      if (path != null) {
+        if (Platform.isAndroid) {
+          androidStyle = BigPictureStyleInformation(
+            FilePathAndroidBitmap(path),
+            contentTitle: title,
+            summaryText: body,
+            hideExpandedLargeIcon: true,
+          );
+        }
+        if (Platform.isIOS) {
+          iosAttachments = [DarwinNotificationAttachment(path)];
+        }
+      }
+    }
+
+    return NotificationDetails(
+      android: AndroidNotificationDetails(
+        channel.id,
+        channel.name,
+        channelDescription: channel.description,
+        importance: importance,
+        priority: priority,
+        ticker: ticker,
+        styleInformation: androidStyle,
+      ),
+      iOS: DarwinNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true,
+        attachments: iosAttachments,
+      ),
+    );
   }
 
   static void _onLocalTap(NotificationResponse response) {
@@ -573,18 +763,22 @@ class NotificationService {
   static String _channelTopic(String channelId) =>
       'channel_${channelId.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_')}';
 
-  static String _fcmChannelId(NotificationPayloadType type) {
+  static AndroidNotificationChannel _channelForType(
+    NotificationPayloadType type,
+  ) {
     switch (type) {
       case NotificationPayloadType.matchLive:
-        return _Channel.liveMatches.id;
+        return _Channel.liveMatches;
       case NotificationPayloadType.scoreUpdate:
-        return _Channel.scoreUpdates.id;
+        return _Channel.scoreUpdates;
       case NotificationPayloadType.channelReminder:
-        return _Channel.channelReminders.id;
+        return _Channel.channelReminders;
       case NotificationPayloadType.breakingNews:
-        return _Channel.breakingNews.id;
+        return _Channel.breakingNews;
+      case NotificationPayloadType.promo:
+        return _Channel.promoAlerts;
       case NotificationPayloadType.unknown:
-        return _Channel.liveMatches.id;
+        return _Channel.promoAlerts;
     }
   }
 
@@ -598,6 +792,8 @@ class NotificationService {
         return NotificationPayloadType.channelReminder;
       case 'breakingNews':
         return NotificationPayloadType.breakingNews;
+      case 'promo':
+        return NotificationPayloadType.promo;
       default:
         return NotificationPayloadType.unknown;
     }
@@ -695,6 +891,7 @@ enum NotificationPayloadType {
   scoreUpdate,
   channelReminder,
   breakingNews,
+  promo,
   unknown,
 }
 

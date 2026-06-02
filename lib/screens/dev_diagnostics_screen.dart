@@ -3,10 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import '../ads/ad_cold_start_eligibility.dart';
+import '../ads/ad_manager.dart';
 import '../ads/adsterra/adsterra_native_cache.dart';
+import '../ads/diagnostics/zone_validator.dart';
 import '../config/ad_config.dart';
 import '../services/ad_health_monitor.dart';
 import '../services/ad_safety_service.dart';
+import '../services/server_cap.dart';
 import '../services/ironsource_service.dart';
 import '../theme/app_theme.dart';
 
@@ -21,13 +25,20 @@ class DevDiagnosticsScreen extends StatefulWidget {
 class _DevDiagnosticsScreenState extends State<DevDiagnosticsScreen> {
   Timer? _refreshTimer;
   PackageInfo? _packageInfo;
+  List<ZoneValidationResult> _zoneResults = [];
+  bool _zoneValidating = false;
+  AdColdStartEligibilityReport? _coldStartReport;
 
   @override
   void initState() {
     super.initState();
     unawaited(_loadPackageInfo());
+    unawaited(_refreshColdStartReport());
     _refreshTimer = Timer.periodic(const Duration(seconds: 2), (_) {
-      if (mounted) setState(() {});
+      if (mounted) {
+        setState(() {});
+        unawaited(_refreshColdStartReport());
+      }
     });
   }
 
@@ -40,6 +51,22 @@ class _DevDiagnosticsScreenState extends State<DevDiagnosticsScreen> {
   void dispose() {
     _refreshTimer?.cancel();
     super.dispose();
+  }
+
+  Future<void> _refreshColdStartReport() async {
+    final report = await AdColdStartEligibility.evaluate();
+    if (!mounted) return;
+    setState(() => _coldStartReport = report);
+  }
+
+  Future<void> _validateZones() async {
+    setState(() => _zoneValidating = true);
+    final rows = await ZoneValidator.instance.validateAll();
+    if (!mounted) return;
+    setState(() {
+      _zoneResults = rows;
+      _zoneValidating = false;
+    });
   }
 
   @override
@@ -67,12 +94,13 @@ class _DevDiagnosticsScreenState extends State<DevDiagnosticsScreen> {
             'Init: ${lp.isInitialized}',
             'Last init error: ${lp.lastInitError ?? '—'}',
             'Last load error: ${lastErr != null ? '${lastErr.errorCode} ${lastErr.errorMessage}' : '—'}',
-            'Rewarded in flight: ${lp.isRewardedLoadInFlight}',
             'Interstitial in flight: ${lp.isInterstitialLoadInFlight}',
+            'Rewarded unit: ${AdConfig.hasLevelPlayRewardedUnit}',
+            'Rewarded ready: ${lp.isRewardedReady}',
+            'Rewarded in flight: ${lp.isRewardedLoadInFlight}',
           ]),
           _section('Fill rate (1h)', [
             'Interstitial: ${(AdHealthMonitor.instance.getFillRate('interstitial') * 100).toStringAsFixed(1)}%',
-            'Rewarded: ${(AdHealthMonitor.instance.getFillRate('rewarded') * 100).toStringAsFixed(1)}%',
           ]),
           _section('Recent load attempts', [
             for (final a in AdHealthMonitor.instance.allRecent(limit: 10))
@@ -88,6 +116,55 @@ class _DevDiagnosticsScreenState extends State<DevDiagnosticsScreen> {
           _section('Build defines (keys only)', [
             AdConfig.dumpRedacted(),
           ]),
+          if (_coldStartReport != null)
+            _section('Post-splash promo (cold start)', [
+              _coldStartReport!.logSummary,
+              'LevelPlay: ${_coldStartReport!.canShowLevelPlay}',
+              'Adsterra: ${_coldStartReport!.canShowAdsterra}',
+              'House fallback: ${_coldStartReport!.canShowHousePromo}',
+              'capLocalOnly: ${AdConfig.capLocalOnlyEffective}',
+              'blocksCapRelease: ${ServerCap.instance.blocksAdsInRelease}',
+              for (final b in _coldStartReport!.blockers)
+                '${b.codeName}: ${b.message}',
+            ]),
+          if (AdConfig.diagnosticsEnabled) ...[
+            if (AdConfig.hasLevelPlayRewardedUnit) ...[
+              const SizedBox(height: 8),
+              FilledButton(
+                onPressed: AdManager.instance.adsEnabled
+                    ? () async {
+                        final earned = await AdManager.instance.showRewarded(
+                          trigger: 'diagnostics_test',
+                        );
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              earned
+                                  ? 'Rewarded complete — reward earned'
+                                  : 'Rewarded no-fill or dismissed',
+                            ),
+                          ),
+                        );
+                      }
+                    : null,
+                child: const Text('Test rewarded ad'),
+              ),
+            ],
+            const SizedBox(height: 8),
+            FilledButton(
+              onPressed: _zoneValidating ? null : _validateZones,
+              child: Text(
+                _zoneValidating ? 'Validating zones…' : 'Validate All Zones',
+              ),
+            ),
+            if (_zoneResults.isNotEmpty)
+              _section('Zone validation', [
+                for (final z in _zoneResults)
+                  '${z.network} ${z.placement} ${z.zoneId}: '
+                  '${z.result} (${z.latencyMs}ms) ${z.formatDetected}',
+              ]),
+          ],
           if (_packageInfo != null)
             _section('App', [
               'Version ${_packageInfo!.version}+${_packageInfo!.buildNumber}',

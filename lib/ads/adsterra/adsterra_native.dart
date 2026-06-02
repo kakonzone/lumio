@@ -7,11 +7,13 @@ import 'adsterra_webview.dart';
 class AdsterraNativeBanner extends StatelessWidget {
   final double height;
   final String placement;
+  final bool userVisible;
 
   const AdsterraNativeBanner({
     super.key,
     this.height = 100,
     this.placement = 'native_top',
+    this.userVisible = true,
   });
 
   @override
@@ -20,6 +22,7 @@ class AdsterraNativeBanner extends StatelessWidget {
       html: AdsterraHtml.nativeBanner(height: height),
       height: height,
       placement: placement,
+      userVisible: userVisible,
     );
   }
 }

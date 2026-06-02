@@ -1,38 +1,173 @@
 <!DOCTYPE html>
-<html>
+<html lang="bn">
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
-  <base href="$FLUTTER_BASE_HREF">
-
-  <meta charset="UTF-8">
-  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
-
-  <!-- iOS meta tags & icons -->
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="lumio">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
-
-  <title>lumio</title>
-  <link rel="manifest" href="manifest.json">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Lumio TV — Live sports &amp; TV. Download the latest APK for Android." />
+  <title>Lumio TV — Download</title>
+  <style>
+    :root {
+      --bg: #0f0f14;
+      --card: #1a1a24;
+      --accent: #6c5ce7;
+      --accent-hover: #5b4cdb;
+      --text: #f5f5f7;
+      --muted: #a0a0b0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: radial-gradient(ellipse 80% 60% at 50% -20%, #2d2460 0%, var(--bg) 55%);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      line-height: 1.5;
+    }
+    main {
+      width: 100%;
+      max-width: 420px;
+      background: var(--card);
+      border-radius: 20px;
+      padding: 2rem 1.75rem;
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+      text-align: center;
+    }
+    .logo {
+      font-size: 2.5rem;
+      margin-bottom: 0.25rem;
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin: 0 0 0.35rem;
+    }
+    .tagline {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin: 0 0 1.5rem;
+    }
+    .version-pill {
+      display: inline-block;
+      background: rgba(108, 92, 231, 0.2);
+      color: #c4b5fd;
+      font-size: 0.85rem;
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      margin-bottom: 1.5rem;
+    }
+    .download-btn {
+      display: block;
+      width: 100%;
+      padding: 1rem 1.25rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #fff;
+      background: var(--accent);
+      border: none;
+      border-radius: 14px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .download-btn:hover:not(.disabled) {
+      background: var(--accent-hover);
+    }
+    .download-btn:active:not(.disabled) {
+      transform: scale(0.98);
+    }
+    .download-btn.disabled {
+      opacity: 0.55;
+      pointer-events: none;
+      cursor: wait;
+    }
+    .steps {
+      margin-top: 1.75rem;
+      text-align: left;
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+    .steps strong { color: var(--text); }
+    .steps ol { margin: 0.5rem 0 0; padding-left: 1.2rem; }
+    .steps li { margin-bottom: 0.4rem; }
+    .error {
+      color: #f87171;
+      font-size: 0.85rem;
+      margin-top: 0.75rem;
+      display: none;
+    }
+    footer {
+      margin-top: 2rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    footer a { color: #a78bfa; }
+  </style>
 </head>
 <body>
-  <script src="flutter_bootstrap.js" async></script>
+  <main>
+    <div class="logo" aria-hidden="true">📺</div>
+    <h1>Lumio TV</h1>
+    <p class="tagline">লাইভ স্পোর্টস ও টিভি — Android APK</p>
+    <p class="version-pill">Version <span id="versionLabel">…</span></p>
+
+    <a id="downloadBtn" class="download-btn disabled" href="#" rel="noopener">
+      ডাউনলোড করুন
+    </a>
+    <p id="errorMsg" class="error" role="alert"></p>
+
+    <div class="steps">
+      <strong>ইনস্টল করার নিয়ম</strong>
+      <ol>
+        <li>ডাউনলোড শেষে APK ফাইল খুলুন</li>
+        <li>“Unknown sources” / অজানা উৎস থেকে ইনস্টল অনুমতি দিন</li>
+        <li>ইনস্টল করুন — আপডেটের জন্য একই বাটন ব্যবহার করুন</li>
+      </ol>
+    </div>
+  </main>
+  <footer>
+    <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> ·
+    <a href="mailto:support@lumio.app">support@lumio.app</a>
+  </footer>
+
+  <script>
+    (function () {
+      var versionLabel = document.getElementById('versionLabel');
+      var downloadBtn = document.getElementById('downloadBtn');
+      var errorMsg = document.getElementById('errorMsg');
+
+      function showError(msg) {
+        errorMsg.textContent = msg;
+        errorMsg.style.display = 'block';
+        downloadBtn.textContent = 'পুনরায় চেষ্টা করুন';
+        downloadBtn.classList.remove('disabled');
+        downloadBtn.onclick = function () { location.reload(); };
+      }
+
+      fetch('/version.json', { cache: 'no-store' })
+        .then(function (res) {
+          if (!res.ok) throw new Error('version.json unavailable');
+          return res.json();
+        })
+        .then(function (data) {
+          var version = (data.version || '').trim();
+          var apkUrl = (data.apk_url || '').trim();
+          if (!version || !apkUrl) throw new Error('invalid manifest');
+
+          versionLabel.textContent = version;
+          downloadBtn.href = apkUrl;
+          downloadBtn.setAttribute('download', 'lumio-tv-' + version + '.apk');
+          downloadBtn.classList.remove('disabled');
+        })
+        .catch(function () {
+          versionLabel.textContent = '—';
+          showError('ডাউনলোড লিংক লোড হয়নি। কিছুক্ষণ পর আবার চেষ্টা করুন।');
+        });
+    })();
+  </script>
 </body>
 </html>

@@ -67,6 +67,7 @@ class LumioAppDrawer extends StatelessWidget {
   final ValueChanged<AppDrawerDestination> onDestinationSelected;
   final VoidCallback onPrivacyTap;
   final VoidCallback onToggleTheme;
+  final VoidCallback? onShareTap;
   final VoidCallback? onDiagnosticsTap;
 
   const LumioAppDrawer({
@@ -75,6 +76,7 @@ class LumioAppDrawer extends StatelessWidget {
     required this.onDestinationSelected,
     required this.onPrivacyTap,
     required this.onToggleTheme,
+    this.onShareTap,
     this.onDiagnosticsTap,
   });
 
@@ -131,6 +133,7 @@ class LumioAppDrawer extends StatelessWidget {
               isDark: isDark,
               onPrivacyTap: onPrivacyTap,
               onToggleTheme: onToggleTheme,
+              onShareTap: onShareTap,
               onDiagnosticsTap: onDiagnosticsTap,
             ),
           ],
@@ -334,12 +337,14 @@ class _DrawerFooter extends StatefulWidget {
   final bool isDark;
   final VoidCallback onPrivacyTap;
   final VoidCallback onToggleTheme;
+  final VoidCallback? onShareTap;
   final VoidCallback? onDiagnosticsTap;
 
   const _DrawerFooter({
     required this.isDark,
     required this.onPrivacyTap,
     required this.onToggleTheme,
+    this.onShareTap,
     this.onDiagnosticsTap,
   });
 
@@ -395,6 +400,12 @@ class _DrawerFooterState extends State<_DrawerFooter> {
             label: widget.isDark ? 'Light mode' : 'Dark mode',
             onTap: widget.onToggleTheme,
           ),
+          if (widget.onShareTap != null)
+            _FooterAction(
+              icon: Icons.share_outlined,
+              label: 'Share app',
+              onTap: widget.onShareTap!,
+            ),
           const SizedBox(height: 12),
           Divider(height: 1, color: context.brd),
           const SizedBox(height: 10),

@@ -49,51 +49,55 @@ https://ekusheyserver.com/etvlivesn.m3u8
 https://app.ncare.live/c3VydmVyX8RpbEU9Mi8xNy8yMDE0GIDU6RgzQ6NTAgdEoaeFzbF92YWxIZTO0U0ezN1IzMyfvcGVMZEJCTEFWeVN3PTOmdFsaWRtaW51aiPhnPTI2/flixsrktv.stream/playlist.m3u8
 #EXTINF:-1 group-title="Bangladesh" ,Friends TV
 https://server.playontv.in/friendstv/index.m3u8
-#EXTINF:-1 group-title="Bangladesh" ,GP CDN 1701
+#EXTINF:-1 group-title="Bangladesh" ,Jamuna TV
 https://owrcovcrpy.gpcdn.net/bpk-tv/1701/output/index.m3u8
-#EXTINF:-1 group-title="Bangladesh" ,GP CDN 1701
+#EXTINF:-1 group-title="Bangladesh" ,Jamuna TV
 https://owrcovcrpy.gpcdn.net/bpk-tv/1701/output/1701-audio_113312_eng=113200-video=1692000.m3u8
-#EXTINF:-1 group-title="Bangladesh" ,GP CDN 1702
+#EXTINF:-1 group-title="Bangladesh" ,Somoy TV
 https://owrcovcrpy.gpcdn.net/bpk-tv/1702/output/index.m3u8
-#EXTINF:-1 group-title="Bangladesh" ,GP CDN 1702
+#EXTINF:-1 group-title="Bangladesh" ,Somoy TV
 https://owrcovcrpy.gpcdn.net/bpk-tv/1702/output/1702.m3u8
-#EXTINF:-1 group-title="Bangladesh" ,GP CDN 1703
+#EXTINF:-1 group-title="Bangladesh" ,Channel 24
 https://owrcovcrpy.gpcdn.net/bpk-tv/1703/output/index.m3u8
-#EXTINF:-1 group-title="Bangladesh" ,GP CDN 1703
+#EXTINF:-1 group-title="Bangladesh" ,Channel 24
 https://owrcovcrpy.gpcdn.net/bpk-tv/1703/output/1703.m3u8
-#EXTINF:-1 group-title="Bangladesh" ,GP CDN 1704
+#EXTINF:-1 group-title="Bangladesh" ,Independent TV
 https://owrcovcrpy.gpcdn.net/bpk-tv/1704/output/index.m3u8
-#EXTINF:-1 group-title="Bangladesh" ,GP CDN 1704
+#EXTINF:-1 group-title="Bangladesh" ,Independent TV
 https://owrcovcrpy.gpcdn.net/bpk-tv/1704/output/1704.m3u8
-#EXTINF:-1 group-title="Bangladesh" ,GP CDN 1705
+#EXTINF:-1 group-title="Bangladesh" ,Ekattor TV
 https://owrcovcrpy.gpcdn.net/bpk-tv/1705/output/index.m3u8
-#EXTINF:-1 group-title="Bangladesh" ,GP CDN 1705
+#EXTINF:-1 group-title="Bangladesh" ,Ekattor TV
 https://owrcovcrpy.gpcdn.net/bpk-tv/1705/output/1705.m3u8
-#EXTINF:-1 group-title="Bangladesh" ,GP CDN 1706
+#EXTINF:-1 group-title="Bangladesh" ,ATN News
 https://owrcovcrpy.gpcdn.net/bpk-tv/1706/output/index.m3u8
-#EXTINF:-1 group-title="Bangladesh" ,GP CDN 1706
+#EXTINF:-1 group-title="Bangladesh" ,ATN News
 https://owrcovcrpy.gpcdn.net/bpk-tv/1706/output/1706.m3u8
-#EXTINF:-1 group-title="Bangladesh" ,GP CDN 1708
+#EXTINF:-1 group-title="Bangladesh" ,News 24
 https://owrcovcrpy.gpcdn.net/bpk-tv/1708/output/index.m3u8
-#EXTINF:-1 group-title="Bangladesh" ,GP CDN 1709
+#EXTINF:-1 group-title="Bangladesh" ,BTV
 https://owrcovcrpy.gpcdn.net/bpk-tv/1709/output/index.m3u8
-#EXTINF:-1 group-title="Bangladesh" ,GP CDN 1710
+#EXTINF:-1 group-title="Bangladesh" ,BTV
+https://owrcovcrpy.gpcdn.net/bpk-tv/1709/output/1709-audio_113392_eng=113200-video=1692000.m3u8
+#EXTINF:-1 group-title="Bangladesh" ,BTV
+http://198.195.239.50:8095/BTV/tracks-v1a1/mono.m3u8
+#EXTINF:-1 group-title="Bangladesh" ,Star News
 https://owrcovcrpy.gpcdn.net/bpk-tv/1710/output/index.m3u8
-#EXTINF:-1 group-title="Bangladesh" ,GP CDN 1710
+#EXTINF:-1 group-title="Bangladesh" ,Star News
 https://owrcovcrpy.gpcdn.net/bpk-tv/1710/output/1701.m3u8
-#EXTINF:-1 group-title="Bangladesh" ,GP CDN 1711
+#EXTINF:-1 group-title="Bangladesh" ,Deepto TV
 https://owrcovcrpy.gpcdn.net/bpk-tv/1711/output/index.m3u8
-#EXTINF:-1 group-title="Bangladesh" ,GP CDN 1711
+#EXTINF:-1 group-title="Bangladesh" ,Deepto TV
 https://owrcovcrpy.gpcdn.net/bpk-tv/1711/output/1711.m3u8
-#EXTINF:-1 group-title="Bangladesh" ,GP CDN 1713
+#EXTINF:-1 group-title="Bangladesh" ,Kingdom of Saudi Arabia
 https://owrcovcrpy.gpcdn.net/bpk-tv/1713/output/index.m3u8
-#EXTINF:-1 group-title="Bangladesh" ,GP CDN 1715
+#EXTINF:-1 group-title="Bangladesh" ,Bangla Vision
 https://owrcovcrpy.gpcdn.net/bpk-tv/1715/output/index.m3u8
-#EXTINF:-1 group-title="Bangladesh" ,GP CDN 1716
+#EXTINF:-1 group-title="Bangladesh" ,Ekhon TV
 https://owrcovcrpy.gpcdn.net/bpk-tv/1716/output/index.m3u8
-#EXTINF:-1 group-title="Bangladesh" ,GP CDN 1716
+#EXTINF:-1 group-title="Bangladesh" ,Ekhon TV
 https://owrcovcrpy.gpcdn.net/bpk-tv/1716/output/1716-audio_113462_eng=113200-video=1692000.m3u8
-#EXTINF:-1 group-title="Bangladesh" ,GP CDN 1716
+#EXTINF:-1 group-title="Bangladesh" ,Ekhon TV
 https://owrcovcrpy.gpcdn.net/bpk-tv/1716/output/1716.m3u8
 #EXTINF:-1 group-title="Bangladesh" ,GP CDN 1717
 https://owrcovcrpy.gpcdn.net/bpk-tv/1717/output/index.m3u8
@@ -101,7 +105,7 @@ https://owrcovcrpy.gpcdn.net/bpk-tv/1717/output/index.m3u8
 https://owrcovcrpy.gpcdn.net/bpk-tv/1720/output/1720.m3u8
 #EXTINF:-1 group-title="Bangladesh" ,GP CDN 1720
 https://owrcovcrpy.gpcdn.net/bpk-tv/1720/output/index.m3u8
-#EXTINF:-1 group-title="Bangladesh" ,GP CDN 1721
+#EXTINF:-1 group-title="Bangladesh" ,Al Jazeera TV
 https://owrcovcrpy.gpcdn.net/bpk-tv/1721/output/index.m3u8
 #EXTINF:-1 group-title="Bangladesh" ,GP CDN 1722
 https://owrcovcrpy.gpcdn.net/bpk-tv/1722/output/index.m3u8
@@ -109,12 +113,14 @@ https://owrcovcrpy.gpcdn.net/bpk-tv/1722/output/index.m3u8
 https://owrcovcrpy.gpcdn.net/bpk-tv/1722/output/1722-audio_113522_eng=113200-video=1692000.m3u8
 #EXTINF:-1 group-title="Bangladesh" ,GP CDN 1722
 https://owrcovcrpy.gpcdn.net/bpk-tv/1722/output/1722.m3u8
-#EXTINF:-1 group-title="Bangladesh" ,GP CDN 1723
+#EXTINF:-1 group-title="Bangladesh" ,Channel i
 https://owrcovcrpy.gpcdn.net/bpk-tv/1723/output/index.m3u8
-#EXTINF:-1 group-title="Bangladesh" ,GP CDN 1724
-https://owrcovcrpy.gpcdn.net/bpk-tv/1724/output/1724.m3u8
-#EXTINF:-1 group-title="Bangladesh" ,GP CDN 1724
+#EXTINF:-1 group-title="Bangladesh" ,Channel i
+https://owrcovcrpy.gpcdn.net/bpk-tv/1723/output/1723-audio_113532_eng=113200-video=1692000.m3u8
+#EXTINF:-1 group-title="Bangladesh" ,Islamic TV
 https://owrcovcrpy.gpcdn.net/bpk-tv/1724/output/index.m3u8
+#EXTINF:-1 group-title="Bangladesh" ,Islamic TV
+https://owrcovcrpy.gpcdn.net/bpk-tv/1724/output/1724.m3u8
 #EXTINF:-1 group-title="Bangladesh" ,GP CDN 1728
 https://owrcovcrpy.gpcdn.net/bpk-tv/1728/output/index.m3u8
 #EXTINF:-1 group-title="Bangladesh" ,GP CDN 1728

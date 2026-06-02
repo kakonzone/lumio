@@ -3,57 +3,91 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../ads/ad_manager.dart';
 import '../models/model.dart';
 import '../provider/app_provider.dart';
+import '../screens/news_article_reader_screen.dart';
 import '../theme/app_theme.dart';
+import '../utils/lumio_image_cache.dart';
+import '../utils/news_priority.dart';
 
-Future<void> openNewsArticle(NewsModel news) async {
+Future<void> openNewsArticle(NewsModel news, {BuildContext? context}) async {
+  await AdManager.instance.maybeMonetizeNewsReadMore();
+  if (context != null && context.mounted) {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => NewsArticleReaderScreen(article: news),
+      ),
+    );
+    return;
+  }
   final uri = Uri.tryParse(news.url.trim());
   if (uri == null || !uri.hasScheme) return;
   await launchUrl(uri, mode: LaunchMode.externalApplication);
 }
 
-/// Large featured story (ESPN / BBC).
+/// Large featured story with image + priority badge.
 class NewsHeroCard extends StatelessWidget {
   final NewsModel news;
   final VoidCallback? onTap;
 
   const NewsHeroCard({super.key, required this.news, this.onTap});
 
+  List<Color> get _accentGradient {
+    if (NewsPriority.isWorldCup(news)) {
+      return [const Color(0xFF1565C0), const Color(0xFF0D47A1)];
+    }
+    if (NewsPriority.isCricket(news)) {
+      return [const Color(0xFF00897B), const Color(0xFF004D40)];
+    }
+    return [AppColors.accent, const Color(0xFFE65100)];
+  }
+
   @override
   Widget build(BuildContext context) {
     final isPending = context.watch<AppProvider>().isPendingNewsArticle(news.id);
+    final priority = NewsPriority.priorityLabel(news);
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(18),
-          child: Ink(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: isPending ? AppColors.accent : context.brd,
-                width: isPending ? 2 : 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: context.shadowColor,
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: _accentGradient.map((c) => c.withValues(alpha: 0.35)).toList(),
             ),
+            border: Border.all(
+              color: isPending ? AppColors.accent : Colors.white24,
+              width: isPending ? 2 : 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: _accentGradient.first.withValues(alpha: 0.25),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(19),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Stack(
                   children: [
                     SizedBox(
-                      height: 200,
+                      height: 210,
                       width: double.infinity,
-                      child: _NewsImage(news: news, fit: BoxFit.cover),
+                      child: _NewsImage(
+                        news: news,
+                        fit: BoxFit.cover,
+                        memWidth: 720,
+                      ),
                     ),
                     Positioned.fill(
                       child: DecoratedBox(
@@ -62,13 +96,19 @@ class NewsHeroCard extends StatelessWidget {
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
-                              Colors.transparent,
-                              Colors.black.withValues(alpha: 0.75),
+                              Colors.black.withValues(alpha: 0.15),
+                              Colors.black.withValues(alpha: 0.82),
                             ],
                           ),
                         ),
                       ),
                     ),
+                    if (priority != null)
+                      Positioned(
+                        top: 12,
+                        left: 12,
+                        child: _PriorityBadge(label: priority),
+                      ),
                     Positioned(
                       left: 14,
                       right: 14,
@@ -76,43 +116,23 @@ class NewsHeroCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _CategoryChip(label: news.category, compact: true),
+                          _CategoryChip(
+                            label: news.category,
+                            accent: _accentGradient.first,
+                          ),
                           const SizedBox(height: 8),
                           Text(
                             news.title,
                             style: GF.head(
-                              fontSize: 18,
+                              fontSize: 19,
                               fontWeight: FontWeight.w800,
                               color: Colors.white,
-                              height: 1.25,
+                              height: 1.22,
                             ),
                             maxLines: 3,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ],
-                      ),
-                    ),
-                    Positioned(
-                      top: 12,
-                      left: 12,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.accent,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          'TOP STORY',
-                          style: GF.body(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            letterSpacing: 0.8,
-                          ),
-                        ),
                       ),
                     ),
                   ],
@@ -130,7 +150,7 @@ class NewsHeroCard extends StatelessWidget {
                             color: context.txt2,
                             height: 1.45,
                           ),
-                          maxLines: 3,
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 10),
@@ -147,19 +167,34 @@ class NewsHeroCard extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          Text(
-                            'Read',
-                            style: GF.body(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.accent,
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
                             ),
-                          ),
-                          const SizedBox(width: 2),
-                          const Icon(
-                            Icons.open_in_new_rounded,
-                            size: 14,
-                            color: AppColors.accent,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(colors: _accentGradient),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Read',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                SizedBox(width: 4),
+                                Icon(
+                                  Icons.arrow_forward_rounded,
+                                  size: 14,
+                                  color: Colors.white,
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
@@ -175,85 +210,174 @@ class NewsHeroCard extends StatelessWidget {
   }
 }
 
-/// Compact list row for headlines.
+/// Headline row — always shows image slot (photo or gradient fallback).
 class NewsArticleTile extends StatelessWidget {
   final NewsModel news;
   final VoidCallback? onTap;
 
   const NewsArticleTile({super.key, required this.news, this.onTap});
 
+  Color get _accent {
+    if (NewsPriority.isWorldCup(news)) return const Color(0xFF1976D2);
+    if (NewsPriority.isCricket(news)) return const Color(0xFF00897B);
+    return AppColors.accent;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isPending = context.watch<AppProvider>().isPendingNewsArticle(news.id);
+    final priority = NewsPriority.priorityLabel(news);
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         child: Ink(
           decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
             color: isPending ? AppColors.accentDim : context.bg2,
-            borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: isPending ? AppColors.accent : context.brd,
               width: isPending ? 2 : 1,
             ),
-          ),
-          padding: const EdgeInsets.all(10),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: SizedBox(
-                  width: 96,
-                  height: 72,
-                  child: _NewsImage(news: news, fit: BoxFit.cover),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _CategoryChip(label: news.category),
-                    const SizedBox(height: 6),
-                    Text(
-                      news.title,
-                      style: GF.body(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: context.txt,
-                        height: 1.3,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (news.summary.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        news.summary,
-                        style: GF.body(
-                          fontSize: 11,
-                          color: context.txt3,
-                          height: 1.35,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                    const SizedBox(height: 6),
-                    Text(
-                      '${news.timeAgo} · ${news.source}',
-                      style: GF.body(fontSize: 10, color: context.txt3),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
+            boxShadow: [
+              BoxShadow(
+                color: _accent.withValues(alpha: 0.08),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
               ),
             ],
           ),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  width: 4,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [_accent, _accent.withValues(alpha: 0.4)],
+                    ),
+                    borderRadius: const BorderRadius.horizontal(
+                      left: Radius.circular(16),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(10, 10, 12, 10),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: SizedBox(
+                            width: 108,
+                            height: 80,
+                            child: _NewsImage(
+                              news: news,
+                              fit: BoxFit.cover,
+                              memWidth: 320,
+                              accent: _accent,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  _CategoryChip(
+                                    label: news.category,
+                                    accent: _accent,
+                                  ),
+                                  if (priority != null) ...[
+                                    const SizedBox(width: 6),
+                                    _PriorityBadge(
+                                      label: priority,
+                                      compact: true,
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                news.title,
+                                style: GF.body(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
+                                  color: context.txt,
+                                  height: 1.28,
+                                ),
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                '${news.timeAgo} · ${news.source}',
+                                style: GF.body(
+                                  fontSize: 10,
+                                  color: context.txt3,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PriorityBadge extends StatelessWidget {
+  final String label;
+  final bool compact;
+
+  const _PriorityBadge({required this.label, this.compact = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final isWc = label.contains('WORLD');
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 6 : 8,
+        vertical: compact ? 3 : 4,
+      ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isWc
+              ? [const Color(0xFF1976D2), const Color(0xFF0D47A1)]
+              : [const Color(0xFF00897B), const Color(0xFF00695C)],
+        ),
+        borderRadius: BorderRadius.circular(6),
+        boxShadow: [
+          BoxShadow(
+            color: (isWc ? Colors.blue : Colors.teal).withValues(alpha: 0.4),
+            blurRadius: 6,
+          ),
+        ],
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: compact ? 8 : 9,
+          fontWeight: FontWeight.w900,
+          color: Colors.white,
+          letterSpacing: 0.6,
         ),
       ),
     );
@@ -262,28 +386,26 @@ class NewsArticleTile extends StatelessWidget {
 
 class _CategoryChip extends StatelessWidget {
   final String label;
-  final bool compact;
+  final Color accent;
 
-  const _CategoryChip({required this.label, this.compact = false});
+  const _CategoryChip({required this.label, this.accent = AppColors.accent});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: compact ? 8 : 7,
-        vertical: compact ? 4 : 3,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
-        color: AppColors.accent.withValues(alpha: context.isDark ? 0.22 : 0.12),
+        color: accent.withValues(alpha: 0.18),
         borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: accent.withValues(alpha: 0.35)),
       ),
       child: Text(
         label.toUpperCase(),
         style: GF.body(
-          fontSize: compact ? 9 : 9,
+          fontSize: 9,
           fontWeight: FontWeight.w800,
-          color: AppColors.accent,
-          letterSpacing: 0.6,
+          color: accent,
+          letterSpacing: 0.5,
         ),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
@@ -295,33 +417,54 @@ class _CategoryChip extends StatelessWidget {
 class _NewsImage extends StatelessWidget {
   final NewsModel news;
   final BoxFit fit;
+  final int memWidth;
+  final Color? accent;
 
-  const _NewsImage({required this.news, required this.fit});
+  const _NewsImage({
+    required this.news,
+    required this.fit,
+    this.memWidth = 400,
+    this.accent,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    final cacheW = (memWidth * dpr).round();
+
     if (news.imageUrl.isEmpty) {
-      return ColoredBox(
-        color: context.bg3,
+      final c = accent ?? AppColors.accent;
+      return Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              c.withValues(alpha: 0.55),
+              context.bg3,
+            ],
+          ),
+        ),
         child: Center(
           child: Text(
             news.categoryEmoji,
-            style: const TextStyle(fontSize: 32),
+            style: const TextStyle(fontSize: 36),
           ),
         ),
       );
     }
+
     return CachedNetworkImage(
       imageUrl: news.imageUrl,
+      cacheManager: lumioImageCache,
       fit: fit,
+      memCacheWidth: cacheW,
+      fadeInDuration: const Duration(milliseconds: 180),
+      fadeOutDuration: const Duration(milliseconds: 120),
       placeholder: (_, __) => ColoredBox(
         color: context.bg3,
-        child: const Center(
-          child: SizedBox(
-            width: 22,
-            height: 22,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
+        child: Center(
+          child: Icon(Icons.image_outlined, color: context.txt3, size: 28),
         ),
       ),
       errorWidget: (_, __, ___) => ColoredBox(
@@ -329,7 +472,7 @@ class _NewsImage extends StatelessWidget {
         child: Center(
           child: Text(
             news.categoryEmoji,
-            style: const TextStyle(fontSize: 28),
+            style: const TextStyle(fontSize: 30),
           ),
         ),
       ),

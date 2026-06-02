@@ -1,0 +1,127 @@
+name: Build and Release APK
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'version.json'
+      - 'web/version.json'
+      - '**.md'
+      - 'docs/**'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+          cache: true
+
+      - name: Decode keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
+
+      - name: Create key.properties
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          cat > android/key.properties <<EOF
+          storePassword=${KEYSTORE_PASSWORD}
+          keyPassword=${KEY_PASSWORD}
+          keyAlias=${KEY_ALIAS}
+          storeFile=app/release.keystore
+          EOF
+
+      - name: Write google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            echo "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+          fi
+
+      - name: Build secrets.json from CI secrets
+        env:
+          LEVELPLAY_APP_KEY: ${{ secrets.LEVELPLAY_APP_KEY }}
+          ADSTERRA_DIRECT_LINK: ${{ secrets.ADSTERRA_DIRECT_LINK }}
+          ADSTERRA_NATIVE_INVOKE_URL: ${{ secrets.ADSTERRA_NATIVE_INVOKE_URL }}
+          ADSTERRA_NATIVE_BASE_URL: ${{ secrets.ADSTERRA_NATIVE_BASE_URL }}
+          CAP_BASE_URL: ${{ secrets.CAP_BASE_URL }}
+          CAP_HMAC_KEY: ${{ secrets.CAP_HMAC_KEY }}
+          TOFFEE_SUBSCRIBER_TOKEN: ${{ secrets.TOFFEE_SUBSCRIBER_TOKEN }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          keys = [
+              "LEVELPLAY_APP_KEY", "ADSTERRA_DIRECT_LINK",
+              "ADSTERRA_NATIVE_INVOKE_URL", "ADSTERRA_NATIVE_BASE_URL",
+              "CAP_BASE_URL", "CAP_HMAC_KEY", "TOFFEE_SUBSCRIBER_TOKEN",
+          ]
+          data = {"ADS_ENABLED": "true"}
+          for k in keys:
+              v = os.environ.get(k, "")
+              if v:
+                  data[k] = v
+          with open("secrets.json", "w") as f:
+              json.dump(data, f)
+          PY
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --release --dart-define-from-file=secrets.json
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Release v${{ steps.version.outputs.version }}
+          files: build/app/outputs/flutter-apk/app-release.apk
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish version.json (lumio.me)
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          REPO="${{ github.repository }}"
+          APK_URL="https://github.com/$REPO/releases/download/v$VERSION/app-release.apk"
+          MANIFEST="{\"version\":\"$VERSION\",\"apk_url\":\"$APK_URL\"}"
+          echo "$MANIFEST" > web/version.json
+          echo "$MANIFEST" > version.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add web/version.json version.json
+          git diff --staged --quiet && exit 0
+          git commit -m "chore: publish version.json v$VERSION for lumio.me [skip ci]"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

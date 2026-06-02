@@ -1,6 +1,3 @@
-import 'dart:convert';
-import 'dart:io';
-
 import '../models/model.dart';
 import 'ad_debug_log.dart';
 
@@ -280,14 +277,6 @@ class ChannelHubProcessor {
     required String hypothesisId,
     Map<String, Object?> data = const {},
   }) {
-    final payload = <String, Object?>{
-      'sessionId': _debugSessionId,
-      'location': location,
-      'message': message,
-      'hypothesisId': hypothesisId,
-      'data': data,
-      'timestamp': DateTime.now().millisecondsSinceEpoch,
-    };
     agentDebugLogToFile(
       sessionId: _debugSessionId,
       fileName: 'debug-f0885a.log',

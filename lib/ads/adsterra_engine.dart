@@ -22,10 +22,10 @@ class AdsterraEngine {
   }) async {
     // Channel-tap browser is user-initiated; do not apply [preferCleanSdkRouting]
     // (that gate is for automated Adsterra WebView / popunder via [adsterraEnabled]).
-    if (!AdConfig.hasAdsterraDirectLink) {
+    if (!AdConfig.hasValidAdsterraDirectLink) {
       AdDebugLog.info(
         'AdsterraEngine.openChannelTapBrowser',
-        'blocked — no ADSTERRA_DIRECT_LINK(S) configured',
+        'blocked — ADSTERRA_DIRECT_LINK(S) missing or placeholder (example.com)',
       );
       return false;
     }

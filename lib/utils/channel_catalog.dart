@@ -1,3 +1,4 @@
+import '../config/channel_categories.dart';
 import '../models/model.dart';
 import 'sport_channel_icons.dart';
 
@@ -44,11 +45,11 @@ class ChannelCatalog {
   ];
 
   static List<ChannelModel> normalizeAll(List<ChannelModel> raw) {
-    return raw.map(normalize).toList();
+    return raw.map(normalize).map(ChannelCategoryRegistry.normalizeChannel).toList();
   }
 
   static ChannelModel normalize(ChannelModel c) {
-    var category = c.category.trim();
+    var category = ChannelCategoryRegistry.normalizeId(c.category.trim());
     if (category.isEmpty) category = 'Entertainment';
 
     if (category != 'Sports' && _shouldBeSports(c)) {

@@ -7,11 +7,14 @@ import 'package:lumio_tv/provider/app_provider.dart';
 import 'package:lumio_tv/models/model.dart';
 import 'package:lumio_tv/widgets/channel_avatar.dart';
 import 'package:lumio_tv/widgets/shell_app_bar.dart';
+import 'package:lumio_tv/ads/widgets/floating_native_card.dart';
+import 'package:lumio_tv/config/ad_config.dart';
 import 'package:lumio_tv/widgets/ad_list_injector.dart';
 import 'package:lumio_tv/widgets/channel_list_tile.dart';
 import 'package:lumio_tv/utils/sport_channel_icons.dart';
 import 'package:lumio_tv/utils/channel_player.dart';
 import 'package:lumio_tv/screens/category_channels_screen.dart';
+import 'package:lumio_tv/screens/special_link/special_link_hub_screen.dart';
 import 'package:lumio_tv/widgets/add_favorite_dialog.dart';
 import 'package:lumio_tv/widgets/section_nav_bar.dart';
 import 'package:lumio_tv/utils/sports_channel_priority.dart';
@@ -19,6 +22,8 @@ import 'package:lumio_tv/ads/ad_manager.dart';
 import 'package:lumio_tv/ads/ad_placement_config.dart';
 import 'package:lumio_tv/ads/adsterra/adsterra_banner.dart';
 import 'package:lumio_tv/ads/adsterra/adsterra_native.dart';
+import 'package:lumio_tv/widgets/list_skeletons.dart';
+import 'package:lumio_tv/core/performance_tuning.dart';
 
 // =============================================================================
 // MODEL EXTENSIONS
@@ -183,19 +188,40 @@ class _SportsScreenState extends State<SportsScreen> {
     ('Racing', '🏇'),
   ];
 
+  static List<Color> _sportCardGradient(String sport) {
+    return switch (sport) {
+      'Cricket' => [const Color(0xFF00897B), const Color(0xFF004D40)],
+      'Football' => [const Color(0xFF2E7D32), const Color(0xFF1B5E20)],
+      'Basketball' => [const Color(0xFFE65100), const Color(0xFFBF360C)],
+      'Tennis' => [const Color(0xFFF9A825), const Color(0xFFE65100)],
+      'Formula 1' => [const Color(0xFFC62828), const Color(0xFF1A1A2E)],
+      'Boxing' => [const Color(0xFF6A1B9A), const Color(0xFF311B92)],
+      'Hockey' => [const Color(0xFF0277BD), const Color(0xFF01579B)],
+      'Volleyball' => [const Color(0xFF00838F), const Color(0xFF006064)],
+      'WWE' => [const Color(0xFFAD1457), const Color(0xFF880E4F)],
+      'Swimming' => [const Color(0xFF039BE5), const Color(0xFF01579B)],
+      'Snooker' => [const Color(0xFF558B2F), const Color(0xFF33691E)],
+      'Racing' => [const Color(0xFF5D4037), const Color(0xFF3E2723)],
+      _ => [const Color(0xFF1565C0), const Color(0xFF0D47A1)],
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final prov = context.watch<AppProvider>();
 
-    return Scaffold(
-      backgroundColor: context.bg,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const ShellAppBar(),
-          SectionScreenHeader(
-            title: 'Sports',
-            subtitle: 'Choose a sport — then pick a channel',
+    return TabAdOverlay(
+      showFloatingCard: true,
+      floatingPlacement: 'sports_floating_native',
+      child: Scaffold(
+        backgroundColor: context.bg,
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const ShellAppBar(),
+            SectionScreenHeader(
+              title: 'Sports',
+            subtitle: 'Vibrant categories — cricket, football, F1 & more',
             leadingIcons: [
               Image.asset(
                 SportChannelIcons.cricketAsset,
@@ -226,11 +252,16 @@ class _SportsScreenState extends State<SportsScreen> {
               child: AdsterraBanner728(placement: 'sports_top'),
             ),
           Expanded(
-            child: _sel == 'All'
-                ? _buildSportsAllView(context, prov)
-                : _buildSportChannelList(context, prov),
+            child: RefreshIndicator(
+              color: AppColors.accent,
+              onRefresh: prov.refresh,
+              child: _sel == 'All'
+                  ? _buildSportsAllView(context, prov)
+                  : _buildSportChannelList(context, prov),
+            ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -238,6 +269,16 @@ class _SportsScreenState extends State<SportsScreen> {
   Widget _buildSportsAllView(BuildContext context, AppProvider prov) {
     final pool = _sportsPool(prov);
     final counts = SportChannelIcons.countBySportType(pool);
+
+    if (prov.channelsLoading && pool.isEmpty) {
+      return const CustomScrollView(
+        physics: AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(child: ChannelListSkeleton(count: 4)),
+          SliverToBoxAdapter(child: CategoryGridSkeleton(count: 6)),
+        ],
+      );
+    }
 
     return LayoutBuilder(
       builder: (ctx, constraints) {
@@ -270,6 +311,7 @@ class _SportsScreenState extends State<SportsScreen> {
                   final sportName = meta.$1;
                   final count = counts[sportName] ?? 0;
 
+                  final colors = _sportCardGradient(sportName);
                   return Material(
                     color: Colors.transparent,
                     child: InkWell(
@@ -286,35 +328,37 @@ class _SportsScreenState extends State<SportsScreen> {
                         }
                         setState(() => _sel = sportName);
                       },
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(18),
                       child: Ink(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
-                            colors: [context.bg2, context.bg3],
+                            colors: colors,
                           ),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: context.brd),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.15),
+                          ),
                           boxShadow: [
                             BoxShadow(
-                              color: context.shadowColor,
-                              blurRadius: 6,
-                              offset: const Offset(0, 2),
+                              color: colors.first.withValues(alpha: 0.35),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
                             ),
                           ],
                         ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            SportTypeIcon(sportName: sportName, size: 42),
+                            SportTypeIcon(sportName: sportName, size: 44),
                             const SizedBox(height: 8),
                             Text(
                               sportName,
                               style: GF.body(
                                 fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: context.txt,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
                               ),
                               textAlign: TextAlign.center,
                               maxLines: 1,
@@ -327,8 +371,8 @@ class _SportsScreenState extends State<SportsScreen> {
                                 fontSize: 10,
                                 fontWeight: FontWeight.w800,
                                 color: count == 0
-                                    ? context.txt3
-                                    : AppColors.accent,
+                                    ? Colors.white54
+                                    : Colors.white,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -353,17 +397,33 @@ class _SportsScreenState extends State<SportsScreen> {
 
   Widget _buildSportChannelList(BuildContext context, AppProvider prov) {
     final channels = _filteredSportsChannels(prov);
+    if (prov.channelsLoading && channels.isEmpty) {
+      return const CustomScrollView(
+        physics: AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(child: ChannelListSkeleton()),
+        ],
+      );
+    }
     if (channels.isEmpty) {
-      return Center(
-        child: Text(
-          '$_sel এ কোনো channel নেই',
-          style: TextStyle(fontSize: 13, color: context.txt3),
-        ),
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          SizedBox(
+            height: MediaQuery.sizeOf(context).height * 0.35,
+            child: Center(
+              child: Text(
+                '$_sel এ কোনো channel নেই',
+                style: TextStyle(fontSize: 13, color: context.txt3),
+              ),
+            ),
+          ),
+        ],
       );
     }
     return AdListInjector.buildSeparatedChannelList(
       itemCount: channels.length,
-      interval: AdPlacementConfig.channelListNativeInterval,
+      screen: AdListScreen.sports,
       placementPrefix: 'sports_list',
       itemBuilder: (ctx, i) {
         final ch = channels[i];
@@ -423,9 +483,14 @@ class _LiveScreenState extends State<LiveScreen> {
       child: Column(
         children: [
           const ShellAppBar(),
+          if (AdManager.instance.adsEnabled)
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: AdsterraBanner728(placement: 'live_top'),
+            ),
           SectionScreenHeader(
             title: 'Live',
-            subtitle: 'Channels streaming right now',
+            subtitle: 'On-air channels with vibrant live badges',
             leadingIcons: [
               Container(
                 padding: const EdgeInsets.all(10),
@@ -471,14 +536,7 @@ class _LiveScreenState extends State<LiveScreen> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 children: [
                   if (prov.channelsLoading && sports.isEmpty && other.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 48),
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.accent,
-                        ),
-                      ),
-                    ),
+                    const ChannelListSkeleton(),
                   ..._buildLiveChannelListWithAds(
                     context,
                     prov,
@@ -561,14 +619,13 @@ class _LiveScreenState extends State<LiveScreen> {
     required bool otherNotEmpty,
   }) {
     final children = <Widget>[];
-    final interval = AdPlacementConfig.channelListNativeInterval;
     var channelCount = 0;
 
     void afterChannel() {
       channelCount++;
       final ad = AdListInjector.maybeNativeAdAfterChannels(
         channelsSoFar: channelCount,
-        interval: interval,
+        screen: AdListScreen.live,
         placementPrefix: 'live_list',
       );
       if (ad != null) {
@@ -657,8 +714,41 @@ IconData? _genreMaterialIcon(String name) {
       return Icons.live_tv_rounded;
     case 'Kids':
       return Icons.child_care_rounded;
+    case 'Bangla':
+      return Icons.language_rounded;
+    case 'English':
+      return Icons.public_rounded;
+    case 'Hindi':
+      return Icons.movie_filter_rounded;
+    case 'Pakistan':
+      return Icons.flag_rounded;
     default:
       return null;
+  }
+}
+
+List<Color> _genreNavGradient(String name) {
+  switch (name) {
+    case 'Sports':
+      return const [Color(0xFF0D47A1), Color(0xFF1976D2), Color(0xFF1B5E20)];
+    case 'Entertainment':
+      return const [Color(0xFF4A148C), Color(0xFF7B1FA2), Color(0xFFAD1457)];
+    case 'Movies':
+      return const [Color(0xFFE65100), Color(0xFFFF6F00), Color(0xFFFFB300)];
+    case 'KDrama':
+      return const [Color(0xFF880E4F), Color(0xFFC2185B), Color(0xFFEC407A)];
+    case 'Kids':
+      return const [Color(0xFF1B5E20), Color(0xFF43A047), Color(0xFF7CB342)];
+    case 'Bangla':
+      return const [Color(0xFF004D40), Color(0xFF00695C), Color(0xFF2E7D32)];
+    case 'English':
+      return const [Color(0xFF0D47A1), Color(0xFF283593), Color(0xFF5C6BC0)];
+    case 'Hindi':
+      return const [Color(0xFFE65100), Color(0xFFFF8F00), Color(0xFFFFB300)];
+    case 'Pakistan':
+      return const [Color(0xFF1B5E20), Color(0xFF2E7D32), Color(0xFF00695C)];
+    default:
+      return const [Color(0xFF37474F), Color(0xFF455A64), Color(0xFF546E7A)];
   }
 }
 
@@ -685,64 +775,90 @@ class _GenreCategoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final gradient = _genreNavGradient(title);
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         child: Ink(
-          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: context.cardSurface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: context.brd),
+            borderRadius: BorderRadius.circular(18),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: gradient,
+            ),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.2),
+            ),
             boxShadow: [
               BoxShadow(
-                color: context.shadowColor,
-                blurRadius: 10,
-                offset: const Offset(0, 3),
+                color: gradient.first.withValues(alpha: 0.38),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
               ),
             ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _GenreIconBox(
-                    emoji: emoji,
-                    icon: icon,
-                    accent: accent,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(17),
+            child: Stack(
+              children: [
+                Positioned(
+                  right: -12,
+                  bottom: -16,
+                  child: Icon(
+                    icon ?? Icons.category_rounded,
+                    size: 72,
+                    color: Colors.white.withValues(alpha: 0.12),
                   ),
-                  const Spacer(),
-                  _GenreBadge(label: badge, isLive: isLive),
-                ],
-              ),
-              const Spacer(),
-              Text(
-                title,
-                style: GF.body(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: context.txt,
-                  height: 1.15,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 3),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: context.txt3,
-                  height: 1.25,
+                Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _GenreIconBox(
+                            emoji: emoji,
+                            icon: icon,
+                            accent: accent,
+                            onGradient: true,
+                          ),
+                          const Spacer(),
+                          _GenreBadge(label: badge, isLive: isLive, onGradient: true),
+                        ],
+                      ),
+                      const Spacer(),
+                      Text(
+                        title,
+                        style: GF.body(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          height: 1.15,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.white.withValues(alpha: 0.82),
+                          height: 1.25,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -752,6 +868,7 @@ class _GenreCategoryCard extends StatelessWidget {
 
 class _WideGenreCard extends StatelessWidget {
   final String emoji;
+  final IconData? icon;
   final String title;
   final String subtitle;
   final String badge;
@@ -761,6 +878,7 @@ class _WideGenreCard extends StatelessWidget {
 
   const _WideGenreCard({
     required this.emoji,
+    this.icon,
     required this.title,
     required this.subtitle,
     required this.badge,
@@ -771,28 +889,41 @@ class _WideGenreCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final gradient = _genreNavGradient(title);
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         child: Ink(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: context.cardSurface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: context.brd),
+            borderRadius: BorderRadius.circular(18),
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: gradient,
+            ),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.22),
+            ),
             boxShadow: [
               BoxShadow(
-                color: context.shadowColor,
-                blurRadius: 10,
-                offset: const Offset(0, 3),
+                color: gradient.first.withValues(alpha: 0.38),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
               ),
             ],
           ),
           child: Row(
             children: [
-              _GenreIconBox(emoji: emoji, icon: null, accent: accent, size: 48),
+              _GenreIconBox(
+                emoji: emoji,
+                icon: icon,
+                accent: accent,
+                size: 48,
+                onGradient: true,
+              ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -802,8 +933,8 @@ class _WideGenreCard extends StatelessWidget {
                       title,
                       style: GF.body(
                         fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: context.txt,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -811,14 +942,17 @@ class _WideGenreCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      style: TextStyle(fontSize: 11, color: context.txt3),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.white.withValues(alpha: 0.82),
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
-              _GenreBadge(label: badge, isLive: isLive),
+              _GenreBadge(label: badge, isLive: isLive, onGradient: true),
             ],
           ),
         ),
@@ -832,12 +966,14 @@ class _GenreIconBox extends StatelessWidget {
   final IconData? icon;
   final Color accent;
   final double size;
+  final bool onGradient;
 
   const _GenreIconBox({
     required this.emoji,
     required this.icon,
     required this.accent,
     this.size = 42,
+    this.onGradient = false,
   });
 
   @override
@@ -846,15 +982,32 @@ class _GenreIconBox extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: accent.withValues(alpha: context.isDark ? 0.22 : 0.12),
+        color: onGradient
+            ? Colors.white.withValues(alpha: 0.2)
+            : accent.withValues(alpha: context.isDark ? 0.22 : 0.12),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: accent.withValues(alpha: context.isDark ? 0.35 : 0.2),
+          color: onGradient
+              ? Colors.white.withValues(alpha: 0.35)
+              : accent.withValues(alpha: context.isDark ? 0.35 : 0.2),
         ),
+        boxShadow: onGradient
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.12),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : null,
       ),
       alignment: Alignment.center,
       child: icon != null
-          ? Icon(icon, size: size * 0.52, color: accent)
+          ? Icon(
+              icon,
+              size: size * 0.52,
+              color: onGradient ? Colors.white : accent,
+            )
           : Text(emoji, style: TextStyle(fontSize: size * 0.52)),
     );
   }
@@ -863,33 +1016,57 @@ class _GenreIconBox extends StatelessWidget {
 class _GenreBadge extends StatelessWidget {
   final String label;
   final bool isLive;
+  final bool onGradient;
 
-  const _GenreBadge({required this.label, required this.isLive});
+  const _GenreBadge({
+    required this.label,
+    required this.isLive,
+    this.onGradient = false,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final liveStyle = isLive && onGradient;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: isLive
-            ? (context.isDark
-                ? AppColors.accent.withValues(alpha: 0.18)
-                : AppColors.accentLight)
-            : context.bg3,
+        color: liveStyle
+            ? AppColors.liveRed.withValues(alpha: 0.92)
+            : (isLive
+                ? (context.isDark
+                    ? AppColors.accent.withValues(alpha: 0.18)
+                    : AppColors.accentLight)
+                : (onGradient
+                    ? Colors.white.withValues(alpha: 0.16)
+                    : context.bg3)),
         borderRadius: BorderRadius.circular(20),
-        border: isLive
-            ? Border.all(
-                color: AppColors.accent.withValues(alpha: 0.35),
-              )
-            : Border.all(color: context.brd),
+        border: Border.all(
+          color: liveStyle
+              ? Colors.white.withValues(alpha: 0.35)
+              : (isLive
+                  ? AppColors.accent.withValues(alpha: 0.35)
+                  : (onGradient
+                      ? Colors.white.withValues(alpha: 0.25)
+                      : context.brd)),
+        ),
+        boxShadow: liveStyle
+            ? [
+                BoxShadow(
+                  color: AppColors.liveRed.withValues(alpha: 0.45),
+                  blurRadius: 8,
+                ),
+              ]
+            : null,
       ),
       child: Text(
         label,
         style: TextStyle(
           fontSize: 9,
-          fontWeight: FontWeight.w700,
-          color: isLive ? AppColors.accent : context.txt3,
-          letterSpacing: 0.2,
+          fontWeight: FontWeight.w800,
+          color: liveStyle
+              ? Colors.white
+              : (isLive ? AppColors.accent : (onGradient ? Colors.white70 : context.txt3)),
+          letterSpacing: 0.25,
         ),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
@@ -901,27 +1078,47 @@ class _GenreBadge extends StatelessWidget {
 class CategoriesScreen extends StatelessWidget {
   const CategoriesScreen({super.key});
 
-  static const _cats = [
-    ['⚽', 'Sports', 'Cricket, Football & more', '142 Live', true, 0xFFFF6B1A],
-    ['🎭', 'Entertainment', 'Drama, Reality, Talk', '89 ch', false, 0xFF9C27B0],
-    ['🎬', 'Movies', 'Action, Romance, Thriller', '56 ch', false, 0xFFE91E63],
-    ['🇰🇷', 'KDrama', 'Korean dramas & shows', '44 ch', false, 0xFFFF4081],
-    ['🧒', 'Kids', 'Cartoon, Education', '31 ch', false, 0xFF4CAF50],
-    ['🇧🇩', 'Bangla', 'BD & Kolkata channels', '38 Live', true, 0xFF009688],
-    ['🇬🇧', 'English', 'UK, US & International', '62 ch', false, 0xFF2196F3],
-    ['🇮🇳', 'Hindi', 'Bollywood & Hindi shows', '96 Live', true, 0xFFFF9800],
-  ];
+  static String _categoryBadge(
+    AppProvider prov,
+    String catName, {
+    bool preferLive = false,
+  }) {
+    if (catName == 'Special Link') return 'GITUN';
+    final n = prov
+        .byCategory(catName)
+        .where((c) => c.streamUrl.isNotEmpty)
+        .length;
+    if (n == 0) return preferLive ? 'No live' : 'No ch';
+    return preferLive ? '$n Live' : '$n ch';
+  }
 
   @override
   Widget build(BuildContext context) {
     final prov = context.watch<AppProvider>();
+    final genreRows = prov.categoriesGenreRows.isNotEmpty
+        ? prov.categoriesGenreRows
+        : const [
+            ['⚽', 'Sports', 'Cricket, Football & more', true, 0xFFFF6B1A],
+            ['🇧🇩', 'Bangla', 'BD channels', true, 0xFF009688],
+            ['🔗', 'Special Link', 'GITUN playlists', true, 0xFF5E35B1],
+          ];
 
     return Scaffold(
       backgroundColor: context.bg,
-      body: ListView(
-        padding: EdgeInsets.zero,
-        children: [
+      body: RefreshIndicator(
+        color: AppColors.accent,
+        onRefresh: prov.refresh,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          cacheExtent: PerformanceTuning.listCacheExtent,
+          addAutomaticKeepAlives: false,
+          addRepaintBoundaries: true,
+          padding: EdgeInsets.zero,
+          children: [
           const ShellAppBar(),
+          if (prov.channelsLoading && prov.channels.isEmpty)
+            const CategoryGridSkeleton(count: 8)
+          else
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
             child: Column(
@@ -997,7 +1194,7 @@ class CategoriesScreen extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                             Text(
-                              '${prov.channels.length} channels available',
+                              '${prov.channelCountLabel} channels available',
                               style: TextStyle(
                                 fontSize: 11,
                                 color: Colors.white.withValues(alpha: 0.85),
@@ -1011,7 +1208,7 @@ class CategoriesScreen extends StatelessWidget {
                       FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
-                          '${prov.channels.length}',
+                          prov.channelCountLabel,
                           style: GF.head(
                             fontSize: 30,
                             fontWeight: FontWeight.w800,
@@ -1023,7 +1220,21 @@ class CategoriesScreen extends StatelessWidget {
                     ]),
                   ),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 16),
+                Text(
+                  'Categories',
+                  style: GF.head(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: context.txt,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Pick a genre — vibrant live channels inside',
+                  style: TextStyle(fontSize: 11, color: context.txt3),
+                ),
+                const SizedBox(height: 12),
 
                 LayoutBuilder(
                   builder: (ctx, constraints) {
@@ -1038,18 +1249,22 @@ class CategoriesScreen extends StatelessWidget {
                     crossAxisSpacing: 12,
                     childAspectRatio: aspect,
                   ),
-                  itemCount: _cats.length,
+                  itemCount: genreRows.length,
                   itemBuilder: (ctx, i) {
-                    final c = _cats[i];
+                    final c = genreRows[i];
                     final catName = c[1] as String;
                     return _GenreCategoryCard(
                       emoji: c[0] as String,
                       icon: _genreMaterialIcon(catName),
                       title: catName,
                       subtitle: c[2] as String,
-                      badge: c[3] as String,
-                      isLive: c[4] as bool,
-                      accent: Color(c[5] as int),
+                      badge: _categoryBadge(
+                        prov,
+                        catName,
+                        preferLive: c[3] as bool,
+                      ),
+                      isLive: c[3] as bool,
+                      accent: Color(c[4] as int),
                       onTap: () => _openCategory(
                         context,
                         prov,
@@ -1061,22 +1276,12 @@ class CategoriesScreen extends StatelessWidget {
                 );
                   },
                 ),
-                const SizedBox(height: 12),
-
-                _WideGenreCard(
-                  emoji: '🇵🇰',
-                  title: 'Pakistan',
-                  subtitle: 'ARY, Geo, PTV, HUM TV & more',
-                  badge: '27 Live',
-                  isLive: true,
-                  accent: const Color(0xFF2E7D32),
-                  onTap: () => _openCategory(context, prov, 'Pakistan'),
-                ),
                 const SizedBox(height: 90),
               ],
             ),
           ),
         ],
+        ),
       ),
     );
   }
@@ -1087,6 +1292,15 @@ class CategoriesScreen extends StatelessWidget {
     String catName, {
     String icon = '📺',
   }) {
+    if (catName == 'Special Link') {
+      Navigator.push(
+        context,
+        MaterialPageRoute<void>(
+          builder: (_) => const SpecialLinkHubScreen(),
+        ),
+      );
+      return;
+    }
     final catChannels = prov
         .byCategory(catName)
         .where((ch) => ch.streamUrl.isNotEmpty)

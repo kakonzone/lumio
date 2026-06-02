@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../models/model.dart';
+import '../utils/lumio_image_cache.dart';
 import '../utils/sport_channel_icons.dart';
 
 /// Channel thumbnail: sport icons, network logo, or emoji fallback.
@@ -35,6 +36,7 @@ class ChannelAvatar extends StatelessWidget {
     } else if (logo.isNotEmpty) {
       child = CachedNetworkImage(
         imageUrl: logo,
+        cacheManager: lumioImageCache,
         width: size,
         height: size,
         fit: BoxFit.cover,

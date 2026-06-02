@@ -6,6 +6,10 @@ import 'package:flutter/foundation.dart';
 
 /// Firebase Core + Crashlytics on cold start.
 class FirebaseBootstrap {
+  static const bool firebaseEnabled = bool.fromEnvironment(
+    'FIREBASE_ENABLED',
+    defaultValue: true,
+  );
   FirebaseBootstrap._();
 
   static bool _initialized = false;
@@ -19,6 +23,14 @@ class FirebaseBootstrap {
 
   /// Call once from `main()` before ads / Remote Config consumers.
   static Future<void> initialize() async {
+    if (!firebaseEnabled) {
+      _initialized = false;
+      _crashlyticsWired = false;
+      if (kDebugMode) {
+        debugPrint('[Lumio] Firebase init skipped — FIREBASE_ENABLED=false');
+      }
+      return;
+    }
     try {
       await Firebase.initializeApp();
       _initialized = true;

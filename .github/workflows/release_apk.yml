@@ -59,13 +59,19 @@ jobs:
             "ADSTERRA_NATIVE_INVOKE_URL", "ADSTERRA_NATIVE_BASE_URL",
             "CAP_BASE_URL", "CAP_HMAC_KEY", "TOFFEE_SUBSCRIBER_TOKEN",
           ]
-          data = {"ADS_ENABLED": "true"}
+          data = {
+            "ADS_ENABLED": "true",
+            "STREAM_TOKEN_BASE_URL": os.environ.get("STREAM_TOKEN_BASE_URL", ""),
+            "CAP_LOCAL_ONLY_MODE": "true",
+          }
           for k in keys:
             v = os.environ.get(k, "")
             if v:
               data[k] = v
+          if not str(data.get("CAP_BASE_URL", "")).strip():
+            data["CAP_LOCAL_ONLY_MODE"] = "true"
           with open("secrets.json", "w") as f:
-            json.dump(data, f)
+            json.dump(data, f, indent=2)
           PY
 
       - run: flutter pub get

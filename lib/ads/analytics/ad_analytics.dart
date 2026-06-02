@@ -53,7 +53,6 @@ class AdAnalytics {
     'lumio_ad_impression',
     'interstitial_shown',
     'channel_tap_slot',
-    'rewarded_complete',
     'banner_impression',
     'adsterra_native_loaded',
     'adsterra_banner_loaded',
@@ -63,6 +62,18 @@ class AdAnalytics {
     'channel_click_count',
     'cap_client_fallback',
     'lumio_levelplay_fill_attempt',
+    'ad_waterfall_attempt',
+    'ad_waterfall_fallback',
+    'ad_waterfall_failure',
+    'ad_interstitial_shown',
+    'ad_interstitial_skipped_cap',
+    'ad_interstitial_failed',
+    'rewarded_shown',
+    'rewarded_complete',
+    'push_permission_prompted',
+    'push_permission_granted',
+    'push_permission_denied',
+    'push_subscribed',
   };
 
   Future<void> init() async {
@@ -106,17 +117,68 @@ class AdAnalytics {
         {'trigger': trigger, 'network': 'levelplay'},
       );
 
+  Future<void> logRewardedShown({required String trigger}) => _event(
+        'rewarded_shown',
+        {'trigger': trigger, 'network': 'levelplay'},
+      );
+
+  Future<void> logRewardedComplete({
+    required String trigger,
+    String? rewardName,
+  }) =>
+      _event('rewarded_complete', {
+        'trigger': trigger,
+        'network': 'levelplay',
+        if (rewardName != null && rewardName.isNotEmpty) 'reward_name': rewardName,
+      });
+
+  Future<void> logAdInterstitialShown({
+    required String placement,
+    required String network,
+    double? ecpmEstimate,
+  }) =>
+      _event('ad_interstitial_shown', {
+        'placement': placement,
+        'network': network,
+        if (ecpmEstimate != null) 'ecpm_estimate': ecpmEstimate,
+      });
+
+  Future<void> logAdInterstitialSkippedCap({
+    required String placement,
+    required String reason,
+  }) =>
+      _event('ad_interstitial_skipped_cap', {
+        'placement': placement,
+        'reason': reason,
+      });
+
+  Future<void> logAdInterstitialFailed({
+    required String placement,
+    required String network,
+    required String error,
+  }) =>
+      _event('ad_interstitial_failed', {
+        'placement': placement,
+        'network': network,
+        'error': error,
+      });
+
+  Future<void> logPushPermissionPrompted({required int sessionNumber}) =>
+      _event('push_permission_prompted', {'session_number': sessionNumber});
+
+  Future<void> logPushPermissionGranted() => _event('push_permission_granted');
+
+  Future<void> logPushPermissionDenied() => _event('push_permission_denied');
+
+  Future<void> logPushSubscribed({required String provider}) =>
+      _event('push_subscribed', {'provider': provider});
+
   Future<void> logChannelTapSlot({required String slot}) => _event(
         'channel_tap_slot',
         {
           'slot': slot,
           'sdk': slot == 'adsterra' ? 'adsterra' : 'levelplay',
         },
-      );
-
-  Future<void> logRewardedComplete({required String placement}) => _event(
-        'rewarded_complete',
-        {'placement': placement, 'network': 'levelplay'},
       );
 
   Future<void> logBannerImpression({required String placement}) => _event(
@@ -214,6 +276,43 @@ class AdAnalytics {
         {'count': count},
       );
 
+  Future<void> logWaterfallAttempt({
+    required String format,
+    required String network,
+    required String trigger,
+  }) =>
+      _event('ad_waterfall_attempt', {
+        'format': format,
+        'network': network,
+        'trigger': trigger,
+      });
+
+  Future<void> logWaterfallFallback({
+    required String format,
+    required String fromNetwork,
+    required String toNetwork,
+    required String trigger,
+    String? reason,
+  }) =>
+      _event('ad_waterfall_fallback', {
+        'format': format,
+        'from_network': fromNetwork,
+        'to_network': toNetwork,
+        'trigger': trigger,
+        if (reason != null) 'reason': reason,
+      });
+
+  Future<void> logWaterfallFailure({
+    required String format,
+    required String trigger,
+    String? lastNetwork,
+  }) =>
+      _event('ad_waterfall_failure', {
+        'format': format,
+        'trigger': trigger,
+        if (lastNetwork != null) 'last_network': lastNetwork,
+      });
+
   Future<void> logCapClientFallback({
     required String reason,
     required String placement,
@@ -229,7 +328,6 @@ class AdAnalytics {
 
   static String _normalizeFormat(String raw) {
     final f = raw.toLowerCase();
-    if (f.contains('reward')) return 'rewarded';
     if (f.contains('interstitial')) return 'interstitial';
     if (f.contains('banner')) return 'banner';
     if (f.contains('native')) return 'native';

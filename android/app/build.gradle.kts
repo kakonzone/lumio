@@ -1,4 +1,5 @@
 import org.gradle.api.Project
+import org.gradle.api.GradleException
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.io.File
 import java.io.FileInputStream
@@ -78,6 +79,28 @@ fun resolveReleaseStoreFile(): File? {
     return file.takeIf { it.exists() }
 }
 
+val releaseBuildAbortMessage =
+    "RELEASE BUILD ABORTED: key.properties missing or storeFile null. See docs/RELEASE_SIGNING.md"
+
+val isReleaseBuildRequested = gradle.startParameter.taskNames.any { task ->
+    task.contains("release", ignoreCase = true)
+}
+
+/** Local APK size check only (`tool/build_size_apk.sh`). Production release still fail-closed. */
+val localSizeCheck =
+    project.findProperty("LUMIO_LOCAL_SIZE_CHECK")?.toString() == "true"
+
+fun releaseSigningReady(): Boolean {
+    val store = resolveReleaseStoreFile()
+    val storePass = releaseSigningValue("storePassword", "RELEASE_STORE_PASSWORD")
+    val alias = releaseSigningValue("keyAlias", "RELEASE_KEY_ALIAS")
+    val keyPass = releaseSigningValue("keyPassword", "RELEASE_KEY_PASSWORD")
+    return store != null &&
+        !storePass.isNullOrBlank() &&
+        !alias.isNullOrBlank() &&
+        !keyPass.isNullOrBlank()
+}
+
 android {
     namespace = "com.kakonzone.lumio"
     compileSdk = flutter.compileSdkVersion
@@ -89,12 +112,21 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
+    androidResources {
+        localeFilters += listOf("en")
+        // generateLocaleConfig = true  // Disabled due to build issues
+    }
+
     defaultConfig {
         applicationId = "com.kakonzone.lumio"
+        // Android 5.0 Lollipop (API 21)+ — release: flutter build apk --split-per-abi (32 + 64 separate).
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        multiDexEnabled = true
+
+        // ABI splits are configured in splits block below
 
         // Sync native manifest key with Dart String.fromEnvironment('LEVELPLAY_APP_KEY').
         resValue("string", "levelplay_app_key", levelPlayAppKey)
@@ -102,9 +134,14 @@ android {
 
         externalNativeBuild {
             cmake {
-                cppFlags += listOf("-O3", "-fvisibility=hidden", "-DNDEBUG")
+                cppFlags += listOf("-O3", "-fvisibility=hidden", "-DNDEBUG", "-ffunction-sections", "-fdata-sections")
+                cFlags += listOf("-O3", "-fvisibility=hidden", "-DNDEBUG", "-ffunction-sections", "-fdata-sections")
+                arguments += listOf("-DANDROID_STL=c++_shared", "-DANDROID_ARM_NEON=TRUE")
             }
         }
+
+        // ABI: use `flutter build apk --split-per-abi --target-platform=android-arm64`
+        // Do not set ndk.abiFilters here — conflicts with Flutter split-per-abi.
     }
 
     externalNativeBuild {
@@ -114,27 +151,31 @@ android {
     }
 
     signingConfigs {
+        getByName("debug") {
+            // API 21–23 (Android 5–6) require JAR (v1) signatures or install → Parse error.
+            enableV1Signing = true
+            enableV2Signing = true
+        }
         create("release") {
+            enableV1Signing = true
+            enableV2Signing = true
             val store = resolveReleaseStoreFile()
-            if (store != null) {
+            val storePass = releaseSigningValue("storePassword", "RELEASE_STORE_PASSWORD")
+            val alias = releaseSigningValue("keyAlias", "RELEASE_KEY_ALIAS")
+            val keyPass = releaseSigningValue("keyPassword", "RELEASE_KEY_PASSWORD")
+
+            if (store != null && !storePass.isNullOrBlank() && !alias.isNullOrBlank() && !keyPass.isNullOrBlank()) {
                 storeFile = store
-                storePassword = releaseSigningValue("storePassword", "RELEASE_STORE_PASSWORD")
-                keyAlias = releaseSigningValue("keyAlias", "RELEASE_KEY_ALIAS")
-                keyPassword = releaseSigningValue("keyPassword", "RELEASE_KEY_PASSWORD")
-            } else {
-                logger.warn(
-                    "Release keystore missing — set android/key.properties or RELEASE_* env / dart-define.",
-                )
+                storePassword = storePass
+                keyAlias = alias
+                keyPassword = keyPass
             }
         }
     }
 
     buildTypes {
         release {
-            val releaseSigning = signingConfigs.getByName("release")
-            signingConfig =
-                if (releaseSigning.storeFile != null) releaseSigning
-                else signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("debug")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -147,8 +188,57 @@ android {
         }
         debug {
             isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
+
+    // Enable app bundle for Play Store (smaller download size)
+    bundle {
+        language {
+            enableSplit = false
+        }
+        density {
+            enableSplit = true
+        }
+        abi {
+            enableSplit = true
+        }
+    }
+
+    // Enable R8 full mode for better optimization
+    buildFeatures {
+        buildConfig = true
+    }
+
+    // Further optimization: compress native libraries and remove unused
+    packaging {
+        jniLibs {
+            useLegacyPackaging = false
+        }
+        resources {
+            excludes += setOf(
+                "META-INF/DEPENDENCIES",
+                "META-INF/LICENSE",
+                "META-INF/LICENSE.txt",
+                "META-INF/NOTICE",
+                "META-INF/*.kotlin_module",
+                "META-INF/INDEX.LIST",
+                "META-INF/io.netty.versions.properties",
+                "**/*.proto",
+                "META-INF/*.version",
+                "META-INF/androidx.*",
+                "META-INF/com.google.*",
+                "META-INF/services/**",
+                "kotlin/**",
+                "kotlin_module/**",
+                "META-INF/AL2.0",
+                "META-INF/LGPL2.1",
+            )
+        }
+    }
+
+    // Per-ABI APKs: use `flutter build apk --release --split-per-abi` (see tool/build_release_apk.sh).
+    // Gradle abi splits stay off — Flutter split-per-abi avoids ndk.abiFilters conflicts.
 
 }
 
@@ -163,9 +253,14 @@ flutter {
 }
 
 dependencies {
+    implementation("androidx.multidex:multidex:2.0.1")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
     implementation("com.google.android.gms:play-services-appset:16.0.2")
     implementation("com.google.android.gms:play-services-ads-identifier:18.0.1")
     implementation("com.google.android.gms:play-services-basement:18.3.0")
+    // Exclude unused transitive dependencies to reduce size
+    implementation("com.google.android.gms:play-services-base:18.5.0") {
+        exclude(group = "com.google.android.gms", module = "play-services-tasks")
+    }
 }

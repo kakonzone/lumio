@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Short alias: ./run  →  ads-enabled debug (same as scripts/flutter_run_with_ads.sh)
+exec "$(cd "$(dirname "$0")" && pwd)/scripts/flutter_run_with_ads.sh" "$@"

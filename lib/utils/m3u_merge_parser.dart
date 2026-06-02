@@ -1,3 +1,4 @@
+import '../config/channel_categories.dart';
 import '../models/model.dart';
 
 /// Parses M3U playlists and merges duplicate channel names into multi-link entries.
@@ -59,7 +60,8 @@ class M3uMergeParser {
         () => _Builder(
           id: '${idPrefix}_${byName.length}',
           name: name,
-          category: mapCategory?.call(pendingGroup, name) ?? _defaultCategory(pendingGroup, name),
+          category: mapCategory?.call(pendingGroup, name) ??
+              categoryForGroup(pendingGroup, name),
           country: mapCountry?.call(pendingGroup, name) ?? _defaultCountry(pendingGroup, name),
           group: pendingGroup,
           logo: pendingLogo,
@@ -89,53 +91,9 @@ class M3uMergeParser {
   static String _attr(String l, String k) =>
       RegExp('$k="([^"]*)"', caseSensitive: false).firstMatch(l)?.group(1) ?? '';
 
-  static String _defaultCategory(String group, String name) {
-    final s = (group + name).toLowerCase();
-    if (s.contains('sport') ||
-        s.contains('cricket') ||
-        s.contains('football') ||
-        s.contains('star sports') ||
-        s.contains('sony sports') ||
-        s.contains('eurosport') ||
-        s.contains('espn') ||
-        s.contains('willow') ||
-        s.contains('tsports') ||
-        s.contains('ptv sports')) {
-      return 'Sports';
-    }
-    if (s.contains('movie') || s.contains('cinema') || s.contains('film')) {
-      return 'Movies';
-    }
-    if (s.contains('kids') || s.contains('cartoon') || s.contains('nick') || s.contains('pogo')) {
-      return 'Kids';
-    }
-    if (s.contains('news') ||
-        s.contains('aaj tak') ||
-        s.contains('ndtv') ||
-        s.contains('cnn') ||
-        s.contains('republic') ||
-        s.contains('abp') ||
-        s.contains('times now') ||
-        s.contains('wion')) {
-      return 'News';
-    }
-    if (s.contains('bangla') ||
-        s.contains('bangladesh') ||
-        s.contains('jamuna') ||
-        s.contains('somoy') ||
-        s.contains('btv') ||
-        s.contains('channel 24') ||
-        s.contains('channel i')) {
-      return 'Bangladesh';
-    }
-    if (s.contains('hindi') || s.contains('zee') || s.contains('colors') || s.contains('star plus')) {
-      return 'Hindi';
-    }
-    if (s.contains('english') || s.contains('discovery') || s.contains('nat geo')) {
-      return 'English';
-    }
-    return 'Entertainment';
-  }
+  /// Public alias for playlist importers (e.g. owner M3U on GitHub).
+  static String categoryForGroup(String group, String name) =>
+      ChannelCategoryRegistry.fromGroupTitle(group, name);
 
   static String _defaultCountry(String group, String name) {
     final s = (group + name).toLowerCase();

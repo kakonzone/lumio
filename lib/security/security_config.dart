@@ -15,6 +15,12 @@ class SecurityConfig {
   /// রিলিজে রুট/এমুলেটর/ডিবাগার/Frida ইত্যাদি পেলে অ্যাপ বন্ধ
   static const bool strictModeInRelease = true;
 
+  /// `--dart-define=LUMIO_SIDELOAD_DEV=true` — local APK via adb (USB debugging on).
+  static const bool sideloadDevBuild = bool.fromEnvironment(
+    'LUMIO_SIDELOAD_DEV',
+    defaultValue: false,
+  );
+
   /// VPN ব্যবহারকারী ব্লক (অনেক লিগitimate ইউজার VPN ব্যবহার করে — ডিফল্ট false)
   static const bool blockVpn = false;
 
@@ -40,13 +46,69 @@ class SecurityConfig {
   /// স্বাক্ষরিত স্ট্রিম টোকেন এন্ডপয়েন্ট
   static const String streamTokenPath = '/v1/stream/token';
 
-  /// TLS সার্টিফিকেট পিন (Base64 SHA-256 SPKI) — খালি = শুধু সিস্টেম CA
-  static const List<String> certificatePins = <String>[
-    // 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
-  ];
+  /// Global stream/API pins (fallback when host-specific stream token pins unset).
+  static const String sslPinPrimary = String.fromEnvironment(
+    'SSL_PIN_PRIMARY',
+    defaultValue: '__MISSING__',
+  );
+  static const String sslPinBackup = String.fromEnvironment(
+    'SSL_PIN_BACKUP',
+    defaultValue: '__MISSING__',
+  );
 
-  /// ব্যাকআপ পিন (সার্ট রোটেশনের জন্য)
-  static const List<String> certificateBackupPins = <String>[];
+  /// TLS pinning targets (host -> primary/backup pins via dart-define).
+  static const String streamTokenPinPrimary = String.fromEnvironment(
+    'SSL_PIN_STREAM_TOKEN_PRIMARY',
+    defaultValue: '__MISSING__',
+  );
+  static const String streamTokenPinBackup = String.fromEnvironment(
+    'SSL_PIN_STREAM_TOKEN_BACKUP',
+    defaultValue: '__MISSING__',
+  );
+  static const String levelPlayPinPrimary = String.fromEnvironment(
+    'SSL_PIN_LEVELPLAY_PRIMARY',
+    defaultValue: '__MISSING__',
+  );
+  static const String levelPlayPinBackup = String.fromEnvironment(
+    'SSL_PIN_LEVELPLAY_BACKUP',
+    defaultValue: '__MISSING__',
+  );
+  static const String supersonicPinPrimary = String.fromEnvironment(
+    'SSL_PIN_SUPERSONIC_PRIMARY',
+    defaultValue: '__MISSING__',
+  );
+  static const String supersonicPinBackup = String.fromEnvironment(
+    'SSL_PIN_SUPERSONIC_BACKUP',
+    defaultValue: '__MISSING__',
+  );
+  static const String adsterraPinPrimary = String.fromEnvironment(
+    'SSL_PIN_ADSTERRA_PRIMARY',
+    defaultValue: '__MISSING__',
+  );
+  static const String adsterraPinBackup = String.fromEnvironment(
+    'SSL_PIN_ADSTERRA_BACKUP',
+    defaultValue: '__MISSING__',
+  );
+
+  static List<String> _pins(String primary, String backup) => [
+        if (primary.trim().isNotEmpty && primary != '__MISSING__') primary.trim(),
+        if (backup.trim().isNotEmpty && backup != '__MISSING__') backup.trim(),
+      ];
+
+  static Map<String, List<String>> get hostPins => {
+        'app.levelplay.com': _pins(levelPlayPinPrimary, levelPlayPinBackup),
+        'init.supersonic.com': _pins(
+          supersonicPinPrimary,
+          supersonicPinBackup,
+        ),
+        'adsterra.com': _pins(adsterraPinPrimary, adsterraPinBackup),
+      };
+
+  static List<String> get streamTokenPins {
+    final specific = _pins(streamTokenPinPrimary, streamTokenPinBackup);
+    if (specific.isNotEmpty) return specific;
+    return _pins(sslPinPrimary, sslPinBackup);
+  }
 
   /// HMAC রিকোয়েস্ট সাইনিং সিক্রেট (সার্ভারের সাথে মিলিয়ে রাখুন)
   static const String hmacSecret = String.fromEnvironment(

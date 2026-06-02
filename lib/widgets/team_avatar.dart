@@ -1,7 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:lumio_tv/theme/app_theme.dart';
-import '../theme/app_theme.dart';
+import '../utils/lumio_image_cache.dart';
 
 /// Team crest: network logo, else colored initials + sport hint.
 class TeamAvatar extends StatelessWidget {
@@ -53,6 +53,7 @@ class TeamAvatar extends StatelessWidget {
       child: url.isNotEmpty
           ? CachedNetworkImage(
               imageUrl: url,
+              cacheManager: lumioImageCache,
               fit: BoxFit.cover,
               httpHeaders: const {'User-Agent': 'Mozilla/5.0'},
               placeholder: (_, __) => _initials(context),

@@ -56,9 +56,19 @@ class SecurityManager {
     }
 
     _lastCheckPassed = await performSecurityChecks();
-    if (!_lastCheckPassed && SecurityConfig.strictModeInRelease) {
-      await _handleFailure(SecurityFailureMode.exitSilently);
-    } else if (_lastCheckPassed) {
+    if (!_lastCheckPassed) {
+      if (SecurityConfig.sideloadDevBuild) {
+        // ignore: avoid_print
+        print(
+          '[SecurityManager] LUMIO_SIDELOAD_DEV — checks failed but app continues '
+          '(USB debugging / sideload testing)',
+        );
+        _lastCheckPassed = true;
+      } else if (SecurityConfig.strictModeInRelease) {
+        await _handleFailure(SecurityFailureMode.exitSilently);
+      }
+    }
+    if (_lastCheckPassed) {
       _startWatchdog();
     }
     return _lastCheckPassed;
@@ -70,7 +80,7 @@ class SecurityManager {
     _watchdog = Timer.periodic(SecurityConfig.watchdogInterval, (_) async {
       if (kDebugMode && SecurityConfig.bypassChecksInDebug) return;
       final ok = await performSecurityChecks();
-      if (!ok && SecurityConfig.strictModeInRelease) {
+      if (!ok && SecurityConfig.strictModeInRelease && !SecurityConfig.sideloadDevBuild) {
         _lastCheckPassed = false;
         await _handleFailure(SecurityFailureMode.exitSilently);
       }
@@ -99,7 +109,10 @@ class SecurityManager {
         Future.value(true),
       _checkProxyDetection(),
       _checkNativeIntegrity(),
-      if (SecurityConfig.strictModeInRelease) _checkAdbDebugging() else Future.value(true),
+      if (SecurityConfig.strictModeInRelease && !SecurityConfig.sideloadDevBuild)
+        _checkAdbDebugging()
+      else
+        Future.value(true),
     ]);
 
     return results.every((v) => v);

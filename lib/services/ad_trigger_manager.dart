@@ -5,7 +5,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../ads/server_cap_client.dart';
 import 'server_cap.dart';
+import '../ads/interstitial_placement.dart';
 import '../config/ad_config.dart';
+import '../config/ad_policy_config.dart';
 import 'ad_consent_service.dart';
 import 'ad_safety_service.dart';
 import 'user_preferences.dart';
@@ -31,8 +33,12 @@ class AdTriggerManager {
   int _sessionInterstitialsShown = 0;
   int _sessionInterstitialAttempts = 0;
   bool _exitAdShown = false;
-  int _playerVideoAdsShown = 0;
-  DateTime? _lastPlayerVideoAdAt;
+  int _sessionPrerollShown = 0;
+  final Set<String> _prerollShownChannelKeys = {};
+  int _sessionMidrollShown = 0;
+  DateTime? _lastMidrollAt;
+  DateTime? _currentChannelStartedAt;
+  String? _currentChannelKey;
 
   String _hourKey() {
     final n = DateTime.now();
@@ -54,18 +60,26 @@ class AdTriggerManager {
   Future<void> waitUntilAdsEligible() async {
     final deadline = _adsEligibleAfter;
     if (deadline == null) return;
-    final remaining = deadline.difference(DateTime.now());
-    if (remaining > Duration.zero) {
-      await Future.delayed(remaining);
+    // Avoid a single long delay which can be flaky under some test schedulers.
+    while (true) {
+      final remaining = deadline.difference(DateTime.now());
+      if (remaining <= Duration.zero) return;
+      final slice = remaining.inMilliseconds > 250
+          ? const Duration(milliseconds: 250)
+          : remaining;
+      await Future.delayed(slice);
     }
   }
 
-  @visibleForTesting
-  bool get debugIsAdsEligible {
+  /// True when splash consent delay ([splashMinMsBeforeAds]) has elapsed.
+  bool get isSplashAdsDelaySatisfied {
     final deadline = _adsEligibleAfter;
     if (deadline == null) return true;
     return !DateTime.now().isBefore(deadline);
   }
+
+  @visibleForTesting
+  bool get debugIsAdsEligible => isSplashAdsDelaySatisfied;
 
   @visibleForTesting
   void debugResetConsentGate() {
@@ -84,11 +98,17 @@ class AdTriggerManager {
     _sessionInterstitialsShown = 0;
     _sessionInterstitialAttempts = 0;
     _exitAdShown = false;
-    _playerVideoAdsShown = 0;
-    _lastPlayerVideoAdAt = null;
+    _sessionPrerollShown = 0;
+    _prerollShownChannelKeys.clear();
+    _sessionMidrollShown = 0;
+    _lastMidrollAt = null;
+    _currentChannelStartedAt = null;
+    _currentChannelKey = null;
     _lastIronSourceInterstitial = null;
     _lastAdsterraSurfaceEvent = null;
   }
+
+  static const _hourlyRewardedPrefix = 'lumio_hourly_rewarded';
 
   void recordChannelClick() => _sessionChannelClicks++;
 
@@ -135,10 +155,25 @@ class AdTriggerManager {
     return elapsed.inSeconds < AdConfig.networkIsolationSeconds;
   }
 
-  /// When RC `aggressive_mode` is true, cooldowns are 30% shorter (×0.7).
+  AdPolicyConfig get _policy => AdPolicyConfig.instance;
+
+  /// Shorter gaps when RC `aggressive_mode` is on (RC multiplier or legacy ×0.7).
   static int scaledCooldownSeconds(int baseSeconds) {
+    if (baseSeconds <= 0) return baseSeconds;
     if (!AdSafetyService.instance.aggressiveMode) return baseSeconds;
-    return (baseSeconds * 0.7).round().clamp(1, baseSeconds);
+    final m = AdPolicyConfig.instance.aggressiveModeMultiplier;
+    final factor = m > 1.0 ? m : (1 / 0.7);
+    return (baseSeconds / factor).round().clamp(1, baseSeconds);
+  }
+
+  void onPlayerChannelStarted(String channelKey) {
+    _currentChannelKey = channelKey;
+    _currentChannelStartedAt = DateTime.now();
+  }
+
+  void onPlayerChannelStopped() {
+    _currentChannelKey = null;
+    _currentChannelStartedAt = null;
   }
 
   Duration get interstitialNaturalDelay {
@@ -177,16 +212,181 @@ class AdTriggerManager {
     if (_sessionChannelClicks < AdConfig.channelClicksBeforeInterstitial) {
       return false;
     }
-    if (_sessionInterstitialsShown >= AdConfig.maxInterstitialsPerSession) {
+    if (_sessionInterstitialsShown >= _policy.interstitialMaxPerSession) {
       return false;
     }
     if (_lastIronSourceInterstitial != null) {
       final gap = DateTime.now().difference(_lastIronSourceInterstitial!);
-      if (gap.inSeconds < scaledCooldownSeconds(AdConfig.interstitialCooldownSeconds)) {
+      if (gap.inSeconds <
+          scaledCooldownSeconds(_policy.interstitialSessionCooldownSeconds)) {
         return false;
       }
     }
     return true;
+  }
+
+  Future<InterstitialCapResult> canShowPlacement(
+    InterstitialPlacement placement, {
+    required bool removeAds,
+    String? channelKey,
+  }) async {
+    switch (placement) {
+      case InterstitialPlacement.preroll:
+        return _canShowPreroll(removeAds: removeAds, channelKey: channelKey);
+      case InterstitialPlacement.midroll:
+        return _canShowMidroll(removeAds: removeAds);
+      case InterstitialPlacement.appOpen:
+        if (!await canShowAppOpenSubstitute(removeAds: removeAds)) {
+          return const InterstitialCapResult.denied('app_open_cap');
+        }
+        return const InterstitialCapResult.allowed();
+      case InterstitialPlacement.channelTap:
+        if (!await canShowIronSourceInterstitial(
+          isStreaming: false,
+          removeAds: removeAds,
+        )) {
+          return const InterstitialCapResult.denied('channel_tap_cap');
+        }
+        return const InterstitialCapResult.allowed();
+    }
+  }
+
+  Future<InterstitialCapResult> _canShowPreroll({
+    required bool removeAds,
+    String? channelKey,
+  }) async {
+    if (!_policy.prerollEnabled) {
+      return const InterstitialCapResult.denied('preroll_disabled');
+    }
+    if (removeAds || isAdFree) {
+      return const InterstitialCapResult.denied('ad_free');
+    }
+    if (_sessionPrerollShown >= AdConfig.prerollMaxPerSession) {
+      return const InterstitialCapResult.denied('preroll_session_cap');
+    }
+    final key = channelKey?.trim() ?? '';
+    if (key.isNotEmpty && _prerollShownChannelKeys.contains(key)) {
+      return const InterstitialCapResult.denied('preroll_channel_cap');
+    }
+    if (await _recentPopunderWithin(AdConfig.prerollPopunderCooldownSeconds)) {
+      return const InterstitialCapResult.denied('recent_popunder');
+    }
+    if (!await _baseInterstitialAllowed(removeAds: removeAds)) {
+      return const InterstitialCapResult.denied('interstitial_cap');
+    }
+    return const InterstitialCapResult.allowed();
+  }
+
+  Future<InterstitialCapResult> _canShowMidroll({required bool removeAds}) async {
+    if (removeAds || isAdFree) {
+      return const InterstitialCapResult.denied('ad_free');
+    }
+    if (_sessionMidrollShown >= _policy.midrollMaxPerSession) {
+      return const InterstitialCapResult.denied('midroll_session_cap');
+    }
+    final started = _currentChannelStartedAt;
+    if (started == null) {
+      return const InterstitialCapResult.denied('no_active_channel');
+    }
+    if (DateTime.now().difference(started).inSeconds <
+        AdConfig.midRollMinChannelSeconds) {
+      return const InterstitialCapResult.denied('channel_watch_too_short');
+    }
+    if (_lastMidrollAt != null) {
+      final gap = DateTime.now().difference(_lastMidrollAt!);
+      if (gap.inMinutes < _policy.midrollIntervalMinutes) {
+        return const InterstitialCapResult.denied('midroll_interval');
+      }
+    }
+    if (!await _baseInterstitialAllowed(removeAds: removeAds)) {
+      return const InterstitialCapResult.denied('interstitial_cap');
+    }
+    return const InterstitialCapResult.allowed();
+  }
+
+  Future<bool> _baseInterstitialAllowed({required bool removeAds}) async {
+    if (AdSafetyService.instance.adsBlockedInDebug) return false;
+    if (_networkIsolationActive) return false;
+    final adsEligibleAfter = _adsEligibleAfter;
+    if (adsEligibleAfter != null && DateTime.now().isBefore(adsEligibleAfter)) {
+      return false;
+    }
+    if (_lastIronSourceInterstitial != null) {
+      final gap = DateTime.now().difference(_lastIronSourceInterstitial!);
+      if (gap.inSeconds < scaledCooldownSeconds(_policy.interstitialMinGapSeconds)) {
+        return false;
+      }
+    }
+    if (!await _hourlyCountBelow(
+      'lumio_is_inter',
+      _policy.interstitialMaxPerHour,
+    )) {
+      return false;
+    }
+    if (_sessionInterstitialsShown >= _policy.interstitialMaxPerSession) {
+      return false;
+    }
+    if (!await ServerCapService.instance.allowsPlacement('interstitial')) {
+      return false;
+    }
+    return true;
+  }
+
+  Future<bool> _recentPopunderWithin(int seconds) async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastMs = prefs.getInt('lumio_popunder_last_ms');
+    if (lastMs == null) return false;
+    final last = DateTime.fromMillisecondsSinceEpoch(lastMs);
+    return DateTime.now().difference(last).inSeconds < seconds;
+  }
+
+  Future<void> recordPlacementShown(
+    InterstitialPlacement placement, {
+    String? channelKey,
+  }) async {
+    switch (placement) {
+      case InterstitialPlacement.preroll:
+        _sessionPrerollShown++;
+        final key = channelKey?.trim() ?? '';
+        if (key.isNotEmpty) _prerollShownChannelKeys.add(key);
+        await recordInterstitialShown();
+      case InterstitialPlacement.midroll:
+        _sessionMidrollShown++;
+        _lastMidrollAt = DateTime.now();
+        await recordInterstitialShown();
+      case InterstitialPlacement.appOpen:
+        await recordAppOpenSubstituteShown();
+      case InterstitialPlacement.channelTap:
+        await recordInterstitialShown();
+    }
+  }
+
+  /// Rewarded video — hourly cap + server cap; not blocked by streaming shell rule.
+  Future<bool> canShowRewarded({
+    required bool removeAds,
+  }) async {
+    if (removeAds || isAdFree) return false;
+    if (AdSafetyService.instance.adsBlockedInDebug) return false;
+    if (!AdConfig.hasLevelPlayRewardedUnit) return false;
+    if (_networkIsolationActive) return false;
+    final adsEligibleAfter = _adsEligibleAfter;
+    if (adsEligibleAfter != null && DateTime.now().isBefore(adsEligibleAfter)) {
+      return false;
+    }
+    if (!await _hourlyCountBelow(
+      _hourlyRewardedPrefix,
+      AdConfig.rewardedMaxPerHour,
+    )) {
+      return false;
+    }
+    if (!await ServerCapService.instance.allowsPlacement('rewarded')) {
+      return false;
+    }
+    return true;
+  }
+
+  Future<void> recordRewardedShown() async {
+    await _incrementHourly(_hourlyRewardedPrefix);
   }
 
   Future<bool> canShowIronSourceInterstitial({
@@ -202,24 +402,12 @@ class AdTriggerManager {
     if (AdSafetyService.instance.adsBlockedInDebug) return false;
     if (_networkIsolationActive) return false;
 
-    if (_lastIronSourceInterstitial != null) {
-      final gap = DateTime.now().difference(_lastIronSourceInterstitial!);
-      if (gap.inSeconds < scaledCooldownSeconds(AdConfig.interstitialMinGapSeconds)) {
-        return false;
-      }
-    }
-
-    if (!await _hourlyCountBelow(
-      'lumio_is_inter',
-      AdConfig.interstitialMaxPerHour,
-    )) {
+    if (!await _baseInterstitialAllowed(removeAds: removeAds)) {
       return false;
     }
-
-    if (!await ServerCapService.instance.allowsPlacement('interstitial')) {
+    if (_sessionChannelClicks < AdConfig.channelClicksBeforeInterstitial) {
       return false;
     }
-
     return true;
   }
 
@@ -244,23 +432,6 @@ class AdTriggerManager {
   /// Alias — prefer [recordInterstitialShown].
   Future<void> recordIronSourceInterstitialShown() => recordInterstitialShown();
 
-  Future<bool> canShowRewarded({required bool removeAds}) async {
-    if (AdSafetyService.instance.adsBlockedInDebug) return false;
-    if (removeAds || isAdFree) return false;
-    if (!await _hourlyCountBelow(
-      'lumio_is_rewarded',
-      AdConfig.rewardedMaxPerHour,
-    )) {
-      return false;
-    }
-    return ServerCapService.instance.allowsPlacement('rewarded');
-  }
-
-  /// Call only from LevelPlay `onAdRewarded` (not on close/timeout).
-  Future<void> recordRewardedShown() async {
-    await _incrementHourly('lumio_is_rewarded');
-  }
-
   /// App-open substitute (interstitial) — 3/day, 4h gap.
   Future<bool> canShowAppOpenSubstitute({required bool removeAds}) async {
     if (AdSafetyService.instance.adsBlockedInDebug) return false;
@@ -282,7 +453,7 @@ class AdTriggerManager {
 
     if (!await _hourlyCountBelow(
       'lumio_is_inter',
-      AdConfig.interstitialMaxPerHour,
+      _policy.interstitialMaxPerHour,
     )) {
       return false;
     }
@@ -420,27 +591,4 @@ class AdTriggerManager {
 
   void recordExitAdShown() => _exitAdShown = true;
 
-  bool canShowPlayerVideoAd({
-    required bool removeAds,
-    bool isMidRoll = false,
-  }) {
-    if (removeAds || isAdFree) return false;
-    if (_playerVideoAdsShown >= AdConfig.maxInterstitialsPerSession) {
-      return false;
-    }
-    if (_lastPlayerVideoAdAt != null) {
-      final minGap = isMidRoll
-          ? Duration(minutes: AdConfig.playerMidRollIntervalMinutes)
-          : const Duration(seconds: 30);
-      if (DateTime.now().difference(_lastPlayerVideoAdAt!) < minGap) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  void recordPlayerVideoAdShown() {
-    _playerVideoAdsShown++;
-    _lastPlayerVideoAdAt = DateTime.now();
-  }
 }

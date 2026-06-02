@@ -1,4 +1,5 @@
 import '../models/model.dart';
+import 'priority_broadcasters.dart';
 import 'sport_channel_icons.dart';
 
 /// Live sports ordering: Bangladesh → India → Pakistan → other regions.
@@ -133,6 +134,10 @@ class SportsChannelPriority {
   }
 
   static int compare(ChannelModel a, ChannelModel b) {
+    final pa = PriorityBroadcasters.rank(a);
+    final pb = PriorityBroadcasters.rank(b);
+    if (pa != pb) return pa.compareTo(pb);
+
     final ra = regionPriority(a);
     final rb = regionPriority(b);
     if (ra != rb) return ra.compareTo(rb);

@@ -1,11 +1,12 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../ad_log.dart';
 import '../ad_manager.dart';
+import '../utils/ad_webview_navigation_policy.dart';
+import '../utils/lumio_webview_config.dart';
 import '../../utils/ad_debug_log.dart';
 import 'adsterra_html.dart';
 import 'adsterra_native_cache.dart';
@@ -28,6 +29,8 @@ class AdsterraWebView extends StatefulWidget {
   final String placement;
   final bool fullWidth;
   final String? cachedHtml;
+  /// When false, WebView still mounts/loads but is drawn at opacity 0 (player strip).
+  final bool userVisible;
 
   const AdsterraWebView({
     super.key,
@@ -36,6 +39,7 @@ class AdsterraWebView extends StatefulWidget {
     required this.placement,
     this.fullWidth = true,
     this.cachedHtml,
+    this.userVisible = true,
   });
 
   @override
@@ -45,11 +49,14 @@ class AdsterraWebView extends StatefulWidget {
 class _AdsterraWebViewState extends State<AdsterraWebView> {
   WebViewController? _controller;
   bool _loading = true;
+  bool _pageLoaded = false;
   bool _loadEventLogged = false;
   String? _lastError;
   bool _disposed = false;
   bool _hasPainted = false;
   bool _clickLogged = false;
+  int _loadAttempts = 0;
+  Timer? _loadGuardTimer;
 
   @override
   void initState() {
@@ -60,7 +67,8 @@ class _AdsterraWebViewState extends State<AdsterraWebView> {
     _mountWebView();
   }
 
-  void _mountWebView() {
+  Future<void> _mountWebView() async {
+    _loadGuardTimer?.cancel();
     final cached = widget.cachedHtml ??
         AdsterraNativeCache.instance.get(widget.placement);
     final html = cached ?? widget.html;
@@ -69,45 +77,86 @@ class _AdsterraWebViewState extends State<AdsterraWebView> {
     }
 
     final baseUrl = AdsterraHtml.baseUrlForPlacement(widget.placement);
-    final controller = WebViewController()
+    final controller = await createLumioWebViewController();
+    if (!mounted || _disposed) return;
+    controller
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0xFF0C0C0E))
+      ..setBackgroundColor(Colors.transparent)
+      ..setUserAgent('Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 '
+          '(KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36')
       ..setNavigationDelegate(
         NavigationDelegate(
           onNavigationRequest: (request) {
-            _maybeLogAdsterraClick(request.url);
-            return NavigationDecision.navigate;
+            final decision = AdWebViewNavigationPolicy.evaluate(request.url);
+            if (decision == NavigationDecision.navigate) {
+              _maybeLogAdsterraClick(request.url);
+            }
+            return decision;
           },
           onPageFinished: (_) {
             if (!mounted || _disposed) return;
-            setState(() => _loading = false);
+            final mountedController = _controller;
+            if (mountedController != null) {
+              unawaited(
+                mountedController.runJavaScript(
+                  "document.documentElement.style.background='transparent';"
+                  "document.body.style.background='transparent';",
+                ),
+              );
+            }
+            _loadGuardTimer?.cancel();
+            setState(() {
+              _loading = false;
+              _pageLoaded = true;
+              _lastError = null;
+            });
             _logAdsterraLoadedOnce();
           },
           onWebResourceError: (err) {
             if (!mounted || _disposed) return;
-            _lastError = err.description;
+            _loadGuardTimer?.cancel();
+            if (_loadAttempts < 2) {
+              _loadAttempts++;
+              Future.delayed(const Duration(milliseconds: 400), () {
+                if (mounted && !_disposed) _mountWebView();
+              });
+              return;
+            }
+            setState(() {
+              _lastError = err.description;
+              _loading = false;
+              _pageLoaded = false;
+            });
           },
         ),
       );
     _controller = controller;
-    if (cached != null) {
-      unawaited(controller.loadHtmlString(html, baseUrl: baseUrl));
-      _loading = false;
-    } else {
-      unawaited(controller.loadHtmlString(html, baseUrl: baseUrl));
-    }
+    _loadGuardTimer?.cancel();
+    _loadGuardTimer = Timer(const Duration(seconds: 12), () {
+      if (!mounted || _disposed || !_loading) return;
+      if (_loadAttempts < 2) {
+        _loadAttempts++;
+        _mountWebView();
+        return;
+      }
+      setState(() => _loading = false);
+    });
+    unawaited(controller.loadHtmlString(html, baseUrl: baseUrl));
   }
 
   @override
   void dispose() {
     _disposed = true;
+    _loadGuardTimer?.cancel();
     if (!_hasPainted && !_loadEventLogged) {
       adLog(
         '[AdsterraNative] disposed before paint — impression suppressed '
         'placement=${widget.placement}',
       );
     }
+    final c = _controller;
     _controller = null;
+    unawaited(disposeLumioWebView(c));
     super.dispose();
   }
 
@@ -160,6 +209,9 @@ class _AdsterraWebViewState extends State<AdsterraWebView> {
       placement: p,
       format: isBanner ? 'banner_webview' : 'native_webview',
     );
+    if (p.toLowerCase().contains('popunder')) {
+      adLog('[Adsterra] popunder loaded placement=$p');
+    }
   }
 
   static bool _isBannerPlacement(String placement) {
@@ -177,13 +229,17 @@ class _AdsterraWebViewState extends State<AdsterraWebView> {
     if (controller == null) {
       return SizedBox(height: widget.height);
     }
-    return SizedBox(
+
+    final webStack = SizedBox(
       height: widget.height,
       width: widget.fullWidth ? double.infinity : widget.height,
       child: Stack(
         children: [
-          WebViewWidget(controller: controller),
-          if (_loading)
+          Opacity(
+            opacity: _pageLoaded ? 1 : 0.01,
+            child: WebViewWidget(controller: controller),
+          ),
+          if (widget.userVisible && _loading)
             const Center(
               child: SizedBox(
                 width: 20,
@@ -191,21 +247,17 @@ class _AdsterraWebViewState extends State<AdsterraWebView> {
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
             ),
-          if (_lastError != null && !_loading)
-            Positioned(
-              left: 4,
-              right: 4,
-              bottom: 2,
-              child: Text(
-                'Ad',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 9,
-                  color: Colors.white.withValues(alpha: 0.35),
-                ),
-              ),
-            ),
         ],
+      ),
+    );
+
+    if (widget.userVisible) return webStack;
+
+    return Opacity(
+      opacity: 0,
+      child: IgnorePointer(
+        ignoring: true,
+        child: webStack,
       ),
     );
   }

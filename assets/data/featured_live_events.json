@@ -1,0 +1,86 @@
+{
+  "sectionTitle": "World Cup 2026",
+  "sectionSubtitle": "Tap a match — pick your channel link",
+  "maxCards": 3,
+  "events": [
+    {
+      "id": "wc26-final",
+      "sport": "football",
+      "tournament": "FIFA World Cup 2026 — Final",
+      "teamA": "Brazil",
+      "teamB": "Argentina",
+      "status": "live",
+      "scoreA": "1",
+      "scoreB": "0",
+      "matchDate": "2026-07-19T18:00:00.000Z",
+      "channels": [
+        {
+          "name": "T Sports",
+          "url": "https://owrcovcrpy.gpcdn.net/bpk-tv/1701/output/index.m3u8"
+        },
+        {
+          "name": "Sony Ten 1",
+          "url": "https://backup.m3u8",
+          "alternateStreams": [
+            {
+              "url": "https://hd-backup.m3u8",
+              "label": "HD"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wc26-sf-1",
+      "sport": "football",
+      "tournament": "FIFA World Cup 2026 — Semi Final",
+      "teamA": "France",
+      "teamB": "Germany",
+      "status": "upcoming",
+      "time": "21:00 BDT",
+      "matchDate": "2026-07-14T18:00:00.000Z",
+      "channels": [
+        {
+          "name": "T Sports",
+          "url": "https://owrcovcrpy.gpcdn.net/bpk-tv/1701/output/index.m3u8"
+        },
+        {
+          "name": "Sony Ten 1",
+          "url": "https://backup.m3u8",
+          "alternateStreams": [
+            {
+              "url": "https://hd-backup.m3u8",
+              "label": "HD"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wc26-sf-2",
+      "sport": "football",
+      "tournament": "FIFA World Cup 2026 — Semi Final",
+      "teamA": "Spain",
+      "teamB": "England",
+      "status": "upcoming",
+      "time": "00:30 BDT",
+      "matchDate": "2026-07-15T21:30:00.000Z",
+      "channels": [
+        {
+          "name": "T Sports",
+          "url": "https://owrcovcrpy.gpcdn.net/bpk-tv/1701/output/index.m3u8"
+        },
+        {
+          "name": "Sony Ten 1",
+          "url": "https://backup.m3u8",
+          "alternateStreams": [
+            {
+              "url": "https://hd-backup.m3u8",
+              "label": "HD"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

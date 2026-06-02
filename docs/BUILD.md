@@ -42,10 +42,29 @@ On cold start, logcat should include one line from `AdConfig.dumpRedacted()` (ea
 
 ## 3. Release APK
 
+Before building, refresh the channel bundle and Android HTTP allowlist (release blocks cleartext except listed hosts):
+
+```bash
+python3 tool/gen_network_security_config.py
+# optional: tool/user_playlist.m3u → assets
+python3 tool/ingest_user_playlist.py
+# optional: ~1000+ scanned channels offline in APK
+python3 tool/build_scanned_iptv_m3u.py
+```
+
 ```bash
 flutter build apk --release --target-platform=android-arm64 \
-  --dart-define-from-file=secrets.json
+  --dart-define-from-file=secrets.json \
+  --dart-define=STREAM_TOKEN_BASE_URL=https://api.lumio.app \
+  --dart-define=SSL_PIN_PRIMARY=base64_primary_spki_hash \
+  --dart-define=SSL_PIN_BACKUP=base64_backup_spki_hash \
+  --dart-define=PRIVACY_POLICY_URL=https://lumio.app/privacy \
+  --dart-define=TERMS_OF_SERVICE_URL=https://lumio.app/terms \
+  --dart-define=CONTACT_EMAIL=support@lumio.app \
+  --dart-define=DATA_DELETION_URL=https://lumio.app/data-deletion
 ```
+
+Or use `tool/build_release_apk.sh` (requires `STREAM_TOKEN_BASE_URL` and legal defines).
 
 CI example (no committed file):
 
@@ -66,8 +85,7 @@ Names in the left column are **dart-define** keys. Legacy nicknames from spreads
 | `ADS_ENABLED` | Local QA (`true` in debug) | Debug/profile ad gate only |
 | `ADS_TEST_MODE` | Legacy alias for `ADS_ENABLED` | Optional |
 | `LEVELPLAY_APP_KEY` | [LevelPlay / IronSource](https://platform.ironsrc.com/) → App → App key | Yes |
-| `LEVELPLAY_INTERSTITIAL_AD_UNIT` | LevelPlay → Ad units → Interstitial | Yes (all three units) |
-| `LEVELPLAY_REWARDED_AD_UNIT` | LevelPlay → Rewarded | Yes |
+| `LEVELPLAY_INTERSTITIAL_AD_UNIT` | LevelPlay → Ad units → Interstitial | Yes (interstitial + banner) |
 | `LEVELPLAY_BANNER_AD_UNIT` | LevelPlay → Banner | Yes |
 | `ADSTERRA_DIRECT_LINK` | [Adsterra](https://publishers.adsterra.com/) → Direct link | One of direct **or** WebView pair |
 | `ADSTERRA_DIRECT_LINKS` | Pipe-separated direct links (`url1\|url2\|…`) — **random** pick on each **1st channel tap** | Preferred over single `ADSTERRA_DIRECT_LINK` |
@@ -86,13 +104,20 @@ Names in the left column are **dart-define** keys. Legacy nicknames from spreads
 | `CAP_LOCAL_ONLY_MODE` | Set `"true"` for release/sideload QA when cap backend is not ready | Skips server GET; uses local `AdTriggerManager` caps only (see `server_cap.dart`) |
 | `ADSTERRA_TELEMETRY_URL` | Private telemetry POST host | Optional v1.0 |
 | `ADSTERRA_TELEMETRY_HMAC_KEY` | Telemetry signing secret | With telemetry URL |
+| `STREAM_TOKEN_BASE_URL` | HTTPS API root for `POST /v1/stream-token` | **Required** release (protected streams) |
+| `SSL_PIN_PRIMARY` | SPKI SHA-256 (base64) for stream-token API host | **Required** release (or `SSL_PIN_STREAM_TOKEN_*`) |
+| `SSL_PIN_BACKUP` | Backup pin for cert rotation | Strongly recommended |
+| `PRIVACY_POLICY_URL` | Public privacy page | Release / ad compliance |
+| `TERMS_OF_SERVICE_URL` | Public terms page | Release |
+| `CONTACT_EMAIL` | Support email (`mailto:`) | Release |
+| `DATA_DELETION_URL` | Play Console data deletion page | Release |
+| `DIAGNOSTICS_ENABLED` | `true` unlocks zone validator UI | Debug QA only |
 
 ### Legacy name → dart-define (do not use legacy names in JSON)
 
 | Spreadsheet / old name | Use instead |
 |------------------------|-------------|
 | `LEVELPLAY_INTERSTITIAL_UNIT` | `LEVELPLAY_INTERSTITIAL_AD_UNIT` |
-| `LEVELPLAY_REWARDED_UNIT` | `LEVELPLAY_REWARDED_AD_UNIT` |
 | `LEVELPLAY_BANNER_UNIT` | `LEVELPLAY_BANNER_AD_UNIT` |
 | `ADSTERRA_POPUNDER_ZONE` | `ADSTERRA_POPUNDER_SCRIPT_URL` + `ADSTERRA_POPUNDER_BASE_URL` |
 | `ADSTERRA_BANNER_ZONE` | `ADSTERRA_BANNER728_INVOKE_URL` + `ADSTERRA_BANNER728_BASE_URL` (+ container id) |

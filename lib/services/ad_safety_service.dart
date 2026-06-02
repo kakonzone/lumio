@@ -284,6 +284,17 @@ class AdSafetyService {
     if (_debugAdsterraEnabled != null) return _debugAdsterraEnabled!;
     if (adsBlockedInDebug) return false;
     if (preferCleanSdkRouting) return false;
+    return _adsterraEnabledFromRemote;
+  }
+
+  /// Post-splash app-open promo — VPN routing does not block Adsterra here.
+  bool get adsterraEnabledForColdStart {
+    if (_debugAdsterraEnabled != null) return _debugAdsterraEnabled!;
+    if (adsBlockedInDebug) return false;
+    return _adsterraEnabledFromRemote;
+  }
+
+  bool get _adsterraEnabledFromRemote {
     if (!_remoteReady || _remote == null) {
       return RemoteConfigKeys.defaults[RemoteConfigKeys.adsterraEnabled] as bool;
     }

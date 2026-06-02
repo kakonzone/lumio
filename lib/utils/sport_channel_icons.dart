@@ -4,8 +4,8 @@ import '../models/model.dart';
 class SportChannelIcons {
   SportChannelIcons._();
 
-  static const cricketAsset = 'assets/images/cricket_icon.png';
-  static const footballAsset = 'assets/images/football_icon.png';
+  static const cricketAsset = 'assets/images/cricket_icon.webp';
+  static const footballAsset = 'assets/images/football_icon.webp';
 
   static const sportGridTypes = [
     'Cricket',

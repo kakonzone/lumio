@@ -1,14 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
 
-import '../security/encryption_helper.dart';
 import '../security/security_config.dart';
+import '../security/encryption_helper.dart';
 import '../security/security_manager.dart';
+import '../security/ssl_pinning.dart';
 
 /// সার্টিফিকেট-পিনড Dio ক্লায়েন্ট + HMAC সাইনড রিকোয়েস্ট।
 ///
@@ -21,13 +21,55 @@ class SecureDio {
   SecureDio._();
 
   static Dio? _instance;
+  static final Map<String, Dio> _pinnedByBase = {};
 
+  /// Default singleton for [SecurityConfig.apiBaseUrl] (HMAC + security assert).
   static Dio create({String? baseUrl}) {
     if (_instance != null) return _instance!;
 
+    final dio = _buildPinnedDio(
+      baseUrl: baseUrl ?? SecurityConfig.apiBaseUrl,
+      assertSecurity: true,
+      signRequests: SecurityConfig.hmacSecret.isNotEmpty,
+    );
+
+    _instance = dio;
+    return dio;
+  }
+
+  /// Per-host pinned client (stream token API, remote channels Worker, etc.).
+  static Dio createForBaseUrl(
+    String baseUrl, {
+    bool assertSecurity = false,
+    bool signRequests = false,
+  }) {
+    final normalized = baseUrl.trim().replaceAll(RegExp(r'/+$'), '');
+    final cached = _pinnedByBase[normalized];
+    if (cached != null) return cached;
+
+    final dio = _buildPinnedDio(
+      baseUrl: normalized,
+      assertSecurity: assertSecurity,
+      signRequests: signRequests,
+    );
+    _pinnedByBase[normalized] = dio;
+    return dio;
+  }
+
+  @visibleForTesting
+  static void clearPinnedCacheForTest() {
+    _instance = null;
+    _pinnedByBase.clear();
+  }
+
+  static Dio _buildPinnedDio({
+    required String baseUrl,
+    required bool assertSecurity,
+    required bool signRequests,
+  }) {
     final dio = Dio(
       BaseOptions(
-        baseUrl: baseUrl ?? SecurityConfig.apiBaseUrl,
+        baseUrl: baseUrl,
         connectTimeout: const Duration(seconds: 15),
         receiveTimeout: const Duration(seconds: 20),
         headers: {
@@ -41,56 +83,47 @@ class SecureDio {
       final adapter = IOHttpClientAdapter();
       adapter.createHttpClient = () {
         final client = HttpClient();
-        client.badCertificateCallback = (cert, host, port) {
-          if (SecurityConfig.certificatePins.isEmpty) {
-            return false;
-          }
-          return _validatePin(cert);
+        client.badCertificateCallback = (_, __, ___) {
+          // Chain validation failures are never accepted.
+          return false;
         };
         return client;
+      };
+      adapter.validateCertificate = (cert, host, port) {
+        return SslPinning.validateCertificate(cert, host);
       };
       dio.httpClientAdapter = adapter;
     }
 
-    dio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) async {
-          try {
-            await SecurityManager.instance.assertSecureOrThrow();
-          } catch (e) {
-            return handler.reject(
-              DioException(
-                requestOptions: options,
-                type: DioExceptionType.cancel,
-                error: e,
-                message: 'Network Error',
-              ),
-            );
-          }
+    if (assertSecurity || signRequests) {
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) async {
+            if (assertSecurity) {
+              try {
+                await SecurityManager.instance.assertSecureOrThrow();
+              } catch (e) {
+                return handler.reject(
+                  DioException(
+                    requestOptions: options,
+                    type: DioExceptionType.cancel,
+                    error: e,
+                    message: 'Network Error',
+                  ),
+                );
+              }
+            }
 
-          if (SecurityConfig.hmacSecret.isNotEmpty) {
-            _signRequest(options);
-          }
-          handler.next(options);
-        },
-      ),
-    );
+            if (signRequests && SecurityConfig.hmacSecret.isNotEmpty) {
+              _signRequest(options);
+            }
+            handler.next(options);
+          },
+        ),
+      );
+    }
 
-    _instance = dio;
     return dio;
-  }
-
-  static bool _validatePin(X509Certificate cert) {
-    final pins = [
-      ...SecurityConfig.certificatePins,
-      ...SecurityConfig.certificateBackupPins,
-    ];
-    if (pins.isEmpty) return false;
-
-    final der = cert.der;
-    final digest = sha256.convert(der).bytes;
-    final b64 = base64Encode(digest);
-    return pins.contains(b64);
   }
 
   static void _signRequest(RequestOptions options) {

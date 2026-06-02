@@ -27,7 +27,6 @@ void main() {
     ServerCap.instance.debugSetFailClosed(true);
     expect(ServerCap.instance.isFailClosed, isTrue);
     expect(await ServerCap.instance.allowsPlacement('interstitial'), isFalse);
-    expect(await ServerCap.instance.allowsPlacement('rewarded'), isFalse);
     expect(await ServerCapService.instance.allowsPlacement('interstitial'), isFalse);
   });
 

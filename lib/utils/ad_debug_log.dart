@@ -36,7 +36,12 @@ class AdDebugLog {
     Map<String, dynamic>? data,
   }) {
     final extra = data == null ? '' : ' data=$data';
-    debugPrint('[AdDebug] ERROR $location: $message$extra');
+    final line = '[AdDebug] ERROR $location: $message$extra';
+    debugPrint(line);
+    if (kReleaseMode) {
+      // ignore: avoid_print
+      print(line);
+    }
     _appendFile('level=ERROR location=$location message=$message$extra');
   }
 

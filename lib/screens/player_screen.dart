@@ -4,8 +4,10 @@ import 'dart:io';
 import 'package:audio_session/audio_session.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:floating/floating.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:screen_brightness/screen_brightness.dart';
@@ -19,13 +21,21 @@ import '../services/stream_link_ranker_service.dart';
 import '../widgets/channel_avatar.dart';
 import '../utils/ad_debug_log.dart';
 import '../utils/debug_log.dart';
+import '../core/performance_tuning.dart';
 import '../services/lumio_audio_service.dart';
+import '../services/firebase_bootstrap.dart';
 import '../ads/ad_manager.dart';
+import '../ads/interstitial_placement.dart';
+import '../services/ad_trigger_manager.dart';
 import '../ads/ad_placement_config.dart';
-import '../config/ad_config.dart';
+import '../ads/adsterra/adsterra_native.dart';
+import '../ads/propeller/propeller_webview.dart';
+import '../config/monetag_config.dart';
 import '../services/user_preferences.dart';
-import '../widgets/player_ad_slot.dart';
+import '../widgets/player_ad_slot.dart' show PlayerAdSlot, PlayerStickyAdStrip;
+import '../config/ad_config.dart';
 import '../widgets/player_video_ad_overlay.dart';
+import 'player_screen_widgets.dart';
 
 // #region agent log
 void _debugSessionLog({
@@ -127,6 +137,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
   bool _userOverrideQuality = false;
   bool _pipConfigured = false;
   bool _probeInFlight = false;
+  List<ChannelModel> _relatedDisplay = const [];
   double _estimatedMbps = 2.0;
   int _stablePlaybackTicks = 0;
   int _switchGeneration = 0;
@@ -138,11 +149,15 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
   DateTime? _bufferingStartedAt;
   int _failoverAttempts = 0;
   final Set<int> _failedLinks = {};
+  final Set<int> _schemeFlipUsedForLink = {};
   DateTime? _lastFailoverAt;
   DateTime? _failoverSuppressedUntil;
   static const int _maxFailoverAttempts = 3;
-  static const Duration _bufferingTimeout = Duration(seconds: 22);
-  static const Duration _failoverCooldown = Duration(seconds: 10);
+  static const Duration _connectTimeout = Duration(
+    milliseconds: int.fromEnvironment('STREAM_CONNECT_TIMEOUT_MS', defaultValue: 6000),
+  );
+  static const Duration _bufferingTimeout = Duration(seconds: 12);
+  static const Duration _failoverCooldown = Duration(seconds: 5);
   StreamSubscription<Duration>? _positionSub;
   StreamSubscription<int?>? _widthSub;
   StreamSubscription<int?>? _heightSub;
@@ -173,6 +188,10 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
   bool _showVideoAdOverlay = false;
   Completer<void>? _videoAdCompleter;
   ChannelModel? _debouncedChannel;
+  bool _isPlaying = false;
+  bool _pauseAdVisible = false;
+  bool _pauseAdShown = false;
+  DateTime? _playbackStartedAt;
 
   // ── Vertical drag (volume / brightness) ───────────────
   bool _isDragging = false;
@@ -191,9 +210,10 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    final bufferBytes = PerformanceTuning.playerBufferBytes;
     _player = Player(
-      configuration: const PlayerConfiguration(
-        bufferSize: 8 * 1024 * 1024,
+      configuration: PlayerConfiguration(
+        bufferSize: bufferBytes,
       ),
     );
     // #region agent log
@@ -201,7 +221,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
       location: 'player_screen.dart:initState',
       message: 'player init bufferSize',
       hypothesisId: 'H4-buffer',
-      data: {'bufferMb': 8},
+      data: {'bufferMb': PerformanceTuning.playerBufferMb},
     );
     // #endregion
     _videoCtrl = VideoController(_player);
@@ -211,6 +231,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     _currentUrl = _links.first.url;
     _currentTitle = widget.title;
     _relatedCategory = widget.category;
+    _relatedDisplay = widget.relatedChannels ?? const [];
     _activeHeaders = _links.first.headers;
     _loadBrightness();
     _loadPreferredQuality();
@@ -218,9 +239,6 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     unawaited(_bindBackgroundPlayback());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_runPreRollThenPlay());
-      if (UserPreferences.hasActiveHd) {
-        unawaited(_applyHdFromReward());
-      }
     });
     _startAutoQualityTimer();
     _pipStatusSub = _floating.pipStatusStream.listen((status) {
@@ -235,39 +253,11 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_enableLeavePiP());
-      Future.delayed(const Duration(milliseconds: 500), () {
+      _refreshRelatedDisplay();
+      Future.delayed(const Duration(seconds: 3), () {
         if (mounted) _probeRelatedChannels();
       });
     });
-  }
-
-  Future<void> _applyHdFromReward() async {
-    if (!mounted) return;
-    var targetH = 720;
-    var label = '720p';
-    if (_hlsVariants.isNotEmpty) {
-      final heights = _hlsVariants.map((v) => v.height).where((h) => h > 0);
-      if (heights.isNotEmpty) {
-        final best = heights.reduce((a, b) => a > b ? a : b);
-        if (best >= 1080) {
-          targetH = 1080;
-          label = '1080p';
-        } else if (best >= 720) {
-          targetH = 720;
-          label = '720p';
-        } else {
-          targetH = best;
-          label = '${best}p';
-        }
-      }
-    } else {
-      _refreshSourceHeight();
-      if (_sourceHeight >= 1080) {
-        targetH = 1080;
-        label = '1080p';
-      }
-    }
-    await _applyQuality(label, targetH);
   }
 
   Future<void> _loadPreferredQuality() async {
@@ -292,23 +282,29 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     }
   }
 
-  List<ChannelModel> _relatedChannelsForProbe() {
-    return context.read<AppProvider>().playerRelatedChannels(
+  void _refreshRelatedDisplay() {
+    if (!mounted) return;
+    final list = context.read<AppProvider>().playerRelatedChannels(
           currentTitle: _currentTitle,
           currentUrl: _currentUrl,
           relatedCategory: _relatedCategory,
           fallback: widget.relatedChannels,
         );
+    if (list.length == _relatedDisplay.length &&
+        list.every((c) => _relatedDisplay.any((d) => d.id == c.id))) {
+      return;
+    }
+    setState(() => _relatedDisplay = list);
   }
 
   void _probeRelatedChannels() {
     if (!mounted || _probeInFlight) return;
-    final channels = _relatedChannelsForProbe();
-    if (channels.isEmpty) return;
+    if (_relatedDisplay.isEmpty) return;
     _probeInFlight = true;
+    final probe = _relatedDisplay.take(6).toList();
     context
         .read<AppProvider>()
-        .ensureStreamHealth(channels, priority: true)
+        .ensureStreamHealth(probe, priority: false)
         .whenComplete(() {
       _probeInFlight = false;
     });
@@ -515,10 +511,26 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     // #endregion
 
     if (!mounted) return;
+    _warmAlternateLinks();
     await _bootstrapPlayback();
 
     if (_links.length > 1) {
       unawaited(_rankLinksInBackground());
+    }
+  }
+
+  void _warmAlternateLinks() {
+    if (_links.length <= 1) return;
+    for (var i = 1; i < _links.length && i < 3; i++) {
+      final link = _links[i];
+      final uri = Uri.tryParse(link.url);
+      if (uri == null || !uri.hasScheme) continue;
+      unawaited(
+        http
+            .head(uri, headers: link.headers)
+            .timeout(const Duration(seconds: 3))
+            .catchError((_) => http.Response('', 599)),
+      );
     }
   }
 
@@ -547,17 +559,22 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
 
   Future<void> _bootstrapPlayback({bool skipOpen = false}) async {
     _suppressFailoverFor(const Duration(seconds: 25));
-    final variantFuture = HlsQualityService.fetchVariants(
+    final variants = await HlsQualityService.fetchVariantsFast(
       _masterUrl,
       headers: _activeHeaders,
     );
-    _currentUrl = _masterUrl;
-    if (!skipOpen) {
-      await _initPlayer(_masterUrl, _activeHeaders);
+    var openUrl = _masterUrl;
+    final low = HlsQualityService.lowestVariant(variants);
+    if (low != null && low.url.isNotEmpty) {
+      openUrl = low.url;
     }
-    final variants = await variantFuture;
+    _currentUrl = openUrl;
     if (!mounted) return;
     setState(() => _hlsVariants = variants);
+    if (!skipOpen) {
+      await _initPlayer(openUrl, _activeHeaders);
+    }
+    if (!mounted) return;
 
     if (_pendingTargetHeight != null && _pendingTargetHeight! > 0) {
       await _applyQuality(_selectedQuality, _pendingTargetHeight!);
@@ -617,6 +634,11 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     _playingSub = _player.stream.playing.listen((playing) {
       if (!mounted) return;
       if (playing) {
+        _isPlaying = true;
+        _playbackStartedAt ??= DateTime.now();
+        if (_pauseAdVisible) {
+          setState(() => _pauseAdVisible = false);
+        }
         _resetBufferingWatchdog();
         _stablePlaybackTicks++;
         if (_initialized && !_pipConfigured) {
@@ -624,7 +646,9 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
           unawaited(_enableLeavePiP());
         }
       } else {
+        _isPlaying = false;
         _stablePlaybackTicks = 0;
+        _onPlayerPaused();
       }
     });
     _positionSub = _player.stream.position.listen((_) {
@@ -647,7 +671,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     });
     _tracksSub = _player.stream.tracks.listen((_) {
       if (!mounted || _applyingQuality) return;
-      setState(() {});
+      _updateQualityBadge();
     });
   }
 
@@ -739,6 +763,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
         return;
       }
       _failoverAttempts++;
+      if (await _trySchemeFlipForCurrentLink()) return;
       // #region agent log
       _debugSessionLog(
         location: 'player_screen.dart:_attemptFailover',
@@ -750,6 +775,8 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
       await _retryCurrentLink();
       return;
     }
+    if (await _trySchemeFlipForCurrentLink()) return;
+
     _failedLinks.add(_activeLinkIndex);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -762,6 +789,11 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     for (var i = 1; i < _links.length; i++) {
       final next = (_activeLinkIndex + i) % _links.length;
       if (_failedLinks.contains(next)) continue;
+      await _recordPlayerCrashlyticsError(
+        Exception('player_failover_switch'),
+        StackTrace.current,
+        reason: 'failover_from_${_activeLinkIndex}_to_$next',
+      );
       agentDebugLog(
         location: 'player_screen.dart:_attemptFailover',
         message: 'failover switch',
@@ -772,6 +804,26 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
       return;
     }
     _showFailoverExhaustedUi();
+  }
+
+  Future<void> _recordPlayerCrashlyticsError(
+    Object error,
+    StackTrace stackTrace, {
+    required String reason,
+  }) async {
+    if (!FirebaseBootstrap.crashlyticsWired) return;
+    final host = Uri.tryParse(_currentUrl ?? _masterUrl)?.host ?? 'unknown';
+    await FirebaseCrashlytics.instance.setCustomKey('channel_id', widget.title);
+    await FirebaseCrashlytics.instance.setCustomKey('stream_url_host', host);
+    await FirebaseCrashlytics.instance.setCustomKey(
+      'player_state',
+      _initialized ? 'initialized' : 'booting',
+    );
+    await FirebaseCrashlytics.instance.recordError(
+      error,
+      stackTrace,
+      reason: reason,
+    );
   }
 
   bool get _isSingleRenditionStream {
@@ -845,10 +897,14 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     final n = _player.platform as NativePlayer;
     try {
       await n.setProperty('cache', 'yes');
-      await n.setProperty('cache-secs', '10');
-      await n.setProperty('demuxer-max-bytes', '16MiB');
-      await n.setProperty('demuxer-max-back-bytes', '4MiB');
-      await n.setProperty('hls-bitrate', 'max');
+      await n.setProperty('cache-secs', '2');
+      await n.setProperty('cache-pause-initial', 'no');
+      await n.setProperty('demuxer-readahead-secs', '1');
+      await n.setProperty('demuxer-max-bytes', '8MiB');
+      await n.setProperty('demuxer-max-back-bytes', '2MiB');
+      await n.setProperty('hls-bitrate', 'min');
+      await n.setProperty('hwdec', 'auto-safe');
+      await n.setProperty('vd-lavc-fast', 'yes');
       await n.setProperty('vd-lavc-threads', '0');
       _mpvNativeConfigured = true;
     } catch (_) {}
@@ -909,19 +965,26 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
       _hasError = false;
     });
     try {
+      await _configureMpvOnce();
       final httpHeaders = {
         'User-Agent': 'Mozilla/5.0 LumioTV/1.0',
         ...?headers,
       };
-      await _player.open(Media(url, httpHeaders: httpHeaders), play: true);
-      await _configureMpvOnce();
+      await _player
+          .open(Media(url, httpHeaders: httpHeaders), play: true)
+          .timeout(_connectTimeout);
       await _player.setVolume(_volume * 100);
       if (mounted) {
         setState(() => _initialized = true);
         _initBufferingWatchdog();
         _updateQualityBadge();
       }
-    } catch (e) {
+    } catch (e, st) {
+      await _recordPlayerCrashlyticsError(
+        e,
+        st,
+        reason: 'player_open_stream_failed',
+      );
       if (mounted) {
         setState(() {
           _hasError = true;
@@ -1046,7 +1109,16 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
       _hasError = false;
       _isBuffering = true;
     });
-    await _openStreamUrl(url, headers);
+    try {
+      await _openStreamUrl(url, headers);
+    } catch (e, st) {
+      await _recordPlayerCrashlyticsError(
+        e,
+        st,
+        reason: 'player_init_failed',
+      );
+      rethrow;
+    }
     if (mounted && _initialized) {
       agentDebugLog(
         location: 'player_screen.dart:_initPlayer',
@@ -1141,7 +1213,10 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
   List<StreamLink> _resolveStreamLinks() {
     final fromWidget =
         widget.streamLinks?.where((l) => l.url.isNotEmpty).toList() ?? [];
-    if (fromWidget.isNotEmpty) return fromWidget;
+    final visible = fromWidget
+        .where((l) => !ChannelModel.isInternalStreamLabel(l.label))
+        .toList();
+    if (visible.isNotEmpty) return visible;
     if (widget.streamUrl.isNotEmpty) {
       return [
         StreamLink(
@@ -1154,6 +1229,36 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     return [];
   }
 
+  String? _schemeAlternateUrl(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return null;
+    if (uri.scheme == 'https') {
+      return uri.replace(scheme: 'http').toString();
+    }
+    if (uri.scheme == 'http') {
+      return uri.replace(scheme: 'https').toString();
+    }
+    return null;
+  }
+
+  Future<bool> _trySchemeFlipForCurrentLink() async {
+    final url = _currentUrl ?? _masterUrl;
+    final alt = _schemeAlternateUrl(url);
+    if (alt == null || alt == url) return false;
+    if (_schemeFlipUsedForLink.contains(_activeLinkIndex)) return false;
+    _schemeFlipUsedForLink.add(_activeLinkIndex);
+    if (mounted) {
+      setState(() {
+        _masterUrl = alt;
+        _currentUrl = alt;
+        _hasError = false;
+        _isBuffering = true;
+      });
+    }
+    await _openStreamUrl(alt, _activeHeaders);
+    return true;
+  }
+
   Future<void> _switchToLink(int index) async {
     if (index < 0 || index >= _links.length) return;
     _cancelPendingOps();
@@ -1162,6 +1267,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     final link = _links[index];
     _failedLinks.clear();
     _failoverAttempts = 0;
+    _schemeFlipUsedForLink.clear();
     setState(() {
       _activeLinkIndex = index;
       _masterUrl = link.url;
@@ -1181,6 +1287,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
       _qualityDebounce?.cancel();
     });
     await _bootstrapPlayback();
+    if (mounted) _refreshRelatedDisplay();
   }
 
   void _scheduleChannelSwitch(ChannelModel ch) {
@@ -1205,7 +1312,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
       );
       // #endregion
     } catch (_) {}
-    final links = ch.allStreams;
+    final links = ch.userStreamLinks;
     if (links.isEmpty) return;
     final first = links.first;
     if (mounted) {
@@ -1216,6 +1323,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
         _currentUrl = first.url;
         _currentTitle = ch.name;
         _relatedCategory = context.read<AppProvider>().categoryForRelated(ch);
+        _relatedDisplay = const [];
         _initialized = false;
         _hasError = false;
         _activeHeaders = first.headers;
@@ -1292,7 +1400,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
       return;
     }
     _lastSwipeAt = now;
-    final channels = _relatedChannelsForProbe();
+    final channels = _relatedDisplay;
     if (channels.isEmpty) return;
     var idx = channels.indexWhere(
       (c) =>
@@ -1444,32 +1552,60 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     super.didChangeAppLifecycleState(state);
   }
 
-  Future<void> _runPreRollThenPlay() async {
-    if (AdManager.instance.canShowPlayerVideoAd()) {
-      await _presentPlayerVideoAd(isMidRoll: false);
+  void _onPlayerPaused() {
+    if (_pauseAdShown || !AdManager.instance.adsEnabled) return;
+    if (_showVideoAdOverlay || _hasError || !_initialized) return;
+    final started = _playbackStartedAt;
+    if (started == null) return;
+    if (DateTime.now().difference(started) <
+        AdPlacementConfig.playerPauseAdMinPlayback) {
+      return;
     }
-    if (!mounted) return;
+    setState(() {
+      _pauseAdVisible = true;
+      _pauseAdShown = true;
+    });
+    unawaited(
+      AdManager.instance.analytics.logImpression(
+        network: 'adsterra',
+        placement: 'pause_overlay',
+      ),
+    );
+  }
+
+  Future<void> _runPreRollThenPlay() async {
     AdManager.instance.setStreaming(true);
+    final channelKey = widget.title.trim().isNotEmpty
+        ? widget.title.trim()
+        : (_currentUrl ?? 'player');
+    AdTriggerManager.instance.onPlayerChannelStarted(channelKey);
+    if (!mounted) return;
     if (_currentUrl != null && _currentUrl!.isNotEmpty) {
       await _prepareLinksAndPlay();
     }
+    if (!mounted) return;
+    if (AdManager.instance.adsEnabled) {
+      await AdManager.instance.showPlacementInterstitial(
+        context: context,
+        placement: InterstitialPlacement.preroll,
+        channelKey: channelKey,
+      );
+    }
+    if (!mounted) return;
     _startMidRollTimer();
   }
 
-  Future<void> _presentPlayerVideoAd({required bool isMidRoll}) async {
+  Future<void> _presentMidRollInterstitial() async {
     if (!mounted) return;
-    if (!AdManager.instance.canShowPlayerVideoAd(isMidRoll: isMidRoll)) {
-      return;
-    }
-    AdManager.instance.recordPlayerVideoAdShown();
-
-    _videoAdCompleter = Completer<void>();
     try {
       await _player.pause();
     } catch (_) {}
     if (!mounted) return;
-    setState(() => _showVideoAdOverlay = true);
-    await _videoAdCompleter!.future;
+    await AdManager.instance.showMidRollInterstitial(context: context);
+    if (!mounted) return;
+    if (_initialized && !_hasError) {
+      unawaited(_player.play());
+    }
   }
 
   void _dismissPlayerVideoAd() {
@@ -1488,14 +1624,10 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     _midRollTimer = Timer.periodic(
       AdPlacementConfig.playerMidRollPeriod,
       (_) {
-        if (!mounted ||
-            _showVideoAdOverlay ||
-            _hasError ||
-            !_initialized ||
-            !AdManager.instance.canShowPlayerVideoAd(isMidRoll: true)) {
+        if (!mounted || _showVideoAdOverlay || _hasError || !_initialized) {
           return;
         }
-        unawaited(_presentPlayerVideoAd(isMidRoll: true));
+        unawaited(_presentMidRollInterstitial());
       },
     );
   }
@@ -1503,7 +1635,18 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
   // ── Lifecycle ──────────────────────────────────────────
 
   @override
+  void deactivate() {
+    // Tear down video before home banner/platform views repaint (Android <33 crash).
+    AdManager.instance.setStreaming(false);
+    try {
+      _player.pause();
+    } catch (_) {}
+    super.deactivate();
+  }
+
+  @override
   void dispose() {
+    AdTriggerManager.instance.onPlayerChannelStopped();
     AdManager.instance.setStreaming(false);
     _midRollTimer?.cancel();
     _videoAdCompleter?.complete();
@@ -1562,7 +1705,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     if (!_initialized) {
       return const ColoredBox(
         color: Colors.black,
-        child: Center(child: _Spinner()),
+        child: Center(child: PlayerSpinner()),
       );
     }
     return ColoredBox(
@@ -1576,10 +1719,6 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
   }
 
   Widget _buildFullPlayerUi(BuildContext context) {
-    assert(() {
-      debugPrint('[PlayerScreen] rebuild reason: full_player_ui');
-      return true;
-    }());
     return PopScope(
       canPop: !_isFullscreen,
       onPopInvokedWithResult: (didPop, _) {
@@ -1611,20 +1750,6 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
       final maxH = (size.height * 0.58).clamp(280.0, double.infinity);
       playerH = ideal.clamp(280.0, maxH);
     }
-    // #region agent log
-    _debugSessionLog(
-      location: 'player_screen.dart:_buildPlayer',
-      message: 'player layout size',
-      hypothesisId: 'H3-aspect',
-      data: {
-        'fullscreen': _isFullscreen,
-        'playerH': playerH,
-        'screenW': size.width,
-        'screenH': size.height,
-      },
-    );
-    // #endregion
-
     return GestureDetector(
       onTap: _toggleControls,
       onDoubleTapDown: _onDoubleTapDown,
@@ -1640,7 +1765,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
           // ── Video surface ──
           if (_hasError || (_currentUrl?.isEmpty ?? true))
             Center(
-              child: _PlayerErrorWidget(
+              child: PlayerErrorPanel(
                 message: (_currentUrl?.isEmpty ?? true)
                     ? 'Stream link নেই'
                     : 'Stream load হয়নি',
@@ -1663,7 +1788,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
               if (!buffering || _hasError || !_initialized) {
                 return const SizedBox.shrink();
               }
-              return const Center(child: _Spinner());
+              return const Center(child: PlayerSpinner());
             },
           ),
 
@@ -1686,6 +1811,42 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
             Positioned.fill(
               child: PlayerVideoAdOverlay(
                 onDismiss: _dismissPlayerVideoAd,
+              ),
+            ),
+
+          if (_pauseAdVisible &&
+              !_isPlaying &&
+              !_showVideoAdOverlay &&
+              (AdConfig.hasAdsterraWebViewZones || MonetagConfig.isConfigured))
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () => setState(() => _pauseAdVisible = false),
+                child: ColoredBox(
+                  color: Colors.black.withValues(
+                    alpha: AdConfig.playerAdsUserVisible ? 0.72 : 0,
+                  ),
+                  child: Center(
+                    child: AdsterraNativeBanner(
+                      placement: 'pause_overlay',
+                      height: 200,
+                      userVisible: AdConfig.playerAdsUserVisible,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+          if (AdPlacementConfig.showPlayerStickySocialBar &&
+              AdManager.instance.adsEnabled &&
+              _initialized &&
+              !_showVideoAdOverlay &&
+              _isPlaying)
+            Positioned(
+              left: 8,
+              right: 8,
+              bottom: 8,
+              child: const RepaintBoundary(
+                child: PlayerStickyAdStrip(),
               ),
             ),
         ]),
@@ -1803,7 +1964,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const _LiveDot(),
+                  const PlayerLiveDot(),
                   const SizedBox(width: 5),
                   Text(
                     'LIVE',
@@ -1860,7 +2021,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
             ),
           ),
           const SizedBox(height: 16),
-          _ConnectingDots(),
+          PlayerConnectingDots(),
         ],
       ),
     );
@@ -1921,53 +2082,54 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
   Widget _buildStreamLinkStrip(BuildContext context) {
     return Container(
       color: const Color(0xFF0A0A0C),
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-      child: Container(
-        height: 40,
-        decoration: BoxDecoration(
-          color: const Color(0xFF14141A),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFF252530)),
-        ),
-        child: Row(
-          children: List.generate(_links.length, (i) {
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+      child: SizedBox(
+        height: 44,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: _links.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (_, i) {
             final link = _links[i];
             final active = i == _activeLinkIndex;
-            return Expanded(
-              child: GestureDetector(
+            return Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
                 onTap: () => _switchToLink(i),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  margin: const EdgeInsets.all(3),
+                  constraints: const BoxConstraints(minWidth: 88, maxWidth: 140),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
-                    color: active ? AppColors.accent : Colors.transparent,
-                    borderRadius: BorderRadius.circular(9),
-                    boxShadow: active
-                        ? [
-                            BoxShadow(
-                              color: AppColors.accent.withValues(alpha: 0.35),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ]
-                        : null,
+                    color: active
+                        ? AppColors.accent
+                        : const Color(0xFF14141A),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: active
+                          ? AppColors.accent
+                          : const Color(0xFF252530),
+                    ),
                   ),
                   alignment: Alignment.center,
                   child: Text(
                     link.label.toUpperCase(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: GF.body(
                       color: active
                           ? Colors.white
-                          : Colors.white.withValues(alpha: 0.55),
+                          : Colors.white.withValues(alpha: 0.72),
                       fontSize: 11,
                       fontWeight: FontWeight.w800,
-                      letterSpacing: 0.6,
+                      letterSpacing: 0.5,
                     ),
                   ),
                 ),
               ),
             );
-          }),
+          },
         ),
       ),
     );
@@ -2002,14 +2164,14 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
             const SizedBox(height: 10),
             Row(
               children: [
-                _TransportBtn(
+                PlayerTransportBtn(
                   icon: _videoFit == BoxFit.cover
                       ? Icons.crop_free_rounded
                       : Icons.fit_screen_rounded,
                   tooltip: _videoFit == BoxFit.cover ? 'Fit screen' : 'Fill',
                   onTap: _toggleFill,
                 ),
-                _TransportBtn(
+                PlayerTransportBtn(
                   icon: Icons.replay_10_rounded,
                   onTap: () => _seek(-10),
                 ),
@@ -2040,11 +2202,11 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
                     ),
                   ),
                 ),
-                _TransportBtn(
+                PlayerTransportBtn(
                   icon: Icons.forward_10_rounded,
                   onTap: () => _seek(10),
                 ),
-                _TransportBtn(
+                PlayerTransportBtn(
                   icon: _isFullscreen
                       ? Icons.fullscreen_exit_rounded
                       : Icons.fullscreen_rounded,
@@ -2229,13 +2391,10 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
   // ═══════════════════════════════════════════════════════
 
   Widget _buildInfo(BuildContext context) {
-    final prov = context.watch<AppProvider>();
-    final displayChannels = prov.playerRelatedChannels(
-      currentTitle: _currentTitle,
-      currentUrl: _currentUrl,
-      relatedCategory: _relatedCategory,
-      fallback: widget.relatedChannels ?? _defaultChannelsForCategory(),
-    );
+    final prov = context.read<AppProvider>();
+    final displayChannels = _relatedDisplay.isNotEmpty
+        ? _relatedDisplay
+        : (widget.relatedChannels ?? _defaultChannelsForCategory());
     final relatedTitle = AppProvider.relatedSectionLabel(_relatedCategory);
 
     return Container(
@@ -2332,7 +2491,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const _LiveDot(),
+                      const PlayerLiveDot(),
                       const SizedBox(width: 5),
                       Text(
                         'LIVE',
@@ -2368,13 +2527,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
           ]),
         ),
         const SizedBox(height: 12),
-        PlayerAdSlot(
-          onHdUnlocked: () {
-            if (!mounted) return;
-            setState(() {});
-            unawaited(_applyHdFromReward());
-          },
-        ),
+        const PlayerAdSlot(),
 
         // ── Related channels header ──
         Text(
@@ -2389,7 +2542,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
         const SizedBox(height: 12),
 
         // ── Related channel cards ──
-        ...displayChannels.map((ch) => _RelatedCard(
+        ...displayChannels.map((ch) => PlayerRelatedCard(
               channel: ch,
               isPlaying: _currentUrl == ch.streamUrl,
               onTap: () => _scheduleChannelSwitch(ch),
@@ -3036,364 +3189,3 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
   ];
 }
 
-// ═══════════════════════════════════════════════════════════════
-// TOP-LEVEL HELPER — shared by PlayerScreen + _RelatedCard
-// ═══════════════════════════════════════════════════════════════
-
-String categoryEmoji(String cat) {
-  switch (cat.toLowerCase()) {
-    case 'sports':
-      return '🏆';
-    case 'bangladesh':
-      return '🇧🇩';
-    case 'pakistan':
-      return '🇵🇰';
-    case 'hindi':
-      return '🇮🇳';
-    case 'english':
-      return '🇬🇧';
-    case 'movies':
-      return '🎬';
-    case 'kids':
-      return '🧒';
-    case 'kdrama':
-      return '🇰🇷';
-    default:
-      return '📺';
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// RELATED CHANNEL CARD
-// ═══════════════════════════════════════════════════════════════
-
-class _RelatedCard extends StatelessWidget {
-  final ChannelModel channel;
-  final bool isPlaying;
-  final VoidCallback onTap;
-
-  const _RelatedCard({
-    required this.channel,
-    required this.isPlaying,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final prov = context.watch<AppProvider>();
-    final showLive = prov.isStreamLive(channel);
-    final checking = prov.isStreamHealthPending(channel);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: isPlaying
-                ? AppColors.accent.withValues(alpha: 0.08)
-                : const Color(0xFF131318),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: isPlaying
-                  ? AppColors.accent.withValues(alpha: 0.55)
-                  : const Color(0xFF22222E),
-              width: isPlaying ? 1.5 : 1,
-            ),
-          ),
-          child: Row(children: [
-            ChannelAvatar(channel: channel, size: 44, borderRadius: 10),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    channel.name,
-                    style: GF.body(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    channel.currentShow.isEmpty
-                        ? channel.category
-                        : channel.currentShow,
-                    style: GF.body(
-                      color: AppColors.txt3Dark,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            if (isPlaying)
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: AppColors.accent.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'PLAYING',
-                  style: GF.head(
-                    color: AppColors.accent,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              )
-            else if (checking)
-              const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: AppColors.accent,
-                ),
-              )
-            else if (showLive)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.accentDim,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const _LiveDot(),
-                    const SizedBox(width: 4),
-                    Text(
-                      'LIVE',
-                      style: GF.head(
-                        color: AppColors.accent,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: AppColors.accent,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.accent.withValues(alpha: 0.35),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.play_arrow_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-          ]),
-        ),
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// SMALL REUSABLE WIDGETS
-// ═══════════════════════════════════════════════════════════════
-
-class _Spinner extends StatelessWidget {
-  const _Spinner();
-  @override
-  Widget build(BuildContext context) => const SizedBox(
-        width: 42,
-        height: 42,
-        child: CircularProgressIndicator(
-          color: AppColors.accent,
-          strokeWidth: 3,
-        ),
-      );
-}
-
-class _TransportBtn extends StatelessWidget {
-  final IconData icon;
-  final String? label;
-  final String? tooltip;
-  final VoidCallback onTap;
-
-  const _TransportBtn({
-    required this.icon,
-    required this.onTap,
-    this.label,
-    this.tooltip,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    Widget child;
-    if (label != null) {
-      child = TextButton(
-        onPressed: onTap,
-        style: TextButton.styleFrom(
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          minimumSize: const Size(48, 40),
-        ),
-        child: Text(
-          label!,
-          style: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.4,
-          ),
-        ),
-      );
-    } else {
-      child = IconButton(
-        onPressed: onTap,
-        icon: Icon(icon, color: Colors.white.withValues(alpha: 0.92), size: 26),
-        padding: const EdgeInsets.all(8),
-        constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-      );
-    }
-    if (tooltip != null && tooltip!.isNotEmpty) {
-      return Tooltip(message: tooltip!, child: child);
-    }
-    return child;
-  }
-}
-
-class _ConnectingDots extends StatefulWidget {
-  const _ConnectingDots();
-
-  @override
-  State<_ConnectingDots> createState() => _ConnectingDotsState();
-}
-
-class _ConnectingDotsState extends State<_ConnectingDots> {
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.3, end: 1.0),
-      duration: const Duration(milliseconds: 900),
-      curve: Curves.easeInOut,
-      builder: (context, value, child) {
-        return Opacity(
-          opacity: value,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: List.generate(
-              3,
-              (i) => Container(
-                margin: const EdgeInsets.symmetric(horizontal: 3),
-                width: 7,
-                height: 7,
-                decoration: BoxDecoration(
-                  color: AppColors.accent.withValues(
-                    alpha: 0.35 + (i * 0.2),
-                  ),
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-      onEnd: () {
-        if (mounted) setState(() {});
-      },
-    );
-  }
-}
-
-class _LiveDot extends StatefulWidget {
-  const _LiveDot();
-  @override
-  State<_LiveDot> createState() => _LiveDotState();
-}
-
-class _LiveDotState extends State<_LiveDot>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1000),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => FadeTransition(
-        opacity: Tween(begin: 1.0, end: 0.2).animate(_ctrl),
-        child: Container(
-          width: 5,
-          height: 5,
-          decoration: const BoxDecoration(
-            color: AppColors.accent,
-            shape: BoxShape.circle,
-          ),
-        ),
-      );
-}
-
-/// Renamed from _ErrorWidget to avoid shadowing Flutter's built-in ErrorWidget.
-class _PlayerErrorWidget extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-  const _PlayerErrorWidget({required this.message, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) =>
-      Column(mainAxisSize: MainAxisSize.min, children: [
-        const Icon(Icons.error_outline, color: Color(0xFF555555), size: 48),
-        const SizedBox(height: 12),
-        Text(
-          message,
-          style: const TextStyle(color: Color(0xFFAAAAAA), fontSize: 13),
-        ),
-        const SizedBox(height: 16),
-        GestureDetector(
-          onTap: onRetry,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            decoration: BoxDecoration(
-              color: AppColors.accent,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Text(
-              'Retry',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ),
-      ]);
-}

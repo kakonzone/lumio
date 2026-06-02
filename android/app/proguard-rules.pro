@@ -37,8 +37,7 @@
 }
 -keep class com.kakonzone.lumio.MainActivity { *; }
 
-# ── অবফাসকেশন অপ্টিমাইজেশন ────────────────────────────────────────────────
--optimizationpasses 5
+# ── R8 shrink (compatible options only) ─────────────────────────────────────
 -allowaccessmodification
 -repackageclasses 'lumio.obf'
 -flattenpackagehierarchy 'lumio.obf'
@@ -74,3 +73,16 @@
 
 -dontwarn javax.annotation.**
 -dontwarn org.conscrypt.**
+
+# Aggressive size optimization
+-dontwarn java.lang.invoke.**
+-dontwarn java.lang.ClassValue
+-dontwarn java.lang.invoke.MethodHandle
+-dontwarn java.lang.invoke.MethodHandles
+-dontwarn java.lang.invoke.MethodHandles$Lookup
+-dontwarn java.lang.invoke.MethodType
+-dontwarn java.lang.invoke.CallSite
+-dontwarn java.lang.invoke.ConstantCallSite
+
+# Kotlin stdlib
+-keep class kotlin.** { *; }

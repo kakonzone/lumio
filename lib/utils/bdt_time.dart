@@ -70,16 +70,6 @@ class BdtTime {
   static String formatEventCardFooter(DateTime matchDate) =>
       formatCountdownLabel(matchDate);
 
-  static String _formatShortCountdown(Duration remaining) {
-    final h = remaining.inHours;
-    final m = remaining.inMinutes.remainder(60);
-    if (h > 0) return '${h}h ${m}m';
-    if (m > 0) return '${m}m';
-    final s = remaining.inSeconds.remainder(60);
-    if (s > 0) return '${s}s';
-    return 'soon';
-  }
-
   /// ভোর 3–6, সকাল 6–12, দুপুর 12–3, বিকাল 3–6, সন্ধ্যা 6–9, রাত 9–3.
   static String _bengaliDayPart(int hour24) {
     if (hour24 >= 3 && hour24 < 6) return 'ভোর';

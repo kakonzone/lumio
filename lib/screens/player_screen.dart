@@ -23,6 +23,7 @@ import '../widgets/channel_avatar.dart';
 import '../utils/ad_debug_log.dart';
 import '../utils/debug_log.dart';
 import '../core/performance_tuning.dart';
+import '../core/player/idle_playback_gate.dart';
 import '../core/player/quality_config.dart';
 import '../services/lumio_audio_service.dart';
 import '../services/lumio_window_secure.dart';
@@ -172,6 +173,9 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
   StreamSubscription<Duration>? _positionSub;
   StreamSubscription<int?>? _widthSub;
   StreamSubscription<int?>? _heightSub;
+  StreamSubscription<bool>? _idleProbeSub;
+  int _idleWorkToken = 0;
+
   String _selectedQuality = 'Auto';
   int _selectedTargetHeight = 0;
   int? _lastMpvCapHeight;
@@ -246,6 +250,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     _loadBrightness();
     _loadPreferredQuality();
     _attachListeners();
+    _scheduleIdleWork();
     unawaited(_bindBackgroundPlayback());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_runPreRollThenPlay());
@@ -268,9 +273,6 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
       unawaited(LumioWindowSecure.setSecure(false));
       unawaited(_enableLeavePiP());
       unawaited(_ensureRelatedChannelsReady());
-      Future.delayed(const Duration(seconds: 3), () {
-        if (mounted) _probeRelatedChannels();
-      });
     });
   }
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.0-wc-hotfix-1]
+
+### Performance
+
+- Force mediacodec hardware decode on Android (was auto-safe → caused SW fallback on MIUI/ColorOS)
+- Default stream quality 540p on mobile, 720p on tablet (was 1080p)
+- Auto-quality clamps to 720p without wifi + >50% battery
+- Removed CPU-side `vf scale` filter on Android
+- Probe and prewarm now gated behind 5-second idle state
+
 ## [1.0.0-rc1]
 
 - Stabilize four failing test suites (server-cap fail-closed, splash delay profile).

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:audio_session/audio_session.dart';
+import 'package:battery_plus/battery_plus.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:floating/floating.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -22,6 +23,7 @@ import '../widgets/channel_avatar.dart';
 import '../utils/ad_debug_log.dart';
 import '../utils/debug_log.dart';
 import '../core/performance_tuning.dart';
+import '../core/player/quality_config.dart';
 import '../services/lumio_audio_service.dart';
 import '../services/lumio_window_secure.dart';
 import '../services/firebase_bootstrap.dart';
@@ -145,6 +147,9 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
   bool _probeInFlight = false;
   List<ChannelModel> _relatedDisplay = const [];
   double _estimatedMbps = 2.0;
+  bool _isOnWifi = false;
+  int _batteryPercent = 100;
+  static final Battery _qualityBattery = Battery();
   int _stablePlaybackTicks = 0;
   int _switchGeneration = 0;
 
@@ -167,7 +172,6 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
   StreamSubscription<Duration>? _positionSub;
   StreamSubscription<int?>? _widthSub;
   StreamSubscription<int?>? _heightSub;
-
   String _selectedQuality = 'Auto';
   int _selectedTargetHeight = 0;
   int? _lastMpvCapHeight;
@@ -281,6 +285,18 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
           _pendingTargetHeight = h == 0 ? null : h;
           _userOverrideQuality = h != 0;
         });
+      } else if (mounted) {
+        final device = _qualityDeviceClasses();
+        final initialPx = QualityConfig.initialTargetHeightPx(
+          isTablet: device.$1,
+          isDesktop: device.$2,
+        );
+        setState(() {
+          _selectedTargetHeight = initialPx;
+          _selectedQuality = '${initialPx}p';
+          _pendingTargetHeight = initialPx;
+          _userOverrideQuality = false;
+        });
       }
     } catch (e) {
       agentDebugLog(
@@ -313,6 +329,15 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
       return;
     }
     setState(() => _relatedDisplay = list);
+  }
+
+  (bool, bool) _qualityDeviceClasses() {
+    final views = WidgetsBinding.instance.platformDispatcher.views;
+    if (views.isEmpty) return (false, false);
+    final view = views.first;
+    final logicalShort =
+        view.physicalSize.shortestSide / view.devicePixelRatio;
+    return (logicalShort >= 600, false);
   }
 
   void _probeRelatedChannels() {
@@ -428,14 +453,18 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
   Future<void> _refreshConnectivityHint() async {
     try {
       final results = await Connectivity().checkConnectivity();
-      if (results.contains(ConnectivityResult.wifi) ||
-          results.contains(ConnectivityResult.ethernet)) {
+      _isOnWifi = results.contains(ConnectivityResult.wifi) ||
+          results.contains(ConnectivityResult.ethernet);
+      if (_isOnWifi) {
         _estimatedMbps = 8.0;
       } else if (results.contains(ConnectivityResult.mobile)) {
         _estimatedMbps = 2.0;
       } else if (results.contains(ConnectivityResult.none)) {
         _estimatedMbps = 0.3;
       }
+      try {
+        _batteryPercent = await _qualityBattery.batteryLevel;
+      } catch (_) {}
     } catch (e) {
       agentDebugLog(
         location: 'player_screen.dart:_refreshConnectivityHint',
@@ -484,12 +513,22 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     if (downgrade) {
       _estimatedMbps = (_estimatedMbps * 0.7).clamp(0.2, 20.0);
     }
-    final variant = HlsQualityService.pickVariantForAuto(
+    var variant = HlsQualityService.pickVariantForAuto(
       _hlsVariants,
       _estimatedMbps,
       downgrade: downgrade,
     );
     if (variant == null) return;
+    final clampedH = QualityConfig.clampAutoHeightPx(
+      targetHeightPx: variant.height,
+      isMobile: QualityConfig.isMobilePlatform,
+      isOnWifi: _isOnWifi,
+      batteryPercent: _batteryPercent,
+    );
+    if (clampedH != variant.height) {
+      variant = HlsQualityService.pickVariantForced(_hlsVariants, clampedH) ??
+          variant;
+    }
     agentDebugLog(
       location: 'player_screen.dart:_evaluateAutoQuality',
       message: 'auto tier selected',

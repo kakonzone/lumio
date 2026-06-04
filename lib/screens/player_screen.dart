@@ -120,11 +120,14 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
   bool _pipBlocked = false;
 
   bool _initialized = false;
+  /// Stays true after first successful open — keeps in-player WebViews mounted.
+  bool _playbackSurfaceReady = false;
   bool _hasError = false;
   bool _isFullscreen = false;
   bool _showControls = false;
   bool _isBuffering = false;
   final ValueNotifier<bool> _bufferingVisible = ValueNotifier(false);
+  final GlobalKey _stickyAdKey = GlobalKey();
   BoxFit _videoFit = BoxFit.contain;
 
   double _volume = 1.0;
@@ -924,6 +927,10 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     if (_mpvNativeConfigured || _player.platform is! NativePlayer) return;
     final n = _player.platform as NativePlayer;
     try {
+      // Player tuning (WC hotfix):
+      // - mediacodec hwdec on Android avoids MIUI/ColorOS software fallback
+      // - vf scale removed on mobile; mediacodec handles native output
+      // - software scaling on 720p+ HLS = thermal throttle within 10 min
       await n.setProperty('cache', 'yes');
       await n.setProperty('cache-secs', '2');
       await n.setProperty('cache-pause-initial', 'no');
@@ -931,7 +938,14 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
       await n.setProperty('demuxer-max-bytes', '8MiB');
       await n.setProperty('demuxer-max-back-bytes', '2MiB');
       await n.setProperty('hls-bitrate', 'min');
-      await n.setProperty('hwdec', 'auto-safe');
+      if (Platform.isAndroid) {
+        await n.setProperty('hwdec', 'mediacodec');
+        await n.setProperty('hwdec-codecs', 'h264,hevc,vp9,av1');
+        await n.setProperty('vo', 'gpu');
+        await n.setProperty('gpu-context', 'android');
+      } else {
+        await n.setProperty('hwdec', 'auto-safe');
+      }
       await n.setProperty('vd-lavc-fast', 'yes');
       await n.setProperty('vd-lavc-threads', '0');
       _mpvNativeConfigured = true;
@@ -1003,7 +1017,10 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
           .timeout(_connectTimeout);
       await _player.setVolume(_volume * 100);
       if (mounted) {
-        setState(() => _initialized = true);
+        setState(() {
+          _initialized = true;
+          _playbackSurfaceReady = true;
+        });
         _initBufferingWatchdog();
         _updateQualityBadge();
       }
@@ -1084,6 +1101,11 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
         // #endregion
         return;
       }
+      if (Platform.isAndroid) {
+        // WC hotfix: no CPU vf scale on Android — use HLS/track selection only.
+        _lastMpvCapHeight = cap;
+        return;
+      }
       final filter = 'scale=-2:min($cap\\,ih):flags=fast_bilinear';
       // #region agent log
       _debugSessionLog(
@@ -1133,7 +1155,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
   Future<void> _initPlayer(String url, Map<String, String>? headers) async {
     if (!mounted) return;
     setState(() {
-      _initialized = false;
+      if (!_playbackSurfaceReady) _initialized = false;
       _hasError = false;
       _isBuffering = true;
     });
@@ -1340,7 +1362,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
       );
       // #endregion
     } catch (_) {}
-    final links = ch.userStreamLinks;
+    final links = context.read<AppProvider>().playbackLinksFor(ch);
     if (links.isEmpty) return;
     final first = links.first;
     if (mounted) {
@@ -1874,15 +1896,15 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
 
           if (AdPlacementConfig.showPlayerStickySocialBar &&
               AdManager.instance.adsEnabled &&
-              _initialized &&
+              _playbackSurfaceReady &&
               !_showVideoAdOverlay &&
               _isPlaying)
             Positioned(
               left: 8,
               right: 8,
               bottom: 8,
-              child: const RepaintBoundary(
-                child: PlayerStickyAdStrip(),
+              child: RepaintBoundary(
+                child: PlayerStickyAdStrip(key: _stickyAdKey),
               ),
             ),
         ]),

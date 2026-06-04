@@ -24,6 +24,7 @@ import '../utils/ad_debug_log.dart';
 import '../utils/debug_log.dart';
 import '../core/performance_tuning.dart';
 import '../core/player/idle_playback_gate.dart';
+import '../core/player/player_fit_mode.dart';
 import '../core/player/quality_config.dart';
 import '../services/lumio_audio_service.dart';
 import '../services/lumio_window_secure.dart';
@@ -131,7 +132,8 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
   bool _isBuffering = false;
   final ValueNotifier<bool> _bufferingVisible = ValueNotifier(false);
   final GlobalKey _stickyAdKey = GlobalKey();
-  BoxFit _videoFit = BoxFit.contain;
+  static const String _fitPrefKey = 'player_fit_mode';
+  PlayerFitMode _fitMode = PlayerFitMode.fit;
 
   double _volume = 1.0;
   double _brightness = 0.5;
@@ -249,6 +251,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     _activeHeaders = _links.first.headers;
     _loadBrightness();
     _loadPreferredQuality();
+    _loadFitMode();
     _attachListeners();
     _scheduleIdleWork();
     unawaited(_bindBackgroundPlayback());
@@ -274,6 +277,117 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
       unawaited(_enableLeavePiP());
       unawaited(_ensureRelatedChannelsReady());
     });
+  }
+
+  Future<void> _loadFitMode() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final mode = parsePlayerFitMode(prefs.getString(_fitPrefKey));
+      if (mode != null && mounted) {
+        setState(() => _fitMode = mode);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _persistFitMode(PlayerFitMode mode) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_fitPrefKey, mode.name);
+    } catch (_) {}
+  }
+
+  void _setFitMode(PlayerFitMode mode) {
+    setState(() => _fitMode = mode);
+    unawaited(_persistFitMode(mode));
+    _revealControls();
+  }
+
+  void _showFitModeSheet(BuildContext context) {
+    _revealControls(restartTimer: false);
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFF14141A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                child: Text(
+                  'Video size',
+                  style: GF.head(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              for (final mode in PlayerFitMode.values)
+                ListTile(
+                  leading: Icon(
+                    _fitMode == mode
+                        ? Icons.check_circle_rounded
+                        : Icons.circle_outlined,
+                    color: _fitMode == mode
+                        ? AppColors.accent
+                        : Colors.white54,
+                    size: 22,
+                  ),
+                  title: Text(
+                    labelForPlayerFitMode(mode),
+                    style: GF.body(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _setFitMode(mode);
+                  },
+                ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// Video surface with [FittedBox] so Stretch/Fill honor parent constraints.
+  Widget _buildVideoSurface() {
+    final fit = boxFitFor(_fitMode);
+    final ratio = aspectRatioFor(_fitMode);
+    final w = _player.state.width?.toDouble();
+    final h = _player.state.height?.toDouble();
+    final frameW = (w != null && w > 0) ? w : 1920.0;
+    final frameH = (h != null && h > 0) ? h : 1080.0;
+
+    Widget video = Video(
+      controller: _videoCtrl,
+      controls: NoVideoControls,
+      fit: fit,
+      fill: Colors.black,
+    );
+    if (ratio != null) {
+      video = AspectRatio(aspectRatio: ratio, child: video);
+    }
+
+    return SizedBox.expand(
+      child: FittedBox(
+        fit: fit,
+        clipBehavior: Clip.hardEdge,
+        child: SizedBox(
+          width: frameW,
+          height: frameH,
+          child: video,
+        ),
+      ),
+    );
   }
 
   Future<void> _loadPreferredQuality() async {
@@ -342,7 +456,38 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     return (logicalShort >= 600, false);
   }
 
+  void _scheduleIdleWork() {
+    _idleProbeSub?.cancel();
+    _idleProbeSub = _player.stream.playing.listen((isPlaying) {
+      if (isPlaying) return;
+      final token = ++_idleWorkToken;
+      Future<void>.delayed(const Duration(seconds: 5), () async {
+        if (!mounted || token != _idleWorkToken) return;
+        if (_player.state.playing) return;
+        if (PlayerPlaybackIdleGate.shouldSkipBackgroundWork(
+          isPlaying: _player.state.playing,
+          isLowRam: PerformanceTuning.isLowRam,
+        )) {
+          return;
+        }
+        _probeRelatedChannels();
+        await _prewarmMpvFilters();
+      });
+    });
+  }
+
   void _probeRelatedChannels() {
+    if (PlayerPlaybackIdleGate.shouldSkipBackgroundWork(
+      isPlaying: _player.state.playing,
+      isLowRam: PerformanceTuning.isLowRam,
+    )) {
+      debugPrint(
+        _player.state.playing
+            ? '[probe] skipped — playback active'
+            : '[probe] skipped — low RAM device',
+      );
+      return;
+    }
     if (!mounted || _probeInFlight) return;
     if (_relatedDisplay.isEmpty) return;
     _probeInFlight = true;
@@ -729,14 +874,10 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     _widthSub = _player.stream.width.listen((_) => _updateQualityBadge());
     _heightSub = _player.stream.height.listen((h) {
       if (h != null && h > 0) {
+        final prev = _sourceHeight;
         _sourceHeight = h;
-        if (!_vfPrewarmed &&
-            !_applyingQuality &&
-            !_isBuffering &&
-            _player.state.playing &&
-            _stablePlaybackTicks >= 2 &&
-            _isSingleRenditionStream) {
-          unawaited(_prewarmMpvFilters());
+        if (prev != h && mounted && _initialized) {
+          setState(() {});
         }
       }
       _updateQualityBadge();
@@ -1003,10 +1144,17 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
 
   /// Pre-warm vf on mono streams so later quality switches only swap parameters.
   Future<void> _prewarmMpvFilters() async {
+    if (PerformanceTuning.isLowRam) {
+      debugPrint('[prewarm] skipped — low RAM');
+      return;
+    }
+    if (_player.state.playing) {
+      debugPrint('[prewarm] skipped — playback active');
+      return;
+    }
     if (_player.platform is! NativePlayer ||
         _vfPrewarmed ||
-        _isBuffering ||
-        !_player.state.playing) {
+        _isBuffering) {
       return;
     }
     _suppressFailoverFor(const Duration(seconds: 12));
@@ -1264,11 +1412,20 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     }
   }
 
-  void _toggleFill() {
-    setState(() {
-      _videoFit = _videoFit == BoxFit.contain ? BoxFit.cover : BoxFit.contain;
-    });
-    _revealControls();
+  IconData _fitModeIcon() {
+    switch (_fitMode) {
+      case PlayerFitMode.fit:
+        return Icons.fit_screen_rounded;
+      case PlayerFitMode.fill:
+        return Icons.crop_free_rounded;
+      case PlayerFitMode.stretch:
+        return Icons.open_in_full_rounded;
+      case PlayerFitMode.original:
+        return Icons.photo_size_select_actual_rounded;
+      case PlayerFitMode.ratio16_9:
+      case PlayerFitMode.ratio4_3:
+        return Icons.aspect_ratio_rounded;
+    }
   }
 
   void _seek(int seconds) {
@@ -1442,9 +1599,6 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     if (links.length > 1) {
       unawaited(_rankLinksInBackground());
     }
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted && !_probeInFlight) _probeRelatedChannels();
-    });
   }
 
   void _prefetchVisibleChannelPlaylists(List<ChannelModel> channels) {
@@ -1768,6 +1922,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     _heightSub?.cancel();
     _tracksSub?.cancel();
     _pipStatusSub?.cancel();
+    _idleProbeSub?.cancel();
     _bufferingVisible.dispose();
     _player.dispose();
     try {
@@ -1809,11 +1964,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
     }
     return ColoredBox(
       color: Colors.black,
-      child: Video(
-        controller: _videoCtrl,
-        controls: NoVideoControls,
-        fit: BoxFit.contain,
-      ),
+      child: _buildVideoSurface(),
     );
   }
 
@@ -1874,11 +2025,7 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
           else if (!_initialized)
             _buildLoadingSkeleton()
           else
-            Video(
-              controller: _videoCtrl,
-              controls: NoVideoControls,
-              fit: _videoFit,
-            ),
+            _buildVideoSurface(),
 
           // ── Buffering spinner ──
           ValueListenableBuilder<bool>(
@@ -2264,11 +2411,9 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
             Row(
               children: [
                 PlayerTransportBtn(
-                  icon: _videoFit == BoxFit.cover
-                      ? Icons.crop_free_rounded
-                      : Icons.fit_screen_rounded,
-                  tooltip: _videoFit == BoxFit.cover ? 'Fit screen' : 'Fill',
-                  onTap: _toggleFill,
+                  icon: _fitModeIcon(),
+                  tooltip: labelForPlayerFitMode(_fitMode),
+                  onTap: () => _showFitModeSheet(context),
                 ),
                 PlayerTransportBtn(
                   icon: Icons.replay_10_rounded,

@@ -42,6 +42,37 @@ ALLOWED_FIELDS = (
     "sort_order",
 )
 
+_PLACEHOLDER_MARKERS = (
+    "তোমার",
+    "your_",
+    "your ",
+    "api_key",
+    "api key",
+    "placeholder",
+    "<set>",
+    "xxx",
+)
+
+
+def _validate_api_key(key: str) -> str | None:
+    """Return error message when key is missing/invalid; None when OK."""
+    if not key:
+        return "APPWRITE_API_KEY is empty"
+    try:
+        key.encode("ascii")
+    except UnicodeEncodeError:
+        return (
+            "APPWRITE_API_KEY must be ASCII only (paste the real key from "
+            "Appwrite Console → API Keys — not Bengali placeholder text)"
+        )
+    lower = key.lower()
+    if len(key) < 20 or any(m in lower for m in _PLACEHOLDER_MARKERS):
+        return (
+            "APPWRITE_API_KEY looks like a placeholder. Copy the real key from "
+            "Appwrite Console → Project → API Keys"
+        )
+    return None
+
 
 def _headers() -> dict[str, str]:
     return {
@@ -157,11 +188,15 @@ def row_payload(item: dict[str, Any]) -> dict[str, Any]:
 
 
 def main() -> int:
-    if not ENDPOINT or not PROJECT_ID or not API_KEY:
+    if not ENDPOINT or not PROJECT_ID:
         print(
-            "ERROR: APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID, APPWRITE_API_KEY required",
+            "ERROR: APPWRITE_ENDPOINT and APPWRITE_PROJECT_ID are required",
             file=sys.stderr,
         )
+        return 1
+    key_err = _validate_api_key(API_KEY)
+    if key_err:
+        print(f"ERROR: {key_err}", file=sys.stderr)
         return 1
 
     items = load_items()

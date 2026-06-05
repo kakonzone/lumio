@@ -14,6 +14,7 @@ jobs:
       APPWRITE_MAIN_PROJECT_ID: ${{ secrets.APPWRITE_MAIN_PROJECT_ID }}
       APPWRITE_MAIN_API_KEY: ${{ secrets.APPWRITE_MAIN_API_KEY }}
       APPWRITE_MAIN_DATABASE_ID: ${{ secrets.APPWRITE_MAIN_DATABASE_ID }}
+      APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -24,7 +25,7 @@ jobs:
           SGP_ENDPOINT="${APPWRITE_MAIN_ENDPOINT:-https://sgp.cloud.appwrite.io/v1}"
           SGP_PROJECT="${APPWRITE_MAIN_PROJECT_ID:-6a22869200230b1a8bf0}"
           SGP_DATABASE="${APPWRITE_MAIN_DATABASE_ID:-database-iptv_main}"
-          SGP_API_KEY="${APPWRITE_MAIN_API_KEY:-}"
+          SGP_API_KEY="${APPWRITE_MAIN_API_KEY:-${APPWRITE_API_KEY:-}}"
           {
             echo "MAIN_ENDPOINT=${SGP_ENDPOINT}"
             echo "MAIN_PROJECT=${SGP_PROJECT}"
@@ -39,8 +40,8 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "${MAIN_API_KEY}" ]; then
-            echo "::error::Missing SGP Lumio API key (APPWRITE_MAIN_API_KEY)"
-            echo "SGP Lumio project 6a22869200230b1a8bf0 — global_config + special_links"
+            echo "::error::Missing SGP Lumio API key"
+            echo "Set APPWRITE_MAIN_API_KEY or APPWRITE_API_KEY (SGP Lumio project 6a22869200230b1a8bf0)"
             echo "Channels and featured_live_events are deployed from a separate NYC repo."
             exit 1
           fi

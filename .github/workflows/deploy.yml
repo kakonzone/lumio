@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   update-app-config:
@@ -20,11 +21,14 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "${APPWRITE_ENDPOINT}" ] || [ -z "${APPWRITE_PROJECT_ID}" ] || [ -z "${APPWRITE_API_KEY}" ]; then
-            echo "ERROR: Add GitHub Secrets: APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID, APPWRITE_API_KEY"
-            echo "Repo → Settings → Secrets and variables → Actions → New repository secret"
+            echo "::error::Missing GitHub Secrets"
+            echo "Add these at: Repo → Settings → Secrets and variables → Actions"
+            echo "  APPWRITE_ENDPOINT  = https://cloud.appwrite.io/v1"
+            echo "  APPWRITE_PROJECT_ID = 6a22869200230b1a8bf0"
+            echo "  APPWRITE_API_KEY   = (from Appwrite Console → API Keys)"
             exit 1
           fi
-          echo "Appwrite secrets present (key length: ${#APPWRITE_API_KEY})"
+          echo "Appwrite secrets OK (key length: ${#APPWRITE_API_KEY})"
 
       - name: Update global_config updated_at in Appwrite
         env:
@@ -35,19 +39,24 @@ jobs:
           set -euo pipefail
           TIMESTAMP="$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")"
           echo "Updating app_config/global_config updated_at=${TIMESTAMP}"
+
           HTTP_CODE=$(curl -sS -o /tmp/appwrite_patch.json -w "%{http_code}" -X PATCH \
             "${APPWRITE_ENDPOINT}/databases/database-iptv_main/collections/app_config/documents/global_config" \
             -H "Content-Type: application/json" \
             -H "X-Appwrite-Project: ${APPWRITE_PROJECT_ID}" \
             -H "X-Appwrite-Key: ${APPWRITE_API_KEY}" \
             -d "{\"data\":{\"updated_at\":\"${TIMESTAMP}\"}}")
+
           cat /tmp/appwrite_patch.json
           echo ""
-          if [ "${HTTP_CODE}" -ge 400 ]; then
-            echo "ERROR: Appwrite PATCH failed (HTTP ${HTTP_CODE})"
-            exit 1
-          fi
-          echo "Done — global_config.updated_at set to ${TIMESTAMP}"
+          echo "HTTP ${HTTP_CODE}"
+
+          case "${HTTP_CODE}" in
+            200|201) echo "global_config updated_at OK" ;;
+            401) echo "::error::401 Unauthorized — wrong APPWRITE_API_KEY or missing databases.write scope"; exit 1 ;;
+            404) echo "::error::404 Not Found — create document global_config in app_config collection"; exit 1 ;;
+            *)   echo "::error::Appwrite PATCH failed (HTTP ${HTTP_CODE})"; exit 1 ;;
+          esac
 
       - name: Sync Special Links to Appwrite
         env:
@@ -55,5 +64,6 @@ jobs:
           APPWRITE_PROJECT_ID: ${{ secrets.APPWRITE_PROJECT_ID }}
           APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
         run: |
+          set -euo pipefail
           pip install requests
           python scripts/sync_special_links.py

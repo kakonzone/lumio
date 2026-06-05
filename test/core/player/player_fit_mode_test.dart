@@ -17,12 +17,14 @@ void main() {
     expect(aspectRatioFor(PlayerFitMode.fit), isNull);
   });
 
-  test('tap cycle is fit → fill → stretch → fit', () {
+  test('tap cycle is fit → fill → stretch → 16:9 → fit', () {
     var mode = PlayerFitMode.fit;
     mode = nextPlayerFitModeInTapCycle(mode);
     expect(mode, PlayerFitMode.fill);
     mode = nextPlayerFitModeInTapCycle(mode);
     expect(mode, PlayerFitMode.stretch);
+    mode = nextPlayerFitModeInTapCycle(mode);
+    expect(mode, PlayerFitMode.ratio16_9);
     mode = nextPlayerFitModeInTapCycle(mode);
     expect(mode, PlayerFitMode.fit);
   });
@@ -33,8 +35,16 @@ void main() {
       PlayerFitMode.fit,
     );
     expect(
+      normalizePlayerFitModeForTap(PlayerFitMode.ratio4_3),
+      PlayerFitMode.fit,
+    );
+    expect(
       normalizePlayerFitModeForTap(PlayerFitMode.fill),
       PlayerFitMode.fill,
+    );
+    expect(
+      normalizePlayerFitModeForTap(PlayerFitMode.ratio16_9),
+      PlayerFitMode.ratio16_9,
     );
   });
 

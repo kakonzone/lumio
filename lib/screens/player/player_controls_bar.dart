@@ -8,7 +8,7 @@ extension _PlayerControls on _PlayerScreenState {
       final prefs = await SharedPreferences.getInstance();
       final mode = parsePlayerFitMode(prefs.getString(_PlayerScreenState._fitPrefKey));
       if (mode != null && mounted) {
-        setState(() => _fitMode = mode);
+        setState(() => _fitMode = normalizePlayerFitModeForTap(mode));
       }
     } catch (_) {}
   }
@@ -741,7 +741,7 @@ extension _PlayerControls on _PlayerScreenState {
                 PlayerTransportBtn(
                   icon: _fitModeIcon(),
                   tooltip: labelForPlayerFitMode(_fitMode),
-                  onTap: () => _showFitModeSheet(context),
+                  onTap: _cycleFitMode,
                 ),
                 PlayerTransportBtn(
                   icon: Icons.replay_10_rounded,

@@ -14,6 +14,9 @@
   "APPWRITE_DATABASE_ID": "iptv_main",
   "APPWRITE_CHANNELS_COLLECTION_ID": "channels",
   "APPWRITE_APP_CONFIG_COLLECTION_ID": "app_config",
+  "APPWRITE_MAIN_PROJECT_ID": "6a22869200230b1a8bf0",
+  "APPWRITE_MAIN_ENDPOINT": "https://sgp.cloud.appwrite.io/v1",
+  "APPWRITE_MAIN_DATABASE_ID": "database-iptv_main",
 
   "LUMIO_BACKEND_BASE_URL": "",
   "LUMIO_BACKEND_APP_KEY": "",

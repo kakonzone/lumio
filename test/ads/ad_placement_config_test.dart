@@ -13,7 +13,8 @@ void main() {
 
   test('standard intervals when aggressive_mode false', () {
     AdPlacementConfig.debugAggressiveModeOverride = false;
-    expect(AdPlacementConfig.newsNativeInterval, 5);
+    expect(AdPlacementConfig.listNativeInterval, 8);
+    expect(AdPlacementConfig.newsNativeInterval, 8);
     expect(AdPlacementConfig.channelListNativeInterval, 8);
     expect(AdPlacementConfig.playerMidRollPeriod.inMinutes, 30);
     expect(AdPlacementConfig.showGlobalSocialBarOverlay, isTrue);

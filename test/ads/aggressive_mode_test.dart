@@ -29,7 +29,7 @@ void main() {
     AdPlacementConfig.debugAggressiveModeOverride = false;
     expect(
       AdPlacementConfig.newsNativeInterval,
-      AdConfig.nativeListIntervalNews,
+      AdConfig.nativeListInterval,
     );
   });
 }

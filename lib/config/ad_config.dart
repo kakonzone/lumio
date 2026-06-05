@@ -408,10 +408,10 @@ class AdConfig {
 
   /// Per-screen native list density (items between native rows).
   static const Map<AdListScreen, int> nativeDensityByScreen = {
-    AdListScreen.home: 6,
+    AdListScreen.home: 8,
     AdListScreen.sports: 8,
     AdListScreen.live: 8,
-    AdListScreen.news: 5,
+    AdListScreen.news: 8,
     AdListScreen.categories: 8,
     AdListScreen.categoryDrilldown: 8,
     AdListScreen.favorites: 8,

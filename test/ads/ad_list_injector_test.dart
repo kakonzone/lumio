@@ -6,9 +6,9 @@ void main() {
   test('nativeDensityByScreen channel lists use 8-item spacing', () {
     expect(AdConfig.nativeDensityByScreen[AdListScreen.sports], 8);
     expect(AdConfig.nativeDensityByScreen[AdListScreen.live], 8);
-    expect(AdConfig.nativeDensityByScreen[AdListScreen.news], 5);
+    expect(AdConfig.nativeDensityByScreen[AdListScreen.news], 8);
     expect(AdConfig.nativeDensityByScreen[AdListScreen.categoryDrilldown], 8);
-    expect(AdConfig.nativeDensityByScreen[AdListScreen.home], 6);
+    expect(AdConfig.nativeDensityByScreen[AdListScreen.home], 8);
   });
 
   test('sports injects ad every 8 channels via channelListNativeInterval', () {

@@ -9,10 +9,21 @@ The mobile app uses **anonymous / Guests Read** only. Do **not** put an Appwrite
 **Console (one-time):**
 
 1. Delete any API key that was pasted in chat or committed — **Console → API keys → Delete**.
-2. **Databases → `iptv_main` → `channels` → Settings → Permissions → Read → role `Guests` (any).**
-3. Same **Read → Guests** on collection **`app_config`**.
+2. **NYC catalog** (`191876000995145`) → Databases → `iptv_main`:
+   - **`channels`** → Permissions → **Read → Guests (any)**
+   - **`app_config`** → Permissions → **Read → Guests (any)**
+3. **SGP Lumio** (`6a22869200230b1a8bf0`) → Databases → `iptv_main`:
+   - **`app_config`** → document `global_config` exists → **Read → Guests (any)**
+   - **`special_links`** → **Read → Guests (any)** (GITUN GitHub playlist URLs)
+4. **Storage** (if channel logos / assets use Appwrite files): bucket → **Read → Guests (any)** on files the app loads.
 
-**`secrets.json` — Appwrite keys only (no `APPWRITE_API_KEY`):**
+**GitHub Actions (deploy API key — not in the app):**
+
+| Secret | Project | Purpose |
+|--------|---------|---------|
+| `APPWRITE_API_KEY` or `APPWRITE_MAIN_API_KEY` | SGP Lumio `6a22869200230b1a8bf0` | Deploy: `global_config`, `special_links` sync |
+
+**`secrets.json` / release APK — Appwrite keys only (no `APPWRITE_API_KEY` in the app):**
 
 | Key | Example |
 |-----|---------|
@@ -21,6 +32,9 @@ The mobile app uses **anonymous / Guests Read** only. Do **not** put an Appwrite
 | `APPWRITE_DATABASE_ID` | `iptv_main` |
 | `APPWRITE_CHANNELS_COLLECTION_ID` | `channels` |
 | `APPWRITE_APP_CONFIG_COLLECTION_ID` | `app_config` |
+| `APPWRITE_MAIN_PROJECT_ID` | `6a22869200230b1a8bf0` |
+| `APPWRITE_MAIN_ENDPOINT` | `https://sgp.cloud.appwrite.io/v1` |
+| `APPWRITE_MAIN_DATABASE_ID` | `iptv_main` |
 
 Playlist fallback (`playlists` / document `main`) and featured World Cup cards (`featured_live_events` in `app_config`) use **code defaults** in `lib/config/appwrite_config.dart` — not required in `secrets.json`. See `docs/APPWRITE_WORLD_CUP_CARDS.md` for daily JSON updates.
 

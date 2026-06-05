@@ -3,9 +3,14 @@ name: Release APK (manual)
 on:
   workflow_dispatch:
 
+concurrency:
+  group: release-apk-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build-signed-apk:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
@@ -62,6 +67,9 @@ jobs:
         run: python3 scripts/merge_release_defines.py
 
       - run: flutter pub get
+
+      - name: Sync Android network security config
+        run: python3 tool/gen_network_security_config.py
 
       - name: Build release APK
         run: flutter build apk --release --dart-define-from-file=secrets.json

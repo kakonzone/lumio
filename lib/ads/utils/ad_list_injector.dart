@@ -20,15 +20,7 @@ class AdListInjector {
     int? intervalOverride,
   }) {
     if (intervalOverride != null) return intervalOverride;
-    if (screen == AdListScreen.news) {
-      return AdPlacementConfig.newsNativeInterval;
-    }
-    if (screen == AdListScreen.home) {
-      return AdConfig.nativeDensityByScreen[AdListScreen.home] ??
-          defaultInterval;
-    }
-    // Category / sports / live / favorites — RC interval (8 or 4 aggressive).
-    return AdPlacementConfig.channelListNativeInterval;
+    return AdPlacementConfig.listNativeInterval;
   }
 
   static int totalCount(

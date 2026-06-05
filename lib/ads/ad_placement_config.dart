@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../config/ad_config.dart' show AdConfig, AdListScreen;
 import '../config/ad_policy_config.dart';
+import '../services/app_config_service.dart';
 import 'ad_log.dart';
 import '../services/ad_safety_service.dart';
 
@@ -37,16 +38,21 @@ class AdPlacementConfig {
     debugAggressiveModeOverride = null;
   }
 
-  /// NEWS list: native every 5 (every 4 when aggressive).
-  static int get newsNativeInterval => aggressiveMode
-      ? AdConfig.nativeListIntervalAggressive
-      : (AdConfig.nativeDensityByScreen[AdListScreen.news] ??
-          AdConfig.nativeListIntervalNews);
+  static int get channelListNativeInterval => listNativeInterval;
 
-  /// Channel / category / favorites lists: 8 or 4.
-  static int get channelListNativeInterval => aggressiveMode
-      ? AdConfig.nativeListIntervalAggressive
-      : AdConfig.nativeListInterval;
+  /// In-feed native ad every N channel rows (Appwrite `list_native_interval`, default 8).
+  static int get listNativeInterval {
+    if (debugAggressiveModeOverride == true || aggressiveMode) {
+      return AdConfig.nativeListIntervalAggressive;
+    }
+    final remote =
+        AppConfigService.instance.cachedConfig.listNativeInterval;
+    if (remote > 0) return remote;
+    return AdConfig.nativeListInterval;
+  }
+
+  /// NEWS list uses the same interval as channel lists.
+  static int get newsNativeInterval => listNativeInterval;
 
   static Duration get playerMidRollPeriod {
     final policy = AdPolicyConfig.instance;

@@ -13,6 +13,7 @@ class AppConfigModel {
     this.popunderEnabled = true,
     this.interstitialCooldown = 90,
     this.channelTapsBeforeAd = 3,
+    this.listNativeInterval = 8,
     this.spinWheelEnabled = true,
     this.newsEnabled = true,
     this.specialLinkEnabled = true,
@@ -46,6 +47,7 @@ class AppConfigModel {
   final bool popunderEnabled;
   final int interstitialCooldown;
   final int channelTapsBeforeAd;
+  final int listNativeInterval;
   final bool spinWheelEnabled;
   final bool newsEnabled;
   final bool specialLinkEnabled;
@@ -91,6 +93,12 @@ class AppConfigModel {
         'channel_taps_before_ad',
         'channelTapsBeforeAd',
         defaultValue: 3,
+      ),
+      listNativeInterval: _int(
+        map,
+        'list_native_interval',
+        'listNativeInterval',
+        defaultValue: 8,
       ),
       spinWheelEnabled:
           _bool(map, 'spin_wheel_enabled', 'spinWheelEnabled', defaultValue: true),
@@ -148,6 +156,7 @@ class AppConfigModel {
     bool? popunderEnabled,
     int? interstitialCooldown,
     int? channelTapsBeforeAd,
+    int? listNativeInterval,
     bool? spinWheelEnabled,
     bool? newsEnabled,
     bool? specialLinkEnabled,
@@ -181,6 +190,7 @@ class AppConfigModel {
       popunderEnabled: popunderEnabled ?? this.popunderEnabled,
       interstitialCooldown: interstitialCooldown ?? this.interstitialCooldown,
       channelTapsBeforeAd: channelTapsBeforeAd ?? this.channelTapsBeforeAd,
+      listNativeInterval: listNativeInterval ?? this.listNativeInterval,
       spinWheelEnabled: spinWheelEnabled ?? this.spinWheelEnabled,
       newsEnabled: newsEnabled ?? this.newsEnabled,
       specialLinkEnabled: specialLinkEnabled ?? this.specialLinkEnabled,
@@ -216,6 +226,7 @@ class AppConfigModel {
         'popunder_enabled': popunderEnabled,
         'interstitial_cooldown': interstitialCooldown,
         'channel_taps_before_ad': channelTapsBeforeAd,
+        'list_native_interval': listNativeInterval,
         'spin_wheel_enabled': spinWheelEnabled,
         'news_enabled': newsEnabled,
         'special_link_enabled': specialLinkEnabled,

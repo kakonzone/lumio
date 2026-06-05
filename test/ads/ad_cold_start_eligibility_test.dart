@@ -15,6 +15,7 @@ void main() {
     AdColdStartEligibility.debugResetLogOnce();
     AdSafetyService.instance.debugSetPreferCleanSdkRouting(null);
     AdSafetyService.instance.debugSetAdsterraEnabled(null);
+    AdSafetyService.instance.debugSetAdsBlockedInDebug(false);
     ServerCap.debugTreatAsConfigured = false;
   });
 

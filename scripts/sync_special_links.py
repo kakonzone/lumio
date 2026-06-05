@@ -7,7 +7,7 @@ Environment variables (required unless noted):
   APPWRITE_ENDPOINT
   APPWRITE_PROJECT_ID
   APPWRITE_API_KEY
-  APPWRITE_DATABASE_ID       default: database-iptv_main
+  APPWRITE_DATABASE_ID       default: iptv_main
   SPECIAL_LINKS_JSON         default: data/special_links.json
   SPECIAL_LINKS_COLLECTION   default: special_links
 """
@@ -26,7 +26,7 @@ ROOT = Path(__file__).resolve().parent.parent
 ENDPOINT = os.environ.get("APPWRITE_ENDPOINT", "").rstrip("/")
 PROJECT_ID = os.environ.get("APPWRITE_PROJECT_ID", "").strip()
 API_KEY = os.environ.get("APPWRITE_API_KEY", "").strip()
-DATABASE_ID = os.environ.get("APPWRITE_DATABASE_ID", "database-iptv_main")
+DATABASE_ID = os.environ.get("APPWRITE_DATABASE_ID", "iptv_main")
 COLLECTION_ID = os.environ.get("SPECIAL_LINKS_COLLECTION", "special_links")
 JSON_PATH = Path(os.environ.get("SPECIAL_LINKS_JSON", str(ROOT / "data" / "special_links.json")))
 

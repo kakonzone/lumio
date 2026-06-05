@@ -74,7 +74,7 @@ class AppwriteConfig {
 
   static const mainDatabaseId = String.fromEnvironment(
     'APPWRITE_MAIN_DATABASE_ID',
-    defaultValue: 'database-iptv_main',
+    defaultValue: 'iptv_main',
   );
 
   /// Remote control document in `app_config` (ads, kill switch, updates).

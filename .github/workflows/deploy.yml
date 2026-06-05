@@ -24,7 +24,7 @@ jobs:
           set -euo pipefail
           SGP_ENDPOINT="${APPWRITE_MAIN_ENDPOINT:-https://sgp.cloud.appwrite.io/v1}"
           SGP_PROJECT="${APPWRITE_MAIN_PROJECT_ID:-6a22869200230b1a8bf0}"
-          SGP_DATABASE="${APPWRITE_MAIN_DATABASE_ID:-database-iptv_main}"
+          SGP_DATABASE="${APPWRITE_MAIN_DATABASE_ID:-iptv_main}"
           SGP_API_KEY="${APPWRITE_MAIN_API_KEY:-${APPWRITE_API_KEY:-}}"
           {
             echo "MAIN_ENDPOINT=${SGP_ENDPOINT}"

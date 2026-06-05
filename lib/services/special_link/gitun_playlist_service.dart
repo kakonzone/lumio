@@ -149,7 +149,7 @@ class GitunPlaylistService {
   static String _friendlyAppwriteError(AppwriteException e) {
     if (e.code == 401) {
       return 'Appwrite special_links: permission denied (401). '
-          'Console → database-iptv_main → special_links → Permissions → '
+          'Console → iptv_main → special_links → Permissions → '
           'Read for Guests (no API key in the app).';
     }
     return e.message ?? 'Appwrite special_links error (code=${e.code})';

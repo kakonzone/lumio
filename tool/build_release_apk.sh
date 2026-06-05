@@ -77,6 +77,10 @@ require_secret APPWRITE_ENDPOINT
 require_secret APPWRITE_DATABASE_ID
 require_secret APPWRITE_CHANNELS_COLLECTION_ID
 require_secret APPWRITE_APP_CONFIG_COLLECTION_ID
+# SGP Lumio (global_config, special_links) — optional; code defaults apply if omitted
+# require_secret APPWRITE_MAIN_PROJECT_ID
+# require_secret APPWRITE_MAIN_ENDPOINT
+# require_secret APPWRITE_MAIN_DATABASE_ID
 
 require_secret LEVELPLAY_APP_KEY
 require_secret LEVELPLAY_INTERSTITIAL_AD_UNIT

@@ -1,13 +1,14 @@
-/// Appwrite — main channel catalog (home, sports, categories, live).
+/// Appwrite — dual region setup (no API key in the app; Guests Read only).
 ///
-/// Uses **Guests Read** only (no API key in the app). Console → `iptv_main` →
-/// `channels` / `app_config` → Permissions → Read → **Guests**.
+/// **NYC catalog** — channel list + featured `app_config` rows.
+/// **SGP Lumio** — `global_config`, `special_links` (GitHub Actions deploy).
 class AppwriteConfig {
   AppwriteConfig._();
 
   /// Offline catalog cache TTL when Appwrite is unreachable.
   static const catalogCacheTtl = Duration(hours: 24);
 
+  // ── NYC catalog (channels, featured_live_events) ─────────────────────────
   static const projectId = String.fromEnvironment(
     'APPWRITE_PROJECT_ID',
     defaultValue: '191876000995145',
@@ -18,7 +19,6 @@ class AppwriteConfig {
     defaultValue: 'https://nyc.cloud.appwrite.io/v1',
   );
 
-  /// Databases → your channel table / collection IDs (override in secrets.json).
   static const databaseId = String.fromEnvironment(
     'APPWRITE_DATABASE_ID',
     defaultValue: 'iptv_main',
@@ -61,8 +61,7 @@ class AppwriteConfig {
   static bool get isConfigured =>
       projectId.isNotEmpty && endpoint.isNotEmpty && databaseId.isNotEmpty;
 
-  // ── Main project (remote control / global_config) ───────────────────────
-  /// Education Pro — future single main project.
+  // ── SGP Lumio (global_config, special_links) — GitHub Actions deploy ─────
   static const mainProjectId = String.fromEnvironment(
     'APPWRITE_MAIN_PROJECT_ID',
     defaultValue: '6a22869200230b1a8bf0',

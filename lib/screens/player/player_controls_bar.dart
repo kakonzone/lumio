@@ -8,7 +8,7 @@ extension _PlayerControls on _PlayerScreenState {
       final prefs = await SharedPreferences.getInstance();
       final mode = parsePlayerFitMode(prefs.getString(_PlayerScreenState._fitPrefKey));
       if (mode != null && mounted) {
-        setState(() => _fitMode = mode);
+        setState(() => _fitMode = normalizePlayerFitModeForTap(mode));
       }
     } catch (_) {}
   }
@@ -23,60 +23,11 @@ extension _PlayerControls on _PlayerScreenState {
     unawaited(_persistFitMode(mode));
     _revealControls();
   }
-  void _showFitModeSheet(BuildContext context) {
-    _revealControls(restartTimer: false);
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: const Color(0xFF14141A),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                child: Text(
-                  'Video size',
-                  style: GF.head(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              for (final mode in PlayerFitMode.values)
-                ListTile(
-                  leading: Icon(
-                    _fitMode == mode
-                        ? Icons.check_circle_rounded
-                        : Icons.circle_outlined,
-                    color: _fitMode == mode
-                        ? AppColors.accent
-                        : Colors.white54,
-                    size: 22,
-                  ),
-                  title: Text(
-                    labelForPlayerFitMode(mode),
-                    style: GF.body(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    _setFitMode(mode);
-                  },
-                ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        );
-      },
+  void _cycleFitMode() {
+    final next = nextPlayerFitModeInTapCycle(
+      normalizePlayerFitModeForTap(_fitMode),
     );
+    _setFitMode(next);
   }
   Widget _buildVideoSurface() {
     final fit = boxFitFor(_fitMode);
@@ -741,7 +692,7 @@ extension _PlayerControls on _PlayerScreenState {
                 PlayerTransportBtn(
                   icon: _fitModeIcon(),
                   tooltip: labelForPlayerFitMode(_fitMode),
-                  onTap: () => _showFitModeSheet(context),
+                  onTap: _cycleFitMode,
                 ),
                 PlayerTransportBtn(
                   icon: Icons.replay_10_rounded,

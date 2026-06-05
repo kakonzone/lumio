@@ -14,6 +14,7 @@ const List<PlayerFitMode> playerFitModeTapCycle = [
   PlayerFitMode.fit,
   PlayerFitMode.fill,
   PlayerFitMode.stretch,
+  PlayerFitMode.ratio16_9,
 ];
 
 PlayerFitMode normalizePlayerFitModeForTap(PlayerFitMode? mode) {

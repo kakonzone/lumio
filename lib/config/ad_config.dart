@@ -123,6 +123,12 @@ class AdConfig {
     return list.where((u) => !isPlaceholderAdUrl(u)).toList();
   }
 
+  /// Non-placeholder URLs only — used for [hasMonetizationConfig] (debug samples excluded).
+  static List<String> _realAdUrls(Iterable<String> urls) => urls
+      .map((e) => e.trim())
+      .where((e) => e.isNotEmpty && !isPlaceholderAdUrl(e))
+      .toList();
+
   static bool get hasValidLevelPlayAppKey =>
       hasLevelPlayAppKey && !isPlaceholderSecret(levelPlayAppKey);
 
@@ -426,14 +432,14 @@ class AdConfig {
       adsterraDirectLink.trim().isNotEmpty;
 
   static bool get hasValidAdsterraDirectLink =>
-      adsterraDirectLinksReleaseSafe.isNotEmpty;
+      _realAdUrls(adsterraDirectLinkRotation).isNotEmpty;
 
   static bool get hasAdsterraSmartlink =>
       adsterraSmartlinksBundle.trim().isNotEmpty ||
       adsterraSmartlinkUrl.trim().isNotEmpty;
 
   static bool get hasValidAdsterraSmartlink =>
-      _releaseSafeUrls(adsterraSmartlinkRotation).isNotEmpty;
+      _realAdUrls(adsterraSmartlinkRotation).isNotEmpty;
 
   /// At least one Adsterra WebView zone (script + base URL pairs).
   static bool get hasAdsterraBanner728 =>

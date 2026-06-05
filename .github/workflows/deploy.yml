@@ -22,38 +22,70 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Resolve Appwrite Lumio project
+      - name: Install Python deps
+        run: pip install requests
+
+      - name: Resolve NYC catalog project
         run: |
           set -euo pipefail
-          RESOLVED_ENDPOINT="${APPWRITE_MAIN_ENDPOINT:-${APPWRITE_ENDPOINT:-https://nyc.cloud.appwrite.io/v1}}"
-          RESOLVED_PROJECT="${APPWRITE_MAIN_PROJECT_ID:-${APPWRITE_PROJECT_ID:-191876000995145}}"
-          RESOLVED_DATABASE="${APPWRITE_MAIN_DATABASE_ID:-${APPWRITE_DATABASE_ID:-iptv_main}}"
-          RESOLVED_API_KEY="${APPWRITE_MAIN_API_KEY:-${APPWRITE_API_KEY:-}}"
+          NYC_ENDPOINT="${APPWRITE_ENDPOINT:-https://nyc.cloud.appwrite.io/v1}"
+          NYC_PROJECT="${APPWRITE_PROJECT_ID:-191876000995145}"
+          NYC_DATABASE="${APPWRITE_DATABASE_ID:-iptv_main}"
+          NYC_API_KEY="${APPWRITE_API_KEY:-}"
           {
-            echo "MAIN_ENDPOINT=${RESOLVED_ENDPOINT}"
-            echo "MAIN_PROJECT=${RESOLVED_PROJECT}"
-            echo "MAIN_DATABASE=${RESOLVED_DATABASE}"
-            echo "MAIN_API_KEY=${RESOLVED_API_KEY}"
+            echo "NYC_ENDPOINT=${NYC_ENDPOINT}"
+            echo "NYC_PROJECT=${NYC_PROJECT}"
+            echo "NYC_DATABASE=${NYC_DATABASE}"
+            echo "NYC_API_KEY=${NYC_API_KEY}"
           } >> "$GITHUB_ENV"
-          echo "Lumio endpoint: ${RESOLVED_ENDPOINT}"
-          echo "Lumio project: ${RESOLVED_PROJECT}"
-          echo "Lumio database: ${RESOLVED_DATABASE}"
+          echo "NYC catalog endpoint: ${NYC_ENDPOINT}"
+          echo "NYC catalog project: ${NYC_PROJECT}"
+          echo "NYC catalog database: ${NYC_DATABASE}"
+
+      - name: Resolve SGP Lumio project
+        run: |
+          set -euo pipefail
+          SGP_ENDPOINT="${APPWRITE_MAIN_ENDPOINT:-https://sgp.cloud.appwrite.io/v1}"
+          SGP_PROJECT="${APPWRITE_MAIN_PROJECT_ID:-6a22869200230b1a8bf0}"
+          SGP_DATABASE="${APPWRITE_MAIN_DATABASE_ID:-database-iptv_main}"
+          SGP_API_KEY="${APPWRITE_MAIN_API_KEY:-}"
+          {
+            echo "MAIN_ENDPOINT=${SGP_ENDPOINT}"
+            echo "MAIN_PROJECT=${SGP_PROJECT}"
+            echo "MAIN_DATABASE=${SGP_DATABASE}"
+            echo "MAIN_API_KEY=${SGP_API_KEY}"
+          } >> "$GITHUB_ENV"
+          echo "SGP Lumio endpoint: ${SGP_ENDPOINT}"
+          echo "SGP Lumio project: ${SGP_PROJECT}"
+          echo "SGP Lumio database: ${SGP_DATABASE}"
 
       - name: Verify Appwrite secrets
         run: |
           set -euo pipefail
-          if [ -z "${MAIN_ENDPOINT}" ] || [ -z "${MAIN_PROJECT}" ] || [ -z "${MAIN_API_KEY}" ]; then
-            echo "::error::Missing Lumio Appwrite GitHub Secrets"
-            echo "Add at: Repo → Settings → Secrets and variables → Actions"
-            echo "  APPWRITE_ENDPOINT     = https://nyc.cloud.appwrite.io/v1"
-            echo "  APPWRITE_PROJECT_ID   = 191876000995145"
-            echo "  APPWRITE_API_KEY      = Lumio project API key (databases.write)"
-            echo "  APPWRITE_DATABASE_ID  = iptv_main (optional)"
+          if [ -z "${NYC_API_KEY}" ]; then
+            echo "::error::Missing NYC catalog API key (APPWRITE_API_KEY)"
+            echo "NYC project 191876000995145 — featured_live_events + channel import"
             exit 1
           fi
-          echo "Lumio Appwrite secrets OK (key length: ${#MAIN_API_KEY})"
+          if [ -z "${MAIN_API_KEY}" ]; then
+            echo "::error::Missing SGP Lumio API key (APPWRITE_MAIN_API_KEY)"
+            echo "SGP project 6a22869200230b1a8bf0 — global_config + special_links"
+            exit 1
+          fi
+          echo "NYC catalog API key OK (length: ${#NYC_API_KEY})"
+          echo "SGP Lumio API key OK (length: ${#MAIN_API_KEY})"
 
-      - name: Update global_config updated_at in Appwrite
+      - name: Sync featured live events to Appwrite (NYC)
+        env:
+          APPWRITE_ENDPOINT: ${{ env.NYC_ENDPOINT }}
+          APPWRITE_PROJECT_ID: ${{ env.NYC_PROJECT }}
+          APPWRITE_API_KEY: ${{ env.NYC_API_KEY }}
+          APPWRITE_DATABASE_ID: ${{ env.NYC_DATABASE }}
+        run: |
+          set -euo pipefail
+          python scripts/sync_featured_live_events.py
+
+      - name: Update global_config updated_at in Appwrite (SGP)
         run: |
           set -euo pipefail
           TIMESTAMP="$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")"
@@ -77,19 +109,17 @@ jobs:
             200|201) echo "global_config updated_at OK" ;;
             401)
               if echo "${BODY}" | grep -q "not accessible in this region"; then
-                echo "::error::Wrong Appwrite region for project ${MAIN_PROJECT}. Use the Lumio project endpoint from Appwrite Console."
+                echo "::error::Wrong SGP region for project ${MAIN_PROJECT}. Use https://sgp.cloud.appwrite.io/v1"
               else
-                echo "::error::401 Unauthorized — use Lumio project API key for ${MAIN_PROJECT} with databases.write scope"
+                echo "::error::401 Unauthorized — use SGP Lumio API key for ${MAIN_PROJECT} with databases.write"
               fi
               exit 1
               ;;
             404)
               if echo "${BODY}" | grep -q "database_not_found"; then
-                echo "::error::404 Database '${MAIN_DATABASE}' not found in project ${MAIN_PROJECT}."
-                echo "Check GitHub Secrets match Lumio Appwrite Console (project ${MAIN_PROJECT}, database ${MAIN_DATABASE})."
-                echo "Expected database id: iptv_main"
+                echo "::error::404 Database '${MAIN_DATABASE}' not found in SGP project ${MAIN_PROJECT}."
               elif echo "${BODY}" | grep -q "document_not_found"; then
-                echo "::error::404 Document global_config missing — create it in ${MAIN_DATABASE} → app_config"
+                echo "::error::404 Document global_config missing — create in ${MAIN_DATABASE} → app_config"
               else
                 echo "::error::404 Not Found — ${BODY}"
               fi
@@ -98,7 +128,7 @@ jobs:
             *) echo "::error::Appwrite PATCH failed (HTTP ${HTTP_CODE})"; exit 1 ;;
           esac
 
-      - name: Sync Special Links to Appwrite
+      - name: Sync Special Links to Appwrite (SGP)
         env:
           APPWRITE_ENDPOINT: ${{ env.MAIN_ENDPOINT }}
           APPWRITE_PROJECT_ID: ${{ env.MAIN_PROJECT }}
@@ -106,5 +136,4 @@ jobs:
           APPWRITE_DATABASE_ID: ${{ env.MAIN_DATABASE }}
         run: |
           set -euo pipefail
-          pip install requests
           python scripts/sync_special_links.py

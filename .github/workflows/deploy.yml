@@ -25,15 +25,19 @@ jobs:
       - name: Resolve Appwrite Lumio project
         run: |
           set -euo pipefail
+          RESOLVED_ENDPOINT="${APPWRITE_MAIN_ENDPOINT:-${APPWRITE_ENDPOINT:-https://nyc.cloud.appwrite.io/v1}}"
+          RESOLVED_PROJECT="${APPWRITE_MAIN_PROJECT_ID:-${APPWRITE_PROJECT_ID:-191876000995145}}"
+          RESOLVED_DATABASE="${APPWRITE_MAIN_DATABASE_ID:-${APPWRITE_DATABASE_ID:-iptv_main}}"
+          RESOLVED_API_KEY="${APPWRITE_MAIN_API_KEY:-${APPWRITE_API_KEY:-}}"
           {
-            echo "MAIN_ENDPOINT=${APPWRITE_MAIN_ENDPOINT:-${APPWRITE_ENDPOINT:-https://nyc.cloud.appwrite.io/v1}}"
-            echo "MAIN_PROJECT=${APPWRITE_MAIN_PROJECT_ID:-${APPWRITE_PROJECT_ID:-191876000995145}}"
-            echo "MAIN_DATABASE=${APPWRITE_MAIN_DATABASE_ID:-${APPWRITE_DATABASE_ID:-iptv_main}}"
-            echo "MAIN_API_KEY=${APPWRITE_MAIN_API_KEY:-${APPWRITE_API_KEY:-}}"
+            echo "MAIN_ENDPOINT=${RESOLVED_ENDPOINT}"
+            echo "MAIN_PROJECT=${RESOLVED_PROJECT}"
+            echo "MAIN_DATABASE=${RESOLVED_DATABASE}"
+            echo "MAIN_API_KEY=${RESOLVED_API_KEY}"
           } >> "$GITHUB_ENV"
-          echo "Lumio endpoint: ${MAIN_ENDPOINT}"
-          echo "Lumio project: ${MAIN_PROJECT}"
-          echo "Lumio database: ${MAIN_DATABASE}"
+          echo "Lumio endpoint: ${RESOLVED_ENDPOINT}"
+          echo "Lumio project: ${RESOLVED_PROJECT}"
+          echo "Lumio database: ${RESOLVED_DATABASE}"
 
       - name: Verify Appwrite secrets
         run: |

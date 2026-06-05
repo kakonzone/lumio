@@ -87,6 +87,7 @@ extension _PlayerControls on _PlayerScreenState {
     final frameH = (h != null && h > 0) ? h : 1080.0;
 
     Widget video = Video(
+      key: const ValueKey('lumio-player-video'),
       controller: _videoCtrl,
       controls: NoVideoControls,
       fit: fit,
@@ -374,10 +375,11 @@ extension _PlayerControls on _PlayerScreenState {
                 onRetry: _onRetryPressed,
               ),
             )
-          else if (!_initialized)
-            _buildLoadingSkeleton()
-          else
-            _buildVideoSurface(),
+          else ...[
+            // Mount Video before open — mpv needs a valid Android WinID.
+            Positioned.fill(child: _buildVideoSurface()),
+            if (!_initialized) Positioned.fill(child: _buildLoadingSkeleton()),
+          ],
 
           // ── Buffering spinner ──
           ValueListenableBuilder<bool>(

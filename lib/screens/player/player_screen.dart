@@ -62,6 +62,8 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
   bool _pipBlocked = false;
 
   bool _initialized = false;
+  /// True after [Video] has been laid out — required before mpv open on Android.
+  bool _videoSurfaceMounted = false;
   /// Stays true after first successful open — keeps in-player WebViews mounted.
   bool _playbackSurfaceReady = false;
   bool _hasError = false;

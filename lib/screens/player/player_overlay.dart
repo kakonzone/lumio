@@ -82,15 +82,15 @@ extension _PlayerOverlay on _PlayerScreenState {
     if (_hasError || (_currentUrl?.isEmpty ?? true)) {
       return const ColoredBox(color: Colors.black, child: SizedBox.expand());
     }
-    if (!_initialized) {
-      return const ColoredBox(
-        color: Colors.black,
-        child: Center(child: PlayerSpinner()),
-      );
-    }
     return ColoredBox(
       color: Colors.black,
-      child: _buildVideoSurface(),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          _buildVideoSurface(),
+          if (!_initialized) const Center(child: PlayerSpinner()),
+        ],
+      ),
     );
   }
   Widget _playerOverlayChip({

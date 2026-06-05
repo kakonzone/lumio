@@ -412,6 +412,9 @@ extension _PlayerState on _PlayerScreenState {
     if (!mounted) return;
 
     if (_pendingTargetHeight != null && _pendingTargetHeight! > 0) {
+      // Let the first frame render before track/quality switches (avoids vo races).
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      if (!mounted) return;
       await _applyQuality(_selectedQuality, _pendingTargetHeight!);
       _pendingTargetHeight = null;
     } else if (!_userOverrideQuality && _selectedTargetHeight == 0) {
@@ -570,10 +573,10 @@ extension _PlayerState on _PlayerScreenState {
       await n.setProperty('demuxer-max-back-bytes', '2MiB');
       await n.setProperty('hls-bitrate', 'min');
       if (Platform.isAndroid) {
+        // hwdec only — media_kit_video owns vo/wid via the Flutter [Video] surface.
+        // Setting vo=gpu + gpu-context=android triggers vo_android_init without WinID → SIGABRT.
         await n.setProperty('hwdec', 'mediacodec');
         await n.setProperty('hwdec-codecs', 'h264,hevc,vp9,av1');
-        await n.setProperty('vo', 'gpu');
-        await n.setProperty('gpu-context', 'android');
       } else {
         await n.setProperty('hwdec', 'auto-safe');
       }
@@ -635,6 +638,26 @@ extension _PlayerState on _PlayerScreenState {
     });
   }
 
+  Future<void> _waitForVideoSurface() async {
+    if (_videoSurfaceMounted) return;
+    if (!mounted) return;
+    if (_hasError || (_currentUrl?.isEmpty ?? true)) return;
+
+    // Ensure [Video] is in the tree, then wait for native surface attachment.
+    setState(() {});
+    for (var i = 0; i < 4; i++) {
+      final gate = Completer<void>();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!gate.isCompleted) gate.complete();
+      });
+      await gate.future;
+      if (!mounted) return;
+    }
+    // media_kit attaches wid asynchronously after platform view creation.
+    await Future<void>.delayed(const Duration(milliseconds: 120));
+    if (mounted) setState(() => _videoSurfaceMounted = true);
+  }
+
   Future<void> _openStreamUrl(String url, Map<String, String>? headers) async {
     if (!mounted) return;
     _suppressFailoverFor(const Duration(seconds: 25));
@@ -643,6 +666,8 @@ extension _PlayerState on _PlayerScreenState {
       _hasError = false;
     });
     try {
+      await _waitForVideoSurface();
+      if (!mounted) return;
       await _configureMpvOnce();
       final httpHeaders = {
         'User-Agent': 'Mozilla/5.0 LumioTV/1.0',

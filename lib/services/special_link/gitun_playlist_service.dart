@@ -1,17 +1,24 @@
 import 'package:dart_appwrite/dart_appwrite.dart';
 import 'package:dart_appwrite/models.dart' as aw_models;
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 
 import '../../config/appwrite_config.dart';
+import '../../config/special_link_config.dart';
 import '../../models/model.dart';
 import '../appwrite_service.dart';
+import '../../utils/m3u_merge_parser.dart';
 import '../../utils/priority_broadcasters.dart';
+import 'github_raw_url.dart';
+import 'gitun_repo_discovery.dart';
 import 'special_link_cache.dart';
 
-/// Special Link → GITUN — Appwrite `special_links` collection (main project).
+/// Special Link → GITUN — GitHub M3U sources from Appwrite `special_links`.
 class GitunPlaylistService {
   GitunPlaylistService._();
   static final GitunPlaylistService instance = GitunPlaylistService._();
+
+  static const _gitunOnlyCategory = 'GITUN';
 
   late final Client _client = Client()
       .setEndpoint(AppwriteConfig.mainEndpoint)
@@ -29,7 +36,7 @@ class GitunPlaylistService {
   }) =>
       AppwriteService.instance.fetchChannels(forceRefresh: forceRefresh);
 
-  /// Special Link → GITUN — active rows from Appwrite, ordered by sort_order.
+  /// Special Link → GITUN — GitHub playlist URLs from Appwrite, then M3U fetch.
   Future<List<ChannelModel>> loadGitunChannels({bool forceRefresh = false}) async {
     lastFetchError = null;
 
@@ -48,7 +55,19 @@ class GitunPlaylistService {
 
     var channels = <ChannelModel>[];
     try {
-      channels = await _fetchSpecialLinkDocuments();
+      final sources = await _resolveSourcesFromAppwrite();
+      if (sources.isEmpty) {
+        lastFetchError =
+            'Appwrite special_links has no active GitHub sources. '
+            'Add stream_url (GitHub M3U) rows and Guests Read permission.';
+      } else {
+        channels = await _fetchSources(
+          sources: sources,
+          idPrefix: 'gitun',
+          logTag: 'GITUN',
+          onCache: SpecialLinkCache.instance.writeGitunChannels,
+        );
+      }
     } on AppwriteException catch (e) {
       lastFetchError = _friendlyAppwriteError(e);
       if (kDebugMode) {
@@ -61,11 +80,8 @@ class GitunPlaylistService {
       }
     }
 
-    if (channels.isNotEmpty) {
-      await SpecialLinkCache.instance.writeGitunChannels(channels);
-      if (kDebugMode) {
-        debugPrint('[GITUN] loaded ${channels.length} special links');
-      }
+    if (channels.isNotEmpty && kDebugMode) {
+      debugPrint('[GITUN] loaded ${channels.length} channels from M3U');
     }
 
     return channels;
@@ -75,9 +91,17 @@ class GitunPlaylistService {
   Future<List<ChannelModel>> loadChannels({bool forceRefresh = false}) =>
       loadGitunChannels(forceRefresh: forceRefresh);
 
-  Future<List<ChannelModel>> _fetchSpecialLinkDocuments() async {
-    final out = <ChannelModel>[];
+  Future<List<GitunPlaylistSource>> _resolveSourcesFromAppwrite() async {
+    final seen = <String>{};
+    final out = <GitunPlaylistSource>[];
     var offset = 0;
+
+    void addUrl(String pageUrl, {required bool sportsOnly}) {
+      final u = pageUrl.trim();
+      if (u.isEmpty || SpecialLinkConfig.isAppCatalogUrl(u)) return;
+      if (!seen.add(u.toLowerCase())) return;
+      out.add(GitunPlaylistSource(pageUrl: u, sportsOnly: sportsOnly));
+    }
 
     while (true) {
       final page = await _databases.listDocuments(
@@ -92,8 +116,32 @@ class GitunPlaylistService {
       );
 
       for (final doc in page.documents) {
-        final ch = _fromDocument(doc);
-        if (ch != null) out.add(ch);
+        final data = Map<String, dynamic>.from(doc.data);
+        final sportsOnly = _sportsOnlyFromData(data);
+
+        final autoRepo = _parseAutoRepo(_str(data, const ['group_title', 'groupTitle']));
+        if (autoRepo != null) {
+          final discovered = await GitunRepoDiscovery.discoverPlaylistBlobUrls(
+            owner: autoRepo.owner,
+            repo: autoRepo.repo,
+            branch: autoRepo.branch,
+          );
+          for (final url in discovered) {
+            addUrl(url, sportsOnly: sportsOnly);
+          }
+          continue;
+        }
+
+        final githubUrl = _str(data, const [
+          'stream_url',
+          'streamUrl',
+          'github_url',
+          'githubUrl',
+          'url',
+        ]);
+        if (_isGithubPlaylistUrl(githubUrl)) {
+          addUrl(githubUrl, sportsOnly: sportsOnly);
+        }
       }
 
       if (page.documents.isEmpty ||
@@ -103,37 +151,135 @@ class GitunPlaylistService {
       offset += AppwriteConfig.pageSize;
     }
 
-    if (out.isEmpty) {
-      lastFetchError =
-          'Appwrite special_links returned no active rows. '
-          'Check is_active, stream_url, and Guests Read permission.';
+    if (kDebugMode) {
+      debugPrint('[GITUN] ${out.length} GitHub playlist source(s) from Appwrite');
     }
-
-    return PriorityBroadcasters.sort(out);
+    return out;
   }
 
-  static ChannelModel? _fromDocument(aw_models.Document doc) {
-    final data = Map<String, dynamic>.from(doc.data);
-    final name = _str(data, const ['name', 'title', 'channel_name']);
-    final streamUrl = _str(data, const ['stream_url', 'streamUrl', 'url']);
-    if (name.isEmpty || streamUrl.isEmpty) return null;
+  static GitunAutoRepo? _parseAutoRepo(String groupTitle) {
+    final raw = groupTitle.trim();
+    if (!raw.toLowerCase().startsWith('auto:')) return null;
+    final body = raw.substring(5).trim();
+    if (body.isEmpty) return null;
 
-    final logo = _str(data, const ['logo_url', 'logoUrl', 'logo']);
-    final group = _str(data, const ['group_title', 'groupTitle', 'group']);
-    final category = _str(data, const ['category']).isEmpty
-        ? 'Sports'
-        : _str(data, const ['category']);
+    final parts = body.split(':');
+    final repoPath = parts.first.trim();
+    final slash = repoPath.indexOf('/');
+    if (slash <= 0 || slash >= repoPath.length - 1) return null;
 
-    return ChannelModel(
-      id: doc.$id.isNotEmpty ? doc.$id : 'gitun_${name.hashCode}',
-      name: name,
-      category: category,
-      country: 'International',
-      streamUrl: streamUrl,
-      logoUrl: logo,
-      isLive: true,
-      currentShow: group,
+    final branch = parts.length > 1 && parts[1].trim().isNotEmpty
+        ? parts[1].trim()
+        : 'main';
+
+    return GitunAutoRepo(
+      owner: repoPath.substring(0, slash).trim(),
+      repo: repoPath.substring(slash + 1).trim(),
+      branch: branch,
     );
+  }
+
+  static bool _sportsOnlyFromData(Map<String, dynamic> data) {
+    final category = _str(data, const ['category']).toLowerCase();
+    return category != 'all';
+  }
+
+  static bool _isGithubPlaylistUrl(String url) {
+    final u = url.trim().toLowerCase();
+    return u.contains('github.com/') || u.contains('raw.githubusercontent.com/');
+  }
+
+  Future<List<ChannelModel>> _fetchSources({
+    required List<GitunPlaylistSource> sources,
+    required String idPrefix,
+    required String logTag,
+    required Future<void> Function(List<ChannelModel>) onCache,
+  }) async {
+    if (sources.isEmpty) return const [];
+
+    final merged = <String, ChannelModel>{};
+    var playlistIndex = 0;
+
+    for (final source in sources) {
+      final rawUrl = GithubRawUrl.resolve(source.pageUrl);
+      var parsedCount = 0;
+      var keptCount = 0;
+
+      try {
+        final res = await http
+            .get(
+              Uri.parse(rawUrl),
+              headers: const {
+                'User-Agent': 'Mozilla/5.0 (compatible; LumioTV/1.0)',
+                'Accept': '*/*',
+              },
+            )
+            .timeout(const Duration(seconds: 25));
+
+        if (res.statusCode != 200) {
+          if (kDebugMode) {
+            debugPrint('[$logTag] skip $rawUrl http=${res.statusCode}');
+          }
+          continue;
+        }
+
+        final parsed = M3uMergeParser.parse(
+          res.body,
+          idPrefix: '$idPrefix${playlistIndex++}',
+          mapCategory: (group, name) => source.includeAllChannels
+              ? M3uMergeParser.categoryForGroup(group, name)
+              : _gitunOnlyCategory,
+          mapCountry: (_, __) => 'International',
+        );
+        parsedCount = parsed.length;
+
+        for (final ch in parsed) {
+          if (!_keepChannel(ch, source)) continue;
+          keptCount++;
+
+          final display = source.includeAllChannels
+              ? ch.copyWith(isLive: true)
+              : ch.copyWith(category: _gitunOnlyCategory, isLive: true);
+          final key = _mergeKey(display.name);
+          final existing = merged[key];
+          if (existing == null) {
+            merged[key] = display;
+          } else {
+            merged[key] = _mergeChannels(existing, display);
+          }
+        }
+
+        if (kDebugMode) {
+          debugPrint(
+            '[$logTag] $rawUrl parsed=$parsedCount kept=$keptCount '
+            'merged=${merged.length}',
+          );
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint('[$logTag] fetch failed $rawUrl: $e');
+        }
+      }
+    }
+
+    final list = PriorityBroadcasters.sort(merged.values.toList());
+
+    if (list.isNotEmpty) {
+      await onCache(list);
+    } else {
+      lastFetchError =
+          'GitHub M3U fetch returned no sports channels. '
+          'Check Appwrite special_links stream_url values.';
+    }
+
+    return list;
+  }
+
+  static bool _keepChannel(ChannelModel ch, GitunPlaylistSource source) {
+    if (ch.streamUrl.isEmpty) return false;
+    if (source.includeAllChannels) return true;
+    if (!source.sportsOnly) return true;
+    return _isSportsChannel(ch);
   }
 
   static String _str(Map<String, dynamic> data, List<String> keys) {
@@ -154,15 +300,6 @@ class GitunPlaylistService {
     }
     return e.message ?? 'Appwrite special_links error (code=${e.code})';
   }
-
-  // ── Legacy test helpers (sports filter no longer applied at fetch time) ───
-
-  @visibleForTesting
-  static bool isSportsChannelForTest(ChannelModel ch) =>
-      _isSportsChannel(ch);
-
-  @visibleForTesting
-  static String mergeKeyForTest(String name) => _mergeKey(name);
 
   static String _mergeKey(String name) {
     var s = name.toLowerCase().replaceAll(RegExp(r'[+_|]'), ' ');
@@ -193,6 +330,20 @@ class GitunPlaylistService {
     }
     return null;
   }
+
+  @visibleForTesting
+  static bool isSportsChannelForTest(ChannelModel ch) => _isSportsChannel(ch);
+
+  @visibleForTesting
+  static String mergeKeyForTest(String name) => _mergeKey(name);
+
+  @visibleForTesting
+  static GitunAutoRepo? parseAutoRepoForTest(String groupTitle) =>
+      _parseAutoRepo(groupTitle);
+
+  @visibleForTesting
+  static bool isGithubPlaylistUrlForTest(String url) =>
+      _isGithubPlaylistUrl(url);
 
   static bool _isSportsChannel(ChannelModel ch) {
     final s = '${ch.name} ${ch.currentShow}'.toLowerCase();
@@ -384,5 +535,39 @@ class GitunPlaylistService {
       return true;
     }
     return false;
+  }
+
+  static ChannelModel _mergeChannels(ChannelModel a, ChannelModel b) {
+    final seen = <String>{};
+    final links = <StreamLink>[];
+
+    void addFrom(ChannelModel ch) {
+      for (final link in ch.allStreams) {
+        if (link.url.isEmpty || seen.contains(link.url)) continue;
+        seen.add(link.url);
+        links.add(
+          StreamLink(
+            url: link.url,
+            label: 'Link ${links.length + 1}',
+            headers: link.headers.isNotEmpty
+                ? link.headers
+                : (a.headers.isNotEmpty ? a.headers : b.headers),
+          ),
+        );
+      }
+    }
+
+    addFrom(a);
+    addFrom(b);
+
+    if (links.isEmpty) return a;
+
+    return a.copyWith(
+      streamUrl: links.first.url,
+      alternateStreams: links.length > 1 ? links.sublist(1) : const [],
+      logoUrl: a.logoUrl.isNotEmpty ? a.logoUrl : b.logoUrl,
+      headers: links.first.headers,
+      isLive: true,
+    );
   }
 }

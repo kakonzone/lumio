@@ -1,32 +1,75 @@
 [
   {
-    "id": "ch_001",
-    "name": "Willow Cricket HD",
-    "stream_url": "https://stream.example.com/willow.m3u8",
-    "logo_url": "https://example.com/logos/willow.png",
-    "group_title": "Cricket",
+    "id": "src_sports_m3u8_auto",
+    "name": "Sports.M3U8 auto-discover",
+    "group_title": "auto:yIsus-mEx/Sports.M3U8:main",
+    "stream_url": "https://github.com/yIsus-mEx/Sports.M3U8",
     "category": "Sports",
     "is_active": true,
     "sort_order": 1
   },
   {
-    "id": "ch_002",
-    "name": "Star Sports 1 HD",
-    "stream_url": "https://stream.example.com/starsports1.m3u8",
-    "logo_url": "https://example.com/logos/starsports1.png",
-    "group_title": "Cricket",
+    "id": "src_piratestv",
+    "name": "PiratesTv combined",
+    "stream_url": "https://github.com/FunctionError/PiratesTv/blob/main/combined_playlist.m3u",
     "category": "Sports",
     "is_active": true,
     "sort_order": 2
   },
   {
-    "id": "ch_003",
-    "name": "T Sports HD",
-    "stream_url": "https://stream.example.com/tsports.m3u8",
-    "logo_url": "https://example.com/logos/tsports.png",
-    "group_title": "Football",
+    "id": "src_tvtvhd",
+    "name": "TVTVHD",
+    "stream_url": "https://github.com/yIsus-mEx/Sports.M3U8/blob/main/TVTVHD.m3u8",
     "category": "Sports",
     "is_active": true,
     "sort_order": 3
+  },
+  {
+    "id": "src_sharkstreams",
+    "name": "SharkStreams",
+    "stream_url": "https://github.com/yIsus-mEx/Sports.M3U8/blob/main/SharkStreams.m3u8",
+    "category": "Sports",
+    "is_active": true,
+    "sort_order": 4
+  },
+  {
+    "id": "src_roxie",
+    "name": "Roxie",
+    "stream_url": "https://github.com/yIsus-mEx/Sports.M3U8/blob/main/Roxie.m3u8",
+    "category": "Sports",
+    "is_active": true,
+    "sort_order": 5
+  },
+  {
+    "id": "src_slapstreams_nhl",
+    "name": "SlapStreams NHL",
+    "stream_url": "https://github.com/yIsus-mEx/Sports.M3U8/blob/main/SlapStreams.NHL.m3u8",
+    "category": "Sports",
+    "is_active": true,
+    "sort_order": 6
+  },
+  {
+    "id": "src_streameast_nba",
+    "name": "StreamEast NBA",
+    "stream_url": "https://github.com/yIsus-mEx/Sports.M3U8/blob/main/StreamEast.NBA.m3u8",
+    "category": "Sports",
+    "is_active": true,
+    "sort_order": 7
+  },
+  {
+    "id": "src_streameast_mlb",
+    "name": "StreamEast MLB",
+    "stream_url": "https://github.com/yIsus-mEx/Sports.M3U8/blob/main/StreamEast.MLB.m3u8",
+    "category": "Sports",
+    "is_active": true,
+    "sort_order": 8
+  },
+  {
+    "id": "src_mlbwebcast",
+    "name": "MLBWebcast",
+    "stream_url": "https://github.com/yIsus-mEx/Sports.M3U8/blob/main/MLBWebcast.m3u8",
+    "category": "Sports",
+    "is_active": true,
+    "sort_order": 9
   }
 ]

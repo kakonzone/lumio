@@ -8,13 +8,15 @@ class SpecialLinkConfig {
   /// Main channel catalog is **Appwrite** ([AppwriteService]) — not GitHub.
   /// Home featured cards (World Cup 2026) — **Appwrite** `app_config` / `featured_live_events`.
 
-  /// Auto-load sports `.m3u` / `.m3u8` from these repos into GITUN (sports filter applied).
+  /// GITUN GitHub sources live in Appwrite `special_links` (see `data/special_links.json`).
+  /// Deploy syncs them; the app reads URLs from Appwrite then fetches M3U.
+
+  @Deprecated('Sources are in Appwrite special_links — edit data/special_links.json')
   static const gitunAutoDiscoverRepos = <GitunAutoRepo>[
     GitunAutoRepo(owner: 'yIsus-mEx', repo: 'Sports.M3U8', branch: 'main'),
   ];
 
-  /// Third-party GitHub playlists for GITUN — **sports channels only** ([sportsOnly] default true).
-  /// Do **not** add Appwrite catalog channels here — GITUN is third-party GitHub only.
+  @Deprecated('Sources are in Appwrite special_links — edit data/special_links.json')
   static const gitunPlaylistSources = <GitunPlaylistSource>[
     GitunPlaylistSource(
       pageUrl:

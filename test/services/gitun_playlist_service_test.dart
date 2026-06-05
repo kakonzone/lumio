@@ -1,5 +1,7 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lumio_tv/config/special_link_config.dart';
 import 'package:lumio_tv/models/model.dart';
 import 'package:lumio_tv/services/special_link/gitun_playlist_service.dart';
 
@@ -12,13 +14,37 @@ void main() {
     streamUrl: 'https://example.com/s.m3u8',
   );
 
-  test('PiratesTv playlist is registered in GITUN sources', () {
-    final urls = SpecialLinkConfig.gitunPlaylistSources
-        .map((s) => s.pageUrl.toLowerCase())
+  test('special_links.json contains PiratesTv GitHub source', () {
+    final file = File('data/special_links.json');
+    final list = jsonDecode(file.readAsStringSync()) as List<dynamic>;
+    final urls = list
+        .map((e) => (e as Map<String, dynamic>)['stream_url']?.toString() ?? '')
+        .map((u) => u.toLowerCase())
         .toList();
+    expect(urls.any((u) => u.contains('functionerror/piratestv')), isTrue);
+  });
+
+  test('parses auto-discover repo from group_title', () {
+    final repo = GitunPlaylistService.parseAutoRepoForTest(
+      'auto:yIsus-mEx/Sports.M3U8:main',
+    );
+    expect(repo?.owner, 'yIsus-mEx');
+    expect(repo?.repo, 'Sports.M3U8');
+    expect(repo?.branch, 'main');
+  });
+
+  test('detects GitHub playlist URLs', () {
     expect(
-      urls.any((u) => u.contains('functionerror/piratestv')),
+      GitunPlaylistService.isGithubPlaylistUrlForTest(
+        'https://github.com/yIsus-mEx/Sports.M3U8/blob/main/TVTVHD.m3u8',
+      ),
       isTrue,
+    );
+    expect(
+      GitunPlaylistService.isGithubPlaylistUrlForTest(
+        'https://stream.example.com/live.m3u8',
+      ),
+      isFalse,
     );
   });
 

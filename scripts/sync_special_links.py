@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Upsert special_links documents from data/special_links.json into Appwrite.
+"""Upsert special_links GitHub playlist sources from data/special_links.json.
+
+Each row is a GitHub M3U source (stream_url) or auto-discover repo (group_title
+auto:owner/repo:branch). The app reads these from Appwrite and fetches M3U at runtime.
 
 Only creates or updates documents listed in the JSON — never deletes others.
 
@@ -175,6 +178,15 @@ def load_items() -> list[dict[str, Any]]:
     return raw
 
 
+def _is_github_source(url: str) -> bool:
+    u = url.strip().lower()
+    return "github.com/" in u or "raw.githubusercontent.com/" in u
+
+
+def _is_auto_repo(group_title: str) -> bool:
+    return group_title.strip().lower().startswith("auto:")
+
+
 def row_payload(item: dict[str, Any]) -> dict[str, Any]:
     out: dict[str, Any] = {}
     for key in ALLOWED_FIELDS:
@@ -183,8 +195,16 @@ def row_payload(item: dict[str, Any]) -> dict[str, Any]:
         out[key] = item[key]
     if "name" not in out or not str(out["name"]).strip():
         raise ValueError("each item requires non-empty name")
-    if "stream_url" not in out or not str(out["stream_url"]).strip():
-        raise ValueError("each item requires non-empty stream_url")
+    stream_url = str(out.get("stream_url", "")).strip()
+    group_title = str(out.get("group_title", "")).strip()
+    if not stream_url and not _is_auto_repo(group_title):
+        raise ValueError(
+            "each item requires stream_url (GitHub M3U) or group_title auto:owner/repo:branch"
+        )
+    if stream_url and not _is_github_source(stream_url) and not _is_auto_repo(group_title):
+        raise ValueError(
+            f"stream_url must be a GitHub playlist URL, got: {stream_url}"
+        )
     if "category" not in out:
         out["category"] = "Sports"
     if "is_active" not in out:

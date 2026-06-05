@@ -23,7 +23,7 @@ jobs:
           if [ -z "${APPWRITE_ENDPOINT}" ] || [ -z "${APPWRITE_PROJECT_ID}" ] || [ -z "${APPWRITE_API_KEY}" ]; then
             echo "::error::Missing GitHub Secrets"
             echo "Add these at: Repo → Settings → Secrets and variables → Actions"
-            echo "  APPWRITE_ENDPOINT  = https://cloud.appwrite.io/v1"
+            echo "  APPWRITE_ENDPOINT  = https://sgp.cloud.appwrite.io/v1"
             echo "  APPWRITE_PROJECT_ID = 6a22869200230b1a8bf0"
             echo "  APPWRITE_API_KEY   = (from Appwrite Console → API Keys)"
             exit 1
@@ -51,9 +51,17 @@ jobs:
           echo ""
           echo "HTTP ${HTTP_CODE}"
 
+          BODY="$(cat /tmp/appwrite_patch.json)"
           case "${HTTP_CODE}" in
             200|201) echo "global_config updated_at OK" ;;
-            401) echo "::error::401 Unauthorized — wrong APPWRITE_API_KEY or missing databases.write scope"; exit 1 ;;
+            401)
+              if echo "${BODY}" | grep -q "not accessible in this region"; then
+                echo "::error::Wrong APPWRITE_ENDPOINT region. Update GitHub Secret to: https://sgp.cloud.appwrite.io/v1"
+              else
+                echo "::error::401 Unauthorized — wrong APPWRITE_API_KEY or missing databases.write scope"
+              fi
+              exit 1
+              ;;
             404) echo "::error::404 Not Found — create document global_config in app_config collection"; exit 1 ;;
             *)   echo "::error::Appwrite PATCH failed (HTTP ${HTTP_CODE})"; exit 1 ;;
           esac

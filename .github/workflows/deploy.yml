@@ -17,39 +17,37 @@ jobs:
       APPWRITE_ENDPOINT: ${{ secrets.APPWRITE_ENDPOINT }}
       APPWRITE_PROJECT_ID: ${{ secrets.APPWRITE_PROJECT_ID }}
       APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
+      APPWRITE_DATABASE_ID: ${{ secrets.APPWRITE_DATABASE_ID }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Resolve Appwrite main project
+      - name: Resolve Appwrite Lumio project
         run: |
           set -euo pipefail
           {
-            echo "MAIN_ENDPOINT=${APPWRITE_MAIN_ENDPOINT:-https://sgp.cloud.appwrite.io/v1}"
-            echo "MAIN_PROJECT=${APPWRITE_MAIN_PROJECT_ID:-6a22869200230b1a8bf0}"
-            echo "MAIN_DATABASE=${APPWRITE_MAIN_DATABASE_ID:-database-iptv_main}"
+            echo "MAIN_ENDPOINT=${APPWRITE_MAIN_ENDPOINT:-${APPWRITE_ENDPOINT:-https://nyc.cloud.appwrite.io/v1}}"
+            echo "MAIN_PROJECT=${APPWRITE_MAIN_PROJECT_ID:-${APPWRITE_PROJECT_ID:-191876000995145}}"
+            echo "MAIN_DATABASE=${APPWRITE_MAIN_DATABASE_ID:-${APPWRITE_DATABASE_ID:-iptv_main}}"
             echo "MAIN_API_KEY=${APPWRITE_MAIN_API_KEY:-${APPWRITE_API_KEY:-}}"
           } >> "$GITHUB_ENV"
-          echo "Main project: ${APPWRITE_MAIN_ENDPOINT:-https://sgp.cloud.appwrite.io/v1}"
-          echo "Main database: ${APPWRITE_MAIN_DATABASE_ID:-database-iptv_main}"
+          echo "Lumio endpoint: ${MAIN_ENDPOINT}"
+          echo "Lumio project: ${MAIN_PROJECT}"
+          echo "Lumio database: ${MAIN_DATABASE}"
 
       - name: Verify Appwrite secrets
         run: |
           set -euo pipefail
-          if [ -z "${MAIN_API_KEY}" ]; then
-            echo "::error::Missing GitHub Secret for SGP main project API key"
+          if [ -z "${MAIN_ENDPOINT}" ] || [ -z "${MAIN_PROJECT}" ] || [ -z "${MAIN_API_KEY}" ]; then
+            echo "::error::Missing Lumio Appwrite GitHub Secrets"
             echo "Add at: Repo → Settings → Secrets and variables → Actions"
-            echo "  APPWRITE_MAIN_API_KEY  = API key from SGP Console → Project 6a22869200230b1a8bf0"
-            echo "  (or APPWRITE_API_KEY if it belongs to that same SGP project)"
+            echo "  APPWRITE_ENDPOINT     = https://nyc.cloud.appwrite.io/v1"
+            echo "  APPWRITE_PROJECT_ID   = 191876000995145"
+            echo "  APPWRITE_API_KEY      = Lumio project API key (databases.write)"
+            echo "  APPWRITE_DATABASE_ID  = iptv_main (optional)"
             exit 1
           fi
-          if [ -n "${APPWRITE_ENDPOINT:-}" ] && echo "${APPWRITE_ENDPOINT}" | grep -q 'nyc.cloud.appwrite.io'; then
-            echo "::warning::APPWRITE_ENDPOINT is NYC catalog (iptv_main). Deploy uses SGP main project (${MAIN_ENDPOINT}, database ${MAIN_DATABASE})."
-          fi
-          if [ -n "${APPWRITE_PROJECT_ID:-}" ] && [ "${APPWRITE_PROJECT_ID}" = "191876000995145" ]; then
-            echo "::warning::APPWRITE_PROJECT_ID is NYC catalog project. Deploy uses SGP main project ${MAIN_PROJECT}."
-          fi
-          echo "Appwrite main secrets OK (key length: ${#MAIN_API_KEY})"
+          echo "Lumio Appwrite secrets OK (key length: ${#MAIN_API_KEY})"
 
       - name: Update global_config updated_at in Appwrite
         run: |
@@ -75,17 +73,17 @@ jobs:
             200|201) echo "global_config updated_at OK" ;;
             401)
               if echo "${BODY}" | grep -q "not accessible in this region"; then
-                echo "::error::Wrong Appwrite region. MAIN_ENDPOINT must be: https://sgp.cloud.appwrite.io/v1"
+                echo "::error::Wrong Appwrite region for project ${MAIN_PROJECT}. Use the Lumio project endpoint from Appwrite Console."
               else
-                echo "::error::401 Unauthorized — use API key from SGP main project ${MAIN_PROJECT} with databases.write scope"
+                echo "::error::401 Unauthorized — use Lumio project API key for ${MAIN_PROJECT} with databases.write scope"
               fi
               exit 1
               ;;
             404)
               if echo "${BODY}" | grep -q "database_not_found"; then
                 echo "::error::404 Database '${MAIN_DATABASE}' not found in project ${MAIN_PROJECT}."
-                echo "Deploy needs SGP main project (not NYC catalog iptv_main)."
-                echo "Set GitHub Secrets: APPWRITE_MAIN_API_KEY from SGP Console → API Keys."
+                echo "Check GitHub Secrets match Lumio Appwrite Console (project ${MAIN_PROJECT}, database ${MAIN_DATABASE})."
+                echo "Expected database id: iptv_main"
               elif echo "${BODY}" | grep -q "document_not_found"; then
                 echo "::error::404 Document global_config missing — create it in ${MAIN_DATABASE} → app_config"
               else

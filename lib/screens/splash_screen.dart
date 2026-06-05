@@ -1,15 +1,18 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import '../ads/ad_manager.dart';
+import '../provider/app_config_provider.dart';
 import '../provider/app_provider.dart';
 import '../services/ad_consent_service.dart';
 import '../widgets/ad_consent_dialog.dart';
+import '../widgets/remote_config_widgets.dart';
 import '../theme/app_theme.dart';
 import '../utils/responsive.dart';
 
-/// Splash: logo visible → consent (first launch) → home. Catalog loads in background.
+/// Splash: logo visible → remote config → consent (first launch) → home.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -34,7 +37,7 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _start() async {
     try {
       await _startInternal().timeout(
-        const Duration(seconds: 8),
+        const Duration(seconds: 12),
         onTimeout: () {
           // ignore: avoid_print
           print('[Splash] timed out — opening home');
@@ -51,6 +54,44 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _startInternal() async {
+    await context.read<AppConfigProvider>().init();
+    if (!mounted) return;
+
+    final config = context.read<AppConfigProvider>().config;
+
+    if (config.killSwitch) {
+      // ignore: avoid_print
+      print('[Splash] kill_switch active — blocking app');
+      await Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => KillSwitchScreen(config: config),
+        ),
+      );
+      return;
+    }
+
+    if (config.maintenanceMode) {
+      // ignore: avoid_print
+      print('[Splash] maintenance_mode active — blocking app');
+      await Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => MaintenanceScreen(config: config),
+        ),
+      );
+      return;
+    }
+
+    if (config.forceUpdate) {
+      final packageInfo = await PackageInfo.fromPlatform();
+      if (isAppVersionOlder(packageInfo.version, config.latestVersion)) {
+        if (!mounted) return;
+        // ignore: avoid_print
+        print('[Splash] force_update required — showing dialog');
+        await ForceUpdateDialog.show(context, config);
+        return;
+      }
+    }
+
     await AdConsentService.instance.load();
     unawaited(AdConsentService.instance.applyStoredConsentToSdk());
     AdConsentService.instance.markSplashConsentGateSatisfied();

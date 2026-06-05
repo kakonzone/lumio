@@ -1,0 +1,40 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  update-app-config:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Update global_config updated_at in Appwrite
+        env:
+          APPWRITE_ENDPOINT: ${{ secrets.APPWRITE_ENDPOINT }}
+          APPWRITE_PROJECT_ID: ${{ secrets.APPWRITE_PROJECT_ID }}
+          APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
+        run: |
+          set -euo pipefail
+          TIMESTAMP="$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")"
+          echo "Updating app_config/global_config updated_at=${TIMESTAMP}"
+          curl -sS -X PATCH \
+            "${APPWRITE_ENDPOINT}/databases/database-iptv_main/collections/app_config/documents/global_config" \
+            -H "Content-Type: application/json" \
+            -H "X-Appwrite-Project: ${APPWRITE_PROJECT_ID}" \
+            -H "X-Appwrite-Key: ${APPWRITE_API_KEY}" \
+            -d "{\"data\":{\"updated_at\":\"${TIMESTAMP}\"}}"
+          echo ""
+          echo "Done — global_config.updated_at set to ${TIMESTAMP}"
+
+      - name: Sync Special Links to Appwrite
+        env:
+          APPWRITE_ENDPOINT: ${{ secrets.APPWRITE_ENDPOINT }}
+          APPWRITE_PROJECT_ID: ${{ secrets.APPWRITE_PROJECT_ID }}
+          APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
+        run: |
+          pip install requests
+          python scripts/sync_special_links.py

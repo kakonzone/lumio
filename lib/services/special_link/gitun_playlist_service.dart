@@ -1,172 +1,168 @@
+import 'package:dart_appwrite/dart_appwrite.dart';
+import 'package:dart_appwrite/models.dart' as aw_models;
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 
-import '../../config/special_link_config.dart';
+import '../../config/appwrite_config.dart';
 import '../../models/model.dart';
 import '../appwrite_service.dart';
-import '../../utils/m3u_merge_parser.dart';
 import '../../utils/priority_broadcasters.dart';
-import 'github_raw_url.dart';
-import 'gitun_repo_discovery.dart';
 import 'special_link_cache.dart';
 
-/// Fetches M3U playlists from GitHub (owner catalog vs GITUN third-party).
+/// Special Link → GITUN — Appwrite `special_links` collection (main project).
 class GitunPlaylistService {
   GitunPlaylistService._();
   static final GitunPlaylistService instance = GitunPlaylistService._();
 
-  static const _gitunOnlyCategory = 'GITUN';
+  late final Client _client = Client()
+      .setEndpoint(AppwriteConfig.mainEndpoint)
+      .setProject(AppwriteConfig.mainProjectId);
 
-  /// Main app catalog — **Appwrite** ([AppwriteService]), not GitHub.
+  late final Databases _databases = Databases(_client);
+
+  /// Last fetch failure — debug / pull-to-refresh messaging.
+  String? lastFetchError;
+
+  /// Main app catalog — **Appwrite** ([AppwriteService]), not GITUN.
   @Deprecated('Use AppwriteService.fetchChannels or CatalogService.loadCatalog')
   Future<List<ChannelModel>> loadAppCatalogChannels({
     bool forceRefresh = false,
   }) =>
       AppwriteService.instance.fetchChannels(forceRefresh: forceRefresh);
 
-  /// Special Link → GITUN — third-party GitHub playlists only (not owner catalog).
+  /// Special Link → GITUN — active rows from Appwrite, ordered by sort_order.
   Future<List<ChannelModel>> loadGitunChannels({bool forceRefresh = false}) async {
+    lastFetchError = null;
+
     if (!forceRefresh) {
       final cached = await SpecialLinkCache.instance.readGitunChannels();
       if (cached != null && cached.isNotEmpty) return cached;
     }
 
-    final sources = await _resolveGitunSources();
-
-    final list = await _fetchSources(
-      sources: sources,
-      idPrefix: 'gitun',
-      logTag: 'GITUN',
-      onCache: SpecialLinkCache.instance.writeGitunChannels,
-    );
-    return list;
-  }
-
-  /// Manual sources + auto-discovered M3U files from [SpecialLinkConfig.gitunAutoDiscoverRepos].
-  Future<List<GitunPlaylistSource>> _resolveGitunSources() async {
-    final seen = <String>{};
-    final out = <GitunPlaylistSource>[];
-
-    void addUrl(String pageUrl, {bool sportsOnly = true}) {
-      final u = pageUrl.trim();
-      if (u.isEmpty || SpecialLinkConfig.isAppCatalogUrl(u)) return;
-      if (!seen.add(u.toLowerCase())) return;
-      out.add(GitunPlaylistSource(pageUrl: u, sportsOnly: sportsOnly));
+    if (!AppwriteConfig.mainProjectConfigured) {
+      lastFetchError = 'Appwrite main project not configured.';
+      if (kDebugMode) {
+        debugPrint('[GITUN] missing main project config');
+      }
+      return const [];
     }
 
-    for (final repo in SpecialLinkConfig.gitunAutoDiscoverRepos) {
-      final discovered = await GitunRepoDiscovery.discoverPlaylistBlobUrls(
-        owner: repo.owner,
-        repo: repo.repo,
-        branch: repo.branch,
-      );
-      for (final url in discovered) {
-        addUrl(url, sportsOnly: true);
+    var channels = <ChannelModel>[];
+    try {
+      channels = await _fetchSpecialLinkDocuments();
+    } on AppwriteException catch (e) {
+      lastFetchError = _friendlyAppwriteError(e);
+      if (kDebugMode) {
+        debugPrint('[GITUN] ${e.message} (code=${e.code})');
+      }
+    } catch (e) {
+      lastFetchError = e.toString();
+      if (kDebugMode) {
+        debugPrint('[GITUN] fetch failed: $e');
       }
     }
 
-    for (final source in SpecialLinkConfig.gitunPlaylistSources) {
-      addUrl(source.pageUrl, sportsOnly: source.sportsOnly);
+    if (channels.isNotEmpty) {
+      await SpecialLinkCache.instance.writeGitunChannels(channels);
+      if (kDebugMode) {
+        debugPrint('[GITUN] loaded ${channels.length} special links');
+      }
     }
 
-    if (kDebugMode) {
-      debugPrint('[GITUN] loading ${out.length} third-party playlist(s)');
-    }
-    return out;
+    return channels;
   }
 
   @Deprecated('Use loadAppCatalogChannels or loadGitunChannels')
   Future<List<ChannelModel>> loadChannels({bool forceRefresh = false}) =>
       loadGitunChannels(forceRefresh: forceRefresh);
 
-  Future<List<ChannelModel>> _fetchSources({
-    required List<GitunPlaylistSource> sources,
-    required String idPrefix,
-    required String logTag,
-    required Future<void> Function(List<ChannelModel>) onCache,
-  }) async {
-    if (sources.isEmpty) return const [];
+  Future<List<ChannelModel>> _fetchSpecialLinkDocuments() async {
+    final out = <ChannelModel>[];
+    var offset = 0;
 
-    final merged = <String, ChannelModel>{};
-    var playlistIndex = 0;
+    while (true) {
+      final page = await _databases.listDocuments(
+        databaseId: AppwriteConfig.mainDatabaseId,
+        collectionId: AppwriteConfig.specialLinksCollectionId,
+        queries: [
+          Query.equal('is_active', true),
+          Query.orderAsc('sort_order'),
+          Query.limit(AppwriteConfig.pageSize),
+          Query.offset(offset),
+        ],
+      );
 
-    for (final source in sources) {
-      final rawUrl = GithubRawUrl.resolve(source.pageUrl);
-      var parsedCount = 0;
-      var keptCount = 0;
-
-      try {
-        final res = await http
-            .get(
-              Uri.parse(rawUrl),
-              headers: const {
-                'User-Agent': 'Mozilla/5.0 (compatible; LumioTV/1.0)',
-                'Accept': '*/*',
-              },
-            )
-            .timeout(const Duration(seconds: 25));
-
-        if (res.statusCode != 200) {
-          if (kDebugMode) {
-            debugPrint('[$logTag] skip $rawUrl http=${res.statusCode}');
-          }
-          continue;
-        }
-
-        final parsed = M3uMergeParser.parse(
-          res.body,
-          idPrefix: '$idPrefix${playlistIndex++}',
-          mapCategory: (group, name) => source.includeAllChannels
-              ? M3uMergeParser.categoryForGroup(group, name)
-              : _gitunOnlyCategory,
-          mapCountry: (_, __) => 'International',
-        );
-        parsedCount = parsed.length;
-
-        for (final ch in parsed) {
-          if (!_keepChannel(ch, source)) continue;
-          keptCount++;
-
-          final display = source.includeAllChannels
-              ? ch.copyWith(isLive: true)
-              : ch.copyWith(category: _gitunOnlyCategory, isLive: true);
-          final key = _mergeKey(display.name);
-          final existing = merged[key];
-          if (existing == null) {
-            merged[key] = display;
-          } else {
-            merged[key] = _mergeChannels(existing, display);
-          }
-        }
-
-        if (kDebugMode) {
-          debugPrint(
-            '[$logTag] $rawUrl parsed=$parsedCount kept=$keptCount '
-            'merged=${merged.length}',
-          );
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          debugPrint('[$logTag] fetch failed $rawUrl: $e');
-        }
+      for (final doc in page.documents) {
+        final ch = _fromDocument(doc);
+        if (ch != null) out.add(ch);
       }
+
+      if (page.documents.isEmpty ||
+          page.documents.length < AppwriteConfig.pageSize) {
+        break;
+      }
+      offset += AppwriteConfig.pageSize;
     }
 
-    final list = PriorityBroadcasters.sort(merged.values.toList());
-
-    if (list.isNotEmpty) {
-      await onCache(list);
+    if (out.isEmpty) {
+      lastFetchError =
+          'Appwrite special_links returned no active rows. '
+          'Check is_active, stream_url, and Guests Read permission.';
     }
-    return list;
+
+    return PriorityBroadcasters.sort(out);
   }
 
-  /// GITUN: sports-only unless [GitunPlaylistSource.sportsOnly] is false.
-  static bool _keepChannel(ChannelModel ch, GitunPlaylistSource source) {
-    if (ch.streamUrl.isEmpty) return false;
-    if (source.includeAllChannels) return true;
-    if (!source.sportsOnly) return true;
-    return _isSportsChannel(ch);
+  static ChannelModel? _fromDocument(aw_models.Document doc) {
+    final data = Map<String, dynamic>.from(doc.data);
+    final name = _str(data, const ['name', 'title', 'channel_name']);
+    final streamUrl = _str(data, const ['stream_url', 'streamUrl', 'url']);
+    if (name.isEmpty || streamUrl.isEmpty) return null;
+
+    final logo = _str(data, const ['logo_url', 'logoUrl', 'logo']);
+    final group = _str(data, const ['group_title', 'groupTitle', 'group']);
+    final category = _str(data, const ['category']).isEmpty
+        ? 'Sports'
+        : _str(data, const ['category']);
+
+    return ChannelModel(
+      id: doc.$id.isNotEmpty ? doc.$id : 'gitun_${name.hashCode}',
+      name: name,
+      category: category,
+      country: 'International',
+      streamUrl: streamUrl,
+      logoUrl: logo,
+      isLive: true,
+      currentShow: group,
+    );
   }
+
+  static String _str(Map<String, dynamic> data, List<String> keys) {
+    for (final key in keys) {
+      final raw = data[key];
+      if (raw == null) continue;
+      final text = raw.toString().trim();
+      if (text.isNotEmpty) return text;
+    }
+    return '';
+  }
+
+  static String _friendlyAppwriteError(AppwriteException e) {
+    if (e.code == 401) {
+      return 'Appwrite special_links: permission denied (401). '
+          'Console → database-iptv_main → special_links → Permissions → '
+          'Read for Guests (no API key in the app).';
+    }
+    return e.message ?? 'Appwrite special_links error (code=${e.code})';
+  }
+
+  // ── Legacy test helpers (sports filter no longer applied at fetch time) ───
+
+  @visibleForTesting
+  static bool isSportsChannelForTest(ChannelModel ch) =>
+      _isSportsChannel(ch);
+
+  @visibleForTesting
+  static String mergeKeyForTest(String name) => _mergeKey(name);
 
   static String _mergeKey(String name) {
     var s = name.toLowerCase().replaceAll(RegExp(r'[+_|]'), ' ');
@@ -182,7 +178,6 @@ class GitunPlaylistService {
     return alias ?? s;
   }
 
-  /// Same broadcaster across GitHub playlists → one row, multi-link in player.
   static String? _canonicalMergeAlias(String s) {
     if (RegExp(r't\s*sports?|tsports').hasMatch(s)) return 't sports';
     if (RegExp(r'^btv\b|bangladesh television').hasMatch(s)) return 'btv';
@@ -199,13 +194,6 @@ class GitunPlaylistService {
     return null;
   }
 
-  @visibleForTesting
-  static bool isSportsChannelForTest(ChannelModel ch) => _isSportsChannel(ch);
-
-  @visibleForTesting
-  static String mergeKeyForTest(String name) => _mergeKey(name);
-
-  /// All GITUN rows are tagged category GITUN before filtering — never use that alone.
   static bool _isSportsChannel(ChannelModel ch) {
     final s = '${ch.name} ${ch.currentShow}'.toLowerCase();
     if (_isExcludedNonSports(s)) return false;
@@ -214,7 +202,6 @@ class GitunPlaylistService {
     return _hasStrongSportsSignal(s);
   }
 
-  /// News, music, Hindi entertainment, movies — drop unless name is clearly sports.
   static bool _isExcludedNonSports(String s) {
     if (_hasStrongSportsSignal(s)) return false;
 
@@ -384,7 +371,6 @@ class GitunPlaylistService {
     return keys.any(s.contains);
   }
 
-  /// BD channels commonly used for live sports (not general news feeds).
   static bool _isBdSportsBroadcaster(String s) {
     if (RegExp(r't\s*sports?|tsports').hasMatch(s)) return true;
     if (RegExp(r'\bbtv\b|bangladesh television').hasMatch(s)) {
@@ -398,39 +384,5 @@ class GitunPlaylistService {
       return true;
     }
     return false;
-  }
-
-  static ChannelModel _mergeChannels(ChannelModel a, ChannelModel b) {
-    final seen = <String>{};
-    final links = <StreamLink>[];
-
-    void addFrom(ChannelModel ch) {
-      for (final link in ch.allStreams) {
-        if (link.url.isEmpty || seen.contains(link.url)) continue;
-        seen.add(link.url);
-        links.add(
-          StreamLink(
-            url: link.url,
-            label: 'Link ${links.length + 1}',
-            headers: link.headers.isNotEmpty
-                ? link.headers
-                : (a.headers.isNotEmpty ? a.headers : b.headers),
-          ),
-        );
-      }
-    }
-
-    addFrom(a);
-    addFrom(b);
-
-    if (links.isEmpty) return a;
-
-    return a.copyWith(
-      streamUrl: links.first.url,
-      alternateStreams: links.length > 1 ? links.sublist(1) : const [],
-      logoUrl: a.logoUrl.isNotEmpty ? a.logoUrl : b.logoUrl,
-      headers: links.first.headers,
-      isLive: true,
-    );
   }
 }

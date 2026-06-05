@@ -4,8 +4,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lumio_tv/models/model.dart';
+import 'package:lumio_tv/provider/app_config_provider.dart';
 import 'package:lumio_tv/provider/app_provider.dart';
 import 'package:lumio_tv/theme/app_theme.dart';
+import 'package:lumio_tv/widgets/remote_config_widgets.dart';
 import 'package:lumio_tv/models/live_event_match.dart';
 import 'package:lumio_tv/utils/channel_player.dart';
 import 'package:lumio_tv/widgets/shell_app_bar.dart';
@@ -93,6 +95,8 @@ class TvScreenState extends State<TvScreen> with SingleTickerProviderStateMixin 
 
   @override
   Widget build(BuildContext context) {
+    final appConfig = context.watch<AppConfigProvider>().config;
+
     return TabAdOverlay(
       showFloatingCard: true,
       floatingPlacement: 'home_floating_native',
@@ -100,6 +104,12 @@ class TvScreenState extends State<TvScreen> with SingleTickerProviderStateMixin 
         color: context.bg,
         child: Column(
           children: [
+            if (appConfig.showAnnouncement &&
+                (appConfig.announcementText?.trim().isNotEmpty ?? false))
+              AnnouncementBanner(text: appConfig.announcementText!),
+            if (appConfig.showTicker &&
+                (appConfig.tickerText?.trim().isNotEmpty ?? false))
+              TickerWidget(text: appConfig.tickerText!),
             const ShellAppBar(
               centerLumioTvBrand: true,
               blendWithScaffold: true,

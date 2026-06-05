@@ -57,7 +57,9 @@ class AdPlacementConfig {
   }
 
   /// Sticky social bar on all main tabs (Week 2 — always when configured).
-  static bool get showGlobalSocialBarOverlay => AdConfig.globalSocialBarEnabled;
+  static bool get showGlobalSocialBarOverlay =>
+      AdConfig.globalSocialBarEnabled &&
+      AdSafetyService.instance.bannerEnabledRemote;
 
   /// Monetag in-page push + Adsterra social during player playback (Week 2).
   static bool get showPlayerStickySocialBar =>

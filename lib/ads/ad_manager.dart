@@ -287,6 +287,7 @@ class AdManager {
   /// Eligibility probe only — WebView mount + cap record happen in [AdsterraPopunderHost].
   Future<void> maybeShowPopunder() async {
     if (!adsEnabled) return;
+    if (!AdSafetyService.instance.popunderEnabledRemote) return;
     if (!AdSafetyService.instance.adsterraEnabled) return;
     if (!await _caps.canShowPopunder()) {
       AdDebugLog.info(

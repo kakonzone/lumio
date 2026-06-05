@@ -276,10 +276,10 @@ class AdSafetyService {
   }
 
   /// Master kill switch — when false, [AdManager.adsEnabled] is false.
-  bool get adsEnabledRemote => _rcBool(RemoteConfigKeys.adsEnabled);
+  bool get adsEnabledRemote => AdConfig.remoteAdsEnabled;
 
   /// LevelPlay SDK layer kill switch.
-  bool get levelPlayEnabledRemote => _rcBool(RemoteConfigKeys.levelPlayEnabled);
+  bool get levelPlayEnabledRemote => AdConfig.levelPlayEnabled;
 
   bool? _debugAdsterraEnabled;
   int? _debugPopunderSessionCap;
@@ -304,12 +304,7 @@ class AdSafetyService {
     return _adsterraEnabledFromRemote;
   }
 
-  bool get _adsterraEnabledFromRemote {
-    if (!_remoteReady || _remote == null) {
-      return RemoteConfigKeys.defaults[RemoteConfigKeys.adsterraEnabled] as bool;
-    }
-    return _remote!.getBool(RemoteConfigKeys.adsterraEnabled);
-  }
+  bool get _adsterraEnabledFromRemote => AdConfig.adsterraEnabled;
 
   @visibleForTesting
   void debugSetAdsterraEnabled(bool? enabled) => _debugAdsterraEnabled = enabled;
@@ -325,14 +320,20 @@ class AdSafetyService {
   @visibleForTesting
   void debugSetPopunderSessionCap(int? cap) => _debugPopunderSessionCap = cap;
 
-  /// Firebase RC `aggressive_mode` — denser natives, social bar overlay, shorter mid-roll.
+  /// Appwrite `aggressive_mode` — denser natives, social bar overlay, shorter mid-roll.
   bool get aggressiveMode {
     if (_debugAggressiveMode != null) return _debugAggressiveMode!;
-    if (!_remoteReady || _remote == null) {
-      return RemoteConfigKeys.defaults[RemoteConfigKeys.aggressiveMode] as bool;
-    }
-    return _remote!.getBool(RemoteConfigKeys.aggressiveMode);
+    return AdConfig.aggressiveMode;
   }
+
+  /// Monetag layer kill switch (Appwrite global_config).
+  bool get monetagEnabledRemote => AdConfig.monetagEnabled;
+
+  /// Banner placements kill switch.
+  bool get bannerEnabledRemote => AdConfig.bannerEnabled;
+
+  /// Popunder placements kill switch.
+  bool get popunderEnabledRemote => AdConfig.popunderEnabled;
 
   /// `off` | `loose` | `strict` — see [VpnSignalService.evaluateLocaleFraud].
   String get vpnLocaleStrictness {

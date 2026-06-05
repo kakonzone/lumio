@@ -60,4 +60,37 @@ class AppwriteConfig {
 
   static bool get isConfigured =>
       projectId.isNotEmpty && endpoint.isNotEmpty && databaseId.isNotEmpty;
+
+  // ── Main project (remote control / global_config) ───────────────────────
+  /// Education Pro — future single main project.
+  static const mainProjectId = String.fromEnvironment(
+    'APPWRITE_MAIN_PROJECT_ID',
+    defaultValue: '6a22869200230b1a8bf0',
+  );
+
+  static const mainEndpoint = String.fromEnvironment(
+    'APPWRITE_MAIN_ENDPOINT',
+    defaultValue: 'https://cloud.appwrite.io/v1',
+  );
+
+  static const mainDatabaseId = String.fromEnvironment(
+    'APPWRITE_MAIN_DATABASE_ID',
+    defaultValue: 'database-iptv_main',
+  );
+
+  /// Remote control document in `app_config` (ads, kill switch, updates).
+  static const globalConfigDocumentId = 'global_config';
+
+  /// Special Link / GITUN rows (replaces GitHub M3U).
+  static const specialLinksCollectionId = String.fromEnvironment(
+    'APPWRITE_SPECIAL_LINKS_COLLECTION_ID',
+    defaultValue: 'special_links',
+  );
+
+  static const globalConfigCacheTtl = Duration(hours: 24);
+
+  static bool get mainProjectConfigured =>
+      mainProjectId.isNotEmpty &&
+      mainEndpoint.isNotEmpty &&
+      mainDatabaseId.isNotEmpty;
 }

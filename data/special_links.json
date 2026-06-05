@@ -1,0 +1,32 @@
+[
+  {
+    "id": "ch_001",
+    "name": "Willow Cricket HD",
+    "stream_url": "https://stream.example.com/willow.m3u8",
+    "logo_url": "https://example.com/logos/willow.png",
+    "group_title": "Cricket",
+    "category": "Sports",
+    "is_active": true,
+    "sort_order": 1
+  },
+  {
+    "id": "ch_002",
+    "name": "Star Sports 1 HD",
+    "stream_url": "https://stream.example.com/starsports1.m3u8",
+    "logo_url": "https://example.com/logos/starsports1.png",
+    "group_title": "Cricket",
+    "category": "Sports",
+    "is_active": true,
+    "sort_order": 2
+  },
+  {
+    "id": "ch_003",
+    "name": "T Sports HD",
+    "stream_url": "https://stream.example.com/tsports.m3u8",
+    "logo_url": "https://example.com/logos/tsports.png",
+    "group_title": "Football",
+    "category": "Sports",
+    "is_active": true,
+    "sort_order": 3
+  }
+]

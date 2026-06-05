@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../services/app_config_service.dart';
 import 'monetag_config.dart';
 
 /// Keys for [AdConfig.nativeDensityByScreen] (Week 2 placement density).
@@ -295,8 +296,32 @@ class AdConfig {
   /// No LevelPlay call within this window after Adsterra popunder/background.
   static const int networkIsolationSeconds = 30;
 
+  // ── Remote flags (Appwrite global_config) ───────────────────────────────
+  static bool get remoteAdsEnabled =>
+      AppConfigService.instance.cachedConfig.adsEnabled;
+
+  static bool get levelPlayEnabled =>
+      AppConfigService.instance.cachedConfig.levelplayEnabled;
+
+  static bool get adsterraEnabled =>
+      AppConfigService.instance.cachedConfig.adsterraEnabled;
+
+  static bool get monetagEnabled =>
+      AppConfigService.instance.cachedConfig.monetagEnabled;
+
+  static bool get aggressiveMode =>
+      AppConfigService.instance.cachedConfig.aggressiveMode;
+
+  static bool get bannerEnabled =>
+      AppConfigService.instance.cachedConfig.bannerEnabled;
+
+  static bool get popunderEnabled =>
+      AppConfigService.instance.cachedConfig.popunderEnabled;
+
   // ── Session funnel (AdTriggerManager) ──────────────────────────────────
-  static const int interstitialCooldownSeconds = 45;
+  static int get interstitialCooldownSeconds =>
+      AppConfigService.instance.cachedConfig.interstitialCooldown;
+
   static const int maxInterstitialsPerSession = 14;
 
   /// Pre-roll before player: max per session; 1 per channel key per session.
@@ -307,7 +332,8 @@ class AdConfig {
   static const int midRollMaxPerSession = 4;
   static const int midRollMinChannelSeconds = 90;
   static const bool prerollEnabled = true;
-  static const int channelClicksBeforeInterstitial = 3;
+  static int get channelClicksBeforeInterstitial =>
+      AppConfigService.instance.cachedConfig.channelTapsBeforeAd;
   /// Delay before post-home interstitials (shorter when sideload/local caps).
   static int get splashMinMsBeforeAds => capLocalOnlyEffective ? 400 : 2500;
 
@@ -470,7 +496,8 @@ class AdConfig {
   }
 
   // Re-export for ad_config consumers
-  static bool get hasMonetag => MonetagConfig.isConfigured;
+  static bool get hasMonetag =>
+      MonetagConfig.isConfigured && monetagEnabled;
 
   static String _flag(String envKey, String value) =>
       '$envKey=${value.trim().isNotEmpty ? '<set>' : '<unset>'}';

@@ -28,6 +28,7 @@ import 'screens/splash_screen.dart';
 import 'widgets/app_drawer.dart';
 import 'provider/ad_gate_provider.dart';
 import 'provider/ads_settings_provider.dart';
+import 'provider/app_config_provider.dart';
 import 'provider/app_provider.dart';
 import 'provider/channels_provider.dart';
 import 'provider/user_state_provider.dart';
@@ -120,6 +121,7 @@ void _runLumioApp() async {
           create: (context) =>
               AppProvider(context.read<UserStateProvider>())..init(),
         ),
+        ChangeNotifierProvider(create: (_) => AppConfigProvider()),
       ],
       child: const LumioApp(),
     ),
@@ -491,9 +493,15 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
           bottomNavigationBar: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (AdManager.instance.adsEnabled) ...[
-                if (_navIdx == 0 && AdManager.instance.levelPlayReady)
-                  const AdBannerWidget(placementName: 'home_bottom'),
+              if (AdManager.instance.adsEnabled &&
+                  AdManager.instance.levelPlayReady) ...[
+                if (_navIdx == 0)
+                  Selector<AppConfigProvider, bool>(
+                    selector: (_, p) => p.config.bannerEnabled,
+                    builder: (_, bannerOn, __) => bannerOn
+                        ? const AdBannerWidget(placementName: 'home_bottom')
+                        : const SizedBox.shrink(),
+                  ),
               ],
               MainShellBottomNav(
                 currentIndex: _navIdx,

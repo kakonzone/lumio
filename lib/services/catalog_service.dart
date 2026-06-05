@@ -24,7 +24,7 @@ List<ChannelModel> normalizeAndExpandCatalogIsolate(List<ChannelModel> raw) {
 }
 
 /// Channel catalog — loaded from Appwrite ([AppwriteService]) for the whole app.
-/// Special Link / GITUN uses separate GitHub sources ([GitunPlaylistService]).
+/// Special Link / GITUN uses Appwrite `special_links` ([GitunPlaylistService]).
 class CatalogService {
   CatalogService._();
   static final CatalogService instance = CatalogService._();

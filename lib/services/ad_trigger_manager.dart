@@ -517,6 +517,7 @@ class AdTriggerManager {
     if (purchased || isAdFree) return false;
     if (!AdConsentService.instance.hasGrantedConsent) return false;
     if (!debugIsAdsEligible) return false;
+    if (!AdSafetyService.instance.popunderEnabledRemote) return false;
     if (!AdSafetyService.instance.adsterraEnabled) return false;
     if (AdSafetyService.instance.adsBlockedInDebug) return false;
     if (!_debugIgnoreAdsterraZoneConfig && !AdConfig.hasAdsterraWebViewZones) {

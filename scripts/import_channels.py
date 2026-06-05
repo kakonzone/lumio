@@ -2,8 +2,8 @@
 """Import M3U playlist channels into Appwrite `channels` collection.
 
 Environment variables:
-  APPWRITE_ENDPOINT          default: https://nyc.cloud.appwrite.io/v1 (legacy channels project)
-  APPWRITE_PROJECT_ID        default: 191876000995145 (legacy channels project)
+  APPWRITE_ENDPOINT          default: https://nyc.cloud.appwrite.io/v1 (NYC catalog)
+  APPWRITE_PROJECT_ID        default: 191876000995145
   APPWRITE_API_KEY           required
   APPWRITE_DATABASE_ID       default: iptv_main
   APPWRITE_CHANNELS_COLLECTION_ID  default: channels

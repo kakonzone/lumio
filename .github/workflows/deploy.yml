@@ -12,6 +12,20 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      - name: Verify Appwrite secrets
+        env:
+          APPWRITE_ENDPOINT: ${{ secrets.APPWRITE_ENDPOINT }}
+          APPWRITE_PROJECT_ID: ${{ secrets.APPWRITE_PROJECT_ID }}
+          APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${APPWRITE_ENDPOINT}" ] || [ -z "${APPWRITE_PROJECT_ID}" ] || [ -z "${APPWRITE_API_KEY}" ]; then
+            echo "ERROR: Add GitHub Secrets: APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID, APPWRITE_API_KEY"
+            echo "Repo → Settings → Secrets and variables → Actions → New repository secret"
+            exit 1
+          fi
+          echo "Appwrite secrets present (key length: ${#APPWRITE_API_KEY})"
+
       - name: Update global_config updated_at in Appwrite
         env:
           APPWRITE_ENDPOINT: ${{ secrets.APPWRITE_ENDPOINT }}
@@ -21,13 +35,18 @@ jobs:
           set -euo pipefail
           TIMESTAMP="$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")"
           echo "Updating app_config/global_config updated_at=${TIMESTAMP}"
-          curl -sS -X PATCH \
+          HTTP_CODE=$(curl -sS -o /tmp/appwrite_patch.json -w "%{http_code}" -X PATCH \
             "${APPWRITE_ENDPOINT}/databases/database-iptv_main/collections/app_config/documents/global_config" \
             -H "Content-Type: application/json" \
             -H "X-Appwrite-Project: ${APPWRITE_PROJECT_ID}" \
             -H "X-Appwrite-Key: ${APPWRITE_API_KEY}" \
-            -d "{\"data\":{\"updated_at\":\"${TIMESTAMP}\"}}"
+            -d "{\"data\":{\"updated_at\":\"${TIMESTAMP}\"}}")
+          cat /tmp/appwrite_patch.json
           echo ""
+          if [ "${HTTP_CODE}" -ge 400 ]; then
+            echo "ERROR: Appwrite PATCH failed (HTTP ${HTTP_CODE})"
+            exit 1
+          fi
           echo "Done — global_config.updated_at set to ${TIMESTAMP}"
 
       - name: Sync Special Links to Appwrite

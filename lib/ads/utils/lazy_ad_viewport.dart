@@ -49,13 +49,9 @@ class _LazyAdViewportState extends State<LazyAdViewport> {
         WidgetsBinding.instance.addPostFrameCallback((_) => _updateVisibility());
         return false;
       },
-      child: SizedBox(
-        key: _key,
-        height: widget.placeholderHeight,
-        child: _nearViewport
-            ? widget.builder()
-            : ColoredBox(color: Colors.transparent),
-      ),
+      child: _nearViewport
+          ? SizedBox(key: _key, child: widget.builder())
+          : SizedBox(key: _key, height: 0),
     );
   }
 }

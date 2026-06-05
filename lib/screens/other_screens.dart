@@ -18,10 +18,10 @@ import 'package:lumio_tv/screens/special_link/special_link_hub_screen.dart';
 import 'package:lumio_tv/widgets/add_favorite_dialog.dart';
 import 'package:lumio_tv/widgets/section_nav_bar.dart';
 import 'package:lumio_tv/utils/sports_channel_priority.dart';
+import 'package:lumio_tv/utils/live_nav_top_sports.dart';
+import 'package:lumio_tv/utils/live_tab_channels.dart';
 import 'package:lumio_tv/ads/ad_manager.dart';
-import 'package:lumio_tv/ads/ad_placement_config.dart';
-import 'package:lumio_tv/ads/adsterra/adsterra_banner.dart';
-import 'package:lumio_tv/ads/adsterra/adsterra_native.dart';
+import 'package:lumio_tv/ads/widgets/lazy_adsterra_strip.dart';
 import 'package:lumio_tv/widgets/list_skeletons.dart';
 import 'package:lumio_tv/core/performance_tuning.dart';
 
@@ -154,8 +154,7 @@ class SportsScreen extends StatefulWidget {
 class _SportsScreenState extends State<SportsScreen> {
   String _sel = 'All';
 
-  List<ChannelModel> _sportsPool(AppProvider prov) =>
-      SportChannelIcons.browseChannels(prov.channels);
+  List<ChannelModel> _sportsPool(AppProvider prov) => prov.sportsBrowseChannels;
 
   List<ChannelModel> _filteredSportsChannels(AppProvider prov) {
     final list = _sportsPool(prov)
@@ -186,6 +185,7 @@ class _SportsScreenState extends State<SportsScreen> {
     ('Swimming', '🏊'),
     ('Snooker', '🎱'),
     ('Racing', '🏇'),
+    ('Other Sports', '🏟️'),
   ];
 
   static List<Color> _sportCardGradient(String sport) {
@@ -202,6 +202,7 @@ class _SportsScreenState extends State<SportsScreen> {
       'Swimming' => [const Color(0xFF039BE5), const Color(0xFF01579B)],
       'Snooker' => [const Color(0xFF558B2F), const Color(0xFF33691E)],
       'Racing' => [const Color(0xFF5D4037), const Color(0xFF3E2723)],
+      'Other Sports' => [const Color(0xFF455A64), const Color(0xFF263238)],
       _ => [const Color(0xFF1565C0), const Color(0xFF0D47A1)],
     };
   }
@@ -216,234 +217,294 @@ class _SportsScreenState extends State<SportsScreen> {
       child: Scaffold(
         backgroundColor: context.bg,
         body: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const ShellAppBar(),
-            SectionScreenHeader(
-              title: 'Sports',
-            subtitle: 'Vibrant categories — cricket, football, F1 & more',
-            leadingIcons: [
-              Image.asset(
-                SportChannelIcons.cricketAsset,
-                width: 34,
-                height: 34,
-                fit: BoxFit.contain,
+            const ShellAppBar(blendWithScaffold: true),
+            Expanded(
+              child: RefreshIndicator(
+                color: AppColors.accent,
+                onRefresh: prov.refresh,
+                child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  cacheExtent: PerformanceTuning.listCacheExtent,
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: SectionScreenHeader(
+                        title: 'Sports',
+                        subtitle:
+                            'Vibrant categories — cricket, football, F1 & more',
+                        leadingIcons: [
+                          Image.asset(
+                            SportChannelIcons.cricketAsset,
+                            width: 34,
+                            height: 34,
+                            fit: BoxFit.contain,
+                          ),
+                          const SizedBox(width: 8),
+                          Image.asset(
+                            SportChannelIcons.footballAsset,
+                            width: 30,
+                            height: 30,
+                            fit: BoxFit.contain,
+                          ),
+                        ],
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                        child: SectionNavBar(
+                          items: _pills,
+                          selected: _sel,
+                          onSelected: (v) => setState(() => _sel = v),
+                        ),
+                      ),
+                    ),
+                    if (AdManager.instance.showAdsterraWebViewSlots)
+                      const SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(16, 0, 16, 6),
+                          child: LazyAdsterraBanner728(placement: 'sports_top'),
+                        ),
+                      ),
+                    if (_sel == 'All') ...[
+                      ..._sportsAllSlivers(context, prov),
+                    ] else ...[
+                      ..._sportCategoryHeaderSlivers(context, prov),
+                      ..._sportChannelSlivers(context, prov),
+                    ],
+                    const SliverPadding(padding: EdgeInsets.only(bottom: 80)),
+                  ],
+                ),
               ),
-              const SizedBox(width: 8),
-              Image.asset(
-                SportChannelIcons.footballAsset,
-                width: 30,
-                height: 30,
-                fit: BoxFit.contain,
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: SectionNavBar(
-              items: _pills,
-              selected: _sel,
-              onSelected: (v) => setState(() => _sel = v),
             ),
-          ),
-          if (AdManager.instance.adsEnabled)
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: AdsterraBanner728(placement: 'sports_top'),
-            ),
-          Expanded(
-            child: RefreshIndicator(
-              color: AppColors.accent,
-              onRefresh: prov.refresh,
-              child: _sel == 'All'
-                  ? _buildSportsAllView(context, prov)
-                  : _buildSportChannelList(context, prov),
-            ),
-          ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSportsAllView(BuildContext context, AppProvider prov) {
+  List<Widget> _sportsAllSlivers(BuildContext context, AppProvider prov) {
     final pool = _sportsPool(prov);
     final counts = SportChannelIcons.countBySportType(pool);
 
     if (prov.channelsLoading && pool.isEmpty) {
-      return const CustomScrollView(
-        physics: AlwaysScrollableScrollPhysics(),
-        slivers: [
-          SliverToBoxAdapter(child: ChannelListSkeleton(count: 4)),
-          SliverToBoxAdapter(child: CategoryGridSkeleton(count: 6)),
-        ],
-      );
+      return const [
+        SliverToBoxAdapter(child: ChannelListSkeleton(count: 4)),
+        SliverToBoxAdapter(child: CategoryGridSkeleton(count: 6)),
+      ];
     }
 
-    return LayoutBuilder(
-      builder: (ctx, constraints) {
-        final aspect = constraints.maxWidth < 340 ? 0.92 : 1.0;
-        return CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            if (AdManager.instance.adsEnabled)
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(16, 0, 16, 10),
-                  child: AdsterraNativeBanner(
-                    placement: 'sports_categories',
-                    height: 100,
+    final width = MediaQuery.sizeOf(context).width;
+    final aspect = width < 340 ? 0.92 : 1.0;
+
+    return [
+      SliverPadding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+        sliver: SliverGrid(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+            childAspectRatio: aspect,
+          ),
+          delegate: SliverChildBuilderDelegate(
+            (ctx, i) {
+              final meta = _sportGridMeta[i];
+              final sportName = meta.$1;
+              final count = counts[sportName] ?? 0;
+
+              final colors = _sportCardGradient(sportName);
+              return Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    if (count == 0) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('$sportName এ কোনো channel নেই'),
+                          backgroundColor: Colors.orange,
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                      return;
+                    }
+                    setState(() => _sel = sportName);
+                  },
+                  borderRadius: BorderRadius.circular(18),
+                  child: Ink(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: colors,
+                      ),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.15),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: colors.first.withValues(alpha: 0.35),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SportTypeIcon(sportName: sportName, size: 44),
+                        const SizedBox(height: 8),
+                        Text(
+                          sportName,
+                          style: GF.body(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          count == 0 ? 'No channels' : '$count Live',
+                          style: GF.body(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color:
+                                count == 0 ? Colors.white54 : Colors.white,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-              sliver: SliverGrid(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                mainAxisSpacing: 10,
-                crossAxisSpacing: 10,
-                childAspectRatio: aspect,
-              ),
-              delegate: SliverChildBuilderDelegate(
-                (ctx, i) {
-                  final meta = _sportGridMeta[i];
-                  final sportName = meta.$1;
-                  final count = counts[sportName] ?? 0;
-
-                  final colors = _sportCardGradient(sportName);
-                  return Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {
-                        if (count == 0) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('$sportName এ কোনো channel নেই'),
-                              backgroundColor: Colors.orange,
-                              duration: const Duration(seconds: 2),
-                            ),
-                          );
-                          return;
-                        }
-                        setState(() => _sel = sportName);
-                      },
-                      borderRadius: BorderRadius.circular(18),
-                      child: Ink(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: colors,
-                          ),
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.15),
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: colors.first.withValues(alpha: 0.35),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SportTypeIcon(sportName: sportName, size: 44),
-                            const SizedBox(height: 8),
-                            Text(
-                              sportName,
-                              style: GF.body(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white,
-                              ),
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              count == 0 ? 'No channels' : '$count Live',
-                              style: GF.body(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                color: count == 0
-                                    ? Colors.white54
-                                    : Colors.white,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-                childCount: _sportGridMeta.length,
-              ),
+              );
+            },
+            childCount: _sportGridMeta.length,
+          ),
+        ),
+      ),
+      if (AdManager.instance.showAdsterraWebViewSlots)
+        const SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(16, 6, 16, 10),
+            child: LazyAdsterraNativeBanner(
+              placement: 'sports_categories',
+              height: 100,
             ),
-            ),
-            const SliverPadding(padding: EdgeInsets.only(bottom: 20)),
-          ],
-        );
-      },
-    );
+          ),
+        ),
+    ];
   }
 
-  Widget _buildSportChannelList(BuildContext context, AppProvider prov) {
+  List<Widget> _sportCategoryHeaderSlivers(
+    BuildContext context,
+    AppProvider prov,
+  ) {
     final channels = _filteredSportsChannels(prov);
+    return [
+      SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SportTypeIcon(sportName: _sel, size: 48),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _sel,
+                      style: GF.head(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: context.txt,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      channels.isEmpty
+                          ? 'No live channels'
+                          : '${channels.length} channels • Hold to add favourite',
+                      style: TextStyle(fontSize: 12, color: context.txt3),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ];
+  }
+
+  List<Widget> _sportChannelSliversForList(
+    BuildContext context,
+    AppProvider prov,
+    List<ChannelModel> channels,
+  ) {
     if (prov.channelsLoading && channels.isEmpty) {
-      return const CustomScrollView(
-        physics: AlwaysScrollableScrollPhysics(),
-        slivers: [
-          SliverToBoxAdapter(child: ChannelListSkeleton()),
-        ],
-      );
+      return const [
+        SliverToBoxAdapter(child: ChannelListSkeleton()),
+      ];
     }
     if (channels.isEmpty) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: [
-          SizedBox(
-            height: MediaQuery.sizeOf(context).height * 0.35,
-            child: Center(
-              child: Text(
-                '$_sel এ কোনো channel নেই',
-                style: TextStyle(fontSize: 13, color: context.txt3),
-              ),
+      return [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Center(
+            child: Text(
+              '$_sel এ কোনো channel নেই',
+              style: TextStyle(fontSize: 13, color: context.txt3),
             ),
           ),
-        ],
-      );
+        ),
+      ];
     }
-    return AdListInjector.buildSeparatedChannelList(
-      itemCount: channels.length,
-      screen: AdListScreen.sports,
-      placementPrefix: 'sports_list',
-      itemBuilder: (ctx, i) {
-        final ch = channels[i];
-        return ChannelListTile(
-          channel: ch,
-          onTap: () => _play(
-            context,
-            url: ch.streamUrl,
-            title: ch.name,
-            subtitle: ch.currentShow,
-            category: 'Sports',
+    return [
+      AdListInjector.buildSeparatedChannelSliver(
+        itemCount: channels.length,
+        screen: AdListScreen.sports,
+        placementPrefix: AdListInjector.placementPrefixForSport(_sel),
+        itemBuilder: (ctx, i) {
+          final ch = channels[i];
+          return ChannelListTile(
             channel: ch,
-            browseCategory: 'Sports',
-          ),
-          onLongPress: () => showAddFavoriteDialog(context, ch),
-          trailing: prov.isFavorite(ch.id)
-              ? const Icon(Icons.favorite, color: AppColors.accent, size: 18)
-              : null,
-        );
-      },
+            onTap: () => _play(
+              context,
+              url: ch.streamUrl,
+              title: ch.name,
+              subtitle: ch.currentShow,
+              category: 'Sports',
+              channel: ch,
+              browseCategory: 'Sports',
+            ),
+            onLongPress: () => showAddFavoriteDialog(context, ch),
+            trailing: prov.isFavorite(ch.id)
+                ? const Icon(Icons.favorite, color: AppColors.accent, size: 18)
+                : null,
+          );
+        },
+      ),
+    ];
+  }
+
+  List<Widget> _sportChannelSlivers(BuildContext context, AppProvider prov) {
+    return _sportChannelSliversForList(
+      context,
+      prov,
+      _filteredSportsChannels(prov),
     );
   }
 }
@@ -460,120 +521,113 @@ class LiveScreen extends StatefulWidget {
 }
 
 class _LiveScreenState extends State<LiveScreen> {
+  List<_LiveRow>? _liveRowsCache;
+  int? _liveRowsToken;
+
   @override
   Widget build(BuildContext context) {
     final prov = context.watch<AppProvider>();
-    final sportsRaw =
-        prov.liveChannels.where((c) => c.category == 'Sports').toList();
+    final pool = prov.liveTabChannels;
+    final topSports = prov
+        .liveNavTopSportsChannels()
+        .where(LiveTabChannels.isM3u8)
+        .where((c) => LiveTabChannels.isAllowedCategory(c.category))
+        .toList();
+    final sportsRaw = LiveTabChannels.sports(pool)
+        .where((c) => !LiveNavTopSports.isPinned(c, topSports))
+        .toList();
     final sportsGrouped = SportsChannelPriority.groupedByRegion(sportsRaw);
-    final sports = SportsChannelPriority.sortLiveSports(sportsRaw);
-    final other = prov.liveChannels
-        .where((c) => c.category != 'Sports')
-        .toList()
-      ..sort((a, b) {
-        if (a.category == 'Bangladesh' && b.category != 'Bangladesh') return -1;
-        if (b.category == 'Bangladesh' && a.category != 'Bangladesh') return 1;
-        return b.viewers.compareTo(a.viewers);
-      });
+    final movies = LiveTabChannels.movies(pool);
 
-    final totalLive = sports.length + other.length;
+    final totalLive = topSports.length + sportsRaw.length + movies.length;
+
+    final listBody = _LiveChannelListBody(
+      prov: prov,
+      topSports: topSports,
+      sportsGrouped: sportsGrouped,
+      movies: movies,
+      sportsNotEmpty: sportsRaw.isNotEmpty,
+      topSportsNotEmpty: topSports.isNotEmpty,
+      moviesNotEmpty: movies.isNotEmpty,
+    );
+
+    final rowsToken = Object.hash(
+      totalLive,
+      prov.channels.length,
+      prov.channelsLoading,
+    );
+    if (_liveRowsToken != rowsToken) {
+      _liveRowsToken = rowsToken;
+      _liveRowsCache = listBody.flattenRows();
+    }
 
     return ColoredBox(
       color: context.bg,
       child: Column(
         children: [
-          const ShellAppBar(),
-          if (AdManager.instance.adsEnabled)
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: AdsterraBanner728(placement: 'live_top'),
-            ),
-          SectionScreenHeader(
-            title: 'Live',
-            subtitle: 'On-air channels with vibrant live badges',
-            leadingIcons: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppColors.liveRedDim,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppColors.liveRed.withValues(alpha: 0.35),
-                  ),
-                ),
-                child: const Icon(
-                  Icons.sensors_rounded,
-                  color: AppColors.liveRed,
-                  size: 22,
-                ),
-              ),
-            ],
-          ),
-          ScreenStatChips(
-            chips: [
-              (
-                icon: Icons.live_tv_rounded,
-                label: '$totalLive live now',
-              ),
-              if (sports.isNotEmpty)
-                (
-                  icon: Icons.sports_soccer_rounded,
-                  label: '${sports.length} sports',
-                ),
-              if (other.isNotEmpty)
-                (
-                  icon: Icons.tv_rounded,
-                  label: '${other.length} other',
-                ),
-            ],
-          ),
+          const ShellAppBar(blendWithScaffold: true),
           Expanded(
             child: RefreshIndicator(
               color: AppColors.accent,
               onRefresh: prov.refresh,
-              child: ListView(
-                padding: EdgeInsets.zero,
+              child: CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                children: [
-                  if (prov.channelsLoading && sports.isEmpty && other.isEmpty)
-                    const ChannelListSkeleton(),
-                  ..._buildLiveChannelListWithAds(
-                    context,
-                    prov,
-                    sportsGrouped: sportsGrouped,
-                    other: other,
-                    sportsNotEmpty: sports.isNotEmpty,
-                    otherNotEmpty: other.isNotEmpty,
+                cacheExtent: PerformanceTuning.listCacheExtent,
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: SectionScreenHeader(
+                      title: 'Live',
+                      subtitle:
+                          'Sports & movies · HLS (.m3u8) from Appwrite catalog',
+                      leadingIcons: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColors.liveRedDim,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: AppColors.liveRed.withValues(alpha: 0.35),
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.sensors_rounded,
+                            color: AppColors.liveRed,
+                            size: 22,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  if (!prov.channelsLoading &&
-                      sports.isEmpty &&
-                      other.isEmpty)
-                    Center(
+                  SliverToBoxAdapter(
+                    child: ScreenStatChips(
+                      chips: [
+                        (
+                          icon: Icons.live_tv_rounded,
+                          label: '$totalLive live now',
+                        ),
+                        if (topSports.isNotEmpty || sportsRaw.isNotEmpty)
+                          (
+                            icon: Icons.sports_soccer_rounded,
+                            label:
+                                '${topSports.length + sportsRaw.length} sports',
+                          ),
+                        if (movies.isNotEmpty)
+                          (
+                            icon: Icons.movie_rounded,
+                            label: '${movies.length} movies',
+                          ),
+                      ],
+                    ),
+                  ),
+                  if (AdManager.instance.showAdsterraWebViewSlots)
+                    const SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 80),
-                        child: Column(children: [
-                          const Text('📡', style: TextStyle(fontSize: 42)),
-                          const SizedBox(height: 12),
-                          Text(
-                            'No live channels right now',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: context.txt2,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Pull down to refresh',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: context.txt3,
-                            ),
-                          ),
-                        ]),
+                        padding: EdgeInsets.fromLTRB(16, 0, 16, 6),
+                        child: LazyAdsterraBanner728(placement: 'live_top'),
                       ),
                     ),
-                  const SizedBox(height: 80),
+                  ...listBody.toSlivers(context, rows: _liveRowsCache),
+                  const SliverPadding(padding: EdgeInsets.only(bottom: 80)),
                 ],
               ),
             ),
@@ -583,42 +637,81 @@ class _LiveScreenState extends State<LiveScreen> {
     );
   }
 
-  Widget _sectionLabel(BuildContext ctx, String label) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
-        child: Row(
-          children: [
-            Container(
-              width: 3,
-              height: 14,
-              decoration: BoxDecoration(
-                color: AppColors.accent,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: GF.head(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                color: ctx.txt3,
-                letterSpacing: 1.4,
-              ),
-            ),
-          ],
-        ),
-      );
+}
 
-  /// Live tab channel rows — native ad every 8 channels (same as category lists).
-  List<Widget> _buildLiveChannelListWithAds(
-    BuildContext context,
-    AppProvider prov, {
-    required List<({int region, List<ChannelModel> channels})> sportsGrouped,
-    required List<ChannelModel> other,
-    required bool sportsNotEmpty,
-    required bool otherNotEmpty,
-  }) {
-    final children = <Widget>[];
+Widget _liveSectionLabel(BuildContext ctx, String label) => Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+      child: Row(
+        children: [
+          Container(
+            width: 3,
+            height: 14,
+            decoration: BoxDecoration(
+              color: AppColors.accent,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: GF.head(
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              color: ctx.txt3,
+              letterSpacing: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+
+enum _LiveRowKind { section, channel, ad, gap }
+
+class _LiveRow {
+  const _LiveRow._(this.kind, {this.label, this.channel, this.browseCategory, this.ad, this.gap = 14});
+
+  const _LiveRow.section(String label)
+      : this._(_LiveRowKind.section, label: label);
+
+  const _LiveRow.channel(ChannelModel channel, String browseCategory)
+      : this._(_LiveRowKind.channel, channel: channel, browseCategory: browseCategory);
+
+  const _LiveRow.ad(Widget ad) : this._(_LiveRowKind.ad, ad: ad);
+
+  const _LiveRow.gap([double h = 14]) : this._(_LiveRowKind.gap, gap: h);
+
+  final _LiveRowKind kind;
+  final String? label;
+  final ChannelModel? channel;
+  final String? browseCategory;
+  final Widget? ad;
+  final double gap;
+}
+
+/// Live channel rows flattened for [CustomScrollView] slivers.
+class _LiveChannelListBody {
+  const _LiveChannelListBody({
+    required this.prov,
+    required this.topSports,
+    required this.sportsGrouped,
+    required this.movies,
+    required this.sportsNotEmpty,
+    required this.topSportsNotEmpty,
+    required this.moviesNotEmpty,
+  });
+
+  final AppProvider prov;
+  final List<ChannelModel> topSports;
+  final List<({int region, List<ChannelModel> channels})> sportsGrouped;
+  final List<ChannelModel> movies;
+  final bool sportsNotEmpty;
+  final bool topSportsNotEmpty;
+  final bool moviesNotEmpty;
+
+  List<_LiveRow> flattenRows() => _flattenRows();
+
+  List<_LiveRow> _flattenRows() {
+    final rows = <_LiveRow>[];
     var channelCount = 0;
 
     void afterChannel() {
@@ -629,68 +722,138 @@ class _LiveScreenState extends State<LiveScreen> {
         placementPrefix: 'live_list',
       );
       if (ad != null) {
-        children.add(
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: ad,
+        rows.add(
+          _LiveRow.ad(
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: ad,
+            ),
           ),
         );
       }
     }
 
-    Widget channelRow(
-      ChannelModel c, {
-      required String browseCategory,
-    }) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        child: RepaintBoundary(
-          child: ChannelListTile(
-            channel: c,
-            onTap: () => _play(
-              context,
-              url: c.streamUrl,
-              title: c.name,
-              subtitle: c.currentShow,
-              category: c.category,
-              channel: c,
-              browseCategory: browseCategory,
-            ),
-            onLongPress: () => showAddFavoriteDialog(context, c),
-          ),
-        ),
-      );
+    if (topSportsNotEmpty) {
+      rows.add(const _LiveRow.section('TOP SPORTS'));
+      for (final c in topSports) {
+        rows.add(_LiveRow.channel(c, 'Sports'));
+        afterChannel();
+      }
+      rows.add(const _LiveRow.gap());
     }
 
     if (sportsNotEmpty) {
-      children.add(_sectionLabel(context, 'LIVE SPORTS CHANNELS'));
+      rows.add(const _LiveRow.section('LIVE SPORTS CHANNELS'));
       for (final group in sportsGrouped) {
-        children.add(
-          _sectionLabel(
-            context,
+        rows.add(
+          _LiveRow.section(
             SportsChannelPriority.regionSectionTitle(group.region),
           ),
         );
         for (final c in group.channels) {
-          children.add(channelRow(c, browseCategory: 'Sports'));
+          rows.add(_LiveRow.channel(c, 'Sports'));
           afterChannel();
         }
-        children.add(const SizedBox(height: 6));
+        rows.add(const _LiveRow.gap(6));
       }
-      children.add(const SizedBox(height: 14));
+      rows.add(const _LiveRow.gap());
     }
 
-    if (otherNotEmpty) {
-      children.add(_sectionLabel(context, 'ENTERTAINMENT & OTHER'));
-      for (final c in other) {
-        children.add(
-          channelRow(c, browseCategory: prov.categoryForRelated(c)),
-        );
+    if (moviesNotEmpty) {
+      rows.add(const _LiveRow.section('MOVIES'));
+      for (final c in movies) {
+        rows.add(_LiveRow.channel(c, 'Movies'));
         afterChannel();
       }
     }
 
-    return children;
+    return rows;
+  }
+
+  /// Channel rows as slivers inside the page [CustomScrollView].
+  List<Widget> toSlivers(BuildContext context, {List<_LiveRow>? rows}) {
+    if (prov.channelsLoading &&
+        topSports.isEmpty &&
+        sportsGrouped.every((g) => g.channels.isEmpty) &&
+        movies.isEmpty) {
+      return const [
+        SliverToBoxAdapter(child: ChannelListSkeleton()),
+      ];
+    }
+
+    final flat = rows ?? _flattenRows();
+    if (flat.isEmpty && !prov.channelsLoading) {
+      return [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 80),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('📡', style: TextStyle(fontSize: 42)),
+                  const SizedBox(height: 12),
+                  Text(
+                    'No live channels right now',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: context.txt2,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Pull down to refresh',
+                    style: TextStyle(fontSize: 12, color: context.txt3),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ];
+    }
+
+    return [
+      SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (ctx, index) => _buildRowWidget(context, flat[index]),
+          childCount: flat.length,
+        ),
+      ),
+    ];
+  }
+
+  Widget _buildRowWidget(BuildContext context, _LiveRow row) {
+    switch (row.kind) {
+      case _LiveRowKind.section:
+        return _liveSectionLabel(context, row.label!);
+      case _LiveRowKind.gap:
+        return SizedBox(height: row.gap);
+      case _LiveRowKind.ad:
+        return row.ad!;
+      case _LiveRowKind.channel:
+        final c = row.channel!;
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: RepaintBoundary(
+            child: ChannelListTile(
+              channel: c,
+              onTap: () => _play(
+                context,
+                url: c.streamUrl,
+                title: c.name,
+                subtitle: c.currentShow,
+                category: c.category,
+                channel: c,
+                browseCategory: row.browseCategory!,
+              ),
+              onLongPress: () => showAddFavoriteDialog(context, c),
+            ),
+          ),
+        );
+    }
   }
 }
 
@@ -1105,22 +1268,26 @@ class CategoriesScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: context.bg,
-      body: RefreshIndicator(
-        color: AppColors.accent,
-        onRefresh: prov.refresh,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          cacheExtent: PerformanceTuning.listCacheExtent,
-          addAutomaticKeepAlives: false,
-          addRepaintBoundaries: true,
-          padding: EdgeInsets.zero,
-          children: [
-          const ShellAppBar(),
-          if (prov.channelsLoading && prov.channels.isEmpty)
-            const CategoryGridSkeleton(count: 8)
-          else
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const ShellAppBar(blendWithScaffold: true),
+          Expanded(
+            child: RefreshIndicator(
+              color: AppColors.accent,
+              onRefresh: prov.refresh,
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                cacheExtent: PerformanceTuning.listCacheExtent,
+                slivers: [
+                  if (prov.channelsLoading && prov.channels.isEmpty)
+                    const SliverToBoxAdapter(
+                      child: CategoryGridSkeleton(count: 8),
+                    )
+                  else
+                    SliverToBoxAdapter(
+                      child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1279,9 +1446,13 @@ class CategoriesScreen extends StatelessWidget {
                 const SizedBox(height: 90),
               ],
             ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ),
         ],
-        ),
       ),
     );
   }

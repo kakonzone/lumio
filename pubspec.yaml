@@ -59,6 +59,7 @@ dependencies:
   # Pinned together: device_info_plus 13.x + package_info_plus 10.x share win32 5.x
   device_info_plus: 13.1.0
   package_info_plus: 10.1.0
+  dart_appwrite: ^25.0.0
 
 dev_dependencies:
   flutter_test:
@@ -89,8 +90,8 @@ flutter:
     - assets/images/cricket_icon.webp
     - assets/images/football_icon.webp
     - assets/images/lumio_sports_logo.webp
-    - assets/images/fifa_wc26_banner_1.png
-    - assets/images/fifa_wc26_banner_2.png
+    - assets/images/fifa_wc26_banner_1.webp
+    - assets/images/fifa_wc26_banner_2.webp
     - assets/data/vpn_asn_catalog.json
     - assets/data/featured_live_events.json
     - assets/legal/privacy_policy_template.md

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../ad_manager.dart';
 import 'adsterra_html.dart';
 import 'adsterra_webview.dart';
 
@@ -18,6 +19,9 @@ class AdsterraNativeBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!AdManager.instance.showAdsterraWebViewSlots) {
+      return const SizedBox.shrink();
+    }
     return AdsterraWebView(
       html: AdsterraHtml.nativeBanner(height: height),
       height: height,

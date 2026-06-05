@@ -6,7 +6,6 @@ import 'package:flutter/painting.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
-import '../ads/adsterra/adsterra_native_cache.dart';
 import '../core/performance_tuning.dart';
 import '../utils/lumio_image_cache.dart';
 
@@ -88,7 +87,8 @@ class AppStorageGuard {
 
   static Future<void> _runTrimPass({required int maxCacheBytes}) async {
     await _clearWebViewCache();
-    AdsterraNativeCache.instance.clear();
+    // Keep in-memory Adsterra HTML cache — clearing while WebViews are mounted
+    // causes nap5k/monetag IDB races and "destroyed WebView" warnings on MIUI.
     await lumioImageCache.emptyCache();
     await DefaultCacheManager().emptyCache();
     PaintingBinding.instance.imageCache.clear();

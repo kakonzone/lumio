@@ -1,13 +1,13 @@
 # Lumio Sports TV — Forensic Technical & Business Audit
 
-> **Canonical report:** [`../AUDIT_REPORT.md`](../AUDIT_REPORT.md) **rev.5** (2026-06-02) — **Section 25** (GitHub-only catalog, split APK 32/64, ads validation, matcher model). This `v2` copy may lag; **always prefer the root file**.
+> **Canonical report:** [`../AUDIT_REPORT.md`](../AUDIT_REPORT.md) **rev.9** (2026-06-04) — **Section 28** P0/P1 forensic fixes. This `v2` copy may lag; **always prefer the root file**.
 
 **Audit date:** 2026-05-28  
-**Last updated:** 2026-06-02 — see root **Section 25** for latest catalog/APK/ads/matcher sprint  
+**Last updated:** 2026-06-04 — see root **rev.9** (§28 stream token, HTTP, CAP, Appwrite cache)  
 **Scope:** Full repo (`lib/`, `android/`, `assets/`, `pubspec.yaml`, Gradle, manifests, docs)  
 **Distribution model:** Sideload APK (not Play Store) — Facebook / WhatsApp / Telegram / landing page  
 **Monetization focus:** IronSource LevelPlay + Unity (mediation only) + Adsterra + Monetag  
-**Infrastructure note:** Cloudflare usage audited — see **Section 13**
+**Infrastructure note:** **Appwrite** catalog — see root **Section 13** (no Cloudflare in app)
 
 **Method:** Static code review + build artifacts on disk + fix-sprint verification (`flutter test` 113/113). No production backend access. Values marked **ESTIMATE** where not measured on device.
 
@@ -27,7 +27,7 @@
 | 10 | Gap analysis (P0/P1/P2 + Phase 10) |
 | 11 | Code quality |
 | 12 | Final verdict |
-| 13 | Cloudflare |
+| 13 | Appwrite (see root AUDIT_REPORT.md §13) |
 | 14 | Firebase & remote services |
 | 15 | Monetization beyond ads (coins, ad-free — no store IAP) |
 | 16 | Native Android, CI/CD, release pipeline |
@@ -345,13 +345,13 @@ Assumptions: 8–12 min session, ads enabled, South Asia traffic, aggressive mod
 | **Token protection** | **Stronger client-side** | `StreamTokenService` — **pinned Dio** (`SecureDio.createForBaseUrl`), **3× retry**, 8s timeout; `ChannelResolver`; requires live `STREAM_TOKEN_BASE_URL` |
 | **Credentialed URLs in source** | **0** `user:pass@` in `lib/` | Grep clean |
 | **Stability rating** | **5/10** | Strong player logic undermined by HTTP origins, cleartext hosts, token backend not guaranteed in ops |
-| **Cloudflare as stream/CDN host** | **Partial** | At least one HLS on `*.pages.dev`; channel list Worker — Section 13 |
+| **Catalog backend** | **Appwrite** | Section 13 — not Cloudflare |
 
 ### 4.1 Data sources (channel catalog pipeline)
 
 | Source | Priority | Evidence |
 |--------|----------|----------|
-| Cloudflare Worker JSON | First if HTTP 200 | `RemoteChannelsService` (pinned Dio, ETag, retry) → `app_provider.dart:435-437`; URL via `REMOTE_CHANNELS_URL` dart-define |
+| Appwrite channels | **Primary** | `CatalogService` → `AppwriteService` — `REMOTE_CHANNELS_URL` legacy unused |
 | Embedded `_hardcodedChannels` | Fallback | `app_provider.dart` (~3.4k LOC catalog) |
 | Remote M3U URL | Merge | `app_provider.dart:441-444` (`_m3uUrl`) |
 | Bundled `assets/data/user_playlist.m3u` | Merge | `app_provider.dart:455-458` |
@@ -650,80 +650,11 @@ Details: `docs/PHASE10_CLOSEOUT.md`, `docs/PHASE10_TASK_[1-5]_VERIFICATION.md`.
 
 ---
 
-## SECTION 13 — Cloudflare Usage Audit
+## SECTION 13 — Appwrite Backend (Catalog)
 
-**Verdict:** Lumio **uses Cloudflare indirectly at runtime** (Workers + Pages URLs in catalog/API). There is **no Cloudflare SDK**, **no `wrangler.toml`**, and **no Worker source code** in this repo — only docs + hardcoded endpoints.
+> **Superseded in v2 mirror.** Full text: [`../AUDIT_REPORT.md`](../AUDIT_REPORT.md) **Section 13 (rev.7)**.
 
-### 13.1 Runtime (app calls Cloudflare-hosted endpoints)
-
-| Use | Status | URL / location | Evidence |
-|-----|--------|----------------|----------|
-| **Channel catalog API** | **ACTIVE** (dart-define default) | `REMOTE_CHANNELS_URL` → default `https://lumio-channels.kakonzone.workers.dev/channels` | `lib/config/app_config.dart`, `remote_channels_service.dart` |
-| Catalog merge logic | If Worker returns 200 + JSON array → **replaces** bundled `_hardcodedChannels`; else fallback to embedded list | `lib/provider/app_provider.dart:435-437` |
-| Cache | 30 min in-memory TTL + **ETag** (`If-None-Match` / 304) | `remote_channels_service.dart` |
-| Transport | **SecureDio** GET, 3× retry, 10s timeout | `remote_channels_service.dart` — same pin model as stream token host when pins configured |
-| **HLS stream origin (Pages)** | **In embedded catalog** | `https://starsportshindiii.pages.dev/index.m3u8` | `lib/provider/app_provider.dart:1048` |
-| Third-party Worker stream (playlist) | **Present in assets, not Lumio-owned** | `https://playboxtv.developed-for-pishow.workers.dev/wanda.m3u8` | `assets/data/user_playlist.m3u:757`, `tool/user_paste_urls.txt:354` |
-
-```dart
-// lib/services/remote_channels_service.dart:13-14
-static const _channelsUrl =
-    'https://lumio-channels.kakonzone.workers.dev/channels';
-```
-
-```dart
-// lib/provider/app_provider.dart:435-437
-final remoteChannels = await RemoteChannelsService.fetch();
-final baseChannels =
-    remoteChannels.isNotEmpty ? remoteChannels : _hardcodedChannels;
-```
-
-### 13.2 Planned / documented (not proven live from repo)
-
-| Item | Status | Evidence |
-|------|--------|----------|
-| `lumio.app` marketing + deep links | **In-app** (`https://lumio.app/open`) | `AndroidManifest.xml:79-82`, `deep_link_service.dart:57` |
-| Legal / APK hosting on Cloudflare | **Docs only** — Cloudflare Pages + DNS steps | `docs/LEGAL_HOSTING.md:5-9`, `docs/LEGAL_PAGES_HOSTING.md` |
-| Stream token API on `api.lumio.app` | **Planned** in build docs; **not** a Cloudflare Worker in client code | `docs/BUILD.md`, `docs/BACKEND_STREAM_TOKEN_CONTRACT.md` |
-| Token/signing **Worker sketch** | **Example JS only** in docs (not deployed here) | `docs/STREAM_PROXY_SETUP.md:43-56` |
-
-### 13.3 NOT FOUND in repository
-
-| Item | Result |
-|------|--------|
-| `wrangler.toml` / Workers project in repo | **NOT FOUND** |
-| Cloudflare Flutter/Dart SDK | **NOT FOUND** |
-| Cloudflare R2 / D1 / KV bindings | **NOT FOUND** |
-| `SSL_PIN_*` for `*.workers.dev` or `*.pages.dev` | **Optional** — Worker uses `SecureDio`; add host-specific pins in CI if required |
-| `network_security_config.xml` Cloudflare-specific domains | **NOT FOUND** — `*.workers.dev` / `*.pages.dev` rely on default HTTPS trust |
-
-### 13.4 Cloudflare WARP / VPN detection (not infrastructure)
-
-The app **detects** Cloudflare’s 1.1.1.1 / WARP app as a VPN signal for ad routing — it does **not** mean Lumio runs on Cloudflare.
-
-| Signal | Evidence |
-|--------|----------|
-| ASN blocklist | `13335`, `209242` — Cloudflare WARP / CF | `lib/services/fraud/vpn_asn_catalog.dart:24-25` |
-| Package denylist | `com.cloudflare.onedotonedotonedotone` | `vpn_asn_catalog.dart:79`, `VpnDetectionBridge.kt:57` |
-
-Effect: users on **Cloudflare WARP** may get `preferCleanSdkRouting` → more LevelPlay, less Adsterra (`AdSafetyService`).
-
-### 13.5 World Cup / ops implications
-
-1. **Single point of failure:** If `lumio-channels.kakonzone.workers.dev` is down, app silently uses `_hardcodedChannels` (no user-facing error) — good fallback, stale catalog risk.  
-2. **Worker URL configurable** — `REMOTE_CHANNELS_URL` dart-define (default unchanged).  
-3. **Third-party `*.workers.dev` / `*.pages.dev` streams** in playlist/catalog — availability and ToS are outside your Cloudflare account.  
-4. **Pin gap (reduced):** Catalog fetch uses pinned Dio; explicit `*.workers.dev` SPKI pins still recommended for release.  
-5. **Recommended ops:** Host `lumio.app`, `app-ads.txt`, legal pages, and optionally `api.lumio.app` on Cloudflare (Pages + Workers + DNS) per docs — **confirm in Cloudflare dashboard** (not verifiable from APK alone).
-
-### 13.6 Cloudflare score
-
-| Aspect | Score (1–10) | Note |
-|--------|--------------|------|
-| Integration maturity | **6** | `REMOTE_CHANNELS_URL` dart-define; ETag; no IaC in repo |
-| Security (pins, config) | **6** | SecureDio catalog fetch; host pins optional |
-| Operational readiness | **7** | Fallback + 304 refresh |
-| **Overall Cloudflare footprint** | **Partial** | **Yes for channels API + some streams; no full CF stack in app** |
+**Summary:** Main catalog = **Appwrite** (`AppwriteService` / `CatalogService`). **Cloudflare Workers catalog removed** from ship path. Legacy `REMOTE_CHANNELS_URL` code is unused by the catalog loader. GITUN still uses GitHub M3U as a secondary Special Link source.
 
 ---
 
@@ -743,7 +674,7 @@ Effect: users on **Cloudflare WARP** may get `preferCleanSdkRouting` → more Le
 | `LUMIO_BACKEND_BASE_URL` | Toffee creds / security API | `__MISSING__` |
 | `LUMIO_BACKEND_APP_KEY` | Backend auth header | `__MISSING__` |
 | `STREAM_TOKEN_BASE_URL` | Signed streams | `__MISSING__` |
-| `REMOTE_CHANNELS_URL` | Cloudflare Worker catalog | Default Workers URL in `app_config.dart` |
+| `REMOTE_CHANNELS_URL` | **Legacy** (unused by catalog) | `remote_channels_service.dart` — Appwrite is primary |
 | `CAP_BASE_URL` + `CAP_HMAC_KEY` | Server ad caps | empty unless CI |
 | `CAP_LOCAL_ONLY_MODE` | Skip server caps QA | `ad_config.dart:207-209` |
 
@@ -816,7 +747,7 @@ Effect: users on **Cloudflare WARP** may get `preferCleanSdkRouting` → more Le
 | `docs/DEEP_LINK_ATTRIBUTION.md` | Campaign URLs |
 | `docs/SIDELOAD_UPDATE.md` | APK update manifest |
 | `docs/APP_ADS_TXT_TEMPLATE.md` | app-ads.txt |
-| `docs/LEGAL_HOSTING.md` | Cloudflare Pages legal |
+| `docs/LEGAL_HOSTING.md` | Legal hosting options |
 | `docs/STREAM_PROXY_SETUP.md` | Worker sketch |
 | `docs/CRASHLYTICS_DASHBOARD.md` | Crash ops |
 | `AUDIT_REPORT.md` | This document |
@@ -864,7 +795,7 @@ Effect: users on **Cloudflare WARP** may get `preferCleanSdkRouting` → more Le
 |---------------------------|-------------------|
 | 12 mandatory sections | **Yes** (§1–12) |
 | Four-network ads deep-dive | **Yes** (§3 + diagram) |
-| Cloudflare | **Yes** (§13) |
+| Appwrite catalog | **Yes** (root §13) |
 | Phase 10 | **Yes** (§10 + §20) |
 | Splash / drawer / favorites / spin | **Yes** (§2) |
 | Firebase / Remote Config | **Yes** (§14) |
@@ -986,7 +917,7 @@ adb logcat -c && adb logcat | grep -E "LumioAds|ServerCap|Placement|AdDebug"
 | 10 Gaps | — | P0 ops: token API, legal host, CI defines |
 | 11 Code quality | 5 | Player split started; app_provider still large |
 | 12 Verdict | 8 | **84%** launch |
-| 13 Cloudflare | 6 | SecureDio + `REMOTE_CHANNELS_URL`; optional host pins |
+| 13 Appwrite | 8 | See root AUDIT_REPORT rev.7 — no Cloudflare |
 | 14 Firebase / backend | 7 | Optional Crashlytics; RC kill switches |
 | 15 Coins / ad-free | 6 | Wallet API scaffold; client coins |
 | 16 Native / CI | 8 | R8 + CI 3.41.6; signing enforced |

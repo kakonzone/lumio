@@ -1,5 +1,6 @@
 import '../config/channel_categories.dart';
 import '../models/model.dart';
+import 'channel_name_normalizer.dart';
 import 'sport_channel_icons.dart';
 
 /// Single place to normalize channels so one add appears everywhere:
@@ -49,10 +50,12 @@ class ChannelCatalog {
   }
 
   static ChannelModel normalize(ChannelModel c) {
+    final name = ChannelNameNormalizer.clean(c.name);
     var category = ChannelCategoryRegistry.normalizeId(c.category.trim());
     if (category.isEmpty) category = 'Entertainment';
 
-    if (category != 'Sports' && _shouldBeSports(c)) {
+    final sportsCandidate = c.copyWith(name: name);
+    if (category != 'Sports' && _shouldBeSports(sportsCandidate)) {
       category = 'Sports';
     }
 
@@ -62,9 +65,12 @@ class ChannelCatalog {
       streamUrl = alts.first.url;
     }
 
-    if (category == c.category && streamUrl == c.streamUrl) return c;
+    if (name == c.name && category == c.category && streamUrl == c.streamUrl) {
+      return c;
+    }
 
     return c.copyWith(
+      name: name,
       category: category,
       streamUrl: streamUrl,
     );

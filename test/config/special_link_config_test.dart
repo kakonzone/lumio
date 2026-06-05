@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lumio_tv/config/special_link_config.dart';
 
 void main() {
-  test('app catalog URL is not listed in GITUN sources', () {
+  test('GITUN sources do not include owner catalog URLs', () {
     for (final source in SpecialLinkConfig.gitunPlaylistSources) {
       expect(
         SpecialLinkConfig.isAppCatalogUrl(source.pageUrl),
@@ -14,16 +14,10 @@ void main() {
     }
   });
 
-  test('isAppCatalogUrl detects kakonzone playlist', () {
+  test('isAppCatalogUrl detects legacy owner GitHub playlists', () {
     expect(
       SpecialLinkConfig.isAppCatalogUrl(
-        SpecialLinkConfig.appCatalogPlaylistUrl,
-      ),
-      isTrue,
-    );
-    expect(
-      SpecialLinkConfig.isAppCatalogUrl(
-        'https://github.com/kakonzone/allchannelking.m3u8/blob/main/foo.m3u8',
+        'https://github.com/kakon122/my-media-notes/blob/main/foo.m3u8',
       ),
       isTrue,
     );

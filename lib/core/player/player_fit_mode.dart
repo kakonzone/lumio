@@ -9,6 +9,24 @@ enum PlayerFitMode {
   ratio4_3,
 }
 
+/// Tap-to-cycle order on the player video-size control (no sheet).
+const List<PlayerFitMode> playerFitModeTapCycle = [
+  PlayerFitMode.fit,
+  PlayerFitMode.fill,
+  PlayerFitMode.stretch,
+];
+
+PlayerFitMode normalizePlayerFitModeForTap(PlayerFitMode? mode) {
+  if (mode != null && playerFitModeTapCycle.contains(mode)) return mode;
+  return PlayerFitMode.fit;
+}
+
+PlayerFitMode nextPlayerFitModeInTapCycle(PlayerFitMode current) {
+  final i = playerFitModeTapCycle.indexOf(current);
+  if (i < 0) return PlayerFitMode.fit;
+  return playerFitModeTapCycle[(i + 1) % playerFitModeTapCycle.length];
+}
+
 BoxFit boxFitFor(PlayerFitMode mode) {
   switch (mode) {
     case PlayerFitMode.fit:

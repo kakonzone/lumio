@@ -1,5 +1,7 @@
 import '../config/channel_categories.dart';
 import '../models/model.dart';
+import 'channel_name_normalizer.dart';
+import 'channel_playback_links.dart';
 
 /// Parses M3U playlists and merges duplicate channel names into multi-link entries.
 class M3uMergeParser {
@@ -40,7 +42,10 @@ class M3uMergeParser {
 
       if (line.startsWith('#EXTINF')) {
         flushOrphanUrls();
-        pendingName = _afterComma(line);
+        pendingName = ChannelNameNormalizer.clean(
+          _afterComma(line),
+          tvgName: _attr(line, 'tvg-name'),
+        );
         pendingGroup = _attr(line, 'group-title');
         pendingLogo = _attr(line, 'tvg-logo');
         continue;
@@ -78,7 +83,8 @@ class M3uMergeParser {
     return byName.values.map((b) => b.build()).where((c) => c.streamUrl.isNotEmpty).toList();
   }
 
-  static String _nameKey(String name) => name.toLowerCase().trim();
+  static String _nameKey(String name) =>
+      ChannelPlaybackLinks.mergeKeyForName(name);
 
   static bool _isStreamLine(String line) =>
       line.startsWith('http') || line.startsWith('rtmp') || line.startsWith('rtsp');

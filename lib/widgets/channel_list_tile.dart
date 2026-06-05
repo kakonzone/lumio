@@ -25,131 +25,140 @@ class ChannelListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final prov = context.watch<AppProvider>();
-    final showLive = prov.isStreamLive(channel);
-    final checking = prov.isStreamHealthPending(channel);
-    final isPendingTap = prov.isPendingChannelTapChannel(channel);
+    return Selector<AppProvider, ({bool showLive, bool checking, bool isPendingTap})>(
+      selector: (_, p) => (
+        showLive: p.isStreamLive(channel),
+        checking: p.isStreamHealthPending(channel),
+        isPendingTap: p.isPendingChannelTapChannel(channel),
+      ),
+      builder: (context, state, _) {
+        final showLive = state.showLive;
+        final checking = state.checking;
+        final isPendingTap = state.isPendingTap;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          HapticFeedback.lightImpact();
-          onTap?.call();
-        },
-        onLongPress: onLongPress,
-        borderRadius: BorderRadius.circular(14),
-        child: Ink(
-          decoration: ChannelListStyle.card(
-            context: context,
-            showLive: showLive,
-            isPendingTap: isPendingTap,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-            child: Row(
-              children: [
-                if (showLive)
-                  Container(
-                    width: 3,
-                    height: 44,
-                    margin: const EdgeInsets.only(right: 10),
-                    decoration: BoxDecoration(
-                      color: AppColors.accent,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ChannelAvatar(channel: channel),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        channel.name,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color:
-                              isPendingTap ? AppColors.accent : context.txt,
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              onTap?.call();
+            },
+            onLongPress: onLongPress,
+            borderRadius: BorderRadius.circular(14),
+            child: Ink(
+              decoration: ChannelListStyle.card(
+                context: context,
+                showLive: showLive,
+                isPendingTap: isPendingTap,
+              ),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                child: Row(
+                  children: [
+                    if (showLive)
+                      Container(
+                        width: 3,
+                        height: 44,
+                        margin: const EdgeInsets.only(right: 10),
+                        decoration: BoxDecoration(
+                          color: AppColors.accent,
+                          borderRadius: BorderRadius.circular(2),
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
-                      Row(
+                    ChannelAvatar(channel: channel),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
+                          Text(
+                            channel.name,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color:
+                                  isPendingTap ? AppColors.accent : context.txt,
                             ),
-                            decoration: ChannelListStyle.categoryChip(
-                              context,
-                              channel.category,
-                            ),
-                            child: Text(
-                              channel.categoryIcon,
-                              style: const TextStyle(fontSize: 10),
-                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              channel.hasMultipleUserStreams
-                                  ? '${channel.userStreamLinks.length} links · tap to play'
-                                  : channel.currentShow.isEmpty
-                                      ? channel.category
-                                      : channel.currentShow,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: context.txt3,
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: ChannelListStyle.categoryChip(
+                                  context,
+                                  channel.category,
+                                ),
+                                child: Text(
+                                  channel.categoryIcon,
+                                  style: const TextStyle(fontSize: 10),
+                                ),
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  channel.hasMultipleUserStreams
+                                      ? '${channel.userStreamLinks.length} links · tap to play'
+                                      : channel.currentShow.isEmpty
+                                          ? channel.category
+                                          : channel.currentShow,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: context.txt3,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
-                  ),
+                    ),
+                    if (checking)
+                      const Padding(
+                        padding: EdgeInsets.only(right: 8),
+                        child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.accent,
+                          ),
+                        ),
+                      )
+                    else if (showLive)
+                      Container(
+                        margin: const EdgeInsets.only(right: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: ChannelListStyle.liveBadge(),
+                        child: const Text(
+                          'LIVE',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: 0.4,
+                          ),
+                        ),
+                      ),
+                    if (trailing != null) trailing!,
+                  ],
                 ),
-                if (checking)
-                  const Padding(
-                    padding: EdgeInsets.only(right: 8),
-                    child: SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.accent,
-                      ),
-                    ),
-                  )
-                else if (showLive)
-                  Container(
-                    margin: const EdgeInsets.only(right: 4),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: ChannelListStyle.liveBadge(),
-                    child: const Text(
-                      'LIVE',
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                        letterSpacing: 0.4,
-                      ),
-                    ),
-                  ),
-                if (trailing != null) trailing!,
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

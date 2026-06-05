@@ -3,8 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../ads/ad_manager.dart';
 import '../ads/ad_placement_news.dart';
-import '../ads/adsterra/adsterra_banner.dart';
-import '../ads/adsterra/adsterra_native.dart';
+import '../ads/widgets/lazy_adsterra_strip.dart';
 import '../models/model.dart';
 import '../provider/app_provider.dart';
 import '../screens/tv_screen.dart' show ScoreCardsSection;
@@ -107,7 +106,6 @@ class _NewsScreenState extends State<NewsScreen> {
   @override
   Widget build(BuildContext context) {
     final prov = context.watch<AppProvider>();
-    final internationalScores = prov.internationalScoreMatches;
     final premierScores = prov.premierLeagueScoreMatches;
     final allNews = prov.news;
     final filtered = _filtered(allNews);
@@ -116,271 +114,237 @@ class _NewsScreenState extends State<NewsScreen> {
         ? filtered.where((n) => n.id != hero.id).toList()
         : filtered;
 
+    final showScores =
+        prov.matchesLoading || premierScores.isNotEmpty;
+
     return Scaffold(
       backgroundColor: context.bg,
-      body: RefreshIndicator(
-        color: AppColors.accent,
-        onRefresh: () async {
-          await prov.ensureMatchesLoaded();
-          await prov.loadNews();
-        },
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            const SliverToBoxAdapter(child: ShellAppBar()),
-            SliverToBoxAdapter(
-              child: SectionScreenHeader(
-                title: 'Sports News',
-                subtitle: 'World Cup & cricket first · headlines with photos',
-                leadingIcons: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.accent.withValues(alpha: 0.9),
-                          AppColors.accent.withValues(alpha: 0.55),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.newspaper_rounded,
-                      color: Colors.white,
-                      size: 22,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (AdManager.instance.adsEnabled)
-              const SliverPersistentHeader(
-                pinned: true,
-                delegate: _NewsStickyBannerDelegate(),
-              ),
-            SliverToBoxAdapter(
-              child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: SectionNavBar(
-                items: _categories,
-                selected: _category,
-                onSelected: (v) => setState(() => _category = v),
-              ),
-              ),
-            ),
-            if (AdManager.instance.adsEnabled)
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
-                  child: AdsterraNativeBanner(
-                    placement: 'news_headlines',
-                    height: 90,
-                  ),
-                ),
-              ),
-            SliverToBoxAdapter(
-              child: _NewsSectionHeader(
-              title: 'Live scores',
-              icon: Icons.sports_score_rounded,
-              ),
-            ),
-            if (prov.matchesLoading &&
-                internationalScores.isEmpty &&
-                premierScores.isEmpty)
-              const SliverToBoxAdapter(child: ScoreRowSkeleton())
-            else ...[
-              SliverToBoxAdapter(
-                child: ScoreCardsSection(
-                  title: 'Cricket & international',
-                  matches: internationalScores,
-                  loading: prov.matchesLoading,
-                  onPlay: (ctx,
-                          {required url,
-                          required title,
-                          subtitle = '',
-                          category = '',
-                          channel,
-                          browseCategory}) =>
-                      _playScore(ctx,
-                          url: url, title: title, subtitle: subtitle),
-                ),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: 8)),
-              SliverToBoxAdapter(
-                child: ScoreCardsSection(
-                  title: 'Premier League',
-                  matches: premierScores,
-                  loading: prov.matchesLoading,
-                  onPlay: (ctx,
-                          {required url,
-                          required title,
-                          subtitle = '',
-                          category = '',
-                          channel,
-                          browseCategory}) =>
-                      _playScore(ctx,
-                          url: url, title: title, subtitle: subtitle),
-                ),
-              ),
-            ],
-            const SliverToBoxAdapter(child: SizedBox(height: 8)),
-            if (filtered.any(NewsPriority.isWorldCup) ||
-                filtered.any(NewsPriority.isCricket))
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-                  child: Wrap(
-                    spacing: 8,
-                    children: [
-                      if (filtered.any(NewsPriority.isWorldCup))
-                        _HighlightChip(
-                          label: 'World Cup',
-                          icon: Icons.emoji_events_rounded,
-                          colors: const [
-                            Color(0xFF1565C0),
-                            Color(0xFF0D47A1),
-                          ],
+      body: Column(
+        children: [
+          const ShellAppBar(blendWithScaffold: true),
+          Expanded(
+            child: RefreshIndicator(
+              color: AppColors.accent,
+              onRefresh: () async {
+                await prov.ensureMatchesLoaded();
+                await prov.loadNews();
+              },
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: SectionScreenHeader(
+                      title: 'Sports News',
+                      subtitle:
+                          'World Cup & cricket first · headlines with photos',
+                      leadingIcons: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                AppColors.accent.withValues(alpha: 0.9),
+                                AppColors.accent.withValues(alpha: 0.55),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.newspaper_rounded,
+                            color: Colors.white,
+                            size: 22,
+                          ),
                         ),
-                      if (filtered.any(NewsPriority.isCricket))
-                        _HighlightChip(
-                          label: 'Cricket',
-                          icon: Icons.sports_cricket_rounded,
-                          colors: const [
-                            Color(0xFF00897B),
-                            Color(0xFF004D40),
-                          ],
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            SliverToBoxAdapter(
-              child: _NewsSectionHeader(
-                title: 'Headlines',
-                icon: Icons.article_outlined,
-                trailing: prov.newsLoading
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.accent,
-                        ),
-                      )
-                    : Text(
-                        '${filtered.length} stories',
-                        style: TextStyle(fontSize: 11, color: context.txt3),
-                      ),
-              ),
-            ),
-            if (prov.newsLoading && allNews.isEmpty)
-              SliverList(
-                delegate: SliverChildListDelegate(
-                  List.generate(
-                    4,
-                    (_) => const Padding(
-                      padding: EdgeInsets.only(bottom: 12),
-                      child: NewsCardShimmer(),
+                      ],
                     ),
                   ),
-                ),
-              )
-            else if (filtered.isEmpty)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                  child: Text(
-                    prov.newsError != null
-                        ? 'Could not load news. Pull to refresh.'
-                        : 'No stories in $_category. Try another category.',
-                    style: TextStyle(fontSize: 13, color: context.txt3),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              )
-            else
-              SliverList(
-                delegate: SliverChildListDelegate([
-                  if (hero != null)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
-                      child: NewsHeroCard(
-                        news: hero,
-                        onTap: () => _onNewsArticleTap(hero),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                      child: SectionNavBar(
+                        items: _categories,
+                        selected: _category,
+                        onSelected: (v) => setState(() => _category = v),
                       ),
                     ),
-                  ...AdPlacementNews.buildArticleList(
-                    articleCount: rest.length,
-                    buildArticleAt: (i) {
-                      final article = rest[i];
-                      return Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                        child: NewsArticleTile(
-                          news: article,
-                          onTap: () => _onNewsArticleTap(article),
-                        ),
-                      );
-                    },
                   ),
-                ]),
-              ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                child: Row(
-                  children: [
-                    Icon(Icons.info_outline, size: 14, color: context.txt3),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        'News © ESPN & BBC Sport. First tap opens offer; tap again to read the story.',
-                        style: TextStyle(
-                            fontSize: 10, color: context.txt3, height: 1.35),
+                  if (AdManager.instance.showAdsterraWebViewSlots) ...[
+                    const SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(16, 0, 16, 6),
+                        child: LazyAdsterraBanner728(placement: 'news_top_sticky'),
+                      ),
+                    ),
+                    const SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(16, 0, 16, 6),
+                        child: LazyAdsterraNativeBanner(
+                          placement: 'news_headlines',
+                          height: 90,
+                        ),
                       ),
                     ),
                   ],
-                ),
+                  if (showScores) ...[
+                    if (prov.matchesLoading && premierScores.isEmpty)
+                      const SliverToBoxAdapter(child: ScoreRowSkeleton())
+                    else
+                      SliverToBoxAdapter(
+                        child: ScoreCardsSection(
+                          title: '',
+                          matches: premierScores,
+                          loading: prov.matchesLoading,
+                          showHeader: false,
+                          showEmptyMessage: false,
+                          onPlay: (ctx,
+                                  {required url,
+                                  required title,
+                                  subtitle = '',
+                                  category = '',
+                                  channel,
+                                  browseCategory}) =>
+                              _playScore(ctx,
+                                  url: url,
+                                  title: title,
+                                  subtitle: subtitle),
+                        ),
+                      ),
+                  ],
+                  if (filtered.any(NewsPriority.isWorldCup) ||
+                      filtered.any(NewsPriority.isCricket))
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+                        child: Wrap(
+                          spacing: 8,
+                          children: [
+                            if (filtered.any(NewsPriority.isWorldCup))
+                              _HighlightChip(
+                                label: 'World Cup',
+                                icon: Icons.emoji_events_rounded,
+                                colors: const [
+                                  Color(0xFF1565C0),
+                                  Color(0xFF0D47A1),
+                                ],
+                              ),
+                            if (filtered.any(NewsPriority.isCricket))
+                              _HighlightChip(
+                                label: 'Cricket',
+                                icon: Icons.sports_cricket_rounded,
+                                colors: const [
+                                  Color(0xFF00897B),
+                                  Color(0xFF004D40),
+                                ],
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  SliverToBoxAdapter(
+                    child: _NewsSectionHeader(
+                      title: 'Headlines',
+                      icon: Icons.article_outlined,
+                      trailing: prov.newsLoading
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.accent,
+                              ),
+                            )
+                          : Text(
+                              '${filtered.length} stories',
+                              style:
+                                  TextStyle(fontSize: 11, color: context.txt3),
+                            ),
+                    ),
+                  ),
+                  if (prov.newsLoading && allNews.isEmpty)
+                    SliverList(
+                      delegate: SliverChildListDelegate(
+                        List.generate(
+                          4,
+                          (_) => const Padding(
+                            padding: EdgeInsets.only(bottom: 12),
+                            child: NewsCardShimmer(),
+                          ),
+                        ),
+                      ),
+                    )
+                  else if (filtered.isEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 20),
+                        child: Text(
+                          prov.newsError != null
+                              ? 'Could not load news. Pull to refresh.'
+                              : 'No stories in $_category. Try another category.',
+                          style: TextStyle(fontSize: 13, color: context.txt3),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    )
+                  else
+                    SliverList(
+                      delegate: SliverChildListDelegate([
+                        if (hero != null)
+                          Padding(
+                            padding:
+                                const EdgeInsets.fromLTRB(16, 4, 16, 14),
+                            child: NewsHeroCard(
+                              news: hero,
+                              onTap: () => _onNewsArticleTap(hero),
+                            ),
+                          ),
+                        ...AdPlacementNews.buildArticleList(
+                          articleCount: rest.length,
+                          buildArticleAt: (i) {
+                            final article = rest[i];
+                            return Padding(
+                              padding:
+                                  const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                              child: NewsArticleTile(
+                                news: article,
+                                onTap: () => _onNewsArticleTap(article),
+                              ),
+                            );
+                          },
+                        ),
+                      ]),
+                    ),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline,
+                              size: 14, color: context.txt3),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'News © ESPN & BBC Sport. First tap opens offer; tap again to read the story.',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: context.txt3,
+                                height: 1.35,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SliverToBoxAdapter(child: SizedBox(height: 72)),
+                ],
               ),
             ),
-            const SliverToBoxAdapter(child: SizedBox(height: 72)),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
-}
-
-class _NewsStickyBannerDelegate extends SliverPersistentHeaderDelegate {
-  const _NewsStickyBannerDelegate();
-
-  static const double _height = 98;
-
-  @override
-  double get minExtent => _height;
-
-  @override
-  double get maxExtent => _height;
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
-    return Material(
-      color: Theme.of(context).scaffoldBackgroundColor,
-      elevation: overlapsContent ? 2 : 0,
-      child: const Padding(
-        padding: EdgeInsets.fromLTRB(16, 0, 16, 10),
-        child: AdsterraBanner728(placement: 'news_top_sticky'),
-      ),
-    );
-  }
-
-  @override
-  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) =>
-      false;
 }
 
 class _HighlightChip extends StatelessWidget {
@@ -442,7 +406,7 @@ class _NewsSectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
       child: Row(
         children: [
           Icon(icon, size: 18, color: AppColors.accent),

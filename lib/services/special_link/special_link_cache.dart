@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../config/appwrite_config.dart';
 import '../../config/special_link_config.dart';
 import '../../models/model.dart';
 
@@ -10,29 +11,47 @@ class SpecialLinkCache {
   SpecialLinkCache._();
   static final SpecialLinkCache instance = SpecialLinkCache._();
 
-  static const _appCatalogBodyKey = 'lumio_app_catalog_channels_v1';
-  static const _appCatalogTsKey = 'lumio_app_catalog_ts_v1';
-  static const _gitunBodyKey = 'lumio_special_gitun_channels_v4_sports';
-  static const _gitunTsKey = 'lumio_special_gitun_ts_v4_sports';
+  static const _appCatalogBodyKey = 'lumio_app_catalog_appwrite_v1';
+  static const _appCatalogTsKey = 'lumio_app_catalog_appwrite_ts_v1';
+  static const _gitunBodyKey = 'lumio_special_gitun_channels_v6_sports_filter';
+  static const _gitunTsKey = 'lumio_special_gitun_ts_v6_sports_filter';
 
-  Future<List<ChannelModel>?> readAppCatalogChannels() =>
-      _read(_appCatalogBodyKey, _appCatalogTsKey);
+  Future<List<ChannelModel>?> readAppCatalogChannels({
+    bool ignoreTtl = false,
+  }) =>
+      _read(
+        _appCatalogBodyKey,
+        _appCatalogTsKey,
+        ignoreTtl: ignoreTtl,
+        maxAge: AppwriteConfig.catalogCacheTtl,
+      );
 
   Future<void> writeAppCatalogChannels(List<ChannelModel> channels) =>
       _write(_appCatalogBodyKey, _appCatalogTsKey, channels);
 
   Future<List<ChannelModel>?> readGitunChannels() =>
-      _read(_gitunBodyKey, _gitunTsKey);
+      _read(
+        _gitunBodyKey,
+        _gitunTsKey,
+        maxAge: SpecialLinkConfig.gitunCacheTtl,
+      );
 
   Future<void> writeGitunChannels(List<ChannelModel> channels) =>
       _write(_gitunBodyKey, _gitunTsKey, channels);
 
-  Future<List<ChannelModel>?> _read(String bodyKey, String tsKey) async {
+  Future<List<ChannelModel>?> _read(
+    String bodyKey,
+    String tsKey, {
+    bool ignoreTtl = false,
+    Duration maxAge = SpecialLinkConfig.gitunCacheTtl,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     final ts = prefs.getInt(tsKey);
     if (ts == null) return null;
-    final age = DateTime.now().millisecondsSinceEpoch - ts;
-    if (age > SpecialLinkConfig.gitunCacheTtl.inMilliseconds) return null;
+    if (!ignoreTtl) {
+      final age = DateTime.now().millisecondsSinceEpoch - ts;
+      if (age > maxAge.inMilliseconds) return null;
+    }
 
     final raw = prefs.getString(bodyKey);
     if (raw == null || raw.isEmpty) return null;

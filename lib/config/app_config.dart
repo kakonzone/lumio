@@ -27,6 +27,10 @@ class AppConfig {
   );
 
   /// Base URL for signed stream token endpoint.
+  ///
+  /// Server contract (audit): `GET/POST {base}/v1/stream-token` with
+  /// `channelId`, `installId`, HMAC headers; returns short-lived `streamUrl`
+  /// + `token` + `expiresAt`. Client: [StreamTokenService].
   static const String streamTokenBaseUrl = String.fromEnvironment(
     'STREAM_TOKEN_BASE_URL',
     defaultValue: '__MISSING__',
@@ -58,6 +62,20 @@ class AppConfig {
   static bool get hasStreamTokenBaseUrl =>
       streamTokenBaseUrl.trim().isNotEmpty &&
       streamTokenBaseUrl != '__MISSING__';
+
+  /// Release requires [streamTokenBaseUrl] unless local cap sideload mode is on.
+  static void assertReleaseStreamTokenConfigured() {
+    if (!isReleaseBuild) return;
+    if (hasStreamTokenBaseUrl) return;
+    // Import cycle avoided — duplicate gate condition from AdConfig.
+    const capLocal = bool.fromEnvironment('CAP_LOCAL_ONLY_MODE');
+    const sideloadDev = bool.fromEnvironment('LUMIO_SIDELOAD_DEV');
+    if (capLocal || sideloadDev) return;
+    throw StateError(
+      'STREAM_TOKEN_BASE_URL must be set for release builds when '
+      'CAP_LOCAL_ONLY_MODE and LUMIO_SIDELOAD_DEV are false (see docs/BUILD.md).',
+    );
+  }
 
   static bool get hasPrivacyPolicy => LegalConfig.hasPrivacyPolicy;
   static bool get hasTerms => LegalConfig.hasTerms;

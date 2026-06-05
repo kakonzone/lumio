@@ -81,6 +81,9 @@ class VpnSignalService {
     return VpnSignals.fromResult(result);
   }
 
+  static Future<(String?, String?)> readTelephonyCountries() =>
+      _readAndroidTelephonyCountries();
+
   static Future<(String?, String?)> _readAndroidTelephonyCountries() async {
     if (!Platform.isAndroid) return (null, null);
     try {

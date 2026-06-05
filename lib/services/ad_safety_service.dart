@@ -30,6 +30,9 @@ class AdSafetyService {
 
   String? _fingerprint;
   String? _installId;
+  String? _simCountry;
+  String? _networkCountry;
+
   VpnSignals _vpnSignals = const VpnSignals(
     vpnInterfaceDetected: false,
     localeMismatch: false,
@@ -55,6 +58,10 @@ class AdSafetyService {
   String get installId => _installId ?? 'unknown';
 
   VpnSignals get vpnSignals => _vpnSignals;
+
+  String? get simCountry => _simCountry;
+
+  String? get networkCountry => _networkCountry;
 
   /// Legacy name — true when ≥2 VPN/geo signals active.
   bool get vpnHeuristicTier1 => _vpnSignals.preferCleanSdkRouting;
@@ -218,6 +225,9 @@ class AdSafetyService {
   }
 
   Future<void> _evaluateVpnSignals() async {
+    final telephony = await VpnSignalService.readTelephonyCountries();
+    _simCountry = telephony.$1;
+    _networkCountry = telephony.$2;
     _vpnSignals = await VpnSignalService.instance.collect();
   }
 

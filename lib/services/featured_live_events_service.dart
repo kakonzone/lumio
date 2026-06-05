@@ -1,15 +1,45 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
 
-import '../config/special_link_config.dart';
+import '../config/appwrite_config.dart';
 import '../models/live_event_match.dart';
 import '../models/model.dart';
+import 'appwrite_app_config.dart';
 import 'featured_live_events_cache.dart';
-import 'special_link/github_raw_url.dart';
 
-/// GitHub JSON → up to 3 home featured cards (same UI as All Live Events).
+/// Where home World Cup / featured cards were loaded from.
+enum FeaturedLiveEventsSource {
+  appwrite,
+  cache,
+  bundledAsset,
+  empty,
+}
+
+/// Result of [FeaturedLiveEventsService.load] — includes source for UI/debug.
+class FeaturedLiveEventsLoadResult {
+  const FeaturedLiveEventsLoadResult({
+    required this.payload,
+    required this.source,
+    this.remoteUpdatedAt,
+    this.errorMessage,
+  });
+
+  final FeaturedLiveEventsPayload payload;
+  final FeaturedLiveEventsSource source;
+  final String? remoteUpdatedAt;
+  final String? errorMessage;
+
+  bool get isFromAppwrite => source == FeaturedLiveEventsSource.appwrite;
+
+  int get totalChannelLinks => payload.events.fold<int>(
+        0,
+        (n, e) => n + e.relatedChannels.length,
+      );
+}
+
+/// Appwrite `app_config` / `featured_live_events` → home featured match cards.
 class FeaturedLiveEventsService {
   FeaturedLiveEventsService._();
   static final FeaturedLiveEventsService instance =
@@ -17,45 +47,210 @@ class FeaturedLiveEventsService {
 
   static const _assetPath = 'assets/data/featured_live_events.json';
 
-  Future<FeaturedLiveEventsPayload> load({bool forceRefresh = false}) async {
-    if (!forceRefresh) {
-      final cached = await FeaturedLiveEventsCache.instance.read();
-      if (cached != null && cached.events.isNotEmpty) return cached;
-    }
-
-    try {
-      final rawUrl = GithubRawUrl.resolve(
-        SpecialLinkConfig.featuredLiveEventsUrl,
-      );
-      final res = await http
-          .get(Uri.parse(rawUrl))
-          .timeout(const Duration(seconds: 12));
-      if (res.statusCode == 200 && res.body.trim().isNotEmpty) {
-        final payload = _parseJson(res.body);
-        if (payload.events.isNotEmpty) {
-          await FeaturedLiveEventsCache.instance.write(payload);
-          return payload;
-        }
-      }
-    } catch (_) {}
-
-    final stale = await FeaturedLiveEventsCache.instance.read(ignoreTtl: true);
-    if (stale != null && stale.events.isNotEmpty) return stale;
-
-    try {
-      final assetBody = await rootBundle.loadString(_assetPath);
-      return _parseJson(assetBody);
-    } catch (_) {
-      return const FeaturedLiveEventsPayload();
-    }
+  /// True when Appwrite row changed or cache missing / [forceRefresh].
+  @visibleForTesting
+  static bool shouldFetchAppwritePayload({
+    required bool forceRefresh,
+    String? remoteUpdatedAt,
+    String? cachedUpdatedAt,
+    bool cacheHit = false,
+  }) {
+    if (forceRefresh) return true;
+    if (!cacheHit) return true;
+    final remote = remoteUpdatedAt?.trim() ?? '';
+    final cached = cachedUpdatedAt?.trim() ?? '';
+    if (remote.isEmpty) return false;
+    return remote != cached;
   }
 
-  FeaturedLiveEventsPayload _parseJson(String body) {
-    final root = jsonDecode(body);
-    if (root is! Map<String, dynamic>) {
-      return const FeaturedLiveEventsPayload();
+  Future<FeaturedLiveEventsLoadResult> load({bool forceRefresh = false}) async {
+    if (!AppwriteConfig.isConfigured) {
+      return _loadWithoutAppwrite(forceRefresh: forceRefresh);
     }
-    return FeaturedLiveEventsPayload.fromJson(root);
+
+    AppConfigEntry entry;
+    try {
+      final fetched = await AppwriteAppConfig.instance.fetchEntry(
+        AppwriteConfig.featuredLiveEventsKey,
+      );
+      entry = fetched ??
+          const AppConfigEntry(
+            errorMessage: 'Appwrite app_config fetch returned null',
+          );
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('[FeaturedLiveEvents] fetch exception: $e\n$st');
+      }
+      return _fallbackAfterAppwriteMiss(
+        forceRefresh: forceRefresh,
+        errorMessage: e.toString(),
+      );
+    }
+
+    if (entry.payload == null &&
+        entry.errorMessage != null &&
+        entry.errorMessage!.trim().isNotEmpty) {
+      if (kDebugMode) {
+        debugPrint(
+          '[FeaturedLiveEvents] Appwrite error: ${entry.errorMessage}',
+        );
+      }
+      return _fallbackAfterAppwriteMiss(
+        forceRefresh: forceRefresh,
+        errorMessage: entry.errorMessage,
+      );
+    }
+
+    final remoteUpdatedAt = entry.updatedAt;
+    final cachedUpdatedAt =
+        await FeaturedLiveEventsCache.instance.readRemoteUpdatedAt();
+    final cached = !forceRefresh
+        ? await FeaturedLiveEventsCache.instance.read()
+        : null;
+
+    final useRemotePayload = entry.payload != null &&
+        shouldFetchAppwritePayload(
+          forceRefresh: forceRefresh,
+          remoteUpdatedAt: remoteUpdatedAt,
+          cachedUpdatedAt: cachedUpdatedAt,
+          cacheHit: cached != null && cached.events.isNotEmpty,
+        );
+
+    if (useRemotePayload && entry.payload != null) {
+      final payload = FeaturedLiveEventsPayload.fromJson(entry.payload!);
+      if (payload.events.isNotEmpty) {
+        await FeaturedLiveEventsCache.instance.write(
+          payload,
+          remoteUpdatedAt: remoteUpdatedAt,
+        );
+        _logLoaded(
+          source: FeaturedLiveEventsSource.appwrite,
+          payload: payload,
+          remoteUpdatedAt: remoteUpdatedAt,
+        );
+        return FeaturedLiveEventsLoadResult(
+          payload: payload,
+          source: FeaturedLiveEventsSource.appwrite,
+          remoteUpdatedAt: remoteUpdatedAt,
+        );
+      }
+      if (kDebugMode) {
+        debugPrint(
+          '[FeaturedLiveEvents] Appwrite row ok but 0 valid events '
+          '(check teamA/teamB/channels[].url in json_payload)',
+        );
+      }
+    }
+
+    if (cached != null && cached.events.isNotEmpty) {
+      _logLoaded(
+        source: FeaturedLiveEventsSource.cache,
+        payload: cached,
+        remoteUpdatedAt: cachedUpdatedAt,
+      );
+      return FeaturedLiveEventsLoadResult(
+        payload: cached,
+        source: FeaturedLiveEventsSource.cache,
+        remoteUpdatedAt: cachedUpdatedAt,
+        errorMessage: entry.payload == null
+            ? 'Appwrite app_config row missing or invalid json_payload'
+            : null,
+      );
+    }
+
+    return _fallbackAfterAppwriteMiss(
+      forceRefresh: forceRefresh,
+      errorMessage: entry.payload == null
+          ? 'Create app_config row key=${AppwriteConfig.featuredLiveEventsKey} '
+              'with json_payload (see docs/APPWRITE_WORLD_CUP_CARDS.md)'
+          : 'No valid events in json_payload (need teamA, teamB, channels[].url)',
+    );
+  }
+
+  Future<FeaturedLiveEventsLoadResult> _fallbackAfterAppwriteMiss({
+    required bool forceRefresh,
+    String? errorMessage,
+  }) async {
+    final stale =
+        await FeaturedLiveEventsCache.instance.read(ignoreTtl: true);
+    if (stale != null && stale.events.isNotEmpty) {
+      _logLoaded(
+        source: FeaturedLiveEventsSource.cache,
+        payload: stale,
+      );
+      return FeaturedLiveEventsLoadResult(
+        payload: stale,
+        source: FeaturedLiveEventsSource.cache,
+        errorMessage: errorMessage,
+      );
+    }
+
+    if (kDebugMode) {
+      try {
+        final assetBody = await rootBundle.loadString(_assetPath);
+        final payload = FeaturedLiveEventsPayload.fromJson(
+          jsonDecode(assetBody) as Map<String, dynamic>,
+        );
+        if (payload.events.isNotEmpty) {
+          _logLoaded(
+            source: FeaturedLiveEventsSource.bundledAsset,
+            payload: payload,
+          );
+          return FeaturedLiveEventsLoadResult(
+            payload: payload,
+            source: FeaturedLiveEventsSource.bundledAsset,
+            errorMessage: errorMessage,
+          );
+        }
+      } catch (_) {}
+    }
+
+    return FeaturedLiveEventsLoadResult(
+      payload: const FeaturedLiveEventsPayload(),
+      source: FeaturedLiveEventsSource.empty,
+      errorMessage: errorMessage,
+    );
+  }
+
+  Future<FeaturedLiveEventsLoadResult> _loadWithoutAppwrite({
+    required bool forceRefresh,
+  }) async {
+    if (!forceRefresh) {
+      final cached = await FeaturedLiveEventsCache.instance.read();
+      if (cached != null && cached.events.isNotEmpty) {
+        return FeaturedLiveEventsLoadResult(
+          payload: cached,
+          source: FeaturedLiveEventsSource.cache,
+        );
+      }
+    }
+    if (kDebugMode) {
+      return _fallbackAfterAppwriteMiss(
+        forceRefresh: forceRefresh,
+        errorMessage: 'Appwrite not configured',
+      );
+    }
+    return const FeaturedLiveEventsLoadResult(
+      payload: FeaturedLiveEventsPayload(),
+      source: FeaturedLiveEventsSource.empty,
+      errorMessage: 'Appwrite not configured',
+    );
+  }
+
+  void _logLoaded({
+    required FeaturedLiveEventsSource source,
+    required FeaturedLiveEventsPayload payload,
+    String? remoteUpdatedAt,
+  }) {
+    if (!kDebugMode) return;
+    final links = payload.events.fold<int>(
+      0,
+      (n, e) => n + e.relatedChannels.length,
+    );
+    debugPrint(
+      '[FeaturedLiveEvents] source=$source events=${payload.events.length} '
+      'channelLinks=$links updated_at=${remoteUpdatedAt ?? "—"}',
+    );
   }
 }
 
@@ -148,17 +343,16 @@ LiveEventMatch? _parseEvent(Map<String, dynamic> j) {
       final item = channels[i];
       if (item is! Map) continue;
       final map = Map<String, dynamic>.from(item);
-      final url =
-          (map['url'] as String? ?? map['streamUrl'] as String? ?? '').trim();
+      final url = _readChannelUrl(map);
       if (url.isEmpty) continue;
       final name = (map['name'] as String?)?.trim();
       final alts = <StreamLink>[];
-      final altRaw = map['alternateStreams'];
+      final altRaw = map['alternateStreams'] ?? map['alternate_streams'];
       if (altRaw is List) {
         for (final alt in altRaw) {
           if (alt is! Map) continue;
           final altMap = Map<String, dynamic>.from(alt);
-          final altUrl = (altMap['url'] as String?)?.trim() ?? '';
+          final altUrl = _readChannelUrl(altMap);
           if (altUrl.isEmpty) continue;
           alts.add(
             StreamLink(
@@ -210,4 +404,18 @@ LiveEventMatch? _parseEvent(Map<String, dynamic> j) {
   );
 
   return LiveEventMatch(match: match, relatedChannels: related);
+}
+
+/// Accepts url / streamUrl / stream_url / link from Appwrite JSON.
+@visibleForTesting
+String readFeaturedChannelUrl(Map<String, dynamic> map) => _readChannelUrl(map);
+
+String _readChannelUrl(Map<String, dynamic> map) {
+  for (final key in ['url', 'streamUrl', 'stream_url', 'link', 'm3u8']) {
+    final v = map[key];
+    if (v == null) continue;
+    final text = v.toString().trim();
+    if (text.isNotEmpty) return text;
+  }
+  return '';
 }

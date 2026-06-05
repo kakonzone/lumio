@@ -97,6 +97,18 @@ class MainActivity : AudioServiceActivity() {
                             result.success(false)
                         }
                     }
+                    "setWindowSecure" -> {
+                        val secure = call.argument<Boolean>("secure") ?: true
+                        if (secure) {
+                            window.setFlags(
+                                WindowManager.LayoutParams.FLAG_SECURE,
+                                WindowManager.LayoutParams.FLAG_SECURE,
+                            )
+                        } else {
+                            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                        }
+                        result.success(null)
+                    }
                     else -> result.notImplemented()
                 }
             }
@@ -168,6 +180,15 @@ class MainActivity : AudioServiceActivity() {
                         val id = call.argument<String>("installId") ?: ""
                         writeEncryptedInstallId(id)
                         result.success(null)
+                    }
+                    "findBlockedAppLabels" -> {
+                        val labels = BlockedAppDetector.findInstalled(this)
+                            .map { it.label }
+                        result.success(labels)
+                    }
+                    "openFirstBlockedAppUninstall" -> {
+                        val pkg = BlockedAppDetector.firstInstalledPackage(this)
+                        result.success(openBlockedAppUninstall(pkg))
                     }
                     else -> result.notImplemented()
                 }
@@ -412,6 +433,23 @@ class MainActivity : AudioServiceActivity() {
             if (file.delete()) total -= len
         }
         Log.i("LumioStorage", "trimCacheDir → ${total / 1024}KB (max=${maxBytes / 1024}KB)")
+    }
+
+    /** Opens system app details so the user can uninstall a conflicting app. */
+    private fun openBlockedAppUninstall(packageName: String?): Boolean {
+        if (packageName.isNullOrBlank()) return false
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            data = Uri.parse("package:$packageName")
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        return try {
+            startActivity(intent)
+            true
+        } catch (_: ActivityNotFoundException) {
+            false
+        } catch (_: Exception) {
+            false
+        }
     }
 
     private fun getInstallerPackageName(): String? {

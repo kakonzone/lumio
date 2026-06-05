@@ -38,6 +38,24 @@
         <package android:name="com.mi.globalbrowser" />
         <package android:name="com.android.browser" />
         <package android:name="com.brave.browser" />
+        <!-- Blocked-app detection (Android 11+ package visibility) -->
+        <package android:name="com.guoshi.httpcanary" />
+        <package android:name="com.guoshi.httpcanary.premium" />
+        <package android:name="com.httpcanary.pro" />
+        <package android:name="app.greyshirts.sslcapture" />
+        <package android:name="jp.co.taosoftware.android.packetcapture" />
+        <package android:name="com.minhui.networkcapture" />
+        <package android:name="com.evbadroid.proxymon" />
+        <package android:name="com.emanuelef.remote_capture" />
+        <package android:name="de.robv.android.xposed.installer" />
+        <package android:name="org.lsposed.manager" />
+        <package android:name="com.topjohnwu.magisk" />
+        <package android:name="io.github.vvb2060.magisk" />
+        <package android:name="com.proxyman.NSProxy" />
+        <package android:name="tech.httptoolkit.android.v1" />
+        <package android:name="com.lbe.parallel.intl" />
+        <package android:name="com.excelliance.dualaid" />
+        <package android:name="com.ludashi.dualspace" />
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="https" android:host="www.effectivecpmnetwork.com" />
@@ -58,6 +76,7 @@
             android:launchMode="singleTop"
             android:theme="@style/LaunchTheme"
             android:resizeableActivity="true"
+            android:supportsPictureInPicture="true"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">

@@ -20,6 +20,7 @@ class SportChannelIcons {
     'Swimming',
     'Snooker',
     'Racing',
+    'Other Sports',
   ];
 
   static const sportFilterPills = [
@@ -177,6 +178,7 @@ class SportChannelIcons {
           !blob.contains('tennis')) {
         return 'Football';
       }
+      return 'Other Sports';
     }
     return null;
   }

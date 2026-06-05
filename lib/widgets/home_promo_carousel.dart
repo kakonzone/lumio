@@ -6,12 +6,19 @@ import 'package:lumio_tv/theme/app_theme.dart';
 
 enum _PromoTapAction { sports, liveEvents, entertainment }
 
-/// Full-width promo slider (search bar এর নিচে), auto-scroll + page dots.
+/// Full-width promo slider (Home scroll — Browse এর উপরে), auto-scroll + page dots.
 class HomePromoCarousel extends StatefulWidget {
   /// Home tab-এর "Live" sub-tab (index 1) এ যেতে চাইলে।
   final VoidCallback? onLiveTabTap;
 
-  const HomePromoCarousel({super.key, this.onLiveTabTap});
+  /// When false, auto-scroll pauses (saves CPU while on Live/Today/Soon).
+  final bool active;
+
+  const HomePromoCarousel({
+    super.key,
+    this.onLiveTabTap,
+    this.active = true,
+  });
 
   @override
   State<HomePromoCarousel> createState() => _HomePromoCarouselState();
@@ -26,11 +33,11 @@ class _HomePromoCarouselState extends State<HomePromoCarousel> {
 
   static final _slides = <_PromoSlide>[
     _PromoSlide(
-      assetPath: 'assets/images/fifa_wc26_banner_1.png',
+      assetPath: 'assets/images/fifa_wc26_banner_1.webp',
       action: _PromoTapAction.liveEvents,
     ),
     _PromoSlide(
-      assetPath: 'assets/images/fifa_wc26_banner_2.png',
+      assetPath: 'assets/images/fifa_wc26_banner_2.webp',
       action: _PromoTapAction.liveEvents,
     ),
     _PromoSlide(
@@ -59,10 +66,21 @@ class _HomePromoCarouselState extends State<HomePromoCarousel> {
   @override
   void initState() {
     super.initState();
-    _startAutoScroll();
+    if (widget.active) _startAutoScroll();
+  }
+
+  @override
+  void didUpdateWidget(HomePromoCarousel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.active && !oldWidget.active) {
+      _startAutoScroll();
+    } else if (!widget.active && oldWidget.active) {
+      _autoTimer?.cancel();
+    }
   }
 
   void _startAutoScroll() {
+    if (!widget.active) return;
     _autoTimer?.cancel();
     _autoTimer = Timer.periodic(_autoInterval, (_) {
       if (!mounted || !_pageCtrl.hasClients) return;

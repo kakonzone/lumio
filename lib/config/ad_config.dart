@@ -377,11 +377,11 @@ class AdConfig {
   /// Per-screen native list density (items between native rows).
   static const Map<AdListScreen, int> nativeDensityByScreen = {
     AdListScreen.home: 6,
-    AdListScreen.sports: 4,
-    AdListScreen.live: 6,
+    AdListScreen.sports: 8,
+    AdListScreen.live: 8,
     AdListScreen.news: 5,
     AdListScreen.categories: 8,
-    AdListScreen.categoryDrilldown: 12,
+    AdListScreen.categoryDrilldown: 8,
     AdListScreen.favorites: 8,
     AdListScreen.defaultList: 8,
   };
@@ -443,6 +443,12 @@ class AdConfig {
   static void assertReleaseMonetization() {
     if (!kReleaseMode) return;
     MonetagConfig.assertReleaseConfiguration();
+    if (MonetagConfig.anyDefineProvided && !MonetagConfig.isConfigured) {
+      throw StateError(
+        'Release build: partial Monetag dart-defines detected. '
+        'Set all MONETAG_* keys in secrets.json or remove them entirely.',
+      );
+    }
     if (usesPlaceholderLevelPlaySecrets) {
       throw StateError(
         'Release build: LEVELPLAY_* in secrets.json are still template text '

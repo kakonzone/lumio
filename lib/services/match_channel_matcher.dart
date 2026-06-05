@@ -260,7 +260,7 @@ class MatchChannelMatcher {
     final cats = <String>{'Sports'};
     if (_hasTeam(blob, 'bangladesh')) cats.add('Bangladesh');
     if (_hasTeam(blob, 'pakistan')) cats.add('Pakistan');
-    if (_hasTeam(blob, 'india')) cats.add('India');
+    if (_hasTeam(blob, 'india')) cats.add('Hindi');
     if (_hasTeam(blob, 'england') ||
         blob.contains('premier') ||
         blob.contains('epl')) {
@@ -533,7 +533,8 @@ class MatchChannelMatcher {
     final sorted = scored.entries.toList()
       ..sort((a, b) {
         final s = b.value.compareTo(a.value);
-        return s != 0 ? s : a.key.name.compareTo(b.key.name);
+        if (s != 0) return s;
+        return PriorityBroadcasters.compare(a.key, b.key);
       });
     return sorted.take(limit).map((e) => e.key).toList();
   }
@@ -649,14 +650,17 @@ class MatchChannelMatcher {
   /// Generic cricket broadcaster keywords — applicable to any cricket match.
   static int _scoreCricket(String blob) {
     const keywords = [
-      'star sports',
       'sony sports',
       'sony ten',
       'ten cricket',
-      'willow',
-      'sky sports cricket',
       't sports',
       'tsports',
+      'btv',
+      'bein sports',
+      'bein',
+      'star sports',
+      'willow',
+      'sky sports cricket',
       'toffee sports',
       'toffee',
       'ptv sports',
@@ -677,22 +681,26 @@ class MatchChannelMatcher {
   /// Generic football broadcaster keywords — applicable to any football match.
   static int _scoreFootball(String blob) {
     const keywords = [
+      'fifa',
+      'world cup 2026',
+      'football world cup',
+      'sony sports',
+      'sony ten',
+      't sports',
+      'tsports',
+      'btv',
+      'bein sports',
+      'bein',
       'sky sports football',
       'sky sports epl',
       'sky sports main event',
       'tnt sports',
-      'bein sports',
-      'bein',
       'fox sports',
       'espn',
       'eurosport',
       'euro sport',
-      't sports',
-      'tsports',
       'toffee sports',
       'toffee',
-      'sony sports',
-      'sony ten',
       'star sports',
     ];
     for (final k in keywords) {

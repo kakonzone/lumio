@@ -31,6 +31,9 @@ Future<WebViewController> createLumioWebViewController({
 Future<void> disposeLumioWebView(WebViewController? controller) async {
   if (controller == null) return;
   try {
+    await controller.loadRequest(Uri.parse('about:blank'));
+  } catch (_) {}
+  try {
     await controller.clearCache();
     await controller.clearLocalStorage();
   } catch (_) {}

@@ -14,6 +14,7 @@ import 'package:lumio_tv/widgets/team_avatar.dart';
 import 'package:lumio_tv/ads/ad_manager.dart';
 import 'package:lumio_tv/ads/adsterra/adsterra_banner.dart';
 import 'package:lumio_tv/ads/adsterra/adsterra_native.dart';
+import 'package:lumio_tv/ads/utils/lazy_ad_viewport.dart';
 import 'package:lumio_tv/ads/widgets/floating_native_card.dart';
 import 'package:lumio_tv/widgets/list_skeletons.dart';
 import 'package:lumio_tv/widgets/home_promo_carousel.dart';
@@ -29,46 +30,37 @@ class TvScreen extends StatefulWidget {
 
 class TvScreenState extends State<TvScreen> with SingleTickerProviderStateMixin {
   late TabController _tabs;
-  final _searchCtrl = TextEditingController();
-  final _searchFocus = FocusNode();
-  String? _highlightCategory;
+  final _highlightCategory = ValueNotifier<String?>(null);
+  final _searchSectionKey = GlobalKey<_TvSearchSectionState>();
 
   @override
   void initState() {
     super.initState();
     _tabs = TabController(length: 4, vsync: this);
-    _tabs.addListener(() {
-      if (mounted) setState(() {});
-    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AppProvider>().loadAll();
+      context.read<AppProvider>().ensureHomeContent();
     });
   }
 
   void goToTab(int index) {
     if (!mounted) return;
     final i = index.clamp(0, 3);
-    if (_tabs.index != i) {
-      _tabs.animateTo(i);
-      setState(() {});
-    }
+    if (_tabs.index != i) _tabs.animateTo(i);
   }
 
   void focusSearch() {
     if (!mounted) return;
-    _searchFocus.requestFocus();
-    setState(() {});
+    _searchSectionKey.currentState?._focus.requestFocus();
   }
 
   void filterCategory(String cat) {
-    setState(() => _highlightCategory = cat == 'All' ? null : cat);
+    _highlightCategory.value = cat == 'All' ? null : cat;
   }
 
   @override
   void dispose() {
     _tabs.dispose();
-    _searchCtrl.dispose();
-    _searchFocus.dispose();
+    _highlightCategory.dispose();
     super.dispose();
   }
 
@@ -101,154 +93,59 @@ class TvScreenState extends State<TvScreen> with SingleTickerProviderStateMixin 
 
   @override
   Widget build(BuildContext context) {
-    final prov = context.watch<AppProvider>();
     return TabAdOverlay(
       showFloatingCard: true,
       floatingPlacement: 'home_floating_native',
       child: ColoredBox(
         color: context.bg,
-        child: Column(children: [
-          const ShellAppBar(centerLumioTvBrand: true),
-          _searchBar(context, prov),
-          HomePromoCarousel(
-            onLiveTabTap: () {
-              if (_tabs.index != 1) {
-                _tabs.animateTo(1);
-                setState(() {});
-              }
-            },
-          ),
-          _tabBar(context),
-          Expanded(
-            child: TabBarView(
-              controller: _tabs,
-              children: [
-                _HomeTab(
-                  prov: prov,
-                  onPlay: _openPlayer,
-                  highlightCategory: _highlightCategory,
-                  onCategoryTap: (cat) =>
-                      setState(() => _highlightCategory = cat),
-                ),
-                _LiveNowTab(prov: prov, onPlay: _openPlayer),
-                _TodayTab(prov: prov, onPlay: _openPlayer),
-                _UpcomingTab(prov: prov, onPlay: _openPlayer),
-              ],
+        child: Column(
+          children: [
+            const ShellAppBar(
+              centerLumioTvBrand: true,
+              blendWithScaffold: true,
             ),
-          ),
-        ]),
+            Expanded(
+              child: NestedScrollView(
+                headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                  SliverToBoxAdapter(
+                    child: _TvSearchSection(
+                      key: _searchSectionKey,
+                      onPlay: _openPlayer,
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: AnimatedBuilder(
+                      animation: _tabs,
+                      builder: (context, _) => _tabBar(context, _tabs.index),
+                    ),
+                  ),
+                ],
+                body: TabBarView(
+                  controller: _tabs,
+                  children: [
+                    _HomeTab(
+                      highlightCategory: _highlightCategory,
+                      onPlay: _openPlayer,
+                      onCategoryTap: (cat) =>
+                          _highlightCategory.value = cat == 'All' ? null : cat,
+                      onLiveTabTap: () {
+                        if (_tabs.index != 1) _tabs.animateTo(1);
+                      },
+                    ),
+                    _LiveNowTab(onPlay: _openPlayer),
+                    _TodayTab(onPlay: _openPlayer),
+                    _UpcomingTab(onPlay: _openPlayer),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _searchBar(BuildContext context, AppProvider prov) {
-    final results = _searchCtrl.text.trim().isEmpty
-        ? <ChannelModel>[]
-        : prov.search(_searchCtrl.text);
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          margin: const EdgeInsets.fromLTRB(16, 4, 16, 10),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-          decoration: BoxDecoration(
-            color: context.bg3,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: context.brd),
-            boxShadow: [
-              BoxShadow(
-                color: context.shadowColor,
-                blurRadius: 12,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Row(children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.accent.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.search_rounded,
-                  size: 20, color: AppColors.accent),
-            ),
-            const SizedBox(width: 10),
-            const SizedBox(width: 8),
-            Expanded(
-              child: TextField(
-                controller: _searchCtrl,
-                focusNode: _searchFocus,
-                onChanged: (_) => setState(() {}),
-                style: TextStyle(fontSize: 13, color: context.txt),
-                decoration: InputDecoration(
-                  isDense: true,
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.zero,
-                  hintText: 'Search channels, sports, events...',
-                  hintStyle: TextStyle(color: context.txt3, fontSize: 13),
-                ),
-              ),
-            ),
-            if (_searchCtrl.text.isNotEmpty)
-              GestureDetector(
-                onTap: () {
-                  _searchCtrl.clear();
-                  setState(() {});
-                },
-                child: Icon(Icons.close, size: 18, color: context.txt3),
-              ),
-          ]),
-        ),
-        if (results.isNotEmpty)
-          SizedBox(
-            height: 52,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: results.take(8).length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (ctx, i) {
-                final ch = results[i];
-                return GestureDetector(
-                  onTap: () => _openPlayer(
-                    context,
-                    url: ch.streamUrl,
-                    title: ch.name,
-                    subtitle: ch.category,
-                    category: ch.category,
-                    channel: ch,
-                    browseCategory: prov.categoryForRelated(ch),
-                  ),
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: context.bg2,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: context.brd),
-                    ),
-                    child: Text(
-                      ch.name,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: context.txt,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _tabBar(BuildContext context) {
+  Widget _tabBar(BuildContext context, int activeIndex) {
     const tabs = [
       (Icons.home_rounded, 'Home', [Color(0xFF3949AB), Color(0xFF5C6BC0)]),
       (Icons.sensors_rounded, 'Live', [Color(0xFFB71C1C), Color(0xFFE53935)]),
@@ -276,17 +173,14 @@ class TvScreenState extends State<TvScreen> with SingleTickerProviderStateMixin 
         ),
         child: Row(
           children: List.generate(tabs.length, (i) {
-            final active = _tabs.index == i;
+            final active = activeIndex == i;
             final (icon, label, grad) = tabs[i];
             return Expanded(
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
                   onTap: () {
-                    if (_tabs.index != i) {
-                      _tabs.animateTo(i);
-                      setState(() {});
-                    }
+                    if (_tabs.index != i) _tabs.animateTo(i);
                   },
                   borderRadius: BorderRadius.circular(11),
                   child: AnimatedContainer(
@@ -353,6 +247,137 @@ class TvScreenState extends State<TvScreen> with SingleTickerProviderStateMixin 
   }
 }
 
+/// Search field isolated so typing does not rebuild the whole home shell.
+class _TvSearchSection extends StatefulWidget {
+  const _TvSearchSection({super.key, required this.onPlay});
+
+  final PlayerCallback onPlay;
+
+  @override
+  State<_TvSearchSection> createState() => _TvSearchSectionState();
+}
+
+class _TvSearchSectionState extends State<_TvSearchSection> {
+  final _ctrl = TextEditingController();
+  final _focus = FocusNode();
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    _focus.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final query = _ctrl.text.trim();
+    final prov = context.watch<AppProvider>();
+    final results =
+        query.isEmpty ? <ChannelModel>[] : prov.search(query).take(8).toList();
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          margin: const EdgeInsets.fromLTRB(16, 4, 16, 10),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+          decoration: BoxDecoration(
+            color: context.bg3,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: context.brd),
+            boxShadow: [
+              BoxShadow(
+                color: context.shadowColor,
+                blurRadius: 12,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Row(children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.accent.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.search_rounded,
+                  size: 20, color: AppColors.accent),
+            ),
+            const SizedBox(width: 10),
+            const SizedBox(width: 8),
+            Expanded(
+              child: TextField(
+                controller: _ctrl,
+                focusNode: _focus,
+                onChanged: (_) => setState(() {}),
+                style: TextStyle(fontSize: 13, color: context.txt),
+                decoration: InputDecoration(
+                  isDense: true,
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.zero,
+                  hintText: 'Search channels, sports, events...',
+                  hintStyle: TextStyle(color: context.txt3, fontSize: 13),
+                ),
+              ),
+            ),
+            if (query.isNotEmpty)
+              GestureDetector(
+                onTap: () {
+                  _ctrl.clear();
+                  setState(() {});
+                },
+                child: Icon(Icons.close, size: 18, color: context.txt3),
+              ),
+          ]),
+        ),
+        if (results.isNotEmpty)
+          SizedBox(
+            height: 52,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: results.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (ctx, i) {
+                final ch = results[i];
+                return GestureDetector(
+                  onTap: () => widget.onPlay(
+                    context,
+                    url: ch.streamUrl,
+                    title: ch.name,
+                    subtitle: ch.category,
+                    category: ch.category,
+                    channel: ch,
+                    browseCategory: prov.categoryForRelated(ch),
+                  ),
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: context.bg2,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: context.brd),
+                    ),
+                    child: Text(
+                      ch.name,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: context.txt,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+      ],
+    );
+  }
+}
+
 // ── Callback type ─────────────────────────────────────────────
 typedef PlayerCallback = void Function(
   BuildContext context, {
@@ -365,21 +390,31 @@ typedef PlayerCallback = void Function(
 });
 
 // ── HOME TAB ──────────────────────────────────────────────────
-class _HomeTab extends StatelessWidget {
-  final AppProvider prov;
+class _HomeTab extends StatefulWidget {
+  final ValueNotifier<String?> highlightCategory;
   final PlayerCallback onPlay;
-  final String? highlightCategory;
   final ValueChanged<String>? onCategoryTap;
+  final VoidCallback? onLiveTabTap;
 
   const _HomeTab({
-    required this.prov,
+    required this.highlightCategory,
     required this.onPlay,
-    this.highlightCategory,
     this.onCategoryTap,
+    this.onLiveTabTap,
   });
 
   @override
+  State<_HomeTab> createState() => _HomeTabState();
+}
+
+class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
+    final prov = context.watch<AppProvider>();
     final liveEvents = prov.sortedLiveEvents;
     final featuredEvents = prov.featuredLiveEvents;
     final showFeaturedSection = prov.featuredLiveEventsLoading ||
@@ -390,160 +425,257 @@ class _HomeTab extends StatelessWidget {
         ? prov.homeCategoryTiles
         : AppProvider.homeCategories;
 
-    return RefreshIndicator(
-      color: AppColors.accent,
-      onRefresh: prov.refresh,
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        cacheExtent: PerformanceTuning.listCacheExtent,
-        addAutomaticKeepAlives: false,
-        addRepaintBoundaries: true,
-        padding: const EdgeInsets.only(top: 14, bottom: 24),
-        children: [
-          if (prov.channelsLoading && prov.channels.isEmpty)
-            const ChannelListSkeleton(count: 5),
-          if (AdManager.instance.adsEnabled) ...[
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 0, 16, 10),
-              child: AdsterraNativeBanner(
-                height: 100,
-                placement: 'home_native_top',
+    return ValueListenableBuilder<String?>(
+      valueListenable: widget.highlightCategory,
+      builder: (context, highlightCategory, _) {
+        return RefreshIndicator(
+          color: AppColors.accent,
+          onRefresh: prov.refresh,
+          child: Builder(
+            builder: (scrollContext) => CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
               ),
-            ),
-          ],
-          const HomeSectionHeader(
-            title: 'Browse',
-            subtitle: 'Tap a category to explore live channels',
-          ),
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: HomeCategoryGrid(
-              prov: prov,
-              categories: cats,
-              highlightCategory: highlightCategory,
-              onCategoryTap: onCategoryTap,
-            ),
-          ),
-          if (showFeaturedSection) ...[
-            const SizedBox(height: 16),
-            _SectionHeader(
-              title: prov.featuredLiveEventsSectionTitle,
-              trailing: prov.featuredLiveEventsLoading
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.accent,
+              cacheExtent: PerformanceTuning.listCacheExtent,
+              slivers: [
+                SliverToBoxAdapter(
+                  child: HomePromoCarousel(
+                    active: true,
+                    onLiveTabTap: widget.onLiveTabTap,
+                  ),
+                ),
+                if (prov.catalogFromStaleCache)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                      child: Material(
+                        color: AppColors.accent.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.cloud_off_rounded,
+                                size: 18,
+                                color: AppColors.accent,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  prov.channelsError ??
+                                      'Using cached channels. Pull to refresh.',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: context.txt2,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    )
-                  : _LiveBadge(label: '${featuredEvents.length} featured'),
-            ),
-            if (prov.featuredLiveEventsSectionSubtitle.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  prov.featuredLiveEventsSectionSubtitle,
-                  style: TextStyle(fontSize: 11, color: context.txt3),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-            const SizedBox(height: 10),
-            if (prov.featuredLiveEventsLoading &&
-                !prov.hasFeaturedLiveEventsData &&
-                featuredEvents.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  'Loading featured matches…',
-                  style: TextStyle(fontSize: 12, color: context.txt3),
-                ),
-              )
-            else
-              ...featuredEvents.map(
-                (e) => RepaintBoundary(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
                     ),
-                    child: _LiveEventCard(event: e),
+                  ),
+                if (prov.channelsLoading && prov.channels.isEmpty)
+                const SliverToBoxAdapter(child: ChannelListSkeleton(count: 5)),
+              if (AdManager.instance.adsEnabled)
+                SliverToBoxAdapter(
+                  child: LazyAdViewport(
+                    placeholderHeight: 110,
+                    builder: () => const Padding(
+                      padding: EdgeInsets.fromLTRB(16, 0, 16, 10),
+                      child: AdsterraNativeBanner(
+                        height: 100,
+                        placement: 'home_native_top',
+                      ),
+                    ),
+                  ),
+                ),
+              const SliverPadding(
+                padding: EdgeInsets.only(top: 14),
+                sliver: SliverToBoxAdapter(
+                  child: HomeSectionHeader(
+                    title: 'Browse',
+                    subtitle: 'Tap a category to explore live channels',
                   ),
                 ),
               ),
-          ],
-          if (showLiveEventsSection) ...[
-            const SizedBox(height: 16),
-            _SectionHeader(
-              title: 'All Live Events',
-              trailing: prov.liveEventsLoading
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.accent,
-                      ),
-                    )
-                  : _LiveBadge(label: '${liveEvents.length} events'),
-            ),
-            const SizedBox(height: 6),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                'FootyStream + ESPN/Cricbuzz — same match shown once',
-                style: TextStyle(fontSize: 11, color: context.txt3),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const SizedBox(height: 10),
-            if (prov.liveEventsLoading &&
-                !prov.hasLiveEventsData &&
-                liveEvents.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  'Loading live events…',
-                  style: TextStyle(fontSize: 12, color: context.txt3),
-                ),
-              )
-            else
-              ...liveEvents.map(
-                (e) => RepaintBoundary(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    child: _LiveEventCard(event: e),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                sliver: SliverToBoxAdapter(
+                  child: HomeCategoryGrid(
+                    prov: prov,
+                    categories: cats,
+                    highlightCategory: highlightCategory,
+                    onCategoryTap: widget.onCategoryTap,
                   ),
                 ),
               ),
-          ],
-          if (AdManager.instance.adsEnabled) ...[
-            const SizedBox(height: 8),
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 0, 16, 10),
-              child: AdsterraBanner728(placement: 'home_bottom_banner'),
+              if (showFeaturedSection) ...[
+                const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                SliverToBoxAdapter(
+                  child: _SectionHeader(
+                    title: prov.featuredLiveEventsSectionTitle,
+                    trailing: prov.featuredLiveEventsLoading
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.accent,
+                            ),
+                          )
+                        : _LiveBadge(
+                            label: '${featuredEvents.length} featured',
+                          ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (prov.featuredLiveEventsSectionSubtitle.isNotEmpty)
+                          Text(
+                            prov.featuredLiveEventsSectionSubtitle,
+                            style: TextStyle(fontSize: 11, color: context.txt3),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        Text(
+                          prov.featuredLiveEventsStatusLine,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: prov.featuredLiveEventsFromAppwrite
+                                ? AppColors.accent.withValues(alpha: 0.9)
+                                : (prov.featuredLiveEventsError != null
+                                    ? Colors.orange.shade300
+                                    : context.txt3),
+                          ),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (prov.featuredLiveEventsLoading &&
+                    !prov.hasFeaturedLiveEventsData &&
+                    featuredEvents.isEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                      child: Text(
+                        'Loading featured matches…',
+                        style: TextStyle(fontSize: 12, color: context.txt3),
+                      ),
+                    ),
+                  )
+                else
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) => RepaintBoundary(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          child: _LiveEventCard(event: featuredEvents[index]),
+                        ),
+                      ),
+                      childCount: featuredEvents.length,
+                    ),
+                  ),
+              ],
+              if (showLiveEventsSection) ...[
+                const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                SliverToBoxAdapter(
+                  child: _SectionHeader(
+                    title: 'All Live Events',
+                    trailing: prov.liveEventsLoading
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.accent,
+                            ),
+                          )
+                        : _LiveBadge(label: '${liveEvents.length} events'),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+                    child: Text(
+                      'FootyStream + ESPN/Cricbuzz — same match shown once',
+                      style: TextStyle(fontSize: 11, color: context.txt3),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+                if (prov.liveEventsLoading &&
+                    !prov.hasLiveEventsData &&
+                    liveEvents.isEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                      child: Text(
+                        'Loading live events…',
+                        style: TextStyle(fontSize: 12, color: context.txt3),
+                      ),
+                    ),
+                  )
+                else
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) => RepaintBoundary(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          child: _LiveEventCard(event: liveEvents[index]),
+                        ),
+                      ),
+                      childCount: liveEvents.length,
+                    ),
+                  ),
+              ],
+              if (AdManager.instance.adsEnabled)
+                SliverToBoxAdapter(
+                  child: LazyAdViewport(
+                    placeholderHeight: 98,
+                    builder: () => const Padding(
+                      padding: EdgeInsets.fromLTRB(16, 8, 16, 10),
+                      child: AdsterraBanner728(
+                        placement: 'home_bottom_banner',
+                      ),
+                    ),
+                  ),
+                ),
+              const SliverToBoxAdapter(child: SizedBox(height: 72)),
+              ],
             ),
-          ],
-          const SizedBox(height: 72),
-        ],
-      ),
+          ),
+        );
+      },
     );
   }
 }
 
 // ── LIVE NOW TAB ──────────────────────────────────────────────
 class _LiveNowTab extends StatefulWidget {
-  final AppProvider prov;
   final PlayerCallback onPlay;
-  const _LiveNowTab({required this.prov, required this.onPlay});
+  const _LiveNowTab({required this.onPlay});
 
   @override
   State<_LiveNowTab> createState() => _LiveNowTabState();
@@ -557,155 +689,236 @@ class _LiveNowTabState extends State<_LiveNowTab>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final prov = widget.prov;
+    final prov = context.watch<AppProvider>();
     final events = prov.sortedLiveEvents;
     final empty = events.isEmpty;
 
-    return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      children: [
-        _SectionHeader(
-          title: 'All Live Events',
-          trailing: prov.liveEventsLoading
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppColors.accent,
-                  ),
-                )
-              : _LiveBadge(label: '${events.length} events'),
+    return Builder(
+      builder: (context) => CustomScrollView(
+        physics: const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
         ),
-        const SizedBox(height: 10),
+        cacheExtent: PerformanceTuning.listCacheExtent,
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 14),
+              child: _SectionHeader(
+                title: 'All Live Events',
+              trailing: prov.liveEventsLoading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.accent,
+                      ),
+                    )
+                  : _LiveBadge(label: '${events.length} events'),
+            ),
+          ),
+        ),
         if (prov.liveEventsLoading && !prov.hasLiveEventsData && empty)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              'Loading live events…',
-              style: TextStyle(fontSize: 12, color: context.txt3),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+              child: Text(
+                'Loading live events…',
+                style: TextStyle(fontSize: 12, color: context.txt3),
+              ),
             ),
           )
         else if (empty)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              'আজকে কোনো live event নেই',
-              style: TextStyle(fontSize: 12, color: context.txt3),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+              child: Text(
+                'আজকে কোনো live event নেই',
+                style: TextStyle(fontSize: 12, color: context.txt3),
+              ),
             ),
           )
         else
-          ...events.map(
-            (e) => Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: _LiveEventCard(event: e),
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: _LiveEventCard(event: events[index]),
+              ),
+              childCount: events.length,
             ),
           ),
-      ],
+          const SliverToBoxAdapter(child: SizedBox(height: 24)),
+        ],
+      ),
     );
   }
 }
 
 // ── TODAY TAB ─────────────────────────────────────────────────
-class _TodayTab extends StatelessWidget {
-  final AppProvider prov;
+class _TodayTab extends StatefulWidget {
   final PlayerCallback onPlay;
-  const _TodayTab({required this.prov, required this.onPlay});
+  const _TodayTab({required this.onPlay});
+
+  @override
+  State<_TodayTab> createState() => _TodayTabState();
+}
+
+class _TodayTabState extends State<_TodayTab> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      children: [
-        _SectionHeader(
-          title: "Today's Schedule",
-          trailing: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF1B5E20), Color(0xFF0D3D1A)],
-              ),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              'FootyStream · ${DateTime.now().day}/${DateTime.now().month}',
-              style: const TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: AppColors.green,
-              ),
-            ),
-          ),
+    super.build(context);
+    final prov = context.watch<AppProvider>();
+    final matches = prov.todayMatches;
+
+    return Builder(
+      builder: (context) => CustomScrollView(
+        physics: const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
         ),
-        const SizedBox(height: 4),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            'Today: FootyStream schedule merged with ESPN/Cricbuzz scores',
-            style: TextStyle(fontSize: 11, color: context.txt3),
-          ),
-        ),
-        const SizedBox(height: 10),
-        ...prov.todayMatches.map((m) => Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: _TodayCard(
-                match: m,
-                onTap: () => onPlay(
-                  context,
-                  url: m.streamUrl,
-                  title: '${m.teamA} vs ${m.teamB}',
-                  subtitle: '${m.sport} • ${m.channel}',
-                  category: 'Sports',
-                  browseCategory: 'Sports',
+        cacheExtent: PerformanceTuning.listCacheExtent,
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 14),
+              child: _SectionHeader(
+                title: "Today's Schedule",
+              trailing: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF1B5E20), Color(0xFF0D3D1A)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  'FootyStream · ${DateTime.now().day}/${DateTime.now().month}',
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.green,
+                  ),
                 ),
               ),
-            )),
-      ],
+            ),
+          ),
+        ),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+            child: Text(
+              'Today: FootyStream schedule merged with ESPN/Cricbuzz scores',
+              style: TextStyle(fontSize: 11, color: context.txt3),
+            ),
+          ),
+        ),
+        SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              final m = matches[index];
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: _TodayCard(
+                  match: m,
+                  onTap: () => widget.onPlay(
+                    context,
+                    url: m.streamUrl,
+                    title: '${m.teamA} vs ${m.teamB}',
+                    subtitle: '${m.sport} • ${m.channel}',
+                    category: 'Sports',
+                    browseCategory: 'Sports',
+                  ),
+                ),
+              );
+            },
+            childCount: matches.length,
+          ),
+        ),
+          const SliverToBoxAdapter(child: SizedBox(height: 24)),
+        ],
+      ),
     );
   }
 }
 
 // ── UPCOMING TAB ──────────────────────────────────────────────
-class _UpcomingTab extends StatelessWidget {
-  final AppProvider prov;
+class _UpcomingTab extends StatefulWidget {
   final PlayerCallback onPlay;
-  const _UpcomingTab({required this.prov, required this.onPlay});
+  const _UpcomingTab({required this.onPlay});
+
+  @override
+  State<_UpcomingTab> createState() => _UpcomingTabState();
+}
+
+class _UpcomingTabState extends State<_UpcomingTab>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      children: [
-        _SectionHeader(
-          title: 'Upcoming Events',
-          trailing: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-                color: const Color(0xFF1A1A3A),
-                borderRadius: BorderRadius.circular(12)),
-            child: Text('${prov.upcomingMatches.length} events',
-                style: const TextStyle(
+    super.build(context);
+    final prov = context.watch<AppProvider>();
+    final matches = prov.upcomingMatches;
+
+    return Builder(
+      builder: (context) => CustomScrollView(
+        physics: const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
+        ),
+        cacheExtent: PerformanceTuning.listCacheExtent,
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 14),
+              child: _SectionHeader(
+                title: 'Upcoming Events',
+              trailing: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A1A3A),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${matches.length} events',
+                  style: const TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.blue)),
-          ),
-        ),
-        const SizedBox(height: 10),
-        ...prov.upcomingMatches.map((m) => Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: _UpcomingCard(
-                match: m,
-                onTap: () => onPlay(
-                  context,
-                  url: m.streamUrl,
-                  title: '${m.teamA} vs ${m.teamB}',
-                  subtitle: '${m.sport} • ${m.time}',
-                  category: 'Sports',
-                  browseCategory: 'Sports',
+                    color: AppColors.blue,
+                  ),
                 ),
               ),
-            )),
-      ],
+            ),
+          ),
+        ),
+        SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              final m = matches[index];
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: _UpcomingCard(
+                  match: m,
+                  onTap: () => widget.onPlay(
+                    context,
+                    url: m.streamUrl,
+                    title: '${m.teamA} vs ${m.teamB}',
+                    subtitle: '${m.sport} • ${m.time}',
+                    category: 'Sports',
+                    browseCategory: 'Sports',
+                  ),
+                ),
+              );
+            },
+            childCount: matches.length,
+          ),
+        ),
+          const SliverToBoxAdapter(child: SizedBox(height: 24)),
+        ],
+      ),
     );
   }
 }
@@ -719,41 +932,71 @@ class ScoreCardsSection extends StatelessWidget {
   final List<MatchModel> matches;
   final bool loading;
   final PlayerCallback onPlay;
+  final bool showHeader;
+  final bool showEmptyMessage;
 
   const ScoreCardsSection({
     required this.title,
     required this.matches,
     required this.loading,
     required this.onPlay,
+    this.showHeader = true,
+    this.showEmptyMessage = true,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (!loading && matches.isEmpty && !showEmptyMessage) {
+      return const SizedBox.shrink();
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SectionHeader(
-          title: title,
-          trailing: loading
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppColors.accent,
+        if (showHeader && title.trim().isNotEmpty) ...[
+          _SectionHeader(
+            title: title,
+            trailing: loading
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.accent,
+                    ),
+                  )
+                : matches.isNotEmpty
+                    ? _LiveBadge(label: '● ${matches.length} matches')
+                    : null,
+          ),
+          const SizedBox(height: 10),
+        ] else if (loading) ...[
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.accent,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+        ],
+        if (matches.isEmpty)
+          showEmptyMessage
+              ? Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    'আজকে এই সেকশনে কোনো ম্যাচ নেই',
+                    style: TextStyle(fontSize: 12, color: context.txt3),
                   ),
                 )
-              : _LiveBadge(label: '● ${matches.length} matches'),
-        ),
-        const SizedBox(height: 10),
-        if (matches.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              'আজকে এই সেকশনে কোনো ম্যাচ নেই',
-              style: TextStyle(fontSize: 12, color: context.txt3),
-            ),
-          )
+              : const SizedBox.shrink()
         else
           LayoutBuilder(
             builder: (ctx, constraints) {

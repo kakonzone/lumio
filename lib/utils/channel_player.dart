@@ -24,7 +24,8 @@ Future<void> openChannelPlayer(
   /// Open a specific backup link (live-event popup per-link tap).
   String? initialStreamUrl,
 }) async {
-  final links = channel.userStreamLinks;
+  final prov = context.read<AppProvider>();
+  final links = prov.playbackLinksFor(channel);
   if (links.isEmpty || links.first.url.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -36,11 +37,15 @@ Future<void> openChannelPlayer(
     return;
   }
 
-  final prov = context.read<AppProvider>();
   final relatedCategory =
       prov.categoryForRelated(channel, browseCategory: browseCategory);
+  final isGitun = relatedCategory == 'GITUN';
 
   Future<void> pushPlayer() async {
+    if (isGitun) {
+      await prov.ensureGitunChannelsLoaded();
+      if (!context.mounted) return;
+    }
     var startUrl = initialStreamUrl != null && initialStreamUrl.isNotEmpty
         ? initialStreamUrl
         : links.first.url;
@@ -68,6 +73,13 @@ Future<void> openChannelPlayer(
       },
     );
     // #endregion
+    final related = isGitun
+        ? prov.gitunRelatedChannels(
+            currentTitle: channel.name,
+            currentUrl: startUrl,
+          )
+        : null;
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -78,7 +90,7 @@ Future<void> openChannelPlayer(
           category: relatedCategory,
           headers: startLink.headers,
           streamLinks: links,
-          relatedChannels: null,
+          relatedChannels: related,
         ),
       ),
     );
@@ -173,14 +185,24 @@ void openStreamPlayer(
           browseCategory: category.isNotEmpty ? category : null,
         )
       : (category.isNotEmpty ? category : null);
-  final links = channel?.userStreamLinks ??
-      [
-        StreamLink(
-          url: url,
-          label: 'Link 1',
-          headers: channel?.headers ?? const {'User-Agent': 'Mozilla/5.0'},
-        ),
-      ];
+  var links = channel != null
+      ? List<StreamLink>.from(prov.playbackLinksFor(channel))
+      : <StreamLink>[
+          StreamLink(
+            url: url,
+            label: 'Link 1',
+            headers: const {'User-Agent': 'Mozilla/5.0'},
+          ),
+        ];
+  if (links.isEmpty || links.every((l) => l.url.isEmpty)) {
+    links = [
+      StreamLink(
+        url: url,
+        label: 'Link 1',
+        headers: channel?.headers ?? const {'User-Agent': 'Mozilla/5.0'},
+      ),
+    ];
+  }
 
   Future<void> pushPlayer() async {
     var playUrl = links.first.url;

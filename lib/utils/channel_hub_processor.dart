@@ -1,5 +1,6 @@
 import '../models/model.dart';
 import 'ad_debug_log.dart';
+import 'channel_name_normalizer.dart';
 
 /// Splits multi-link "hub" channels (e.g. many Akash TV streams) into a parent
 /// hub + named child channels, and auto-detects similar URL-prefix groups.
@@ -154,19 +155,20 @@ class ChannelHubProcessor {
     }
     if (slugs.toSet().length < minHubStreams) return null;
 
-    final n = c.name.trim().toLowerCase();
+    final displayName = ChannelNameNormalizer.clean(c.name);
+    final n = displayName.trim().toLowerCase();
     if (n.startsWith('stream ') || n.startsWith('multi link')) return null;
 
-    final hubKey = _hubKeyFromPrefix(prefix, c.name);
+    final hubKey = _hubKeyFromPrefix(prefix, displayName);
     return _buildHubFamily(
       hubId: hubKey,
-      hubName: c.name,
+      hubName: displayName,
       category: c.category.isNotEmpty ? c.category : 'Entertainment',
       country: c.country,
       logoUrl: c.logoUrl,
       streams: streams,
       slugOf: (url) => _slugAfterPrefix(url, prefix),
-      childName: (slug) => '${c.name} ${_titleSlug(slug)}',
+      childName: (slug) => '$displayName ${_titleSlug(slug)}',
     );
   }
 

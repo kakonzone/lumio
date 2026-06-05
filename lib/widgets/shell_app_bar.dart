@@ -15,6 +15,10 @@ class ShellAppBar extends StatelessWidget {
   final bool showBack;
   /// Home screen: LUMIO+TV brand dead-center on the bar.
   final bool centerLumioTvBrand;
+  /// Match [Scaffold] body color so no dark strip appears under the bar.
+  final bool blendWithScaffold;
+  /// When [showBack], do not paint [subtitle] under the toolbar (put it in scroll).
+  final bool hideSubtitleInBar;
 
   const ShellAppBar({
     super.key,
@@ -22,6 +26,8 @@ class ShellAppBar extends StatelessWidget {
     this.subtitle,
     this.showBack = false,
     this.centerLumioTvBrand = false,
+    this.blendWithScaffold = false,
+    this.hideSubtitleInBar = false,
   });
 
   void _openFavorites(BuildContext context) {
@@ -36,9 +42,13 @@ class ShellAppBar extends StatelessWidget {
     final prov = context.watch<AppProvider>();
     final favCount = prov.favoriteCount;
 
+    final showSubtitleBelow = subtitle != null &&
+        showBack &&
+        !hideSubtitleInBar;
+
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: context.cardSurface,
+        color: blendWithScaffold ? context.bg : context.cardSurface,
         border: Border(bottom: BorderSide(color: context.brd)),
         boxShadow: [
           BoxShadow(
@@ -49,43 +59,45 @@ class ShellAppBar extends StatelessWidget {
         ],
       ),
       child: SafeArea(
-      bottom: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildTopRow(context, prov, favCount),
-            if (subtitle != null && showBack) ...[
-              const SizedBox(height: 8),
-              OverflowSafeText(
-                subtitle!,
-                style: TextStyle(fontSize: 12, color: context.txt3),
-                maxLines: 2,
-              ),
-            ] else if (subtitle != null && !showBack && !centerLumioTvBrand) ...[
-              const SizedBox(height: 12),
-              if (title != null)
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildTopRow(context, prov, favCount),
+              if (showSubtitleBelow) ...[
+                const SizedBox(height: 6),
                 OverflowSafeText(
-                  title!,
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w800,
-                    color: context.txt,
-                  ),
+                  subtitle!,
+                  style: TextStyle(fontSize: 12, color: context.txt3),
                   maxLines: 1,
                 ),
-              const SizedBox(height: 4),
-              OverflowSafeText(
-                subtitle!,
-                style: TextStyle(fontSize: 12, color: context.txt3),
-                maxLines: 2,
-              ),
+              ] else if (subtitle != null &&
+                  !showBack &&
+                  !centerLumioTvBrand) ...[
+                const SizedBox(height: 12),
+                if (title != null)
+                  OverflowSafeText(
+                    title!,
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                      color: context.txt,
+                    ),
+                    maxLines: 1,
+                  ),
+                const SizedBox(height: 4),
+                OverflowSafeText(
+                  subtitle!,
+                  style: TextStyle(fontSize: 12, color: context.txt3),
+                  maxLines: 2,
+                ),
+              ],
             ],
-          ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -161,7 +173,6 @@ class ShellAppBar extends StatelessWidget {
     );
   }
 
-  /// Scales action row down on narrow widths instead of overflowing [sideSlot].
   Widget _fitRightActions(Widget actions) {
     return FittedBox(
       fit: BoxFit.scaleDown,
@@ -340,5 +351,4 @@ class ShellAppBar extends StatelessWidget {
       ],
     );
   }
-
 }

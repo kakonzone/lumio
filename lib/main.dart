@@ -17,6 +17,7 @@ import 'core/shell_scope.dart';
 import 'theme/app_theme.dart';
 import 'screens/tv_screen.dart';
 import 'screens/news_screen.dart';
+import 'ads/utils/webview_pool.dart';
 import 'screens/other_screens.dart';
 import 'screens/player_screen.dart';
 import 'screens/ads_privacy_screen.dart';
@@ -32,15 +33,17 @@ import 'provider/channels_provider.dart';
 import 'provider/user_state_provider.dart';
 import 'services/iab_consent_bridge.dart';
 import 'services/referral_service.dart';
-import 'ads/utils/webview_pool.dart';
 import 'models/model.dart';
 import 'utils/channel_player.dart';
 import 'utils/debug_log.dart';
 import 'services/lumio_audio_service.dart';
 import 'services/user_preferences.dart';
 import 'config/app_config.dart';
+import 'security/blocked_apps_guard.dart';
 import 'security/security_manager.dart';
 import 'security/ssl_pinning.dart';
+import 'screens/blocked_apps_screen.dart';
+import 'widgets/blocked_apps_overlay.dart';
 import 'services/ad_safety_service.dart';
 import 'services/firebase_bootstrap.dart';
 import 'services/deep_link_service.dart';
@@ -62,12 +65,7 @@ void main() async {
   print('[Lumio] main() starting (release=${AppConfig.isReleaseBuild})');
   SslPinning.assertReleaseConfiguration();
   AdConfig.assertReleaseMonetization();
-  if (AppConfig.isReleaseBuild && !AppConfig.hasStreamTokenBaseUrl) {
-    throw StateError(
-      'STREAM_TOKEN_BASE_URL must be set for release builds '
-      '(see docs/BUILD.md).',
-    );
-  }
+  AppConfig.assertReleaseStreamTokenConfigured();
   debugPrint(AdConfig.dumpRedacted());
   if (!kReleaseMode && AdConfig.blockAdsInThisBuild) {
     debugPrint(
@@ -82,31 +80,31 @@ void main() async {
   final securityOk = await SecurityManager.instance.initialize();
   // ignore: avoid_print
   print('[Lumio] SecurityManager.initialize() => $securityOk');
-  await Future.wait([
-    UserPreferences.ensureInit(),
-    NotificationService.initialize(),
-    FirebaseBootstrap.initialize(),
-    AttributionService.instance.restorePendingFromPrefs(),
-  ]);
+
+  if (BlockedAppsGuard.shouldEnforce()) {
+    final blockedLabels = await BlockedAppsGuard.installedLabels();
+    if (blockedLabels.isNotEmpty) {
+      // ignore: avoid_print
+      print('[Lumio] blocked apps detected: ${blockedLabels.length}');
+      runApp(
+        BlockedAppsScreen(
+          appLabels: blockedLabels,
+          onCleared: () => _runLumioApp(),
+        ),
+      );
+      return;
+    }
+  }
+
+  _runLumioApp();
+}
+
+void _runLumioApp() async {
+  await UserPreferences.ensureInit();
   AdsterraNativeCache.registerConsentListener();
-  if (FirebaseBootstrap.isInitialized) {
-    unawaited(AdSafetyService.instance.prefetchRemoteConfig());
-    unawaited(WebViewPool.instance.ensureRemoteConfigLoaded());
-  }
-  unawaited(ensureLumioAudioService());
-  unawaited(DeepLinkService.instance.initialize());
-  unawaited(AppSessionTracker.instance.onAppLaunch());
-  unawaited(IabConsentBridge.instance.load());
-  unawaited(ReferralService.instance.load());
-  if (Platform.isAndroid) {
-    unawaited(NotificationService.requestPermissions());
-  }
   unawaited(
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]),
   );
-  if (Platform.isAndroid) {
-    AppStorageGuard.schedule();
-  }
   // ignore: avoid_print
   print('[Lumio] runApp()');
   runApp(
@@ -126,6 +124,28 @@ void main() async {
       child: const LumioApp(),
     ),
   );
+  unawaited(_deferredBootstrap());
+}
+
+Future<void> _deferredBootstrap() async {
+  await Future.wait([
+    NotificationService.initialize(),
+    FirebaseBootstrap.initialize(),
+    AttributionService.instance.restorePendingFromPrefs(),
+  ]);
+  if (FirebaseBootstrap.isInitialized) {
+    unawaited(AdSafetyService.instance.prefetchRemoteConfig());
+    unawaited(WebViewPool.instance.ensureRemoteConfigLoaded());
+  }
+  unawaited(ensureLumioAudioService());
+  unawaited(DeepLinkService.instance.initialize());
+  unawaited(AppSessionTracker.instance.onAppLaunch());
+  unawaited(IabConsentBridge.instance.load());
+  unawaited(ReferralService.instance.load());
+  if (Platform.isAndroid) {
+    unawaited(NotificationService.requestPermissions());
+    AppStorageGuard.schedule();
+  }
 }
 
 class LumioApp extends StatelessWidget {
@@ -133,49 +153,55 @@ class LumioApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final prov = context.watch<AppProvider>();
-    final isDark = prov.isDark;
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
-    ));
-    return MaterialApp(
-      title: 'Lumio',
-      debugShowCheckedModeBanner: false,
-      theme: prov.isDark ? AppTheme.dark : AppTheme.light,
-      builder: (context, child) {
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            if (child != null) child,
-            const Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: AdsDebugBanner(),
-            ),
-          ],
+    return Selector<AppProvider, bool>(
+      selector: (_, p) => p.isDark,
+      builder: (context, isDark, _) {
+        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness:
+              isDark ? Brightness.light : Brightness.dark,
+        ));
+        return MaterialApp(
+          title: 'Lumio',
+          debugShowCheckedModeBanner: false,
+          theme: isDark ? AppTheme.dark : AppTheme.light,
+          builder: (context, child) {
+            return BlockedAppsOverlay(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (child != null) child,
+                  const Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: AdsDebugBanner(),
+                  ),
+                ],
+              ),
+            );
+          },
+          initialRoute: '/',
+          onGenerateRoute: (settings) {
+            switch (settings.name) {
+              case '/':
+                return PageRouteBuilder(
+                  settings: settings,
+                  pageBuilder: (_, __, ___) => const SplashScreen(),
+                );
+              case '/home':
+                return PageRouteBuilder(
+                  settings: settings,
+                  pageBuilder: (_, __, ___) => const MainShell(),
+                  transitionsBuilder: (_, animation, __, child) =>
+                      FadeTransition(opacity: animation, child: child),
+                  transitionDuration: const Duration(milliseconds: 200),
+                );
+              default:
+                return _onGenerateRoute(settings);
+            }
+          },
         );
-      },
-      initialRoute: '/',
-      onGenerateRoute: (settings) {
-        switch (settings.name) {
-          case '/':
-            return PageRouteBuilder(
-              settings: settings,
-              pageBuilder: (_, __, ___) => const SplashScreen(),
-            );
-          case '/home':
-            return PageRouteBuilder(
-              settings: settings,
-              pageBuilder: (_, __, ___) => const MainShell(),
-              transitionsBuilder: (_, animation, __, child) =>
-                  FadeTransition(opacity: animation, child: child),
-              transitionDuration: const Duration(milliseconds: 200),
-            );
-          default:
-            return _onGenerateRoute(settings);
-        }
       },
     );
   }
@@ -291,6 +317,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      WebViewPool.instance.releasePlacementsForTab(_navIdx);
       unawaited(AdManager.instance.maybeShowPopunder());
       if (!AdManager.instance.isReady) {
         unawaited(
@@ -389,8 +416,9 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final prov = context.watch<AppProvider>();
-    return ShellScope(
+    return Selector<AppProvider, int>(
+      selector: (_, p) => p.liveChannels.length,
+      builder: (context, liveCount, _) => ShellScope(
       scaffoldKey: _scaffoldKey,
       openDrawer: _openDrawer,
       child: PopScope(
@@ -469,7 +497,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
               ],
               MainShellBottomNav(
                 currentIndex: _navIdx,
-                liveChannelCount: prov.liveChannels.length,
+                liveChannelCount: liveCount,
                 onTap: (idx) {
                   if (idx == 1 && _lastNavIdx != 1) {
                     unawaited(
@@ -485,6 +513,9 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
                       _setDrawerSelected(AppDrawerDestination.sports);
                     }
                   });
+                  WebViewPool.instance.releasePlacementsForTab(idx);
+                  final prov = context.read<AppProvider>();
+                  if (idx == 2) prov.onLiveTabSelected();
                   if (idx == 3) prov.ensureMatchesLoaded();
                 },
               ),
@@ -492,6 +523,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
           ),
         ),
       ),
+    ),
     );
   }
 

@@ -106,11 +106,15 @@ class ScreenStatChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: chips.map((c) => _StatChip(icon: c.icon, label: c.label)).toList(),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Center(
+        child: Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 8,
+          runSpacing: 8,
+          children:
+              chips.map((c) => _StatChip(icon: c.icon, label: c.label)).toList(),
+        ),
       ),
     );
   }
@@ -168,21 +172,11 @@ class SectionScreenHeader extends StatelessWidget {
     final isDark = context.isDark;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [
-                  AppColors.accent.withValues(alpha: 0.12),
-                  Colors.transparent,
-                ]
-              : [
-                  AppColors.accentLight,
-                  Colors.transparent,
-                ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: isDark
+            ? AppColors.accent.withValues(alpha: 0.1)
+            : AppColors.accentLight.withValues(alpha: 0.65),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

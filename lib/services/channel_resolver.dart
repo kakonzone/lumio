@@ -1,4 +1,5 @@
 import '../models/model.dart';
+import '../utils/stream_url_upgrade.dart';
 import 'stream_token_service.dart';
 
 /// Resolves playback URLs for protected channels before opening the player.
@@ -21,9 +22,10 @@ class ChannelResolver {
     required String embeddedUrl,
     Duration tokenTimeout = const Duration(seconds: 2),
   }) async {
-    if (!requiresSignedToken(embeddedUrl)) {
+    final directUrl = StreamUrlUpgrade.preferHttps(embeddedUrl);
+    if (!requiresSignedToken(directUrl)) {
       return ChannelPlaybackResolution(
-        url: embeddedUrl,
+        url: directUrl,
         usedToken: false,
         tokenUnavailable: false,
       );
@@ -33,7 +35,7 @@ class ChannelResolver {
     String? signedUrl;
     try {
       signedUrl = await StreamTokenService.instance
-          .fetchToken(channelId, originalUrl: embeddedUrl)
+          .fetchToken(channelId, originalUrl: directUrl)
           .timeout(tokenTimeout);
     } catch (_) {
       signedUrl = null;
@@ -47,9 +49,9 @@ class ChannelResolver {
     }
 
     return ChannelPlaybackResolution(
-      url: embeddedUrl,
+      url: directUrl,
       usedToken: false,
-      tokenUnavailable: false,
+      tokenUnavailable: true,
     );
   }
 }

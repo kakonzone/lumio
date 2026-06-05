@@ -10,8 +10,8 @@
 
 | APK | CPU | Typical download |
 |-----|-----|------------------|
-| `app-arm64-v8a-release.apk` | 64-bit (most phones) | **~22–40 MB** |
-| `app-armeabi-v7a-release.apk` | 32-bit (older phones) | **~22–40 MB** |
+| `app-arm64-v8a-release.apk` | 64-bit (most phones) | **~20–35 MB** |
+| `app-armeabi-v7a-release.apk` | 32-bit (older phones) | **~22–38 MB** |
 
 ```bash
 ./tool/build_release_apk.sh
@@ -29,14 +29,14 @@ Same `secrets.json` as dev (`--dart-define-from-file`). Build fails if ad keys a
 |------|---------|----------|
 | **split** (default) | `./tool/build_release_apk.sh` | Smallest per-device download (recommended sideload) |
 | **fat** | `BUILD_APK_MODE=fat ./tool/build_release_apk.sh` | One APK, both ABIs — **~45–55 MB** |
-| **arm64 only** | `BUILD_APK_MODE=arm64 ./tool/build_release_apk.sh` | Smallest single file for 64-bit-only audience |
+| **arm64 only** (recommended sideload) | `BUILD_APK_MODE=arm64 ./tool/build_size_apk.sh` | One APK, 64-bit only — **~20–35 MB** |
 | **universal 32** | `BUILD_APK_MODE=universal ./tool/build_release_apk.sh` | 32-bit compat single APK |
 
 ## Installed storage target
 
 | Part | Size |
 |------|------|
-| Installed APK (one ABI) | ~22–40 MB download → similar code size |
+| Installed APK (one ABI) | ~20–35 MB download → similar code size |
 | App **data** (cache, WebView, images) | **≤ ~22 MB** ([AppStorageGuard]) |
 | **Total in Settings** | **~60–80 MB** typical |
 

@@ -1,11 +1,11 @@
 # Lumio Sports TV — Forensic Technical & Business Audit
 
 **Audit date:** 2026-05-28  
-**Last updated:** 2026-06-02 **rev.5** — **Section 25** (GitHub-only catalog, split APK 32/64, ads secrets validation, matcher model); **Section 24** UI/size; **Section 23** sideload ads  
+**Last updated:** 2026-06-04 **rev.9** — **Section 28** forensic P0/P1 fix sprint (stream token, HTTP, CAP, Appwrite cache)  
 **Scope:** Full repo (`lib/`, `android/`, `assets/`, `pubspec.yaml`, Gradle, manifests, docs)  
 **Distribution model:** Sideload APK (not Play Store) — Facebook / WhatsApp / Telegram / landing page  
 **Monetization focus:** IronSource LevelPlay + Unity (mediation only) + Adsterra + Monetag  
-**Infrastructure note:** Cloudflare usage audited — see **Section 13**
+**Infrastructure note:** Channel catalog + featured config on **Appwrite** (Guests Read) — see **Section 13**. **No Cloudflare** in the app ship path.
 
 **Method:** Static code review + build artifacts on disk + fix-sprint verification (`flutter test` 113/113). No production backend access. Values marked **ESTIMATE** where not measured on device.
 
@@ -25,7 +25,7 @@
 | 10 | Gap analysis (P0/P1/P2 + Phase 10) |
 | 11 | Code quality |
 | 12 | Final verdict |
-| 13 | Cloudflare |
+| 13 | Appwrite (catalog backend) |
 | 14 | Firebase & remote services |
 | 15 | Monetization beyond ads (coins, ad-free — no store IAP) |
 | 16 | Native Android, CI/CD, release pipeline |
@@ -38,6 +38,9 @@
 | 23 | Sideload ads verification (2026-06-01) |
 | 24 | Product UI, size & performance sprint (2026-06-01) |
 | 25 | Catalog, APK split, ads & matcher sprint (2026-06-02) |
+| 26 | Anti-analysis: blocked-app gate + Play Integrity roadmap (2026-06-04) |
+| 27 | UI density, lazy ads & APK size sprint (2026-06-04) |
+| 28 | Forensic P0/P1 fix sprint (2026-06-04) |
 
 ---
 
@@ -48,7 +51,7 @@
 | Flutter SDK | **3.41.6** (stable) | `flutter --version` |
 | Dart SDK | **3.11.4** | `flutter --version` |
 | compileSdk / targetSdk / minSdk | **36 / 36 / 21+** | `minSdk = maxOf(21, flutter.minSdkVersion)` — **Android 5.0 (Lollipop)+** (`android/app/build.gradle.kts`) |
-| lib `.dart` files | **157** | `find lib -name '*.dart'` (post fix-sprint) |
+| lib `.dart` files | **207** | `find lib -name '*.dart'` (2026-06-04) |
 | lib LOC (approx.) | **~36,000+** | `wc -l` on `lib/**/*.dart` (new services/providers) |
 | State management | **Provider** (`MultiProvider`) | `lib/main.dart` — `ChannelsProvider`, `CoinsProvider`, `AdsSettingsProvider`, `AppProvider` |
 | Architecture | **Pragmatic layered monolith** — screens + `AppProvider` god-state + ad singletons | No Clean/MVVM boundaries; ad stack is well-factored into `lib/ads/` |
@@ -79,14 +82,14 @@ Navigation shell: `lib/main.dart:190-195` — `IndexedStack` with five tabs.
 | Item | Detail |
 |------|--------|
 | **File** | `lib/screens/tv_screen.dart` (~1.9k+ LOC) |
-| **Shell** | Search bar → **`HomePromoCarousel`** → sub-tabs **Home / Live / Today / Soon** (gradient pills + icons) |
-| **Promo carousel** | FIFA WC26 asset banners + legacy gradient slides; tap → Sports / Live tab / Entertainment (`lib/widgets/home_promo_carousel.dart`) |
+| **Shell** | **`NestedScrollView`** — search + tab bar pinned; tab bodies scroll independently (`tv_screen.dart`) |
+| **Promo carousel** | FIFA WC26 **WebP** banners + gradient slides; promo scrolls **inside Home tab only** (`home_promo_carousel.dart`) |
 | **Browse grid** | **`HomeCategoryGrid`** — 3×2 gradient category tiles, emoji, LIVE pulse, channel counts (`lib/widgets/home_category_grid.dart`) |
 | **All Live Events** | Gradient match cards, team flags (`TeamAvatar`), tap → channel dialog — **all links unlocked** (no match-started / health gate) |
 | **Schedules** | **FootyStream** `/pk` + `/today` merged with ESPN/Cricbuzz via `ScheduleMerge` + `LiveEventsService` (`lib/services/footystream_service.dart`) |
 | **Channel matching** | `MatchChannelMatcher.channelPoolFor` — Sports + regional cats (BD/PK/IN/EN); team name in channel metadata scoring |
 | **Working** | Category drill-down, favorites hooks, `openChannelPlayer`, fast catalog + background full merge (`AppProvider.init`) |
-| **Ads** | `AdsterraNativeBanner`, `AdsterraBanner728` (`home_bottom_banner`), `FloatingNativeCard` (`home_floating_native`), LevelPlay banner via shell |
+| **Ads** | **`LazyAdViewport`** / `LazyAdsterra*` (`placeholderHeight: 0` off-screen) — native top + 728 bottom; LevelPlay shell banner |
 | **Loading / error** | **Yes** — `RefreshIndicator` + `ChannelListSkeleton` |
 | **Pull-to-refresh** | **Yes** |
 | **Offline cache** | **Partial** — GitHub M3U cached 1h (`SpecialLinkConfig.gitunCacheTtl`) + in-memory catalog; no full offline playback |
@@ -96,20 +99,21 @@ Navigation shell: `lib/main.dart:190-195` — `IndexedStack` with five tabs.
 
 | Item | Detail |
 |------|--------|
-| **File** | `lib/screens/other_screens.dart` (Sports section ~line 180+) |
-| **Working** | Live scores, match grouping, channel shortcuts, sports-priority sorting |
-| **Ads** | `AdsterraBanner728` (`sports_top`), injected natives, `FloatingNativeCard` (`sports_floating_native`) |
+| **File** | `lib/screens/other_screens.dart` (`SportsScreen` ~147+) |
+| **Working** | Sport filter pills (All / Cricket / Football / …); **3×N gradient category grid** on **All**; tap sport → filtered channel list with priority sort |
+| **Removed (rev.8)** | **“All sports channels”** full browse list under grid — redundant with grid drill-down |
+| **Ads** | `LazyAdsterraBanner728` (`sports_top`); native **`sports_categories`** below grid; list natives when filtered; `TabAdOverlay` floating native |
 | **Loading / error** | **Yes** — skeletons + refresh |
-| **Pull-to-refresh** | **Yes** (`RefreshIndicator` ~235) |
+| **Pull-to-refresh** | **Yes** |
 | **Skeleton** | **Yes** (`ChannelListSkeleton`, `CategoryGridSkeleton`) |
 
 ### LIVE (`LiveScreen`)
 
 | Item | Detail |
 |------|--------|
-| **File** | `lib/screens/other_screens.dart` (Live section) |
-| **Working** | Live events list, stream links, tap-to-play |
-| **Ads** | `AdsterraBanner728` (`live_top`), list natives |
+| **File** | `lib/screens/other_screens.dart` (`LiveScreen` ~538+) |
+| **Working** | **`ScreenStatChips`** (live / sports / movies counts, **centered**); TOP SPORTS + regional HLS groups + movies; `LiveTabChannels` / `LiveNavTopSports` |
+| **Ads** | `LazyAdsterraBanner728` (`live_top`); `AdListInjector` natives in flattened list |
 | **Loading / error** | **Yes** |
 | **Pull-to-refresh** | **Yes** |
 | **Skeleton** | **Yes** |
@@ -119,11 +123,22 @@ Navigation shell: `lib/main.dart:190-195` — `IndexedStack` with five tabs.
 | Item | Detail |
 |------|--------|
 | **File** | `lib/screens/news_screen.dart`, `lib/screens/news_article_reader_screen.dart` |
-| **Working** | RSS/API news feed, article reader, ad injection in list (`lib/ads/ad_placement_news.dart`) |
-| **Ads** | `AdsterraNativeBanner`, sticky `AdsterraBanner728` (`news_top_sticky`) |
+| **Working** | Category pills (All, Top Stories, Cricket, …); optional Premier scores; World Cup/Cricket chips; hero + article list |
+| **Ads** | **Immediately after category nav** — `LazyAdsterraBanner728` + `LazyAdsterraNativeBanner` (`news_headlines`); inline via `ad_placement_news.dart` |
+| **Layout** | Fixed **`ShellAppBar`** + scroll body (no duplicate sticky header gap) |
 | **Loading / error** | **Yes** — refresh on feed |
 | **Pull-to-refresh** | **Yes** |
 | **Skeleton** | **Partial** (list-level; not as heavy as HOME) |
+
+### SPECIAL LINK (`SpecialLinkListScreen`)
+
+| Item | Detail |
+|------|--------|
+| **File** | `lib/screens/special_link/special_link_list_screen.dart` (`SpecialLinkHubScreen` typedef) |
+| **Working** | GITUN M3U channels only; `GitunPlaylistService` + `SpecialLinkCache` (1h TTL) |
+| **Shell** | **`ShellPageScaffold`** — channel count as **`ShellAppBar` subtitle** (no extra scroll gap under bar) |
+| **Ads** | `LazyAdsterraBanner728` (`special_link_top`); list natives via `AdListInjector` |
+| **Empty state** | `SizedBox.shrink()` — no tall placeholder under app bar |
 
 ### CATEGORIES (`CategoriesScreen`)
 
@@ -215,7 +230,7 @@ Navigation shell: `lib/main.dart:190-195` — `IndexedStack` with five tabs.
 | WebView (visible) | **`webview_flutter`** — `AdsterraWebView` | `lib/ads/adsterra/adsterra_webview.dart:74-99` |
 | Headless rotation | **`flutter_inappwebview`** — `HeadlessInAppWebView` | `lib/ads/background_ad_engine.dart:164+` |
 | Direct link / browser | `url_launcher` + `external_url_launcher` MethodChannel | `lib/ads/adsterra/adsterra_direct_link.dart`, manifest queries |
-| Placements (sample) | HOME/Sports/Live/News natives & 728 banners; global social bar; 1×1 popunder host | `tv_screen.dart`, `other_screens.dart`, `news_screen.dart`, `main.dart:394-400` |
+| Placements (sample) | HOME/Sports/Live/News/Special Link via **`LazyAdsterra*`**; global social bar; 1×1 popunder host | `lazy_adsterra_strip.dart`, `tv_screen.dart`, `other_screens.dart`, `news_screen.dart` |
 | Placeholder URLs in source | **Debug-only** (release blocked) | `_debugPlaceholderDirectLinks` / `_debugPlaceholderSmartlinks` in `ad_config.dart`; `AdConfig.assertReleaseMonetization()` in `main.dart` throws if placeholders or no monetization config in release |
 
 ### 3.4 Monetag (PropellerAds-family)
@@ -346,7 +361,8 @@ Assumptions: 8–12 min session, ads enabled, South Asia traffic, aggressive mod
 | **Underlying player** | libmpv (via media_kit) — **not** ExoPlayer directly in Dart | — |
 | **Stream types** | Primarily **HLS** (`.m3u8`); some HTTP origins | GitHub playlist `allchannelking.m3u8` (~700+ channels) |
 | **Buffering / retry** | **YES** — `_bufferingTimeout` 12s, `_maxFailoverAttempts = 3` | `player_screen.dart:147-152` |
-| **Quality switching** | **Partial** — `hls_quality_service.dart` exists; UX varies by source |
+| **Quality switching** | **Yes** — manual 540p / 720p / 1080p; **default 540p** on mobile; auto-clamp 720p without Wi‑Fi + charging |
+| **Android decode** | **`hwdec=mediacodec`** (H.264/HEVC/VP9/AV1); probe/prewarm gated to idle playback | `player_screen.dart`, `lib/core/perf/player_tuning_notes.md` |
 | **Origin** | **Mixed CDN + direct IPs** — cleartext allowlist for legacy hosts | `network_security_config.xml` + `tool/gen_network_security_config.py` |
 | **HTTP in `app_provider.dart`** | **~2** references (not embedded catalog) | Catalog URLs live in remote M3U only |
 | **Latency** | **ESTIMATE 4–15s** start (HLS + HTTP origins + token round-trip) | — |
@@ -355,24 +371,22 @@ Assumptions: 8–12 min session, ads enabled, South Asia traffic, aggressive mod
 | **Token protection** | **Stronger client-side** | `StreamTokenService` — **pinned Dio** (`SecureDio.createForBaseUrl`), **3× retry**, 8s timeout; `ChannelResolver`; requires live `STREAM_TOKEN_BASE_URL` |
 | **Credentialed URLs in source** | **0** `user:pass@` in `lib/` | Grep clean |
 | **Stability rating** | **5/10** | Strong player logic undermined by HTTP origins, cleartext hosts, token backend not guaranteed in ops |
-| **Cloudflare as stream/CDN host** | **Partial** | At least one HLS on `*.pages.dev`; channel list Worker — Section 13 |
+| **Catalog backend** | **Appwrite** | `CatalogService` → `AppwriteService` — Section 13 (not Cloudflare) |
 
-### 4.1 Data sources (channel catalog pipeline) — **rev.5**
+### 4.1 Data sources (channel catalog pipeline) — **rev.7**
 
 | Source | Priority | Evidence |
 |--------|----------|----------|
-| **GitHub M3U (single source)** | **Only** | `SpecialLinkConfig.primaryPlaylistPageUrl` → `kakonzone/allchannelking.m3u8` |
-| Loader | `GitunPlaylistService.loadChannels` → raw GitHub URL | `lib/services/special_link/gitun_playlist_service.dart` |
-| Facade | `CatalogService.loadCatalog` | `lib/services/catalog_service.dart` |
-| UI state | `AppProvider.loadChannels(forceRefresh:)` | `lib/provider/app_provider.dart` (~939 LOC) |
-| Cache | **1 hour** TTL; pull-to-refresh bypasses | `SpecialLinkConfig.gitunCacheTtl` |
-| Channel IDs | Prefix `ack` per Gitun row | `gitun_playlist_service.dart` |
-| **Removed from ship path** | — | Embedded `_hardcodedChannels`; bundled `user_playlist.m3u` / `scanned_iptv.m3u`; CricHD; in-app paste lists; Worker merge in `AppProvider` |
-| `RemoteChannelsService` | **Code remains**; **not** called by catalog | `REMOTE_CHANNELS_URL` still in `secrets.json` for future/ops |
+| **Appwrite Databases** | **Primary (main app)** | `CatalogService.loadCatalog` → `AppwriteService.fetchChannels` — `lib/services/catalog_service.dart` |
+| Collections | `channels` + `app_config` (featured live events) | `lib/config/appwrite_config.dart` |
+| Auth model | **Guests Read only** — no API key in APK | `lib/services/appwrite_service.dart`, `docs/SECRETS.md` |
+| UI state | `AppProvider` loads via `CatalogService` | `lib/provider/app_provider.dart` — comment: “Main catalog: Appwrite only” |
+| **GITUN / GitHub M3U** | **Secondary** (Special Link browse) | `GitunPlaylistService` — not the home/sports/live catalog |
+| **Removed / legacy** | — | `RemoteChannelsService` + `REMOTE_CHANNELS_URL` (old Worker URL) — **not** used by `CatalogService`; embedded `_hardcodedChannels` removed from ship path |
 | Stream token API | Optional signing | `StreamTokenService` — `STREAM_TOKEN_BASE_URL` |
 | Stream health scan | After catalog load | `stream_health_service.dart` |
 
-**Ops:** Update channels by pushing to GitHub repo; app picks up within TTL or on user refresh (not instant).
+**Ops:** Update main channels in **Appwrite Console** (`iptv_main` / `channels`); featured cards via `app_config` document keys. GITUN playlist still updated via GitHub push when that hub is used.
 
 ### 4.2 Scores / matches (adjacent to LIVE)
 
@@ -442,10 +456,13 @@ Assumptions: 8–12 min session, ads enabled, South Asia traffic, aggressive mod
 
 | Check | Status | Evidence |
 |-------|--------|----------|
-| Root / emulator / debugger / Frida / Xposed | **YES** | `security_manager.dart:88-100` |
-| VPN block | **Off by default** | `security_config.dart:19` — `blockVpn = false` |
-| APK signature check | **Optional** (empty hash = skip) | `security_config.dart:32` |
-| Play Integrity | **Gated (optional)** | `PlayIntegrityService` — active when `PLAY_INTEGRITY_CLOUD_PROJECT_NUMBER` set; native bridge pending v1.1 (`docs/PLAY_INTEGRITY_OPTION_B.md`) |
+| Root / emulator / debugger / Frida / Xposed | **YES** | `security_manager.dart` — 60s watchdog; strict release → `exit(1)` |
+| Native anti-tamper (JNI) | **YES** | `liblumio_security.so` — ptrace + `/proc/self/maps` Frida scan (`secrets.cpp`) |
+| **Conflicting-app blocklist** | **YES (2026-06-04)** | `BlockedAppDetector.kt` — 17 XOR-encoded packages; startup gate + resume overlay |
+| VPN block | **Off by default** | `security_config.dart` — `blockVpn = false` |
+| APK signature check | **Optional** (empty hash = skip) | `security_config.dart` — `expectedApkSignatureSha256` |
+| Play Integrity (client) | **Disabled v1.0** | Option B — no `X-Integrity-Token`; `PlayIntegrityService` stub until v1.1 (`docs/PLAY_INTEGRITY_OPTION_B.md`) |
+| Play Integrity (server) | **NOT DEPLOYED** | Decode endpoint planned on `CAP_BASE_URL` / stream API — **not** Appwrite catalog (`docs/PLAY_INTEGRITY_SERVER.md`) |
 
 ### 5.6 Storage
 
@@ -466,7 +483,22 @@ Assumptions: 8–12 min session, ads enabled, South Asia traffic, aggressive mod
 
 Declared: `INTERNET`, `ACCESS_NETWORK_STATE`, `ACCESS_WIFI_STATE`, `AD_ID`, `POST_NOTIFICATIONS`, media foreground service, `WAKE_LOCK` — **reasonable for streaming + ads**; no `READ_CONTACTS` / `SMS`. **Not over-requested** for stated features.
 
-### 5.9 Risk score: **HIGH**
+### 5.9 Conflicting-app gate (anti-analysis) — **rev.6**
+
+| Item | Detail |
+|------|--------|
+| **Trigger** | HttpCanary, PCAPdroid, Magisk, LSPosed, HTTP Toolkit, Parallel/Dual Space, etc. (17 packages) |
+| **Native scan** | `BlockedAppDetector.kt` — XOR `@ 0xA7` (matches `secrets.cpp` key); `PackageManager.getPackageInfo` |
+| **Manifest visibility** | `<queries><package …/></queries>` per blocked package — Android 11+ (`AndroidManifest.xml`) |
+| **Flutter gate** | `main()` → `BlockedAppsGuard` before `runApp`; full-screen Bengali UI (`blocked_apps_screen.dart`) |
+| **Runtime re-check** | `BlockedAppsOverlay` on app resume (`widgets/blocked_apps_overlay.dart`) |
+| **User actions** | **আনইনস্টল করুন** → `Settings.ACTION_APPLICATION_DETAILS_SETTINGS`; **বন্ধ করুন** → `SystemNavigator.pop()` |
+| **MethodChannel** | `findBlockedAppLabels`, `openFirstBlockedAppUninstall` on `com.lumio.security/native` |
+| **Config** | `SecurityConfig.blockConflictingApps = true`; bypass: `kDebugMode` + `bypassChecksInDebug`, or `LUMIO_SIDELOAD_DEV` |
+| **Trust level** | **Client-only** — patchable; pairs with server attestation (v1.1) for real stream protection |
+| **Pro pattern gap** | Local gate ≠ server deny — stream tokens still need Play Integrity decode on backend |
+
+### 5.10 Risk score: **HIGH** (unchanged overall)
 
 | # | Vulnerability | Severity |
 |---|---------------|----------|
@@ -475,6 +507,7 @@ Declared: `INTERNET`, `ACCESS_NETWORK_STATE`, `ACCESS_WIFI_STATE`, `AD_ID`, `POS
 | 3 | Ad WebViews with unrestricted JS + third-party ad scripts — WebView supply-chain | High |
 | 4 | No licensed CMP — TC string storage only | High (business) |
 | 5 | Sideload + aggressive ad UX — store/network ban risk | Medium–High |
+| 6 | Blocked-app gate bypassable — no server Play Integrity yet | Medium (mitigated for casual sniffers) |
 
 ---
 
@@ -482,7 +515,7 @@ Declared: `INTERNET`, `ACCESS_NETWORK_STATE`, `ACCESS_WIFI_STATE`, `AD_ID`, `POS
 
 | Item | Finding |
 |------|---------|
-| **APK download (release)** | **Target 25–38 MB** per ABI — `tool/build_release_apk.sh`, `tool/build_size_apk.sh` (`--split-per-abi`, arm64 default, obfuscate, tree-shake-icons) |
+| **APK download (release)** | **Target 20–35 MB** per ABI — `MIN_APK_MB=20` `MAX_APK_MB=35` in `tool/build_release_apk.sh`; `--split-per-abi` or `BUILD_APK_MODE=arm64` for single 64-bit file |
 | **Installed on device** | **Target ~60–80 MB** — APK + native libs + **`AppStorageGuard`** soft 50 MB / hard 80 MB cache budget |
 | **32-bit / Android 5–7** | **Optional** `BUILD_LEGACY_ABI=true` → `armeabi-v7a` + `arm64-v8a` APKs |
 | Debug APK | **~234 MB** on disk (`app-debug.apk`) — not ship artifact |
@@ -594,7 +627,7 @@ See `docs/PHASE10_CLOSEOUT.md`, `FIX_REPORT.md`.
 |---|------|-------------|-----------------|
 | 6 | HTTP→HTTPS hygiene | **Script** — `scripts/fix_http_streams.sh` | Migrate top World Cup HTTP streams; shrink NSC allowlist |
 | 7 | IAB TCF | **Partial** — `IabConsentBridge` | Licensed CMP or UMP when ready for UK/US |
-| 8 | Remote channels Worker | **Done** — `REMOTE_CHANNELS_URL`, SecureDio, ETag | Optional Worker host pins |
+| 8 | Appwrite catalog | **Done** — `AppwriteService`, Guests Read | Console permissions + collection schema; drop `REMOTE_CHANNELS_URL` from ops docs |
 | 9–10 | God-file split | **Partial** — `player_screen_widgets.dart`, split providers | `player_screen` ~3181 LOC; `app_provider` ~3456 LOC remain |
 | 11 | Ad fill analytics | **Done** — `ad_fill_analytics.dart`, BigQuery doc | Wire waterfall calls if not already via `AdAnalytics` |
 
@@ -607,7 +640,8 @@ See `docs/PHASE10_CLOSEOUT.md`, `FIX_REPORT.md`.
 | 14 | i18n | **Scaffold** — ARB + `l10n.yaml` | BN/HI/UR strings + UI wiring |
 | 15 | Accessibility | **Partial** — consent `Semantics` | Full screen reader pass |
 | 16 | app-ads.txt | **Done** in repo — `legal/app-ads.txt` | Host at `https://lumio.app/app-ads.txt` |
-| 17 | Play Integrity | **Gated** — `play_integrity_service.dart` | Set `PLAY_INTEGRITY_CLOUD_PROJECT_NUMBER` + native bridge v1.1 |
+| 17 | Play Integrity | **Gated** — client Option B off; server decode not deployed | v1.1: restore native bridge + `CAP_BASE_URL` decode (not Appwrite catalog) |
+| 19 | Conflicting-app blocklist | **Done (client)** — Section 5.9 | v1.1: combine with server attestation for stream/cap gate |
 | 18 | WebView pool RC | **Done** — RC key + memory pressure | Set `webview_pool_max_concurrent` in Firebase RC |
 
 ### Phase 10 (reference)
@@ -688,80 +722,63 @@ Details: `docs/PHASE10_CLOSEOUT.md`, `docs/PHASE10_TASK_[1-5]_VERIFICATION.md`.
 
 ---
 
-## SECTION 13 — Cloudflare Usage Audit
+## SECTION 13 — Appwrite Backend (Catalog)
 
-**Verdict:** Lumio **uses Cloudflare indirectly at runtime** (Workers + Pages URLs in catalog/API). There is **no Cloudflare SDK**, **no `wrangler.toml`**, and **no Worker source code** in this repo — only docs + hardcoded endpoints.
+**Verdict:** Lumio’s **main channel catalog and featured live-event config** are served from **Appwrite Databases** (`dart_appwrite`). There is **no Cloudflare Workers/Pages integration** in the active catalog path. Legacy `RemoteChannelsService` (Workers URL) remains in the repo but is **not** called by `CatalogService`.
 
-### 13.1 Runtime (app calls Cloudflare-hosted endpoints)
+### 13.1 Active runtime (Appwrite)
 
-| Use | Status | URL / location | Evidence |
-|-----|--------|----------------|----------|
-| **Channel catalog API** | **ACTIVE** (dart-define default) | `REMOTE_CHANNELS_URL` → default `https://lumio-channels.kakonzone.workers.dev/channels` | `lib/config/app_config.dart`, `remote_channels_service.dart` |
-| Catalog merge logic | If Worker returns 200 + JSON array → **replaces** bundled `_hardcodedChannels`; else fallback to embedded list | `lib/provider/app_provider.dart:435-437` |
-| Cache | 30 min in-memory TTL + **ETag** (`If-None-Match` / 304) | `remote_channels_service.dart` |
-| Transport | **SecureDio** GET, 3× retry, 10s timeout | `remote_channels_service.dart` — same pin model as stream token host when pins configured |
-| **HLS stream origin (Pages)** | **In embedded catalog** | `https://starsportshindiii.pages.dev/index.m3u8` | `lib/provider/app_provider.dart:1048` |
-| Third-party Worker stream (playlist) | **Present in assets, not Lumio-owned** | `https://playboxtv.developed-for-pishow.workers.dev/wanda.m3u8` | `assets/data/user_playlist.m3u:757`, `tool/user_paste_urls.txt:354` |
-
-```dart
-// lib/services/remote_channels_service.dart:13-14
-static const _channelsUrl =
-    'https://lumio-channels.kakonzone.workers.dev/channels';
-```
+| Use | Status | Evidence |
+|-----|--------|----------|
+| **Channel list** | **ACTIVE** | `AppwriteService.fetchChannels` — database `iptv_main`, collection `channels` |
+| **Featured World Cup / home cards** | **ACTIVE** | `app_config` collection — key `featured_live_events` (`docs/APPWRITE_WORLD_CUP_CARDS.md`) |
+| **Client SDK** | `dart_appwrite: ^25.0.0` | `pubspec.yaml` |
+| **Endpoint / project** | Dart-define | `APPWRITE_ENDPOINT`, `APPWRITE_PROJECT_ID` — `lib/config/appwrite_config.dart` |
+| **Permissions** | **Guests Read** on `channels` + `app_config` | `docs/SECRETS.md` — **no** `APPWRITE_API_KEY` in app |
+| **Load path** | `CatalogService.loadCatalog` → normalize on isolate | `lib/services/catalog_service.dart` |
+| **Error UX** | Empty fetch → user-visible error + pull-to-refresh | `CatalogLoadResult.errorMessage` |
 
 ```dart
-// lib/provider/app_provider.dart:435-437
-final remoteChannels = await RemoteChannelsService.fetch();
-final baseChannels =
-    remoteChannels.isNotEmpty ? remoteChannels : _hardcodedChannels;
+// lib/services/catalog_service.dart — main catalog source
+final channels = await AppwriteService.instance.fetchChannels(
+  forceRefresh: forceRefresh,
+);
 ```
 
-### 13.2 Planned / documented (not proven live from repo)
+### 13.2 Secondary: GITUN (GitHub M3U)
 
-| Item | Status | Evidence |
-|------|--------|----------|
-| `lumio.app` marketing + deep links | **In-app** (`https://lumio.app/open`) | `AndroidManifest.xml:79-82`, `deep_link_service.dart:57` |
-| Legal / APK hosting on Cloudflare | **Docs only** — Cloudflare Pages + DNS steps | `docs/LEGAL_HOSTING.md:5-9`, `docs/LEGAL_PAGES_HOSTING.md` |
-| Stream token API on `api.lumio.app` | **Planned** in build docs; **not** a Cloudflare Worker in client code | `docs/BUILD.md`, `docs/BACKEND_STREAM_TOKEN_CONTRACT.md` |
-| Token/signing **Worker sketch** | **Example JS only** in docs (not deployed here) | `docs/STREAM_PROXY_SETUP.md:43-56` |
+| Use | Status | Evidence |
+|-----|--------|----------|
+| Special Link / GITUN browse | **Separate** from main catalog | `GitunPlaylistService`, `SpecialLinkCache` |
+| Not a replacement for Appwrite home/sports/live | Documented in `AppProvider` | “Main catalog: Appwrite only” |
 
-### 13.3 NOT FOUND in repository
+### 13.3 Legacy / NOT USED (removed from audit scope)
 
-| Item | Result |
-|------|--------|
-| `wrangler.toml` / Workers project in repo | **NOT FOUND** |
-| Cloudflare Flutter/Dart SDK | **NOT FOUND** |
-| Cloudflare R2 / D1 / KV bindings | **NOT FOUND** |
-| `SSL_PIN_*` for `*.workers.dev` or `*.pages.dev` | **Optional** — Worker uses `SecureDio`; add host-specific pins in CI if required |
-| `network_security_config.xml` Cloudflare-specific domains | **NOT FOUND** — `*.workers.dev` / `*.pages.dev` rely on default HTTPS trust |
+| Item | Status | Note |
+|------|--------|------|
+| `REMOTE_CHANNELS_URL` / `lumio-channels.*.workers.dev` | **Legacy code only** | `remote_channels_service.dart` — superseded by Appwrite |
+| Cloudflare Workers catalog | **NOT IN SHIP PATH** | Removed from this audit — not Lumio infrastructure |
+| `wrangler.toml` in repo | **NOT FOUND** | — |
 
-### 13.4 Cloudflare WARP / VPN detection (not infrastructure)
+### 13.4 Ops implications
 
-The app **detects** Cloudflare’s 1.1.1.1 / WARP app as a VPN signal for ad routing — it does **not** mean Lumio runs on Cloudflare.
+1. **Single point of failure:** Appwrite outage → empty catalog + error UI (no silent embedded fallback).  
+2. **Updates:** Edit documents in Appwrite Console or migration scripts — clients refresh on pull-to-refresh / cache TTL.  
+3. **Security:** Never put API keys in APK; rotate leaked keys in Console immediately (`docs/SECRETS.md`).  
+4. **Stream URLs** in channel rows may still point to third-party HTTP/HLS hosts — transport risk is per-row, not Appwrite hosting.
 
-| Signal | Evidence |
-|--------|----------|
-| ASN blocklist | `13335`, `209242` — Cloudflare WARP / CF | `lib/services/fraud/vpn_asn_catalog.dart:24-25` |
-| Package denylist | `com.cloudflare.onedotonedotonedotone` | `vpn_asn_catalog.dart:79`, `VpnDetectionBridge.kt:57` |
+### 13.5 VPN note (1.1.1.1 app — not Appwrite)
 
-Effect: users on **Cloudflare WARP** may get `preferCleanSdkRouting` → more LevelPlay, less Adsterra (`AdSafetyService`).
+The app may **detect** the Cloudflare 1.1.1.1 / WARP **client app** as a VPN signal for **ad routing only** (`vpn_asn_catalog.dart`). This is unrelated to catalog hosting on Appwrite.
 
-### 13.5 World Cup / ops implications
-
-1. **Single point of failure:** If `lumio-channels.kakonzone.workers.dev` is down, app silently uses `_hardcodedChannels` (no user-facing error) — good fallback, stale catalog risk.  
-2. **Worker URL configurable** — `REMOTE_CHANNELS_URL` dart-define (default unchanged).  
-3. **Third-party `*.workers.dev` / `*.pages.dev` streams** in playlist/catalog — availability and ToS are outside your Cloudflare account.  
-4. **Pin gap (reduced):** Catalog fetch uses pinned Dio; explicit `*.workers.dev` SPKI pins still recommended for release.  
-5. **Recommended ops:** Host `lumio.app`, `app-ads.txt`, legal pages, and optionally `api.lumio.app` on Cloudflare (Pages + Workers + DNS) per docs — **confirm in Cloudflare dashboard** (not verifiable from APK alone).
-
-### 13.6 Cloudflare score
+### 13.6 Appwrite score
 
 | Aspect | Score (1–10) | Note |
 |--------|--------------|------|
-| Integration maturity | **6** | `REMOTE_CHANNELS_URL` dart-define; ETag; no IaC in repo |
-| Security (pins, config) | **6** | SecureDio catalog fetch; host pins optional |
-| Operational readiness | **7** | Fallback + 304 refresh |
-| **Overall Cloudflare footprint** | **Partial** | **Yes for channels API + some streams; no full CF stack in app** |
+| Integration maturity | **8** | Dedicated service + config; clear Guests Read model |
+| Security | **7** | No API key in client; public-read catalog by design |
+| Operational readiness | **7** | Depends on Console permissions + collection health |
+| **Cloudflare in app** | **0 / N/A** | Not used for catalog — **Appwrite replaces prior Worker design** |
 
 ---
 
@@ -781,7 +798,7 @@ Effect: users on **Cloudflare WARP** may get `preferCleanSdkRouting` → more Le
 | `LUMIO_BACKEND_BASE_URL` | Toffee creds / security API | `__MISSING__` |
 | `LUMIO_BACKEND_APP_KEY` | Backend auth header | `__MISSING__` |
 | `STREAM_TOKEN_BASE_URL` | Signed streams | `__MISSING__` |
-| `REMOTE_CHANNELS_URL` | Cloudflare Worker catalog | Default Workers URL in `app_config.dart` |
+| `REMOTE_CHANNELS_URL` | **Legacy** (unused by catalog) | `remote_channels_service.dart` — prefer Appwrite; optional dart-define for experiments only |
 | `CAP_BASE_URL` + `CAP_HMAC_KEY` | Server ad caps | empty unless CI |
 | `CAP_LOCAL_ONLY_MODE` | Skip server caps QA | `ad_config.dart:207-209` |
 
@@ -815,7 +832,7 @@ Effect: users on **Cloudflare WARP** may get `preferCleanSdkRouting` → more Le
 | **Native C++** | CMake under `android/app/src/main/cpp/` — linked in `build.gradle.kts:111-121` |
 | **ProGuard** | `proguard-rules.pro` + R8 optimize release | `build.gradle.kts:154-156` |
 | **Signing** | Release requires `key.properties` or env signing vars | `docs/RELEASE_SIGNING.md` |
-| **Obfuscated release script** | `tool/build_release_apk.sh` — split ABI, tree-shake, `MAX_APK_MB=38`, optional `BUILD_LEGACY_ABI` | Enforces legal + stream token + LevelPlay + Adsterra |
+| **Obfuscated release script** | `tool/build_release_apk.sh` — split ABI, tree-shake, `MIN_APK_MB=20` `MAX_APK_MB=35`, optional `BUILD_LEGACY_ABI` | Enforces legal + stream token + LevelPlay + Adsterra |
 | **Size QA script** | `tool/build_size_apk.sh` — sideload `CAP_LOCAL_ONLY_MODE` guard | `docs/ANDROID_SIZE_AND_PERFORMANCE.md` |
 | **RAM profile bridge** | `MainActivity.getDeviceProfile` → Flutter `PerformanceTuning` | `totalRamMb`, `lowMemoryDevice` |
 | **Debug run script** | `scripts/flutter_run_with_ads.sh` | `docs/BUILD.md` |
@@ -853,11 +870,11 @@ Effect: users on **Cloudflare WARP** may get `preferCleanSdkRouting` → more Le
 | `docs/AD_ZONE_INVENTORY.md` | 4-network zones |
 | `docs/CREDENTIAL_ROTATION.md` / `CREDENTIAL_ROTATION_URGENT.md` | Secret rotation |
 | `docs/NETWORK_SECURITY_AUDIT.md` | Cleartext allowlist |
-| `docs/ANDROID_SIZE_AND_PERFORMANCE.md` | APK 25–38 MB, install 60–80 MB, Android 5.0+, low-RAM |
+| `docs/ANDROID_SIZE_AND_PERFORMANCE.md` | APK **20–35 MB**, install 60–80 MB, Android 5.0+, low-RAM |
 | `docs/DEEP_LINK_ATTRIBUTION.md` | Campaign URLs |
 | `docs/SIDELOAD_UPDATE.md` | APK update manifest |
 | `docs/APP_ADS_TXT_TEMPLATE.md` | app-ads.txt |
-| `docs/LEGAL_HOSTING.md` | Cloudflare Pages legal |
+| `docs/LEGAL_HOSTING.md` | Legal page hosting options (hosting provider agnostic) |
 | `docs/STREAM_PROXY_SETUP.md` | Worker sketch |
 | `docs/CRASHLYTICS_DASHBOARD.md` | Crash ops |
 | `AUDIT_REPORT.md` | This document |
@@ -905,7 +922,7 @@ Effect: users on **Cloudflare WARP** may get `preferCleanSdkRouting` → more Le
 |---------------------------|-------------------|
 | 12 mandatory sections | **Yes** (§1–12) |
 | Four-network ads deep-dive | **Yes** (§3 + diagram) |
-| Cloudflare | **Yes** (§13) |
+| Appwrite catalog | **Yes** (§13) |
 | Phase 10 | **Yes** (§10 + §20) |
 | Splash / drawer / favorites / spin | **Yes** (§2) |
 | Firebase / Remote Config | **Yes** (§14) |
@@ -922,6 +939,9 @@ Effect: users on **Cloudflare WARP** may get `preferCleanSdkRouting` → more Le
 | 18-item fix sprint | **Yes** (§22) |
 | Sideload ads / CAP gate | **Yes** (§23) |
 | Product UI / APK size / low-RAM | **Yes** (§24) |
+| GitHub catalog / split APK / ads sprint | **Yes** (§25) |
+| Blocked-app anti-analysis gate | **Yes** (§5.9, §26) |
+| Play Integrity / Appwrite architecture | **Yes** (§5.5, §26.4) |
 
 ---
 
@@ -946,8 +966,9 @@ Effect: users on **Cloudflare WARP** may get `preferCleanSdkRouting` → more Le
 | P2 | 14 | i18n ARB scaffold | **Scaffold** |
 | P2 | 15 | Accessibility | **Partial** |
 | P2 | 16 | `legal/app-ads.txt` | **Done** (hosting ops) |
-| P2 | 17 | Play Integrity gate | **Gated** |
+| P2 | 17 | Play Integrity gate | **Gated** — client Option B; server decode v1.1 |
 | P2 | 18 | WebView pool RC + RAM pressure | **Done** |
+| P2 | 19 | Conflicting-app blocklist gate | **Done** (2026-06-04) — §26 |
 
 **New / changed architecture**
 
@@ -1009,7 +1030,7 @@ adb logcat -c && adb logcat | grep -E "LumioAds|ServerCap|Placement|AdDebug"
 | `[Placement] aggressive_mode=…` | Placement summary once |
 | `[ServerCap] ERROR … ads disabled` | **Fail** — rebuild with fixed `secrets.json` |
 
-**Where ads appear when enabled:** HOME native + 728 + bottom LevelPlay banner; Sports/News/Live banners; list natives every 8 rows; channel-tap interstitial/direct; player mid-roll (not shell chrome while playing).
+**Where ads appear when enabled:** HOME/Sports/News/Live **`LazyAdsterra*`** strips (zero off-screen placeholder); list natives every 8 rows; channel-tap interstitial/direct; player mid-roll (not shell chrome while playing).
 
 ---
 
@@ -1021,7 +1042,7 @@ adb logcat -c && adb logcat | grep -E "LumioAds|ServerCap|Placement|AdDebug"
 
 | Area | Change | Evidence |
 |------|--------|----------|
-| Promo carousel | FIFA WC26 PNG banners (assets) + 3 gradient slides; 5s auto-scroll | `assets/images/fifa_wc26_banner_*.png`, `home_promo_carousel.dart` |
+| Promo carousel | FIFA WC26 **WebP** banners (~400 KB saved vs PNG) + 3 gradient slides; 5s auto-scroll | `assets/images/fifa_wc26_banner_*.webp`, `home_promo_carousel.dart` |
 | Home categories | 3-color gradient tiles, emoji, glass icon, LIVE pulse | `home_category_grid.dart` |
 | Browse tab categories | Gradient `_GenreCategoryCard` / `_WideGenreCard` | `other_screens.dart` |
 | Bottom nav | Per-tab accent gradient when active | `main_shell_bottom_nav.dart` |
@@ -1036,13 +1057,13 @@ adb logcat -c && adb logcat | grep -E "LumioAds|ServerCap|Placement|AdDebug"
 | Target | Policy |
 |--------|--------|
 | **Default ship (rev.5)** | **`BUILD_APK_MODE=split`** — **two APKs**: `app-arm64-v8a-release.apk` + `app-armeabi-v7a-release.apk` |
-| Download per device | **~22–40 MB** each (`MIN_APK_MB`–`MAX_APK_MB` in `tool/build_release_apk.sh`) |
+| Download per device | **~20–35 MB** each (`MIN_APK_MB=20`, `MAX_APK_MB=35` in `tool/build_release_apk.sh`) |
 | Fat APK (optional) | `BUILD_APK_MODE=fat` → one file **~45–55 MB** (both ABIs) |
-| arm64-only (optional) | `BUILD_APK_MODE=arm64` |
+| arm64-only (recommended sideload) | `BUILD_APK_MODE=arm64 ./tool/build_size_apk.sh` → **one** 64-bit APK **~20–35 MB** |
 | Installed | **~60–80 MB** with `AppStorageGuard` + tiered image cache |
 | minSdk | **21** (Android 5.0+) via Flutter `minSdkVersion` |
-| Optional shrink | `FIREBASE_ENABLED=false` in `secrets.json` (~3–5 MB) |
-| Doc note | `docs/ANDROID_SIZE_AND_PERFORMANCE.md` still describes fat-as-default — **use this report + `tool/build_release_apk.sh` comments** for current policy |
+| Optional shrink | `FIREBASE_ENABLED=false` in `secrets.json` (~3–5 MB); optional `scripts/font_subset.py` |
+| Doc | `docs/ANDROID_SIZE_AND_PERFORMANCE.md` aligned with **20–35 MB** policy (rev.8) |
 
 ### 24.3 Low-RAM performance
 
@@ -1077,18 +1098,18 @@ adb shell dumpsys package com.kakonzone.lumio | grep -E 'codeSize|dataSize'
 
 ## SECTION 25 — Catalog, APK Split, Ads & Matcher Sprint (2026-06-02)
 
-**Context:** Full-app re-audit after GitHub-only channel catalog, split APK default, ads placeholder fixes, and real monetization keys in `secrets.json`.
+**Context:** Re-audit after **Appwrite** main catalog, split APK default, ads placeholder fixes, and real monetization keys in `secrets.json`. (Rev.7: Cloudflare Worker catalog **removed** from ship path.)
 
-### 25.1 Channel catalog (GitHub-only)
+### 25.1 Channel catalog (Appwrite primary)
 
 | Item | Status |
 |------|--------|
-| Single playlist URL | `https://github.com/kakonzone/allchannelking.m3u8/blob/main/allchannelking.m3u8` |
-| `includeAllChannels: true` | Full M3U categories preserved |
-| `AppProvider` | No hardcoded channel list; loads via `CatalogService` |
+| Main catalog | **Appwrite** `iptv_main` / `channels` via `CatalogService` |
+| Featured cards | **Appwrite** `app_config` / `featured_live_events` |
+| `AppProvider` | Loads via `CatalogService` — no hardcoded channel list |
+| GITUN hub | GitHub M3U — **secondary** Special Link path only |
 | Bundled assets | `user_playlist.m3u` / `scanned_iptv.m3u` **removed** from `pubspec.yaml` |
-| Special Link UI | GITUN hub only; CricHD services **deleted** |
-| Local playlist file | User maintains `~/allchannelking.m3u8` → push to GitHub |
+| Legacy Worker URL | `REMOTE_CHANNELS_URL` — code remains, **not** used by catalog loader |
 
 ### 25.2 APK build (32-bit + 64-bit)
 
@@ -1132,7 +1153,7 @@ adb shell dumpsys package com.kakonzone.lumio | grep -E 'codeSize|dataSize'
 |------|--------|
 | `flutter test` | **122 passed, 4 failed** (2026-06-02) — fix widget/shell failures before release tag |
 | Analyzer | Run `flutter analyze` locally |
-| Legal URLs | `secrets.json` still has `yourusername.github.io` placeholders — host real policy pages |
+| Legal URLs | `secrets.json` → `kakonzone.github.io/lumio/*` (rev.7 pre-ship) |
 | `STREAM_TOKEN_BASE_URL` | Set for production token signing (sideload may use local caps only) |
 
 ### 25.5 Verification commands
@@ -1147,23 +1168,203 @@ flutter test
 
 ---
 
+## SECTION 26 — Anti-Analysis Sprint: Blocked-App Gate (2026-06-04)
+
+**Context:** Client-side anti-tamper layer — refuse launch when MITM / RE / hooking / cloning apps are installed. Aligns with industry “defense in depth” layer 1; server Play Integrity remains layer 5 (not shipped).
+
+### 26.1 Implementation summary
+
+| Layer | Component | File(s) |
+|-------|-----------|---------|
+| Android scan | XOR blocklist + label resolution | `android/.../BlockedAppDetector.kt` |
+| Manifest | Package visibility (API 30+) | `android/app/src/main/AndroidManifest.xml` `<queries>` |
+| Native bridge | MethodChannel handlers | `MainActivity.kt` — `findBlockedAppLabels`, `openFirstBlockedAppUninstall` |
+| Dart guard | Enforce + bypass rules | `lib/security/blocked_apps_guard.dart` |
+| Startup gate | Block before main app | `lib/main.dart` — `BlockedAppsGuard` → `BlockedAppsScreen` |
+| Resume gate | Overlay on lifecycle resume | `lib/widgets/blocked_apps_overlay.dart` |
+| UI | Bengali full-screen block | `lib/screens/blocked_apps_screen.dart` |
+| Config flag | `blockConflictingApps` | `lib/security/security_config.dart` |
+
+### 26.2 Blocked package categories (17)
+
+| Category | Examples (decoded) |
+|----------|-------------------|
+| Packet capture / MITM | HttpCanary, SSL Capture, PCAPdroid, ProxyMon, HTTP Toolkit |
+| Hooking / root | Xposed, LSPosed, Magisk (official + fork) |
+| Proxies | Proxyman NSProxy |
+| App cloners | Parallel Space, Dual Space, DualAid |
+
+Strings stored XOR-encoded in Kotlin — not plaintext in DEX.
+
+### 26.3 Bypass / test modes
+
+| Mode | Behavior |
+|------|----------|
+| `kDebugMode` + `bypassChecksInDebug` | Gate skipped (dev with HttpCanary) |
+| `LUMIO_SIDELOAD_DEV=true` | Gate skipped (USB sideload QA) |
+| Release (default) | Gate **on** — app does not proceed until conflicting apps removed |
+
+### 26.4 Play Integrity & Appwrite — professional architecture (documented, not implemented)
+
+| Concern | Recommended placement | Lumio status |
+|---------|----------------------|--------------|
+| Channel catalog | Appwrite DB — **Guests Read** | **Active** — no API key in app |
+| Blocked-app scan | Android client | **Active** (rev.6) |
+| Play Integrity **decode** | Stream/cap backend (`CAP_BASE_URL`, `STREAM_TOKEN_BASE_URL`) | **Planned v1.1** — `docs/PLAY_INTEGRITY_SERVER.md` |
+| Appwrite Functions for integrity | Possible but **not recommended** for Lumio — splits trust layer away from cap/stream API | **Not used** |
+| Real stream protection | Short-lived signed URLs + server attestation | Partial — `StreamTokenService` exists; integrity header omitted (Option B) |
+
+**Pro rule:** Appwrite = public catalog; **never** put Google service-account secrets or integrity decode in the same Guests-read path.
+
+### 26.5 Verification commands
+
+```bash
+# Static — blocklist files present
+rg -l 'BlockedAppDetector|BlockedAppsGuard|blockConflictingApps' lib/ android/
+
+# Release device — install HttpCanary (test phone), launch Lumio → expect block screen (not splash)
+adb logcat | grep -E 'Lumio|blocked'
+
+# After uninstall conflicting app → tap "আবার যাচাই করুন" or relaunch → app proceeds
+```
+
+### 26.6 Open items (security roadmap)
+
+| Priority | Item | Owner |
+|----------|------|-------|
+| P1 | Deploy Play Integrity decode on cap/stream backend | Backend |
+| P1 | Restore `PlayIntegrityBridge.kt` + send `X-Integrity-Token` (v1.1 Option A) | Mobile |
+| P2 | Set `expectedApkSignatureSha256` for release keystore | Release |
+| P2 | Move blocklist scan to JNI (harder to patch) | Android |
+| P3 | Nonce replay store (Redis / backend) for integrity tokens | Backend |
+
+---
+
+## SECTION 27 — UI Density, Lazy Ads & APK Size Sprint (2026-06-04)
+
+**Context:** Post–rev.7 polish — remove scroll dead space on nav tabs, align ad loading with Home (`LazyAdViewport`), tighten release APK budget to **20–35 MB**, and ship player thermal/decode fixes on `hotfix/player-perf-wc`.
+
+### 27.1 Navigation UI (spacing)
+
+| Screen | Change | Evidence |
+|--------|--------|----------|
+| **Home** | Promo inside Home tab `CustomScrollView`; tighter `SliverPadding` between Browse / featured / live sections | `tv_screen.dart` `_HomeTab` |
+| **Sports** | Removed **“All sports channels”** list on **All** filter; native ad **below** sport grid; reduced pill/ad padding | `other_screens.dart` `_sportsAllSlivers`, `_sportsBrowseListSlivers` removed |
+| **Live** | **`ScreenStatChips`** centered (`Center` + `WrapAlignment.center`) | `section_nav_bar.dart` |
+| **News** | Ads **directly under** category pills (before scores); `ShellAppBar` fixed header; tighter `_NewsSectionHeader` padding | `news_screen.dart` |
+| **Special Link** | Channel count in **`ShellAppBar` subtitle** (not duplicate scroll row); top banner `padding: 0` top; empty → `SizedBox.shrink()` | `special_link_list_screen.dart`, `shell_page_scaffold.dart` |
+
+### 27.2 Lazy ad strips (Home pattern)
+
+| Widget | Behavior | File |
+|--------|----------|------|
+| `LazyAdViewport` | `placeholderHeight: 0` until within `preloadPx` of viewport | `lib/ads/utils/lazy_ad_viewport.dart` |
+| `LazyAdsterraBanner728` / `LazyAdsterraNativeBanner` | Wrap Adsterra widgets; used on Sports, Live, News, Special Link | `lib/ads/widgets/lazy_adsterra_strip.dart` |
+| `AdListInjector` | List natives also use `LazyAdViewport` | `lib/ads/utils/ad_list_injector.dart` |
+
+### 27.3 APK size policy (rev.8)
+
+| Item | Value |
+|------|--------|
+| Script targets | `MIN_APK_MB=20`, `MAX_APK_MB=35` |
+| Default mode | `BUILD_APK_MODE=split` (32 + 64 APKs) |
+| Sideload single file | `BUILD_APK_MODE=arm64 ./tool/build_size_apk.sh` |
+| Asset shrink | FIFA banners **PNG → WebP** in `pubspec.yaml` |
+| Below 20 MB | Requires feature cuts — see `docs/APK_SIZE_REDUCTION_PLAN.md` (media_kit ~15–20 MB) |
+
+**Build (operator):**
+
+```bash
+BUILD_APK_MODE=arm64 ./tool/build_release_apk.sh
+ls -lh build/app/outputs/flutter-apk/*.apk
+```
+
+**Not measured in this audit:** final APK bytes after local release build (operator-run).
+
+### 27.4 Player performance (branch `hotfix/player-perf-wc`)
+
+| Change | Detail |
+|--------|--------|
+| Default quality | **540p** mobile; clamp **720p** without Wi‑Fi + battery |
+| Android HW decode | **`mediacodec`** forced; avoids MIUI/ColorOS SW fallback |
+| Probe / prewarm | Gated to **idle** playback state (less CPU contention) |
+| Fit modes | `FittedBox` wrapper for correct stretch/fit (`player_fit_mode.dart`) |
+
+### 27.5 Verification
+
+```bash
+flutter test
+flutter analyze
+BUILD_APK_MODE=arm64 ./tool/build_size_apk.sh   # size QA — run locally
+```
+
+---
+
+## SECTION 28 — Forensic P0/P1 Fix Sprint (2026-06-04)
+
+**Context:** Operator-requested fixes from forensic audit checklist (stream token, HTTP cleartext, CAP gate, Appwrite SPOF, ads security).
+
+### 28.1 P0 — Critical (shipped in code)
+
+| ID | Fix | Files |
+|----|-----|-------|
+| **P0-1** | `StreamTokenService` **direct URL fallback** when `STREAM_TOKEN_BASE_URL` unset or token API network error (uses `originalUrl` + `StreamUrlUpgrade.preferHttps`) | `stream_token_service.dart`, `channel_resolver.dart` |
+| **P0-2** | Regenerated cleartext allowlist (**172** stream hosts from full `lib/`); HTTP→HTTPS upgrade with **http-only host denylist** | `tool/gen_network_security_config.py`, `network_security_config.xml`, `stream_url_upgrade.dart` |
+| **P0-3** | `build_size_apk.sh` forces `CAP_LOCAL_ONLY_MODE=true` + `LUMIO_SIDELOAD_DEV=true`; clearer `[ServerCap]` logcat hint on missing CAP / invalid JSON | `server_cap.dart`, `build_size_apk.sh` |
+| **P0-4** | Appwrite catalog **24h** disk cache TTL; on empty fetch → stale cache + Home **“Using cached channels”** banner | `appwrite_config.dart`, `special_link_cache.dart`, `catalog_service.dart`, `app_provider.dart`, `tv_screen.dart` |
+
+### 28.2 P1 — High (partial)
+
+| ID | Status | Notes |
+|----|--------|-------|
+| **P1-1** | **Done** | `flutter test` — **183 passed** (2026-06-04); prior “4 failed” not reproduced |
+| **P1-2** | **Done** | `MonetagConfig` zones empty by default; `assertReleaseMonetization()` rejects partial Monetag defines |
+| **P1-3** | **Done** | CSP meta in `AdsterraHtml`; `WebViewAdHost` blocks `javascript:` / `intent:` / `.apk`; `WebViewAdHost.createController()` for mixed-content hardening |
+| **P1-4** | **Deferred** | God-file split (`player_screen` / `app_provider`) — await operator file plan |
+| **P1-5** | **Deferred** | Broad `unawaited` audit — low risk paths unchanged |
+| **P1-6** | **Partial** | `StreamUrlUpgrade` centralizes HTTPS; full `lib/` http:// sweep not automated |
+
+### 28.3 P2 / P3 — Roadmap (not in this sprint)
+
+| IDs | Topic |
+|-----|--------|
+| P2-1 | Google UMP / licensed CMP |
+| P2-2 | Coin economy server validation |
+| P2-3 | Play Integrity token on stream API |
+| P2-4 | Production SSL pin hashes + CI defines |
+| P2-5 | Player/WebView dispose audit |
+| P2-6 | `app-ads.txt` on lumio.app |
+| P2-7 | ARB → UI wiring |
+| P3-* | WebView pool RC, player auto-quality, background ad pause, analytics depth |
+
+### 28.4 Verification
+
+```bash
+flutter test
+python3 tool/gen_network_security_config.py
+BUILD_APK_MODE=arm64 ./tool/build_size_apk.sh
+adb logcat | grep -E 'StreamToken|ServerCap|Appwrite'
+```
+
+---
+
 ## Summary Table
 
 | Section | Score (1–10) | Critical issues |
 |---------|--------------|-----------------|
-| 1 Project health | **8** | 186 dart files; `AppProvider` ~939 LOC; 122/126 tests pass |
-| 2 Pages / features | **8** | GitHub catalog; FootyStream; matcher-driven live events |
+| 1 Project health | **8** | 207 dart files; god files remain; **183/183 tests pass** (2026-06-04) |
+| 2 Pages / features | **8** | Appwrite catalog; Sports grid-only on All; lazy-ad tabs |
 | 3 Ads (4-network) | **9** | Real keys in `secrets.json`; placeholder build guard; valid-config getters |
-| 4 Streaming | **7** | GitHub M3U only; strong matcher; HTTP streams in playlist remain |
-| 5 Security | 6 | Pins + secrets report; cleartext + WebView risk |
-| 6 Performance | **7** | Size targets documented; `PerformanceTuning` + storage guard; fast startup path |
+| 4 Streaming | **8** | Token direct fallback; Appwrite 24h cache; HTTP allowlist expanded |
+| 5 Security | **7** | WebView nav filter + CSP; blocked-app gate; Play Integrity server v1.1 |
+| 6 Performance | **8** | APK **20–35 MB** policy; lazy ads; `PerformanceTuning` + storage guard |
 | 7 Tier-1 | 4 | ARB scaffold; no licensed CMP |
 | 8 Acquisition | 7 | Referral scaffold; deep links + FCM |
 | 9 Revenue model | 6 | Fill/sideload capped |
 | 10 Gaps | — | P0 ops: token API, legal host, CI defines |
 | 11 Code quality | **6** | God-file reduced; matcher well-documented in code |
 | 12 Verdict | **8** | **85%** sideload launch — fix 4 tests + legal URLs |
-| 13 Cloudflare | **5** | Worker URL in secrets but catalog path is GitHub-only |
+| 13 Appwrite | **8** | Main catalog + app_config; Guests Read; no Cloudflare in app |
 | 14 Firebase / backend | 7 | Optional Crashlytics; RC kill switches |
 | 15 Coins / ad-free | 6 | Wallet API scaffold; client coins |
 | 16 Native / CI | **9** | Split APK default; monetization preflight; minSdk 21 |
@@ -1174,10 +1375,15 @@ flutter test
 | 21 Coverage | — | Checklist complete |
 | 22 Fix sprint | 9 | See `FIX_REPORT.md` |
 | 23 Sideload ads | 9 | Phase 8 bugs fixed except prod stream-token host |
-| 24 Product / size / perf | **8** | UI sprint + `PerformanceTuning`; split APK policy |
-| 25 Catalog / APK / ads | **9** | GitHub-only channels; split 32/64; ads keys + matcher doc |
+| 24 Product / size / perf | **8** | WebP assets; split APK; Home sliver layout |
+| 25 Catalog / APK / ads | **9** | Appwrite channels; split 32/64; ads keys + matcher doc |
+| 26 Anti-analysis gate | **8** | 17-package blocklist + Bengali UI; bypassable without server attestation |
+| 27 UI density / lazy ads / size | **8** | Tab spacing fix; `LazyAdsterra*`; APK 20–35 MB; player 540p |
+| 28 Forensic P0/P1 fixes | **8** | Stream token + cache + CAP + HTTP; P2/P3 roadmap |
 
-**Report version:** 2026-06-02 **rev.5** (Section 25; canonical file: `AUDIT_REPORT.md`). Mirror: `docs/AUDIT_REPORT_v2.md` — sync header only.
+---
+
+**Report version:** 2026-06-04 **rev.9** (Section 28 forensic fixes; canonical: `AUDIT_REPORT.md`). Mirror: `docs/AUDIT_REPORT_v2.md` — sync header only.
 
 ---
 

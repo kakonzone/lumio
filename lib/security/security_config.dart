@@ -24,8 +24,14 @@ class SecurityConfig {
   /// VPN ব্যবহারকারী ব্লক (অনেক লিগitimate ইউজার VPN ব্যবহার করে — ডিফল্ট false)
   static const bool blockVpn = false;
 
-  /// অজানা ইনস্টলার (Play Store ছাড়া sideload) ব্লক
-  static const bool requireKnownInstaller = false;
+  /// HttpCanary, Magisk, PCAPdroid ইত্যাদি ইনস্টল থাকলে অ্যাপ চালু হবে না
+  static const bool blockConflictingApps = true;
+
+  /// Play Store ইনস্টল বাধ্য — রিলিজে `--dart-define=SECURITY_REQUIRE_PLAY_INSTALLER=true`
+  static const bool requireKnownInstaller = bool.fromEnvironment(
+    'SECURITY_REQUIRE_PLAY_INSTALLER',
+    defaultValue: false,
+  );
 
   /// অনুমোদিত ইনস্টলার প্যাকেজ (sideload হলে সাধারণত null বা ব্রাউজার)
   static const Set<String> allowedInstallers = {

@@ -2,6 +2,30 @@
 
 Never commit real keys. Use `~/.gradle/gradle.properties`, `android/local.properties`, or shell env vars.
 
+## Appwrite (no API key in the app)
+
+The mobile app uses **anonymous / Guests Read** only. Do **not** put an Appwrite API key in `secrets.json`, dart-defines, or source.
+
+**Console (one-time):**
+
+1. Delete any API key that was pasted in chat or committed — **Console → API keys → Delete**.
+2. **Databases → `iptv_main` → `channels` → Settings → Permissions → Read → role `Guests` (any).**
+3. Same **Read → Guests** on collection **`app_config`**.
+
+**`secrets.json` — Appwrite keys only (no `APPWRITE_API_KEY`):**
+
+| Key | Example |
+|-----|---------|
+| `APPWRITE_PROJECT_ID` | `191876000995145` |
+| `APPWRITE_ENDPOINT` | `https://nyc.cloud.appwrite.io/v1` |
+| `APPWRITE_DATABASE_ID` | `iptv_main` |
+| `APPWRITE_CHANNELS_COLLECTION_ID` | `channels` |
+| `APPWRITE_APP_CONFIG_COLLECTION_ID` | `app_config` |
+
+Playlist fallback (`playlists` / document `main`) and featured World Cup cards (`featured_live_events` in `app_config`) use **code defaults** in `lib/config/appwrite_config.dart` — not required in `secrets.json`. See `docs/APPWRITE_WORLD_CUP_CARDS.md` for daily JSON updates.
+
+Implementation: `AppwriteService` builds `Client` with endpoint + project only (`lib/services/appwrite_service.dart`).
+
 ## Required for `tool/build_release_apk.sh`
 
 | Variable | Example (redacted) | Dart define |

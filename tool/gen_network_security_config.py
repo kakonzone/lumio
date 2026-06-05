@@ -33,9 +33,13 @@ ADS_HTTPS = {
 
 SOURCES = [
     ROOT / "assets/data/user_playlist.m3u",
+    ROOT / "assets/data/scanned_iptv.m3u",
     ROOT / "lib/provider/app_provider.dart",
     ROOT / "lib/data/extra_channels.dart",
+    ROOT / "lib/services/scanned_iptv_service.dart",
 ]
+# All Dart sources — extract http:// hosts for cleartext allowlist.
+SOURCES.extend(sorted((ROOT / "lib").rglob("*.dart")))
 
 
 def extract_hosts(text: str) -> set[str]:

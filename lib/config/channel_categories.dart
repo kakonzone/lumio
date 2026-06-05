@@ -34,7 +34,6 @@ class ChannelCategoryRegistry {
     'Entertainment',
     'Movies',
     'Kids',
-    'Live TV',
   ];
 
   static const _defs = <ChannelCategoryDef>[
@@ -162,11 +161,36 @@ class ChannelCategoryRegistry {
   /// Category from M3U `group-title` (your GitHub playlist).
   static String fromGroupTitle(String group, String channelName) {
     final g = group.trim().toLowerCase();
+    if (g.isEmpty) return fromChannelName(channelName);
     if (g == 'sports' || g.contains('sport')) return 'Sports';
     if (g == 'bangladesh' ||
         g.contains('bangla') ||
         g.contains('bangladesh')) {
       return 'Bangladesh';
+    }
+    if (g.contains('pakistan') || g == 'pk') return 'Pakistan';
+    if (g.contains('hindi') || g.contains('india') || g.contains('bollywood')) {
+      return 'Hindi';
+    }
+    if (g.contains('english') ||
+        g.contains(' uk') ||
+        g.startsWith('uk ') ||
+        g.contains('usa') ||
+        g.contains('international')) {
+      return 'English';
+    }
+    if (g.contains('news') || g.contains('current affairs')) return 'News';
+    if (g.contains('movie') || g.contains('cinema') || g.contains('film')) {
+      return 'Movies';
+    }
+    if (g.contains('kid') || g.contains('cartoon') || g.contains('children')) {
+      return 'Kids';
+    }
+    if (g.contains('korea') || g.contains('k-drama') || g.contains('kdrama')) {
+      return 'KDrama';
+    }
+    if (g.contains('entertain') || g.contains('drama') || g.contains('general')) {
+      return 'Entertainment';
     }
     if (g == 'live tv' || g == 'live' || g == 'livetv') {
       return fromChannelName(channelName);

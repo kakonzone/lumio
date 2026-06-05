@@ -4,7 +4,7 @@ import '../models/model.dart';
 class PriorityBroadcasters {
   PriorityBroadcasters._();
 
-  /// Lower = higher in lists (user order: FIFA → Sony → T Sports → beIN).
+  /// Lower = higher in lists (FIFA → Sony → T Sports → BTV → beIN → …).
   static const _tiers = <_Tier>[
     _Tier(
       rank: 0,
@@ -14,6 +14,9 @@ class PriorityBroadcasters {
         'wc 2026',
         'wc26',
         'fifa world',
+        'football world cup 2026',
+        'fifa+',
+        'fifa plus',
       ],
     ),
     _Tier(
@@ -38,16 +41,33 @@ class PriorityBroadcasters {
     _Tier(
       rank: 3,
       keywords: [
+        'btv',
+        'b tv',
+        'bangladesh television',
+      ],
+    ),
+    _Tier(
+      rank: 4,
+      keywords: [
         'bein sports',
         'bein sport',
         'bein',
+        'bien',
+      ],
+    ),
+    _Tier(
+      rank: 5,
+      keywords: [
+        'willow',
+        'willow tv',
+        'willow by',
       ],
     ),
   ];
 
   static const int notPriority = 99;
 
-  /// 0 = FIFA … 3 = beIN; [notPriority] = everyone else.
+  /// 0 = FIFA … 5 = Willow; [notPriority] = everyone else.
   static int rank(ChannelModel channel) {
     final blob =
         '${channel.name} ${channel.currentShow} ${channel.category}'.toLowerCase();
@@ -72,14 +92,16 @@ class PriorityBroadcasters {
     return copy;
   }
 
-  /// Extra score for [MatchChannelMatcher] (additive).
+  /// Extra score for [MatchChannelMatcher] (additive) — FIFA highest, then Sony, T Sports, BTV, beIN.
   static int matchScoreBoost(String channelBlob) {
     final b = channelBlob.toLowerCase();
     var boost = 0;
-    if (_containsAny(b, _tiers[0].keywords)) boost += 85;
-    if (_containsAny(b, _tiers[1].keywords)) boost += 70;
-    if (_containsAny(b, _tiers[2].keywords)) boost += 75;
-    if (_containsAny(b, _tiers[3].keywords)) boost += 65;
+    if (_containsAny(b, _tiers[0].keywords)) boost += 90;
+    if (_tiers.length > 1 && _containsAny(b, _tiers[1].keywords)) boost += 85;
+    if (_tiers.length > 2 && _containsAny(b, _tiers[2].keywords)) boost += 80;
+    if (_tiers.length > 3 && _containsAny(b, _tiers[3].keywords)) boost += 75;
+    if (_tiers.length > 4 && _containsAny(b, _tiers[4].keywords)) boost += 70;
+    if (_tiers.length > 5 && _containsAny(b, _tiers[5].keywords)) boost += 65;
     return boost;
   }
 

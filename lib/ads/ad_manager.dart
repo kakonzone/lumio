@@ -11,6 +11,7 @@ import '../services/ad_consent_service.dart';
 import '../services/ad_safety_service.dart';
 import '../services/ad_trigger_manager.dart';
 import 'ad_cold_start_eligibility.dart';
+import 'cmp_tier1_gate.dart';
 import 'interstitial_placement.dart';
 import '../services/user_preferences.dart';
 import '../utils/channel_tap_key.dart';
@@ -28,6 +29,7 @@ import 'propeller/propeller_engine.dart';
 import '../config/monetag_config.dart';
 import '../services/app_session_tracker.dart';
 import 'strategies/geo_targeting.dart';
+import 'utils/webview_pool.dart';
 import '../screens/app_open_promo_screen.dart';
 
 /// Global ad orchestration — singleton.
@@ -46,6 +48,17 @@ class AdManager {
   bool _preloadDone = false;
   Timer? _backgroundEngineStartTimer;
   bool _backgroundEngineScheduled = false;
+
+  /// Fire-and-forget analytics with error logging (P1-5).
+  Future<void> _safeAnalytics(Future<void> future) async {
+    try {
+      await future;
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('[AdManager] analytics failed: $e\n$st');
+      }
+    }
+  }
   bool _postHomeWarmupStarted = false;
   bool _loggedRuntimeStatus = false;
 
@@ -76,6 +89,10 @@ class AdManager {
   bool get levelPlayAdsEnabled =>
       adsEnabled && AdSafetyService.instance.levelPlayEnabledRemote;
 
+  /// Adsterra WebView banners/natives — false when zones unset or ads off (no black placeholders).
+  bool get showAdsterraWebViewSlots =>
+      adsEnabled && AdConfig.hasAdsterraWebViewZones;
+
   bool get isUserAdFree =>
       UserPreferences.removeAdsPurchased || _caps.isAdFree;
 
@@ -91,6 +108,27 @@ class AdManager {
 
     await UserPreferences.ensureInit();
     await AdSafetyService.instance.ensureReady();
+
+    if (CmpTier1Gate.blocksAdSdkInitFor(
+      localeCountry: CmpTier1Gate.deviceCountryCode(),
+      simCountry: AdSafetyService.instance.simCountry,
+      networkCountry: AdSafetyService.instance.networkCountry,
+    )) {
+      _initialized = false;
+      AdDebugLog.error(
+        'AdManager.init',
+        'tier-1 market without licensed CMP — ad SDK init blocked',
+        data: {
+          'locale': CmpTier1Gate.deviceCountryCode(),
+          'sim': AdSafetyService.instance.simCountry,
+          'network': AdSafetyService.instance.networkCountry,
+          'cmpLicensed': CmpTier1Gate.cmpLicensedEnabled,
+        },
+      );
+      logRuntimeStatusOnce();
+      return;
+    }
+
     AdsterraTelemetryService.instance.logConfigurationOnce();
     AdPlacementConfig.logPlacementSummaryOnce();
     ServerCapService.instance.attachAnalytics(analytics);
@@ -219,6 +257,7 @@ class AdManager {
 
   void onAppPause() {
     BackgroundAdEngine.onAppBackgrounded();
+    WebViewPool.instance.releaseAllOnBackground();
   }
 
   Future<void> onAppExit() async {
@@ -403,7 +442,7 @@ class AdManager {
         AdTriggerManager.instance.hasChannelTapBrowserShown(key)) {
       if (adsEnabled) {
         _caps.recordChannelClick();
-        unawaited(
+        await _safeAnalytics(
           analytics.logChannelClick(count: _caps.sessionChannelClicks),
         );
       }
@@ -419,7 +458,9 @@ class AdManager {
     }
     _channelTapFirstTapInFlight.add(key);
     try {
-      unawaited(analytics.logChannelTapSlot(slot: 'browser_first'));
+      await _safeAnalytics(
+        analytics.logChannelTapSlot(slot: 'browser_first'),
+      );
 
       final monetized = await _openChannelTapBrowserFirst(
         placement: 'channel_tap_first',

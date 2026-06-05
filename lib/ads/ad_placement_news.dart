@@ -40,7 +40,7 @@ class AdPlacementNews {
   }) {
     if (articleCount <= 0) return [];
     final interval = AdPlacementConfig.newsNativeInterval;
-    final adsOn = AdManager.instance.adsEnabled;
+    final adsOn = AdManager.instance.showAdsterraWebViewSlots;
     final out = <Widget>[];
     for (var i = 0; i < articleCount; i++) {
       if (adsOn && i == 2) {

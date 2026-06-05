@@ -17,6 +17,27 @@ void main() {
     expect(aspectRatioFor(PlayerFitMode.fit), isNull);
   });
 
+  test('tap cycle is fit → fill → stretch → fit', () {
+    var mode = PlayerFitMode.fit;
+    mode = nextPlayerFitModeInTapCycle(mode);
+    expect(mode, PlayerFitMode.fill);
+    mode = nextPlayerFitModeInTapCycle(mode);
+    expect(mode, PlayerFitMode.stretch);
+    mode = nextPlayerFitModeInTapCycle(mode);
+    expect(mode, PlayerFitMode.fit);
+  });
+
+  test('normalizePlayerFitModeForTap maps legacy modes to fit', () {
+    expect(
+      normalizePlayerFitModeForTap(PlayerFitMode.original),
+      PlayerFitMode.fit,
+    );
+    expect(
+      normalizePlayerFitModeForTap(PlayerFitMode.fill),
+      PlayerFitMode.fill,
+    );
+  });
+
   test('parsePlayerFitMode round-trips enum names', () {
     for (final mode in PlayerFitMode.values) {
       expect(parsePlayerFitMode(mode.name), mode);

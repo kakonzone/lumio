@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 
 import '../models/model.dart';
-import '../services/special_link/gitun_playlist_service.dart';
+import '../services/appwrite_service.dart';
 
-/// Your GitHub catalog channels (same source as home / sports / live).
+/// Appwrite catalog channels (same source as home / sports / live).
 class ChannelsProvider extends ChangeNotifier {
   List<ChannelModel> _remote = const [];
   bool _loading = false;
@@ -15,7 +15,7 @@ class ChannelsProvider extends ChangeNotifier {
     _loading = true;
     notifyListeners();
     try {
-      _remote = await GitunPlaylistService.instance.loadAppCatalogChannels(
+      _remote = await AppwriteService.instance.fetchChannels(
         forceRefresh: force,
       );
     } finally {

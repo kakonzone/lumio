@@ -9,17 +9,14 @@ import '../widgets/ad_consent_dialog.dart';
 import '../theme/app_theme.dart';
 import '../utils/responsive.dart';
 
-/// Fast splash: consent (first launch only) → brief logo → home. Ads warm after home paints.
+/// Splash: logo visible → consent (first launch) → home. Catalog loads in background.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
   static const logoAsset = 'assets/images/lumio_sports_logo.webp';
 
-  /// Minimum branding flash so the logo does not flicker.
-  static const brandingMinMs = 350;
-
-  /// Do not block home longer than this waiting on channel index.
-  static const channelWaitMaxMs = 500;
+  /// Minimum time splash stays on screen so branding is visible.
+  static const brandingMinMs = 900;
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -29,18 +26,18 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    unawaited(_start());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_start());
+    });
   }
 
   Future<void> _start() async {
-    var navigateHome = true;
     try {
-      navigateHome = await _startInternal().timeout(
-        const Duration(seconds: 12),
+      await _startInternal().timeout(
+        const Duration(seconds: 8),
         onTimeout: () {
           // ignore: avoid_print
           print('[Splash] timed out — opening home');
-          return true;
         },
       );
     } catch (e, st) {
@@ -48,48 +45,30 @@ class _SplashScreenState extends State<SplashScreen> {
       print('[Splash] error: $e\n$st');
     }
     if (!mounted) return;
-    if (navigateHome) {
-      // ignore: avoid_print
-      print('[Splash] pushReplacementNamed /home');
-      Navigator.of(context).pushReplacementNamed('/home');
-    }
+    // ignore: avoid_print
+    print('[Splash] pushReplacementNamed /home');
+    Navigator.of(context).pushReplacementNamed('/home');
   }
 
-  Future<bool> _startInternal() async {
-    final prov = context.read<AppProvider>();
-
+  Future<void> _startInternal() async {
     await AdConsentService.instance.load();
     unawaited(AdConsentService.instance.applyStoredConsentToSdk());
     AdConsentService.instance.markSplashConsentGateSatisfied();
-    if (!mounted) return true;
+    if (!mounted) return;
 
     if (AdConsentService.instance.needsConsentPrompt) {
       // ignore: avoid_print
       print('[AdConsent] showing first-launch dialog');
       await AdConsentDialog.showIfNeeded(context);
-      if (!mounted) return true;
+      if (!mounted) return;
     }
 
-    await Future.wait([
-      Future<void>.delayed(
-        const Duration(milliseconds: SplashScreen.brandingMinMs),
-      ),
-      _waitForInitialLoad(prov),
-    ]);
-    if (!mounted) return true;
+    await Future<void>.delayed(
+      const Duration(milliseconds: SplashScreen.brandingMinMs),
+    );
+    if (!mounted) return;
 
     AdManager.instance.scheduleBackgroundEngineAfterSplash();
-    return true;
-  }
-
-  Future<void> _waitForInitialLoad(AppProvider prov) async {
-    final deadline = DateTime.now().add(
-      const Duration(milliseconds: SplashScreen.channelWaitMaxMs),
-    );
-    while (mounted && DateTime.now().isBefore(deadline)) {
-      if (!prov.channelsLoading) return;
-      await Future.delayed(const Duration(milliseconds: 40));
-    }
   }
 
   @override
@@ -129,6 +108,16 @@ class _SplashScreenState extends State<SplashScreen> {
                       ),
                     ),
                   ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'LUMIO SPORTS',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.accent.withValues(alpha: 0.9),
+                  letterSpacing: 3,
                 ),
               ),
               const Spacer(flex: 2),

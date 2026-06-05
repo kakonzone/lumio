@@ -82,6 +82,31 @@ class SecurityNative {
     }
   }
 
+  /// Installed conflicting app labels (MITM / RE tools). Empty when none.
+  static Future<List<String>?> findBlockedAppLabels() async {
+    try {
+      final raw = await _channel.invokeMethod<List<Object?>>(
+        'findBlockedAppLabels',
+      );
+      if (raw == null) return const [];
+      return raw.whereType<String>().toList();
+    } on PlatformException {
+      return const [];
+    }
+  }
+
+  /// Opens Android app-details screen for the first blocked package.
+  static Future<bool> openFirstBlockedAppUninstall() async {
+    try {
+      final ok = await _channel.invokeMethod<bool>(
+        'openFirstBlockedAppUninstall',
+      );
+      return ok ?? false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
   /// VPN signals for [SecurityManager] (tun/transport/ASN proxy).
   static Future<SecurityVpnSignals> collectVpnSecurity() async {
     try {

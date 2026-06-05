@@ -7,9 +7,9 @@ import 'package:http/http.dart' as http;
 
 import '../config/app_config.dart';
 import '../network/secure_dio.dart';
-import '../security/security_config.dart';
 import '../services/ad_safety_service.dart';
 import '../utils/ad_debug_log.dart';
+import '../utils/stream_url_upgrade.dart';
 import 'firebase_bootstrap.dart';
 
 class StreamTokenResult {
@@ -103,26 +103,14 @@ class StreamTokenService {
       return cached;
     }
 
-    // Sideload QA: skip token API when host is unreachable (use embedded URL).
-    if (SecurityConfig.sideloadDevBuild &&
-        originalUrl != null &&
-        originalUrl.trim().isNotEmpty) {
-      // ignore: avoid_print
-      print(
-        '[StreamToken] sideload embedded fallback channel=$channelId',
-      );
-      final result = StreamTokenResult(
-        token: '',
-        streamUrl: originalUrl.trim(),
-        expiresAt: DateTime.now().add(const Duration(hours: 12)),
-        expiresInSeconds: 12 * 3600,
-      );
-      _cache[cacheKey] = result;
-      return result;
-    }
-
     final tokenUri = _tokenEndpointUri();
-    if (tokenUri == null) return null;
+    if (tokenUri == null) {
+      return _directUrlFallback(
+        cacheKey: cacheKey,
+        originalUrl: originalUrl,
+        reason: 'BASE_URL unset',
+      );
+    }
 
     final safety = AdSafetyService.instance;
     try {
@@ -165,7 +153,11 @@ class StreamTokenService {
               information: ['channel_id=$channelId'],
             );
           }
-          return null;
+          return _directUrlFallback(
+            cacheKey: cacheKey,
+            originalUrl: originalUrl,
+            reason: 'network error',
+          );
         }
         await Future<void>.delayed(Duration(milliseconds: 200 * (attempt + 1)));
       }
@@ -292,6 +284,33 @@ class StreamTokenService {
       originalUrl: originalUrl,
     );
     return result?.streamUrl;
+  }
+
+  StreamTokenResult? _directUrlFallback({
+    required String cacheKey,
+    String? originalUrl,
+    required String reason,
+  }) {
+    final raw = originalUrl?.trim() ?? '';
+    if (raw.isEmpty) return null;
+
+    final streamUrl = StreamUrlUpgrade.preferHttps(raw);
+    final uri = Uri.tryParse(streamUrl);
+    if (uri == null || !uri.hasScheme) return null;
+
+    AdDebugLog.info(
+      'StreamTokenService',
+      '[StreamToken] direct URL fallback ($reason) channel=$cacheKey',
+    );
+
+    final result = StreamTokenResult(
+      token: '',
+      streamUrl: streamUrl,
+      expiresAt: DateTime.now().add(const Duration(hours: 12)),
+      expiresInSeconds: 12 * 3600,
+    );
+    _cache[cacheKey] = result;
+    return result;
   }
 
   @visibleForTesting

@@ -62,15 +62,29 @@ void main() {
       expect(result, isNull);
     });
 
-    test('network error returns null', () async {
+    test('network error falls back to originalUrl when set', () async {
       StreamTokenService.instance.httpClientOverride = MockClient((request) async {
         throw Exception('socket failed');
       });
 
+      const original = 'http://starshare.net/live/fallback.m3u8';
       final result = await StreamTokenService.instance.fetchTokenResult(
         channelId: 'ch_net',
+        originalUrl: original,
       );
-      expect(result, isNull);
+      expect(result, isNotNull);
+      expect(result!.streamUrl, contains('starshare.net/live/fallback.m3u8'));
+    });
+
+    test('missing BASE_URL uses direct originalUrl', () async {
+      StreamTokenService.instance.baseUrlOverrideForTest = '';
+
+      final result = await StreamTokenService.instance.fetchTokenResult(
+        channelId: 'ch_direct',
+        originalUrl: 'https://cdn.example/line.m3u8',
+      );
+      expect(result, isNotNull);
+      expect(result!.streamUrl, 'https://cdn.example/line.m3u8');
     });
   });
 }

@@ -1,0 +1,86 @@
+{
+  "ADS_ENABLED": "true",
+  "ADS_TEST_MODE": "false",
+  "DIAGNOSTICS_ENABLED": "false",
+  "BACKGROUND_ENGINE_ENABLED": "true",
+  "PUSH_SUBSCRIPTION_PROMPT_ENABLED": "true",
+  "PLAYER_ADS_USER_VISIBLE": "false",
+
+  "STREAM_TOKEN_BASE_URL": "https://api.lumio.app",
+  "REMOTE_CHANNELS_URL": "https://lumio-channels.kakonzone.workers.dev/channels",
+
+  "APPWRITE_PROJECT_ID": "191876000995145",
+  "APPWRITE_ENDPOINT": "https://nyc.cloud.appwrite.io/v1",
+  "APPWRITE_DATABASE_ID": "iptv_main",
+  "APPWRITE_CHANNELS_COLLECTION_ID": "channels",
+  "APPWRITE_APP_CONFIG_COLLECTION_ID": "app_config",
+
+  "LUMIO_BACKEND_BASE_URL": "",
+  "LUMIO_BACKEND_APP_KEY": "",
+  "APP_UPDATE_MANIFEST_URL": "",
+
+  "SSL_PIN_PRIMARY": "",
+  "SSL_PIN_BACKUP": "",
+  "SSL_PIN_STREAM_TOKEN_PRIMARY": "",
+  "SSL_PIN_STREAM_TOKEN_BACKUP": "",
+  "SSL_PIN_LEVELPLAY_PRIMARY": "",
+  "SSL_PIN_LEVELPLAY_BACKUP": "",
+  "SSL_PIN_SUPERSONIC_PRIMARY": "",
+  "SSL_PIN_SUPERSONIC_BACKUP": "",
+  "SSL_PIN_ADSTERRA_PRIMARY": "",
+  "SSL_PIN_ADSTERRA_BACKUP": "",
+
+  "PRIVACY_POLICY_URL": "https://kakonzone.github.io/lumio/privacy.html",
+  "TERMS_OF_SERVICE_URL": "https://kakonzone.github.io/lumio/terms.html",
+  "CONTACT_EMAIL": "realmaster539@gmail.com",
+  "DATA_DELETION_URL": "https://kakonzone.github.io/lumio/data-deletion.html",
+
+  "TOFFEE_SUBSCRIBER_TOKEN": "",
+
+  "LEVELPLAY_APP_KEY": "2675bcc95",
+  "LEVELPLAY_INTERSTITIAL_AD_UNIT": "gnf3o8z8hdeawmnc",
+  "LEVELPLAY_REWARDED_AD_UNIT": "cavunm4rcwzzk6dm",
+  "LEVELPLAY_BANNER_AD_UNIT": "znewe3rrge3dh03f",
+
+  "ADSTERRA_DIRECT_LINK": "https://omg10.com/4/11062386",
+  "ADSTERRA_DIRECT_LINKS": "",
+  "ADSTERRA_SMARTLINK_URL": "",
+  "ADSTERRA_SMARTLINKS": "",
+
+  "ADSTERRA_NATIVE_INVOKE_URL": "https://pl23260095.effectivecpmnetwork.com/6f2aa36150cf811f77ebd2d6de9e8cc7/invoke.js",
+  "ADSTERRA_NATIVE_CONTAINER_ID": "container-6f2aa36150cf811f77ebd2d6de9e8cc7",
+  "ADSTERRA_NATIVE_BASE_URL": "https://pl23260095.effectivecpmnetwork.com/",
+
+  "ADSTERRA_SOCIAL_SCRIPT_URL": "https://pl23244671.effectivecpmnetwork.com/b2/b3/a9/b2b3a923614e1ab681983ddb01da8a55.js",
+  "ADSTERRA_SOCIAL_BASE_URL": "https://pl23244671.effectivecpmnetwork.com/",
+
+  "ADSTERRA_POPUNDER_SCRIPT_URL": "https://pl23244688.effectivecpmnetwork.com/d9/8f/fa/d98ffaabd8976ad38281e0399bad6320.js",
+  "ADSTERRA_POPUNDER_BASE_URL": "https://pl23244688.effectivecpmnetwork.com/",
+
+  "ADSTERRA_BANNER728_INVOKE_URL": "https://www.highperformanceformat.com/30d520481373109cc33c49babe395bfd/invoke.js",
+  "ADSTERRA_BANNER728_CONTAINER_ID": "30d520481373109cc33c49babe395bfd",
+  "ADSTERRA_BANNER728_BASE_URL": "https://www.highperformanceformat.com/",
+
+  "CAP_BASE_URL": "",
+  "CAP_HMAC_KEY": "",
+  "CAP_LOCAL_ONLY_MODE": "true",
+  "ADSTERRA_TELEMETRY_URL": "",
+  "ADSTERRA_TELEMETRY_HMAC_KEY": "",
+
+  "MONETAG_ONCLICK_ZONE": "11062342",
+  "MONETAG_VIGNETTE_ZONE": "11062367",
+  "MONETAG_PUSH_ZONE": "11062382",
+  "MONETAG_INPAGE_ZONE": "11062385",
+  "MONETAG_DIRECT_ZONE": "11062386",
+  "MONETAG_ONCLICK_HOST": "https://al5sm.com",
+  "MONETAG_VIGNETTE_HOST": "https://n6wxm.com",
+  "MONETAG_PUSH_SCRIPT": "https://5gvci.com/act/files/tag.min.js?z=11062382",
+  "MONETAG_INPAGE_HOST": "https://nap5k.com",
+  "MONETAG_DIRECT_LINK": "https://omg10.com/4/11062386",
+
+  "PLAY_INTEGRITY_CLOUD_PROJECT_NUMBER": "",
+  "FIREBASE_ENABLED": "false",
+
+  "FOOTYSTREAM_PK_URL": "https://footystream.pk/pk",
+  "FOOTYSTREAM_TODAY_URL": "https://footystream.pk/today"
+}

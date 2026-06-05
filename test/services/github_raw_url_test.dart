@@ -16,12 +16,12 @@ void main() {
     expect(GithubRawUrl.resolve(direct), direct);
   });
 
-  test('kakonzone allchannelking.m3u8 blob URL', () {
+  test('kakon122 my-media-notes.m3u8 blob URL', () {
     const blob =
-        'https://github.com/kakonzone/allchannelking.m3u8/blob/main/allchannelking.m3u8';
+        'https://github.com/kakon122/my-media-notes/blob/main/my-media-notes.m3u8';
     expect(
       GithubRawUrl.resolve(blob),
-      'https://raw.githubusercontent.com/kakonzone/allchannelking.m3u8/main/allchannelking.m3u8',
+      'https://raw.githubusercontent.com/kakon122/my-media-notes/main/my-media-notes.m3u8',
     );
   });
 }

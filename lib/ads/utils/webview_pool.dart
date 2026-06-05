@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import '../../services/firebase_bootstrap.dart';
 
 /// Limits concurrent native WebView mounts to reduce memory churn (Week 2).
-class WebViewPool {
+class WebViewPool extends ChangeNotifier {
   WebViewPool._();
   static final WebViewPool instance = WebViewPool._();
 
@@ -65,11 +65,61 @@ class WebViewPool {
       return false;
     }
     _active.add(placement);
+    notifyListeners();
     return true;
   }
 
   void release(String placement) {
-    _active.remove(placement);
+    if (_active.remove(placement)) {
+      notifyListeners();
+    }
+  }
+
+  bool holdsPlacement(String placement) => _active.contains(placement);
+
+  /// [IndexedStack] keeps every tab alive — free other tabs' list slots on nav change.
+  void releasePlacementsForTab(int navIndex) {
+    final keepPrefixes = switch (navIndex) {
+      0 => const ['home_'],
+      1 => const ['sports_list', 'floating_'],
+      2 => const ['live_list'],
+      3 => const <String>[],
+      4 => const ['category_list'],
+      _ => const <String>[],
+    };
+    releaseExceptPrefixes(keepPrefixes);
+  }
+
+  void releaseExceptPrefixes(List<String> keepPrefixes) {
+    if (_active.isEmpty) return;
+    final toRemove = _active
+        .where(
+          (p) => keepPrefixes.isEmpty ||
+              !keepPrefixes.any((prefix) => p.startsWith(prefix)),
+        )
+        .toList();
+    if (toRemove.isEmpty) return;
+    for (final p in toRemove) {
+      _active.remove(p);
+    }
+    if (kDebugMode) {
+      debugPrint(
+        '[WebViewPool] tab release removed=${toRemove.length} '
+        'keep=$keepPrefixes remaining=${_active.length}',
+      );
+    }
+    notifyListeners();
+  }
+
+  /// Frees pool slots when the app backgrounds so list ads can remount cleanly.
+  void releaseAllOnBackground() {
+    if (_active.isEmpty) return;
+    if (kDebugMode) {
+      debugPrint('[WebViewPool] background release (${_active.length} active)');
+    }
+    _active.clear();
+    _lastDeferLogAt.clear();
+    notifyListeners();
   }
 
   @visibleForTesting

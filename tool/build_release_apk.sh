@@ -14,8 +14,8 @@ cd "$ROOT"
 
 SECRETS_FILE="${SECRETS_FILE:-$ROOT/secrets.json}"
 BUILD_APK_MODE="${BUILD_APK_MODE:-split}"
-MAX_APK_MB="${MAX_APK_MB:-40}"
-MIN_APK_MB="${MIN_APK_MB:-22}"
+MAX_APK_MB="${MAX_APK_MB:-35}"
+MIN_APK_MB="${MIN_APK_MB:-20}"
 
 require_secret() {
   local key="$1"
@@ -71,6 +71,12 @@ if ! cap_local_only && [[ -z "$cap_url" ]]; then
   echo "ERROR: CAP_BASE_URL empty and CAP_LOCAL_ONLY_MODE not true." >&2
   exit 1
 fi
+
+require_secret APPWRITE_PROJECT_ID
+require_secret APPWRITE_ENDPOINT
+require_secret APPWRITE_DATABASE_ID
+require_secret APPWRITE_CHANNELS_COLLECTION_ID
+require_secret APPWRITE_APP_CONFIG_COLLECTION_ID
 
 require_secret LEVELPLAY_APP_KEY
 require_secret LEVELPLAY_INTERSTITIAL_AD_UNIT
@@ -221,13 +227,14 @@ case "$BUILD_APK_MODE" in
     ;;
   arm64)
     TARGET_PLATFORMS="android-arm64"
-    echo "==> ONE APK: arm64-v8a only"
+    echo "==> ONE APK: arm64-v8a only (recommended sideload — smallest single file)"
+    echo "    Target download: ${MIN_APK_MB}–${MAX_APK_MB} MB"
     ;;
   split)
     TARGET_PLATFORMS="android-arm,android-arm64"
     SPLIT_ARGS=(--split-per-abi)
     echo "==> TWO APKs (default): 32-bit + 64-bit — install the one for your phone"
-    echo "    Target per APK: ~${MIN_APK_MB}–${MAX_APK_MB} MB download each"
+    echo "    Target per APK: ${MIN_APK_MB}–${MAX_APK_MB} MB (arm64 usually smallest)"
     ;;
   *)
     echo "ERROR: unknown BUILD_APK_MODE=$BUILD_APK_MODE (universal|arm64|split|fat)" >&2
@@ -287,19 +294,23 @@ case "$BUILD_APK_MODE" in
 esac
 
 echo ""
-ls -lh "$OUT_DIR"/*.apk 2>/dev/null || true
+ls -lh "$OUT_DIR"/*-release.apk 2>/dev/null || ls -lh "$OUT_DIR"/*.apk 2>/dev/null || true
 
-if [[ -n "$PRIMARY_APK" && -f "$PRIMARY_APK" ]]; then
-  apk_mb=$(du -m "$PRIMARY_APK" | cut -f1)
-  echo ""
-  echo "Primary APK size: ${apk_mb} MB (target ${MIN_APK_MB}–${MAX_APK_MB} MB)"
-  if [[ "$BUILD_APK_MODE" == "fat" ]]; then
-    if [[ "$apk_mb" -lt "$MIN_APK_MB" ]]; then
-      echo "NOTE: Smaller than ${MIN_APK_MB} MB — OK if tree-shake removed unused code."
-    elif [[ "$apk_mb" -gt "$MAX_APK_MB" ]]; then
-      echo "WARN: > ${MAX_APK_MB} MB — still ship if acceptable; see docs/ANDROID_SIZE_AND_PERFORMANCE.md"
-    fi
+echo ""
+echo "==> APK sizes (target ${MIN_APK_MB}–${MAX_APK_MB} MB per install file):"
+over_max=0
+for apk in "$OUT_DIR"/*-release.apk "$OUT_DIR"/lumio-release.apk; do
+  [[ -f "$apk" ]] || continue
+  apk_mb=$(du -m "$apk" | cut -f1)
+  echo "    $(basename "$apk"): ${apk_mb} MB"
+  if [[ "$apk_mb" -gt "$MAX_APK_MB" ]]; then
+    over_max=1
   fi
+done
+if [[ "$over_max" -eq 1 ]]; then
+  echo "WARN: Some APKs exceed ${MAX_APK_MB} MB — try BUILD_APK_MODE=arm64 or FIREBASE_ENABLED=false; see docs/ANDROID_SIZE_AND_PERFORMANCE.md"
+elif [[ -f "$OUT_DIR/app-arm64-v8a-release.apk" ]]; then
+  echo "TIP: For WhatsApp share, prefer app-arm64-v8a-release.apk or BUILD_APK_MODE=arm64"
 fi
 
 echo ""

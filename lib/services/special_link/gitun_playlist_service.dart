@@ -3,7 +3,9 @@ import 'package:http/http.dart' as http;
 
 import '../../config/special_link_config.dart';
 import '../../models/model.dart';
+import '../appwrite_service.dart';
 import '../../utils/m3u_merge_parser.dart';
+import '../../utils/priority_broadcasters.dart';
 import 'github_raw_url.dart';
 import 'gitun_repo_discovery.dart';
 import 'special_link_cache.dart';
@@ -15,27 +17,12 @@ class GitunPlaylistService {
 
   static const _gitunOnlyCategory = 'GITUN';
 
-  /// Main app catalog — **only** [SpecialLinkConfig.appCatalogPlaylistUrl].
+  /// Main app catalog — **Appwrite** ([AppwriteService]), not GitHub.
+  @Deprecated('Use AppwriteService.fetchChannels or CatalogService.loadCatalog')
   Future<List<ChannelModel>> loadAppCatalogChannels({
     bool forceRefresh = false,
-  }) async {
-    if (!forceRefresh) {
-      final cached = await SpecialLinkCache.instance.readAppCatalogChannels();
-      if (cached != null && cached.isNotEmpty) return cached;
-    }
-
-    const source = GitunPlaylistSource(
-      pageUrl: SpecialLinkConfig.appCatalogPlaylistUrl,
-      includeAllChannels: true,
-    );
-
-    final list = await _fetchSources(
-      sources: const [source],
-      idPrefix: 'lumio',
-      onCache: SpecialLinkCache.instance.writeAppCatalogChannels,
-    );
-    return list;
-  }
+  }) =>
+      AppwriteService.instance.fetchChannels(forceRefresh: forceRefresh);
 
   /// Special Link → GITUN — third-party GitHub playlists only (not owner catalog).
   Future<List<ChannelModel>> loadGitunChannels({bool forceRefresh = false}) async {
@@ -49,6 +36,7 @@ class GitunPlaylistService {
     final list = await _fetchSources(
       sources: sources,
       idPrefix: 'gitun',
+      logTag: 'GITUN',
       onCache: SpecialLinkCache.instance.writeGitunChannels,
     );
     return list;
@@ -94,6 +82,7 @@ class GitunPlaylistService {
   Future<List<ChannelModel>> _fetchSources({
     required List<GitunPlaylistSource> sources,
     required String idPrefix,
+    required String logTag,
     required Future<void> Function(List<ChannelModel>) onCache,
   }) async {
     if (sources.isEmpty) return const [];
@@ -119,7 +108,7 @@ class GitunPlaylistService {
 
         if (res.statusCode != 200) {
           if (kDebugMode) {
-            debugPrint('[GITUN] skip $rawUrl http=${res.statusCode}');
+            debugPrint('[$logTag] skip $rawUrl http=${res.statusCode}');
           }
           continue;
         }
@@ -152,19 +141,18 @@ class GitunPlaylistService {
 
         if (kDebugMode) {
           debugPrint(
-            '[GITUN] $rawUrl parsed=$parsedCount kept=$keptCount '
+            '[$logTag] $rawUrl parsed=$parsedCount kept=$keptCount '
             'merged=${merged.length}',
           );
         }
       } catch (e) {
         if (kDebugMode) {
-          debugPrint('[GITUN] fetch failed $rawUrl: $e');
+          debugPrint('[$logTag] fetch failed $rawUrl: $e');
         }
       }
     }
 
-    final list = merged.values.toList()
-      ..sort((a, b) => a.name.compareTo(b.name));
+    final list = PriorityBroadcasters.sort(merged.values.toList());
 
     if (list.isNotEmpty) {
       await onCache(list);
@@ -180,12 +168,155 @@ class GitunPlaylistService {
     return _isSportsChannel(ch);
   }
 
-  static String _mergeKey(String name) =>
-      name.toLowerCase().replaceAll(RegExp(r'\s+'), ' ').trim();
+  static String _mergeKey(String name) {
+    var s = name.toLowerCase().replaceAll(RegExp(r'[+_|]'), ' ');
+    s = s.replaceAll(RegExp(r'\s+'), ' ').trim();
+    s = s
+        .replaceAll(
+          RegExp(r'\b(hd|fhd|sd|4k|uhd|hevc|live)\b'),
+          '',
+        )
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    final alias = _canonicalMergeAlias(s);
+    return alias ?? s;
+  }
 
+  /// Same broadcaster across GitHub playlists → one row, multi-link in player.
+  static String? _canonicalMergeAlias(String s) {
+    if (RegExp(r't\s*sports?|tsports').hasMatch(s)) return 't sports';
+    if (RegExp(r'^btv\b|bangladesh television').hasMatch(s)) return 'btv';
+    if (s.contains('gazi')) return 'gazi tv';
+    if (s.contains('nagorik') || s.contains('nagrik')) return 'nagorik tv';
+    if (s.contains('channel 9') || s == 'channel9') return 'channel 9';
+    if (s.contains('willow') && !RegExp(r'willow\s*\d').hasMatch(s)) {
+      return 'willow';
+    }
+    if (s.contains('fifa')) return 'fifa';
+    if (RegExp(r'bein\s*sport|bein\s*\d|beinsport').hasMatch(s)) {
+      return s.replaceAll(RegExp(r'\s+'), ' ');
+    }
+    return null;
+  }
+
+  @visibleForTesting
+  static bool isSportsChannelForTest(ChannelModel ch) => _isSportsChannel(ch);
+
+  @visibleForTesting
+  static String mergeKeyForTest(String name) => _mergeKey(name);
+
+  /// All GITUN rows are tagged category GITUN before filtering — never use that alone.
   static bool _isSportsChannel(ChannelModel ch) {
-    if (ch.category == 'Sports' || ch.category == 'GITUN') return true;
     final s = '${ch.name} ${ch.currentShow}'.toLowerCase();
+    if (_isExcludedNonSports(s)) return false;
+    if (_isBdSportsBroadcaster(s)) return true;
+    if (ch.category == 'Sports') return true;
+    return _hasStrongSportsSignal(s);
+  }
+
+  /// News, music, Hindi entertainment, movies — drop unless name is clearly sports.
+  static bool _isExcludedNonSports(String s) {
+    if (_hasStrongSportsSignal(s)) return false;
+
+    const exclude = [
+      ' news',
+      'news ',
+      'breaking',
+      'somoy',
+      'jamuna',
+      'independent tv',
+      'channel 24',
+      'channel i',
+      'channel 71',
+      'atn news',
+      'rtv',
+      'dbc',
+      'boishakhi',
+      'ekattor',
+      'nrb',
+      'jago news',
+      'bangla vision',
+      'cnn',
+      'bbc',
+      'al jazeera',
+      'wion',
+      'republic',
+      'aaj tak',
+      'abp',
+      'ndtv',
+      'zee news',
+      'music',
+      '9xm',
+      '9x jalwa',
+      'mtv',
+      'vh1',
+      'b4u music',
+      'song',
+      'hits',
+      'radio',
+      'bollywood',
+      'hindi',
+      'zee tv',
+      'zee bangla',
+      'zee cinema',
+      'zee anmol',
+      'colors bangla',
+      'colors hindi',
+      'colors tv',
+      'star plus',
+      'star jalsha',
+      'star gold',
+      'star bharat',
+      'sony tv',
+      'sony sab',
+      'sony pal',
+      'sony max',
+      'sab tv',
+      '&tv',
+      'and tv',
+      'rishtey',
+      'bindass',
+      'nick ',
+      'nickelodeon',
+      'cartoon',
+      'pogo',
+      'disney',
+      'baby tv',
+      'discovery',
+      'nat geo',
+      'national geographic',
+      'history',
+      'animal planet',
+      'food',
+      'cooking',
+      'religious',
+      'quran',
+      'madani',
+      'islamic',
+      'peace tv',
+      'maidan',
+      'movie',
+      'cinema',
+      'film',
+      'drama',
+      'entertainment',
+      'serial',
+      'geet',
+      'rang',
+      'dhoom',
+    ];
+    if (exclude.any(s.contains)) return true;
+
+    if (s.contains('gazi') && !s.contains('sport')) return true;
+    if ((s.contains('nagorik') || s.contains('nagrik')) && !s.contains('sport')) {
+      return true;
+    }
+    if (RegExp(r'\bbtv\b').hasMatch(s) && s.contains('news')) return true;
+
+    return false;
+  }
+
+  static bool _hasStrongSportsSignal(String s) {
     const keys = [
       'sport',
       'cricket',
@@ -203,52 +334,70 @@ class GitunPlaylistService {
       'wrestling',
       'wwe',
       'f1',
-      'formula',
+      'formula 1',
+      'formula one',
       'motogp',
       'tennis',
       'golf',
-      'match',
       ' vs ',
-      'live ',
-      'stream',
-      'strea',
       'willow',
+      'fifa',
       'espn',
+      'fox sports',
       'fox sport',
       'star sports',
       'sony sports',
       'sony ten',
       'eurosport',
+      'sky sports',
       'sky sport',
+      'tnt sports',
       'tnt sport',
       'tsports',
       't sports',
+      'ptv sports',
       'ptv sport',
-      'bein',
+      'bein sport',
+      'bein sports',
+      'beinsport',
       'dazn',
       'fancode',
       'supersport',
-      'premier',
+      'super sport',
+      'premier league',
       'epl',
       'ucl',
-      'champions',
+      'champions league',
       'laliga',
       'bundesliga',
-      'serie a',
       'ipl',
       'bpl',
       'psl',
       'cpl',
       'mls',
-      'roxi',
-      'roxie',
-      'shark',
-      'slapstream',
+      'astro supersport',
+      'sky cricket',
+      'roxi sports',
       'streameast',
-      'webcast',
       'mlbwebcast',
     ];
     return keys.any(s.contains);
+  }
+
+  /// BD channels commonly used for live sports (not general news feeds).
+  static bool _isBdSportsBroadcaster(String s) {
+    if (RegExp(r't\s*sports?|tsports').hasMatch(s)) return true;
+    if (RegExp(r'\bbtv\b|bangladesh television').hasMatch(s)) {
+      return !s.contains('news');
+    }
+    if (s.contains('channel 9') || s.contains('channel9')) {
+      return !s.contains('news') && !s.contains('music');
+    }
+    if (s.contains('gazi') && s.contains('sport')) return true;
+    if ((s.contains('nagorik') || s.contains('nagrik')) && s.contains('sport')) {
+      return true;
+    }
+    return false;
   }
 
   static ChannelModel _mergeChannels(ChannelModel a, ChannelModel b) {

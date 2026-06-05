@@ -5,6 +5,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 import '../../ads/utils/lumio_webview_config.dart';
+import '../../utils/stream_url_upgrade.dart';
 import '../../config/monetag_config.dart';
 
 /// Single entry for visible ad WebViews (Adsterra + Monetag HTML).
@@ -43,6 +44,12 @@ class WebViewAdHost {
   }
 
   static NavigationDecision evaluateNavigation(String url) {
+    if (StreamUrlUpgrade.isBlockedNavigationUrl(url)) {
+      if (kDebugMode) {
+        debugPrint('[WebViewAdHost] blocked scheme/path: $url');
+      }
+      return NavigationDecision.prevent;
+    }
     if (!isHostAllowed(url)) {
       if (kDebugMode) {
         debugPrint('[WebViewAdHost] blocked navigation: $url');

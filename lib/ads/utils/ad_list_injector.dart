@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../config/ad_config.dart';
+import '../ad_placement_config.dart';
 import '../ad_manager.dart';
 import '../adsterra/adsterra_native.dart';
 import 'lazy_ad_viewport.dart';
@@ -17,10 +18,18 @@ class AdListInjector {
   static int intervalFor(
     AdListScreen screen, {
     int? intervalOverride,
-  }) =>
-      intervalOverride ??
-      AdConfig.nativeDensityByScreen[screen] ??
-      defaultInterval;
+  }) {
+    if (intervalOverride != null) return intervalOverride;
+    if (screen == AdListScreen.news) {
+      return AdPlacementConfig.newsNativeInterval;
+    }
+    if (screen == AdListScreen.home) {
+      return AdConfig.nativeDensityByScreen[AdListScreen.home] ??
+          defaultInterval;
+    }
+    // Category / sports / live / favorites — RC interval (8 or 4 aggressive).
+    return AdPlacementConfig.channelListNativeInterval;
+  }
 
   static int totalCount(
     int itemCount, {
@@ -63,15 +72,47 @@ class AdListInjector {
     return listIndex ~/ (interval + 1);
   }
 
+  /// Stable placement id per browse category (Sports, Bangla, …).
+  static String placementPrefixForCategory(String categoryName) {
+    return 'category_list_${_placementSlug(categoryName)}';
+  }
+
+  /// Stable placement id per Sports filter (Cricket, Football, All, …).
+  static String placementPrefixForSport(String sportFilter) {
+    return 'sports_list_${_placementSlug(sportFilter)}';
+  }
+
+  static String _placementSlug(String raw) {
+    final slug = raw
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+        .replaceAll(RegExp(r'_+'), '_')
+        .replaceAll(RegExp(r'^_|_$'), '');
+    return slug.isEmpty ? 'all' : slug;
+  }
+
+  static bool defaultUseWebViewPool(AdListScreen screen) {
+    switch (screen) {
+      case AdListScreen.sports:
+      case AdListScreen.categoryDrilldown:
+      case AdListScreen.live:
+      case AdListScreen.categories:
+        return false;
+      default:
+        return true;
+    }
+  }
+
   static Widget? maybeNativeAdAfterChannels({
     required int channelsSoFar,
     AdListScreen screen = AdListScreen.defaultList,
     int? interval,
     String placementPrefix = 'list_native',
     bool? showAds,
+    bool? useWebViewPool,
   }) {
     final adsOn = showAds ??
-        (AdManager.instance.adsEnabled &&
+        (AdManager.instance.showAdsterraWebViewSlots &&
             !AdManager.instance.isStreaming &&
             !AdManager.instance.adChromeHidden.value);
     final effectiveInterval =
@@ -79,9 +120,11 @@ class AdListInjector {
     if (!adsOn || effectiveInterval <= 0 || channelsSoFar <= 0) return null;
     if (channelsSoFar % effectiveInterval != 0) return null;
     final slot = channelsSoFar ~/ effectiveInterval;
-    return _PooledNativeAdSlot(
+    final placement = '${placementPrefix}_$slot';
+    return _listNativeAdSlot(
       key: ValueKey('${placementPrefix}_ad_$slot'),
-      placement: '${placementPrefix}_$slot',
+      placement: placement,
+      screen: screen,
     );
   }
 
@@ -116,9 +159,10 @@ class AdListInjector {
     double separatorHeight = 8,
     String placementPrefix = 'list_native',
     bool? showAds,
+    bool? useWebViewPool,
   }) {
     final adsOn = showAds ??
-        (AdManager.instance.adsEnabled &&
+        (AdManager.instance.showAdsterraWebViewSlots &&
             !AdManager.instance.isStreaming &&
             !AdManager.instance.adChromeHidden.value);
     final effectiveInterval =
@@ -137,33 +181,138 @@ class AdListInjector {
       cacheExtent: 200,
       itemCount: total,
       separatorBuilder: (_, __) => SizedBox(height: separatorHeight),
-      itemBuilder: (ctx, i) {
-        if (inject &&
-            isAdIndex(
+      itemBuilder: (ctx, i) => _buildSeparatedItem(
+        ctx,
+        i,
+        itemCount: itemCount,
+        itemBuilder: itemBuilder,
+        screen: screen,
+        interval: interval,
+        placementPrefix: placementPrefix,
+        inject: inject,
+        useWebViewPool: useWebViewPool,
+      ),
+    );
+  }
+
+  /// Channel rows + native ads as one scroll sliver (for unified page scroll).
+  static Widget buildSeparatedChannelSliver({
+    required int itemCount,
+    required Widget Function(BuildContext context, int sourceIndex) itemBuilder,
+    AdListScreen screen = AdListScreen.defaultList,
+    int? interval,
+    EdgeInsetsGeometry padding = const EdgeInsets.fromLTRB(16, 0, 16, 24),
+    double separatorHeight = 8,
+    String placementPrefix = 'list_native',
+    bool? showAds,
+    bool? useWebViewPool,
+  }) {
+    final adsOn = showAds ??
+        (AdManager.instance.showAdsterraWebViewSlots &&
+            !AdManager.instance.isStreaming &&
+            !AdManager.instance.adChromeHidden.value);
+    final effectiveInterval =
+        intervalFor(screen, intervalOverride: interval);
+    final inject = adsOn && effectiveInterval > 0 && itemCount > 0;
+    final total = inject
+        ? totalCount(
+            itemCount,
+            screen: screen,
+            intervalOverride: interval,
+          )
+        : itemCount;
+
+    return SliverPadding(
+      padding: padding,
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (ctx, i) {
+            final child = _buildSeparatedItem(
+              ctx,
               i,
+              itemCount: itemCount,
+              itemBuilder: itemBuilder,
               screen: screen,
-              intervalOverride: interval,
-            )) {
-          final slot = adSlotIndex(
+              interval: interval,
+              placementPrefix: placementPrefix,
+              inject: inject,
+              useWebViewPool: useWebViewPool,
+            );
+            if (i >= total - 1) return child;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                child,
+                SizedBox(height: separatorHeight),
+              ],
+            );
+          },
+          childCount: total,
+        ),
+      ),
+    );
+  }
+
+  static Widget _listNativeAdSlot({
+    Key? key,
+    required String placement,
+    required AdListScreen screen,
+    double height = 100,
+    bool? useWebViewPool,
+  }) {
+    final pooled = useWebViewPool ?? defaultUseWebViewPool(screen);
+    if (pooled) {
+      return _PooledNativeAdSlot(
+        key: key,
+        placement: placement,
+        height: height,
+      );
+    }
+    return _UnpooledListNativeAd(
+      key: key,
+      placement: placement,
+      height: height,
+    );
+  }
+
+  static Widget _buildSeparatedItem(
+    BuildContext ctx,
+    int i, {
+    required int itemCount,
+    required Widget Function(BuildContext context, int sourceIndex) itemBuilder,
+    required AdListScreen screen,
+    int? interval,
+    required String placementPrefix,
+    required bool inject,
+    bool? useWebViewPool,
+  }) {
+    if (inject &&
+        isAdIndex(
+          i,
+          screen: screen,
+          intervalOverride: interval,
+        )) {
+      final slot = adSlotIndex(
+        i,
+        screen: screen,
+        intervalOverride: interval,
+      );
+      final placement = '${placementPrefix}_$slot';
+      return _listNativeAdSlot(
+        key: ValueKey('${placementPrefix}_ad_$slot'),
+        placement: placement,
+        screen: screen,
+        useWebViewPool: useWebViewPool,
+      );
+    }
+    final src = inject
+        ? sourceIndex(
             i,
             screen: screen,
             intervalOverride: interval,
-          );
-          return _PooledNativeAdSlot(
-            key: ValueKey('${placementPrefix}_ad_$slot'),
-            placement: '${placementPrefix}_$slot',
-          );
-        }
-        final src = inject
-            ? sourceIndex(
-                i,
-                screen: screen,
-                intervalOverride: interval,
-              )
-            : i;
-        return itemBuilder(ctx, src);
-      },
-    );
+          )
+        : i;
+    return itemBuilder(ctx, src);
   }
 }
 
@@ -195,8 +344,17 @@ class _PooledNativeAdSlotState extends State<_PooledNativeAdSlot>
   @override
   void initState() {
     super.initState();
+    WebViewPool.instance.addListener(_onPoolChanged);
     if (!widget.lazy) {
       _tryMount();
+    }
+  }
+
+  void _onPoolChanged() {
+    if (_mountedWebView &&
+        !WebViewPool.instance.holdsPlacement(widget.placement)) {
+      _lastAcquireAttemptAt = null;
+      if (mounted) setState(() => _mountedWebView = false);
     }
   }
 
@@ -223,6 +381,7 @@ class _PooledNativeAdSlotState extends State<_PooledNativeAdSlot>
 
   @override
   void dispose() {
+    WebViewPool.instance.removeListener(_onPoolChanged);
     if (_mountedWebView) {
       WebViewPool.instance.release(widget.placement);
     }
@@ -239,21 +398,21 @@ class _PooledNativeAdSlotState extends State<_PooledNativeAdSlot>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final adsAllowed = AdManager.instance.adsEnabled &&
+    final adsAllowed = AdManager.instance.showAdsterraWebViewSlots &&
         !AdManager.instance.isStreaming &&
         !AdManager.instance.adChromeHidden.value;
     if (!adsAllowed) {
-      return SizedBox(height: widget.height);
+      return const SizedBox.shrink();
     }
     if (widget.lazy && !_mountedWebView) {
       return LazyAdViewport(
-        placeholderHeight: widget.height,
+        placeholderHeight: 0,
         builder: () {
           if (!_mountedWebView) {
             _tryMount();
           }
           if (!_mountedWebView) {
-            return SizedBox(height: widget.height);
+            return const SizedBox.shrink();
           }
           return _nativeBanner();
         },
@@ -271,5 +430,37 @@ class _PooledNativeAdSlotState extends State<_PooledNativeAdSlot>
       );
     }
     return _nativeBanner();
+  }
+}
+
+/// In-feed list native — no WebView pool (reliable every-8 on category/sports/live).
+class _UnpooledListNativeAd extends StatelessWidget {
+  const _UnpooledListNativeAd({
+    super.key,
+    required this.placement,
+    this.height = 100,
+  });
+
+  final String placement;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!AdManager.instance.showAdsterraWebViewSlots ||
+        AdManager.instance.isStreaming ||
+        AdManager.instance.adChromeHidden.value) {
+      return const SizedBox.shrink();
+    }
+    return LazyAdViewport(
+      placeholderHeight: 0,
+      preloadPx: 480,
+      builder: () => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: AdsterraNativeBanner(
+          placement: placement,
+          height: height,
+        ),
+      ),
+    );
   }
 }

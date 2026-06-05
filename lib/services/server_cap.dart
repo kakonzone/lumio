@@ -63,7 +63,10 @@ class ServerCap {
         _loggedReleaseMissing = true;
         // ignore: avoid_print
         print(
-          '[ServerCap] ERROR CAP_BASE_URL unset in release — ads disabled',
+          '[ServerCap] ERROR CAP_BASE_URL unset in release — ads disabled. '
+          'Fix: set CAP_BASE_URL in secrets.json OR use '
+          '--dart-define=CAP_LOCAL_ONLY_MODE=true (build_size_apk.sh does this). '
+          'Invalid secrets.json also drops all dart-defines — run: python3 -m json.tool secrets.json',
         );
       } else {
         if (_loggedDisabled) return;

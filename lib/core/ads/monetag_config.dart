@@ -21,9 +21,16 @@ class MonetagZoneConfig {
     defaultValue: '',
   );
 
+  /// Release CI override — applies to all placements when set (verify via APK strings).
+  static const String unifiedZoneId = String.fromEnvironment(
+    'MONETAG_ZONE_ID',
+    defaultValue: '',
+  );
+
   static bool _isSet(String v) => v.trim().isNotEmpty;
 
   static String resolve(String rc1Zone, String legacyZone) {
+    if (_isSet(unifiedZoneId)) return unifiedZoneId.trim();
     if (_isSet(rc1Zone)) return rc1Zone.trim();
     if (_isSet(legacyZone)) return legacyZone.trim();
     return '';

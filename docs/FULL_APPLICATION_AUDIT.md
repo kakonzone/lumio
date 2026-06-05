@@ -1,5 +1,7 @@
 # Lumio Sports TV — Full Application Audit
 
+> **Superseded for ongoing audits:** use canonical [`../AUDIT_REPORT.md`](../AUDIT_REPORT.md) **rev.6** (2026-06-04). This file is a historical snapshot from 2026-05-26.
+
 **Audit type:** READ-ONLY (no code changes)  
 **Repository:** `/home/kakonzone/Downloads/FlutterProject/lumio` (same as `/mnt/ssd3/Ubuntu/FlutterProject/lumio`)  
 **Package:** `lumio_tv` 1.0.0+1 · Android `com.kakonzone.lumio`

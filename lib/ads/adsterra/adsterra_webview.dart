@@ -77,7 +77,7 @@ class _AdsterraWebViewState extends State<AdsterraWebView> {
     }
 
     final baseUrl = AdsterraHtml.baseUrlForPlacement(widget.placement);
-    final controller = await createLumioWebViewController();
+    final controller = await WebViewAdHost.createController();
     if (!mounted || _disposed) return;
     controller
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -219,27 +219,58 @@ class _AdsterraWebViewState extends State<AdsterraWebView> {
     return lower.contains('banner') ||
         lower.contains('728') ||
         lower.contains('social_bar') ||
-        lower == 'sports_top' ||
+        lower.endsWith('_top') ||
         lower == 'player_below';
   }
 
   @override
   Widget build(BuildContext context) {
-    final controller = _controller;
-    if (controller == null) {
-      return SizedBox(height: widget.height);
+    if (!AdManager.instance.showAdsterraWebViewSlots) {
+      return const SizedBox.shrink();
     }
 
-    final webStack = SizedBox(
+    if (_lastError != null && !_pageLoaded && !_loading) {
+      return const SizedBox.shrink();
+    }
+
+    final collapseWhileLoading = widget.userVisible;
+
+    final controller = _controller;
+    if (controller == null) {
+      return const SizedBox.shrink();
+    }
+
+    if (!widget.userVisible) {
+      return Opacity(
+        opacity: 0,
+        child: IgnorePointer(
+          ignoring: true,
+          child: SizedBox(
+            height: widget.height,
+            child: WebViewWidget(controller: controller),
+          ),
+        ),
+      );
+    }
+
+    if (!_pageLoaded && !_loading) {
+      return const SizedBox.shrink();
+    }
+
+    if (collapseWhileLoading && !_pageLoaded) {
+      return const SizedBox.shrink();
+    }
+
+    return SizedBox(
       height: widget.height,
       width: widget.fullWidth ? double.infinity : widget.height,
       child: Stack(
         children: [
           Opacity(
-            opacity: _pageLoaded ? 1 : 0.01,
+            opacity: _pageLoaded ? 1 : 0,
             child: WebViewWidget(controller: controller),
           ),
-          if (widget.userVisible && _loading)
+          if (_loading)
             const Center(
               child: SizedBox(
                 width: 20,
@@ -248,16 +279,6 @@ class _AdsterraWebViewState extends State<AdsterraWebView> {
               ),
             ),
         ],
-      ),
-    );
-
-    if (widget.userVisible) return webStack;
-
-    return Opacity(
-      opacity: 0,
-      child: IgnorePointer(
-        ignoring: true,
-        child: webStack,
       ),
     );
   }

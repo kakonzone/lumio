@@ -76,7 +76,6 @@ void main() {
         'Entertainment',
         'Movies',
         'Kids',
-        'Live TV',
         ChannelCategoryRegistry.specialLinkId,
       ],
     );

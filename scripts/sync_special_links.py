@@ -134,7 +134,14 @@ def get_document(doc_id: str) -> bool:
     if resp.status_code == 404:
         return False
     if resp.status_code >= 400:
-        raise RuntimeError(f"GET {doc_id} failed ({resp.status_code}): {resp.text}")
+        body = resp.text
+        if resp.status_code == 401 and "not accessible in this region" in body:
+            raise RuntimeError(
+                f"GET {doc_id} failed (401): wrong APPWRITE_ENDPOINT for this project. "
+                f"Use the regional URL from Appwrite Console (e.g. "
+                f"https://sgp.cloud.appwrite.io/v1). Response: {body}"
+            )
+        raise RuntimeError(f"GET {doc_id} failed ({resp.status_code}): {body}")
     return True
 
 

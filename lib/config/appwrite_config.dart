@@ -70,7 +70,7 @@ class AppwriteConfig {
 
   static const mainEndpoint = String.fromEnvironment(
     'APPWRITE_MAIN_ENDPOINT',
-    defaultValue: 'https://cloud.appwrite.io/v1',
+    defaultValue: 'https://sgp.cloud.appwrite.io/v1',
   );
 
   static const mainDatabaseId = String.fromEnvironment(

@@ -9,42 +9,61 @@ on:
 jobs:
   update-app-config:
     runs-on: ubuntu-latest
+    env:
+      APPWRITE_MAIN_ENDPOINT: ${{ secrets.APPWRITE_MAIN_ENDPOINT }}
+      APPWRITE_MAIN_PROJECT_ID: ${{ secrets.APPWRITE_MAIN_PROJECT_ID }}
+      APPWRITE_MAIN_API_KEY: ${{ secrets.APPWRITE_MAIN_API_KEY }}
+      APPWRITE_MAIN_DATABASE_ID: ${{ secrets.APPWRITE_MAIN_DATABASE_ID }}
+      APPWRITE_ENDPOINT: ${{ secrets.APPWRITE_ENDPOINT }}
+      APPWRITE_PROJECT_ID: ${{ secrets.APPWRITE_PROJECT_ID }}
+      APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Verify Appwrite secrets
-        env:
-          APPWRITE_ENDPOINT: ${{ secrets.APPWRITE_ENDPOINT }}
-          APPWRITE_PROJECT_ID: ${{ secrets.APPWRITE_PROJECT_ID }}
-          APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
+      - name: Resolve Appwrite main project
         run: |
           set -euo pipefail
-          if [ -z "${APPWRITE_ENDPOINT}" ] || [ -z "${APPWRITE_PROJECT_ID}" ] || [ -z "${APPWRITE_API_KEY}" ]; then
-            echo "::error::Missing GitHub Secrets"
-            echo "Add these at: Repo → Settings → Secrets and variables → Actions"
-            echo "  APPWRITE_ENDPOINT  = https://sgp.cloud.appwrite.io/v1"
-            echo "  APPWRITE_PROJECT_ID = 6a22869200230b1a8bf0"
-            echo "  APPWRITE_API_KEY   = (from Appwrite Console → API Keys)"
+          {
+            echo "MAIN_ENDPOINT=${APPWRITE_MAIN_ENDPOINT:-https://sgp.cloud.appwrite.io/v1}"
+            echo "MAIN_PROJECT=${APPWRITE_MAIN_PROJECT_ID:-6a22869200230b1a8bf0}"
+            echo "MAIN_DATABASE=${APPWRITE_MAIN_DATABASE_ID:-database-iptv_main}"
+            echo "MAIN_API_KEY=${APPWRITE_MAIN_API_KEY:-${APPWRITE_API_KEY:-}}"
+          } >> "$GITHUB_ENV"
+          echo "Main project: ${APPWRITE_MAIN_ENDPOINT:-https://sgp.cloud.appwrite.io/v1}"
+          echo "Main database: ${APPWRITE_MAIN_DATABASE_ID:-database-iptv_main}"
+
+      - name: Verify Appwrite secrets
+        run: |
+          set -euo pipefail
+          if [ -z "${MAIN_API_KEY}" ]; then
+            echo "::error::Missing GitHub Secret for SGP main project API key"
+            echo "Add at: Repo → Settings → Secrets and variables → Actions"
+            echo "  APPWRITE_MAIN_API_KEY  = API key from SGP Console → Project 6a22869200230b1a8bf0"
+            echo "  (or APPWRITE_API_KEY if it belongs to that same SGP project)"
             exit 1
           fi
-          echo "Appwrite secrets OK (key length: ${#APPWRITE_API_KEY})"
+          if [ -n "${APPWRITE_ENDPOINT:-}" ] && echo "${APPWRITE_ENDPOINT}" | grep -q 'nyc.cloud.appwrite.io'; then
+            echo "::warning::APPWRITE_ENDPOINT is NYC catalog (iptv_main). Deploy uses SGP main project (${MAIN_ENDPOINT}, database ${MAIN_DATABASE})."
+          fi
+          if [ -n "${APPWRITE_PROJECT_ID:-}" ] && [ "${APPWRITE_PROJECT_ID}" = "191876000995145" ]; then
+            echo "::warning::APPWRITE_PROJECT_ID is NYC catalog project. Deploy uses SGP main project ${MAIN_PROJECT}."
+          fi
+          echo "Appwrite main secrets OK (key length: ${#MAIN_API_KEY})"
 
       - name: Update global_config updated_at in Appwrite
-        env:
-          APPWRITE_ENDPOINT: ${{ secrets.APPWRITE_ENDPOINT }}
-          APPWRITE_PROJECT_ID: ${{ secrets.APPWRITE_PROJECT_ID }}
-          APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
         run: |
           set -euo pipefail
           TIMESTAMP="$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")"
-          echo "Updating app_config/global_config updated_at=${TIMESTAMP}"
+          PATCH_URL="${MAIN_ENDPOINT}/databases/${MAIN_DATABASE}/collections/app_config/documents/global_config"
+          echo "Updating ${MAIN_DATABASE}/app_config/global_config updated_at=${TIMESTAMP}"
+          echo "PATCH ${PATCH_URL}"
 
           HTTP_CODE=$(curl -sS -o /tmp/appwrite_patch.json -w "%{http_code}" -X PATCH \
-            "${APPWRITE_ENDPOINT}/databases/database-iptv_main/collections/app_config/documents/global_config" \
+            "${PATCH_URL}" \
             -H "Content-Type: application/json" \
-            -H "X-Appwrite-Project: ${APPWRITE_PROJECT_ID}" \
-            -H "X-Appwrite-Key: ${APPWRITE_API_KEY}" \
+            -H "X-Appwrite-Project: ${MAIN_PROJECT}" \
+            -H "X-Appwrite-Key: ${MAIN_API_KEY}" \
             -d "{\"data\":{\"updated_at\":\"${TIMESTAMP}\"}}")
 
           cat /tmp/appwrite_patch.json
@@ -56,21 +75,33 @@ jobs:
             200|201) echo "global_config updated_at OK" ;;
             401)
               if echo "${BODY}" | grep -q "not accessible in this region"; then
-                echo "::error::Wrong APPWRITE_ENDPOINT region. Update GitHub Secret to: https://sgp.cloud.appwrite.io/v1"
+                echo "::error::Wrong Appwrite region. MAIN_ENDPOINT must be: https://sgp.cloud.appwrite.io/v1"
               else
-                echo "::error::401 Unauthorized — wrong APPWRITE_API_KEY or missing databases.write scope"
+                echo "::error::401 Unauthorized — use API key from SGP main project ${MAIN_PROJECT} with databases.write scope"
               fi
               exit 1
               ;;
-            404) echo "::error::404 Not Found — create document global_config in app_config collection"; exit 1 ;;
-            *)   echo "::error::Appwrite PATCH failed (HTTP ${HTTP_CODE})"; exit 1 ;;
+            404)
+              if echo "${BODY}" | grep -q "database_not_found"; then
+                echo "::error::404 Database '${MAIN_DATABASE}' not found in project ${MAIN_PROJECT}."
+                echo "Deploy needs SGP main project (not NYC catalog iptv_main)."
+                echo "Set GitHub Secrets: APPWRITE_MAIN_API_KEY from SGP Console → API Keys."
+              elif echo "${BODY}" | grep -q "document_not_found"; then
+                echo "::error::404 Document global_config missing — create it in ${MAIN_DATABASE} → app_config"
+              else
+                echo "::error::404 Not Found — ${BODY}"
+              fi
+              exit 1
+              ;;
+            *) echo "::error::Appwrite PATCH failed (HTTP ${HTTP_CODE})"; exit 1 ;;
           esac
 
       - name: Sync Special Links to Appwrite
         env:
-          APPWRITE_ENDPOINT: ${{ secrets.APPWRITE_ENDPOINT }}
-          APPWRITE_PROJECT_ID: ${{ secrets.APPWRITE_PROJECT_ID }}
-          APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
+          APPWRITE_ENDPOINT: ${{ env.MAIN_ENDPOINT }}
+          APPWRITE_PROJECT_ID: ${{ env.MAIN_PROJECT }}
+          APPWRITE_API_KEY: ${{ env.MAIN_API_KEY }}
+          APPWRITE_DATABASE_ID: ${{ env.MAIN_DATABASE }}
         run: |
           set -euo pipefail
           pip install requests

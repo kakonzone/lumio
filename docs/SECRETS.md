@@ -15,13 +15,17 @@ The mobile app uses **anonymous / Guests Read** only. Do **not** put an Appwrite
 3. **SGP Lumio** (`6a22869200230b1a8bf0`) → Databases → `iptv_main`:
    - **`app_config`** → document `global_config` exists → **Read → Guests (any)**
    - **`special_links`** → **Read → Guests (any)** (GITUN GitHub playlist URLs)
-4. **Storage** (if channel logos / assets use Appwrite files): bucket → **Read → Guests (any)** on files the app loads.
+   - **`app_version`** → document `6a24675100155949547f` → **Read → Guests (any)**
+4. **SGP Storage** → bucket **`lumio.apk`** → **Read → Guests (any)** on files the app downloads.
+5. **Storage** (channel logos / assets): bucket → **Read → Guests (any)** on files the app loads.
 
 **GitHub Actions (deploy API key — not in the app):**
 
 | Secret | Project | Purpose |
 |--------|---------|---------|
-| `APPWRITE_API_KEY` or `APPWRITE_MAIN_API_KEY` | SGP Lumio `6a22869200230b1a8bf0` | Deploy: `global_config`, `special_links` sync |
+| `APPWRITE_API_KEY` or `APPWRITE_MAIN_API_KEY` | SGP Lumio `6a22869200230b1a8bf0` | Deploy: `global_config`, `special_links` sync; release: APK upload + `app_version` patch |
+
+Optional release overrides (defaults match code): `APPWRITE_BUCKET_ID` (`lumio.apk`), `APPWRITE_COLLECTION_ID` (`app_version`), `APPWRITE_VERSION_DOC_ID` (`6a24675100155949547f`), `APPWRITE_DATABASE_ID` (`iptv_main`).
 
 **`secrets.json` / release APK — Appwrite keys only (no `APPWRITE_API_KEY` in the app):**
 
@@ -35,6 +39,9 @@ The mobile app uses **anonymous / Guests Read** only. Do **not** put an Appwrite
 | `APPWRITE_MAIN_PROJECT_ID` | `6a22869200230b1a8bf0` |
 | `APPWRITE_MAIN_ENDPOINT` | `https://sgp.cloud.appwrite.io/v1` |
 | `APPWRITE_MAIN_DATABASE_ID` | `iptv_main` |
+| `APPWRITE_APK_BUCKET_ID` | `lumio.apk` |
+| `APPWRITE_APP_VERSION_COLLECTION_ID` | `app_version` |
+| `APPWRITE_VERSION_DOC_ID` | `6a24675100155949547f` |
 
 Playlist fallback (`playlists` / document `main`) and featured World Cup cards (`featured_live_events` in `app_config`) use **code defaults** in `lib/config/appwrite_config.dart` — not required in `secrets.json`. See `docs/APPWRITE_WORLD_CUP_CARDS.md` for daily JSON updates.
 

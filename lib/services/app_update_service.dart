@@ -1,55 +1,153 @@
-import 'dart:convert';
+import 'dart:io';
 
-import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:dart_appwrite/dart_appwrite.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import 'package:open_file/open_file.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart' as ph;
 
-import '../config/app_config.dart';
+import '../config/app_update_config.dart';
 
-class AppUpdateInfo {
-  const AppUpdateInfo({
-    required this.remoteVersion,
-    required this.apkUrl,
-    this.message = '',
+class AppVersionInfo {
+  const AppVersionInfo({
+    required this.version,
+    required this.apkFileId,
+    this.forceUpdate = false,
+    this.updatedAt,
   });
 
-  final String remoteVersion;
-  final String apkUrl;
-  final String message;
+  final String version;
+  final String apkFileId;
+  final bool forceUpdate;
+  final DateTime? updatedAt;
 }
 
-/// Sideload update check — no Play Store.
+/// Sideload update via Appwrite `app_version` + Storage bucket (no Play Store).
 class AppUpdateService {
   AppUpdateService._();
   static final AppUpdateService instance = AppUpdateService._();
 
-  Future<AppUpdateInfo?> checkForUpdate() async {
-    if (!AppConfig.hasAppUpdateManifest) return null;
-    final uri = Uri.tryParse(AppConfig.appUpdateManifestUrl.trim());
-    if (uri == null || uri.scheme != 'https') return null;
+  late final Client _client = Client()
+      .setEndpoint(AppUpdateConfig.endpoint)
+      .setProject(AppUpdateConfig.projectId);
 
+  late final Databases _databases = Databases(_client);
+
+  String? _currentVersion;
+
+  Future<String> currentVersion() async {
+    _currentVersion ??= (await PackageInfo.fromPlatform()).version;
+    return _currentVersion!;
+  }
+
+  Future<AppVersionInfo?> fetchLatestVersion() async {
+    if (!AppUpdateConfig.isConfigured) return null;
     try {
-      final response = await http.get(uri).timeout(const Duration(seconds: 8));
-      if (response.statusCode < 200 || response.statusCode >= 300) return null;
-      final decoded = jsonDecode(response.body);
-      if (decoded is! Map<String, dynamic>) return null;
-      final remoteVersion = (decoded['version'] as String? ?? '').trim();
-      final apkUrl = (decoded['apk_url'] as String? ?? '').trim();
-      if (remoteVersion.isEmpty || apkUrl.isEmpty) return null;
-
-      final package = await PackageInfo.fromPlatform();
-      if (!isNewerVersion(remoteVersion, package.version)) return null;
-
-      return AppUpdateInfo(
-        remoteVersion: remoteVersion,
-        apkUrl: apkUrl,
-        message: (decoded['message'] as String? ?? '').trim(),
+      final doc = await _databases.getDocument(
+        databaseId: AppUpdateConfig.databaseId,
+        collectionId: AppUpdateConfig.collectionId,
+        documentId: AppUpdateConfig.versionDocumentId,
       );
+      final data = Map<String, dynamic>.from(doc.data);
+      final version = _str(data, 'version');
+      final apkFileId = _str(data, 'apk_file_id');
+      if (version.isEmpty || apkFileId.isEmpty) return null;
+
+      final info = AppVersionInfo(
+        version: version,
+        apkFileId: apkFileId,
+        forceUpdate: data['force_update'] == true,
+        updatedAt: _parseDate(data['updated_at']),
+      );
+      return info;
+    } on AppwriteException catch (e) {
+      if (kDebugMode) {
+        debugPrint('[AppUpdate] fetch failed: ${e.message} (code=${e.code})');
+      }
+      return null;
     } catch (e) {
-      debugPrint('[AppUpdate] check failed: $e');
+      if (kDebugMode) debugPrint('[AppUpdate] fetch failed: $e');
       return null;
     }
+  }
+
+  Future<bool> isUpdateAvailable() async {
+    try {
+      final remote = await fetchLatestVersion();
+      if (remote == null) return false;
+      final current = await currentVersion();
+      return isNewerVersion(remote.version, current);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  String buildDownloadUrl(String fileId) {
+    final base = AppUpdateConfig.endpoint.replaceAll(RegExp(r'/+$'), '');
+    return '$base/storage/buckets/${AppUpdateConfig.bucketId}/files/$fileId/download'
+        '?project=${AppUpdateConfig.projectId}';
+  }
+
+  Future<String?> downloadApk(
+    String fileId, {
+    void Function(double progress)? onProgress,
+  }) async {
+    if (!Platform.isAndroid) return null;
+    final url = buildDownloadUrl(fileId);
+    final dir = await getTemporaryDirectory();
+    final savePath = '${dir.path}/lumio_update.apk';
+
+    final file = File(savePath);
+    if (file.existsSync()) {
+      await file.delete();
+    }
+
+    try {
+      final dio = Dio(
+        BaseOptions(
+          connectTimeout: const Duration(seconds: 30),
+          receiveTimeout: const Duration(minutes: 20),
+          headers: const {'Accept': '*/*'},
+        ),
+      );
+      await dio.download(
+        url,
+        savePath,
+        onReceiveProgress: (received, total) {
+          if (total <= 0) return;
+          onProgress?.call(received / total);
+        },
+      );
+      return savePath;
+    } catch (e) {
+      if (kDebugMode) debugPrint('[AppUpdate] download failed: $e');
+      return null;
+    }
+  }
+
+  Future<bool> installApk(String filePath) async {
+    if (!Platform.isAndroid) return false;
+    try {
+      if (!await _ensureInstallPermission()) return false;
+      final result = await OpenFile.open(
+        filePath,
+        type: 'application/vnd.android.package-archive',
+      );
+      return result.type == ResultType.done;
+    } catch (e) {
+      if (kDebugMode) debugPrint('[AppUpdate] install failed: $e');
+      return false;
+    }
+  }
+
+  Future<bool> _ensureInstallPermission() async {
+    if (!Platform.isAndroid) return true;
+    final status = await ph.Permission.requestInstallPackages.status;
+    if (status.isGranted) return true;
+    final requested = await ph.Permission.requestInstallPackages.request();
+    return requested.isGranted;
   }
 
   @visibleForTesting
@@ -73,36 +171,11 @@ class AppUpdateService {
         .toList();
   }
 
-  Future<void> showUpdateDialogIfNeeded(BuildContext context) async {
-    final info = await checkForUpdate();
-    if (info == null || !context.mounted) return;
+  static String _str(Map<String, dynamic> data, String key) =>
+      (data[key] as String? ?? '').trim();
 
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Update available'),
-        content: Text(
-          info.message.isNotEmpty
-              ? info.message
-              : 'Version ${info.remoteVersion} is available. Download the latest APK to get fixes and World Cup improvements.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Later'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              final uri = Uri.tryParse(info.apkUrl);
-              if (uri != null) {
-                await launchUrl(uri, mode: LaunchMode.externalApplication);
-              }
-              if (ctx.mounted) Navigator.pop(ctx);
-            },
-            child: const Text('Download APK'),
-          ),
-        ],
-      ),
-    );
+  static DateTime? _parseDate(Object? raw) {
+    if (raw == null) return null;
+    return DateTime.tryParse(raw.toString());
   }
 }

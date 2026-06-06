@@ -77,7 +77,8 @@ jobs:
             --release \
             --split-per-abi \
             --target-platform=android-arm64 \
-            --dart-define-from-file=secrets.json
+            --dart-define-from-file=secrets.json \
+            --dart-define=LUMIO_SIDELOAD_DEV=true
 
       - name: Get version from pubspec
         id: version

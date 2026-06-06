@@ -21,8 +21,8 @@ class GitunPlaylistService {
   static const _gitunOnlyCategory = 'GITUN';
 
   late final Client _client = Client()
-      .setEndpoint(AppwriteConfig.endpoint)
-      .setProject(AppwriteConfig.projectId);
+      .setEndpoint(AppwriteConfig.mainEndpoint)
+      .setProject(AppwriteConfig.mainProjectId);
 
   late final Databases _databases = Databases(_client);
 
@@ -54,10 +54,10 @@ class GitunPlaylistService {
       if (cached != null && cached.isNotEmpty) return cached;
     }
 
-    if (!AppwriteConfig.isConfigured) {
-      lastFetchError = 'Appwrite NYC catalog project not configured.';
+    if (!AppwriteConfig.mainProjectConfigured) {
+      lastFetchError = 'Appwrite main project not configured.';
       if (kDebugMode) {
-        debugPrint('[GITUN] missing NYC catalog config');
+        debugPrint('[GITUN] missing main project config');
       }
       return const [];
     }
@@ -115,7 +115,7 @@ class GitunPlaylistService {
 
     while (true) {
       final page = await _databases.listDocuments(
-        databaseId: AppwriteConfig.databaseId,
+        databaseId: AppwriteConfig.mainDatabaseId,
         collectionId: AppwriteConfig.specialLinksCollectionId,
         queries: [
           Query.equal('is_active', true),

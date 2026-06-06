@@ -1,7 +1,7 @@
 /// Appwrite — dual region setup (no API key in the app; Guests Read only).
 ///
-/// **NYC catalog** — channels, featured `app_config`, `special_links` (GITUN).
-/// **SGP Lumio** — `global_config` remote control (GitHub Actions deploy).
+/// **NYC catalog** — channel list + featured `app_config` rows.
+/// **SGP Lumio** — `global_config`, `special_links` (GitHub Actions deploy).
 class AppwriteConfig {
   AppwriteConfig._();
 
@@ -61,13 +61,7 @@ class AppwriteConfig {
   static bool get isConfigured =>
       projectId.isNotEmpty && endpoint.isNotEmpty && databaseId.isNotEmpty;
 
-  /// GITUN GitHub playlist sources (same NYC database as [channelsCollectionId]).
-  static const specialLinksCollectionId = String.fromEnvironment(
-    'APPWRITE_SPECIAL_LINKS_COLLECTION_ID',
-    defaultValue: 'special_links',
-  );
-
-  // ── SGP Lumio (global_config only) — GitHub Actions deploy ───────────────
+  // ── SGP Lumio (global_config, special_links) — GitHub Actions deploy ─────
   static const mainProjectId = String.fromEnvironment(
     'APPWRITE_MAIN_PROJECT_ID',
     defaultValue: '6a22869200230b1a8bf0',
@@ -85,6 +79,12 @@ class AppwriteConfig {
 
   /// Remote control document in `app_config` (ads, kill switch, updates).
   static const globalConfigDocumentId = 'global_config';
+
+  /// Special Link / GITUN rows (GitHub M3U sources).
+  static const specialLinksCollectionId = String.fromEnvironment(
+    'APPWRITE_SPECIAL_LINKS_COLLECTION_ID',
+    defaultValue: 'special_links',
+  );
 
   static const globalConfigCacheTtl = Duration(hours: 24);
 

@@ -90,27 +90,13 @@ jobs:
             *) echo "::error::Appwrite PATCH failed (HTTP ${HTTP_CODE})"; exit 1 ;;
           esac
 
-      - name: Sync Special Links to Appwrite (NYC catalog)
+      - name: Sync Special Links to Appwrite (SGP)
         env:
-          APPWRITE_ENDPOINT: ${{ secrets.APPWRITE_ENDPOINT }}
-          APPWRITE_PROJECT_ID: ${{ secrets.APPWRITE_PROJECT_ID }}
-          APPWRITE_API_KEY: ${{ secrets.APPWRITE_NYC_API_KEY }}
-          APPWRITE_DATABASE_ID: ${{ secrets.APPWRITE_DATABASE_ID }}
+          APPWRITE_ENDPOINT: ${{ env.MAIN_ENDPOINT }}
+          APPWRITE_PROJECT_ID: ${{ env.MAIN_PROJECT }}
+          APPWRITE_API_KEY: ${{ env.MAIN_API_KEY }}
+          APPWRITE_DATABASE_ID: ${{ env.MAIN_DATABASE }}
         run: |
           set -euo pipefail
-          NYC_ENDPOINT="${APPWRITE_ENDPOINT:-https://nyc.cloud.appwrite.io/v1}"
-          NYC_PROJECT="${APPWRITE_PROJECT_ID:-191876000995145}"
-          NYC_DATABASE="${APPWRITE_DATABASE_ID:-iptv_main}"
-          NYC_API_KEY="${APPWRITE_API_KEY:-}"
-          if [ -z "${NYC_API_KEY}" ]; then
-            echo "::warning::Skipping special_links sync — set APPWRITE_NYC_API_KEY (NYC project ${NYC_PROJECT})"
-            exit 0
-          fi
-          export APPWRITE_ENDPOINT="${NYC_ENDPOINT}"
-          export APPWRITE_PROJECT_ID="${NYC_PROJECT}"
-          export APPWRITE_DATABASE_ID="${NYC_DATABASE}"
-          export APPWRITE_API_KEY="${NYC_API_KEY}"
-          echo "NYC catalog endpoint: ${NYC_ENDPOINT}"
-          echo "NYC catalog project: ${NYC_PROJECT}"
           pip install requests
           python scripts/sync_special_links.py

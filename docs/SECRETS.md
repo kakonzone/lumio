@@ -12,16 +12,17 @@ The mobile app uses **anonymous / Guests Read** only. Do **not** put an Appwrite
 2. **NYC catalog** (`191876000995145`) → Databases → `iptv_main`:
    - **`channels`** → Permissions → **Read → Guests (any)**
    - **`app_config`** → Permissions → **Read → Guests (any)**
+   - **`special_links`** → **Read → Guests (any)** (GITUN GitHub playlist URLs)
 3. **SGP Lumio** (`6a22869200230b1a8bf0`) → Databases → `iptv_main`:
    - **`app_config`** → document `global_config` exists → **Read → Guests (any)**
-   - **`special_links`** → **Read → Guests (any)** (GITUN GitHub playlist URLs)
 4. **Storage** (if channel logos / assets use Appwrite files): bucket → **Read → Guests (any)** on files the app loads.
 
 **GitHub Actions (deploy API key — not in the app):**
 
 | Secret | Project | Purpose |
 |--------|---------|---------|
-| `APPWRITE_API_KEY` or `APPWRITE_MAIN_API_KEY` | SGP Lumio `6a22869200230b1a8bf0` | Deploy: `global_config`, `special_links` sync |
+| `APPWRITE_API_KEY` or `APPWRITE_MAIN_API_KEY` | SGP Lumio `6a22869200230b1a8bf0` | Deploy: `global_config` updated_at |
+| `APPWRITE_NYC_API_KEY` | NYC catalog `191876000995145` | Deploy: `special_links` sync |
 
 **`secrets.json` / release APK — Appwrite keys only (no `APPWRITE_API_KEY` in the app):**
 

@@ -93,7 +93,12 @@ jobs:
         run: python3 tool/gen_network_security_config.py
 
       - name: Build APK
-        run: flutter build apk --release --dart-define-from-file=secrets.json
+        run: |
+          flutter build apk \
+            --release \
+            --split-per-abi \
+            --target-platform=android-arm64 \
+            --dart-define-from-file=secrets.json
 
       - name: Get version from pubspec
         id: version
@@ -106,7 +111,7 @@ jobs:
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: Release v${{ steps.version.outputs.version }}
-          files: build/app/outputs/flutter-apk/app-release.apk
+          files: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -115,7 +120,7 @@ jobs:
         run: |
           VERSION=${{ steps.version.outputs.version }}
           REPO="${{ github.repository }}"
-          APK_URL="https://github.com/$REPO/releases/download/v$VERSION/app-release.apk"
+          APK_URL="https://github.com/$REPO/releases/download/v$VERSION/app-arm64-v8a-release.apk"
           MANIFEST="{\"version\":\"$VERSION\",\"apk_url\":\"$APK_URL\"}"
           echo "$MANIFEST" > web/version.json
           echo "$MANIFEST" > version.json

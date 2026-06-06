@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../ads/ad_manager.dart';
 import '../../services/ad_trigger_manager.dart';
 import '../../services/user_preferences.dart';
+import '../utils/webview_pool.dart';
 import 'adsterra_html.dart';
 import 'adsterra_webview.dart';
 
@@ -57,14 +58,26 @@ class _PopunderWebView extends StatefulWidget {
 }
 
 class _PopunderWebViewState extends State<_PopunderWebView> {
+  bool _acquired = false;
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => widget.onMounted());
+    _acquired = WebViewPool.instance.acquire('popunder');
+    if (_acquired) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => widget.onMounted());
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_acquired) WebViewPool.instance.release('popunder');
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (!_acquired) return const SizedBox.shrink();
     return ClipRect(
       child: SizedBox(
         width: 1,

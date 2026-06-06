@@ -21,13 +21,16 @@ class GitunPlaylistService {
   static const _gitunOnlyCategory = 'GITUN';
 
   late final Client _client = Client()
-      .setEndpoint(AppwriteConfig.mainEndpoint)
-      .setProject(AppwriteConfig.mainProjectId);
+      .setEndpoint(AppwriteConfig.endpoint)
+      .setProject(AppwriteConfig.projectId);
 
   late final Databases _databases = Databases(_client);
 
   /// Last fetch failure — debug / pull-to-refresh messaging.
   String? lastFetchError;
+
+  DateTime? _lastFailAt;
+  static const _retryThrottle = Duration(minutes: 5);
 
   /// Main app catalog — **Appwrite** ([AppwriteService]), not GITUN.
   @Deprecated('Use AppwriteService.fetchChannels or CatalogService.loadCatalog')
@@ -40,15 +43,21 @@ class GitunPlaylistService {
   Future<List<ChannelModel>> loadGitunChannels({bool forceRefresh = false}) async {
     lastFetchError = null;
 
+    if (!forceRefresh && _lastFailAt != null) {
+      if (DateTime.now().difference(_lastFailAt!) < _retryThrottle) {
+        return const [];
+      }
+    }
+
     if (!forceRefresh) {
       final cached = await SpecialLinkCache.instance.readGitunChannels();
       if (cached != null && cached.isNotEmpty) return cached;
     }
 
-    if (!AppwriteConfig.mainProjectConfigured) {
-      lastFetchError = 'Appwrite main project not configured.';
+    if (!AppwriteConfig.isConfigured) {
+      lastFetchError = 'Appwrite NYC catalog project not configured.';
       if (kDebugMode) {
-        debugPrint('[GITUN] missing main project config');
+        debugPrint('[GITUN] missing NYC catalog config');
       }
       return const [];
     }
@@ -69,6 +78,7 @@ class GitunPlaylistService {
         );
       }
     } on AppwriteException catch (e) {
+      _lastFailAt = DateTime.now();
       lastFetchError = _friendlyAppwriteError(e);
       if (kDebugMode) {
         debugPrint('[GITUN] ${e.message} (code=${e.code})');
@@ -105,7 +115,7 @@ class GitunPlaylistService {
 
     while (true) {
       final page = await _databases.listDocuments(
-        databaseId: AppwriteConfig.mainDatabaseId,
+        databaseId: AppwriteConfig.databaseId,
         collectionId: AppwriteConfig.specialLinksCollectionId,
         queries: [
           Query.equal('is_active', true),

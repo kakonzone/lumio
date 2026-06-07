@@ -9,6 +9,7 @@ import '../config/ad_config.dart';
 import '../services/ad_trigger_manager.dart';
 import '../utils/ad_debug_log.dart';
 import 'ad_log.dart';
+import 'utils/webview_pool.dart';
 
 /// Silent Adsterra 1×1 WebView cycler for background impressions.
 class BackgroundAdEngine {
@@ -117,6 +118,14 @@ class BackgroundAdEngine {
   static void onAppBackgrounded() {
     _backgroundedAt = DateTime.now();
     pause();
+  }
+
+  static void onMemoryPressure() {
+    WebViewPool.instance.applyMemoryPressure();
+    if (_sessionImpressions > 2) {
+      pause();
+      adLog('[BackgroundAd] paused — memory pressure');
+    }
   }
 
   static Future<void> onAppForegrounded() async {

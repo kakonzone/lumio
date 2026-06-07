@@ -22,3 +22,9 @@ while IFS= read -r -d '' file; do
 done < <(find "${SEARCH_ROOT}" -path '*/android/build.gradle' ! -path '*/example/*' -print0 2>/dev/null)
 
 echo "Patched ${patched} plugin build.gradle file(s) to Kotlin ${KOTLIN_VERSION}"
+
+# Patch android/settings.gradle.kts
+if [ -f "android/settings.gradle.kts" ]; then
+  sed -i 's/"org.jetbrains.kotlin.android" version "[0-9.]*"/"org.jetbrains.kotlin.android" version "'"$KOTLIN_VERSION"'"/g' android/settings.gradle.kts
+  echo "patched android/settings.gradle.kts"
+fi

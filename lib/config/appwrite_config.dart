@@ -80,7 +80,7 @@ class AppwriteConfig {
   /// Remote control document in `app_config` (ads, kill switch, updates).
   static const globalConfigDocumentId = 'global_config';
 
-  /// Special Link / GITUN rows (replaces GitHub M3U).
+  /// Special Link / GITUN rows (GitHub M3U sources).
   static const specialLinksCollectionId = String.fromEnvironment(
     'APPWRITE_SPECIAL_LINKS_COLLECTION_ID',
     defaultValue: 'special_links',

@@ -398,6 +398,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
       case AppLifecycleState.paused:
       case AppLifecycleState.inactive:
         AdManager.instance.onAppPause();
+        WebViewPool.instance.releaseAllOnBackground();
         break;
       case AppLifecycleState.detached:
         unawaited(AdManager.instance.onAppExit());

@@ -29,6 +29,9 @@ class GitunPlaylistService {
   /// Last fetch failure — debug / pull-to-refresh messaging.
   String? lastFetchError;
 
+  DateTime? _lastFailAt;
+  static const _retryThrottle = Duration(minutes: 5);
+
   /// Main app catalog — **Appwrite** ([AppwriteService]), not GITUN.
   @Deprecated('Use AppwriteService.fetchChannels or CatalogService.loadCatalog')
   Future<List<ChannelModel>> loadAppCatalogChannels({
@@ -39,6 +42,12 @@ class GitunPlaylistService {
   /// Special Link → GITUN — GitHub playlist URLs from Appwrite, then M3U fetch.
   Future<List<ChannelModel>> loadGitunChannels({bool forceRefresh = false}) async {
     lastFetchError = null;
+
+    if (!forceRefresh && _lastFailAt != null) {
+      if (DateTime.now().difference(_lastFailAt!) < _retryThrottle) {
+        return const [];
+      }
+    }
 
     if (!forceRefresh) {
       final cached = await SpecialLinkCache.instance.readGitunChannels();
@@ -69,6 +78,7 @@ class GitunPlaylistService {
         );
       }
     } on AppwriteException catch (e) {
+      _lastFailAt = DateTime.now();
       lastFetchError = _friendlyAppwriteError(e);
       if (kDebugMode) {
         debugPrint('[GITUN] ${e.message} (code=${e.code})');

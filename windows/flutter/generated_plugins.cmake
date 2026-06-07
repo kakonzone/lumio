@@ -8,6 +8,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   firebase_core
   firebase_remote_config
   media_kit_video
+  permission_handler_windows
   screen_brightness_windows
   url_launcher_windows
 )

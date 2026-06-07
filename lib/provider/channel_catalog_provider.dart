@@ -14,8 +14,6 @@ import '../utils/live_nav_top_sports.dart';
 import '../utils/sport_channel_icons.dart';
 import '../utils/live_tab_channels.dart';
 import '../utils/sports_channel_priority.dart';
-import '../utils/stream_url_upgrade.dart';
-
 /// Appwrite catalog, offline cache, GITUN, and stream health probes.
 class ChannelCatalogProvider extends ChangeNotifier {
   /// Invoked after catalog is applied (home extras: featured, live events, GITUN).
@@ -339,7 +337,7 @@ class ChannelCatalogProvider extends ChangeNotifier {
       ignoreTtl: true,
     );
     if (warm != null && warm.isNotEmpty) {
-      applyChannelCatalog(warm);
+      await applyChannelCatalog(warm);
       _scheduleBackgroundCatalogRefresh();
       return;
     }
@@ -364,7 +362,7 @@ class ChannelCatalogProvider extends ChangeNotifier {
         _channelsError ??= catalog.errorMessage;
       }
       if (catalog.channels.isNotEmpty) {
-        applyChannelCatalog(catalog.channels);
+        await applyChannelCatalog(catalog.channels);
       }
     } catch (e) {
       if (kDebugMode) {
@@ -401,7 +399,7 @@ class ChannelCatalogProvider extends ChangeNotifier {
         ignoreTtl: true,
       );
       if (warm != null && warm.isNotEmpty && _channels.isEmpty) {
-        applyChannelCatalog(warm);
+        await applyChannelCatalog(warm);
         _scheduleBackgroundCatalogRefresh();
         return;
       }
@@ -423,16 +421,17 @@ class ChannelCatalogProvider extends ChangeNotifier {
       _channelsError = catalog.errorMessage;
     }
 
-    applyChannelCatalog(catalog.channels);
+    await applyChannelCatalog(catalog.channels);
   }
 
-  void applyChannelCatalog(List<ChannelModel> raw) {
-    _channels = raw
-        .map((ch) {
-          final u = StreamUrlUpgrade.preferHttps(ch.streamUrl);
-          return u == ch.streamUrl ? ch : ch.copyWith(streamUrl: u);
-        })
-        .toList();
+  Future<void> applyChannelCatalog(List<ChannelModel> raw) async {
+    final List<ChannelModel> processed;
+    if (raw.length >= 200) {
+      processed = await compute(normalizeAndExpandCatalogIsolate, raw);
+    } else {
+      processed = normalizeAndExpandCatalogIsolate(raw);
+    }
+    _channels = processed;
     _liveChannels = _channels.where((c) => c.streamUrl.isNotEmpty).toList();
     _byCategoryIndex = null;
     _sportsBrowseCache = null;

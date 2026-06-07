@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 import '../models/model.dart';
 import '../utils/channel_catalog.dart';
 import '../utils/stream_url_upgrade.dart';
@@ -52,15 +50,8 @@ class CatalogService {
       }
     }
 
-    final List<ChannelModel> normalized;
-    if (channels.length >= 200) {
-      normalized = await compute(normalizeAndExpandCatalogIsolate, channels);
-    } else {
-      normalized = normalizeAndExpandCatalogIsolate(channels);
-    }
-
     return CatalogLoadResult(
-      channels: normalized,
+      channels: channels,
       errorMessage: error,
       fromStaleCache: fromStaleCache,
     );

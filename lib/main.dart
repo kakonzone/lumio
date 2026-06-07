@@ -49,7 +49,7 @@ import 'services/ad_safety_service.dart';
 import 'services/firebase_bootstrap.dart';
 import 'services/deep_link_service.dart';
 import 'services/attribution_service.dart';
-import 'services/update_service.dart';
+import 'widgets/update_dialog.dart';
 import 'services/share_campaign_service.dart';
 import 'services/notification_service.dart';
 import 'services/app_session_tracker.dart';
@@ -333,7 +333,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
       unawaited(AdManager.instance.warmupAfterHomeVisible(context));
       unawaited(_applyPendingDeepLinkWhenReady());
       if (mounted) {
-        unawaited(UpdateService.checkForUpdate(context));
+        unawaited(UpdateDialog.showIfNeeded(context));
       }
       Future.delayed(const Duration(seconds: 4), () {
         if (mounted) {
@@ -398,6 +398,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
       case AppLifecycleState.paused:
       case AppLifecycleState.inactive:
         AdManager.instance.onAppPause();
+        WebViewPool.instance.releaseAllOnBackground();
         break;
       case AppLifecycleState.detached:
         unawaited(AdManager.instance.onAppExit());

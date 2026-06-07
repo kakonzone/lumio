@@ -73,6 +73,9 @@ jobs:
 
       - run: flutter pub get
 
+      - name: Patch Flutter plugin Kotlin versions
+        run: bash scripts/patch_plugin_kotlin.sh
+
       - name: Sync Android network security config
         run: python3 tool/gen_network_security_config.py
 

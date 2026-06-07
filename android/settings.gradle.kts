@@ -1,3 +1,24 @@
+// Flutter plugins ship legacy buildscript { ext.kotlin_version = '2.1.x' } blocks.
+// Register before any project (including plugins) is configured.
+val kotlinVersion = "2.3.0"
+
+gradle.beforeProject {
+    ext.set("kotlin_version", kotlinVersion)
+    buildscript {
+        configurations.classpath {
+            resolutionStrategy {
+                force("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
+                eachDependency {
+                    if (requested.group == "org.jetbrains.kotlin") {
+                        useVersion(kotlinVersion)
+                        because("Align Kotlin compiler with app module ($kotlinVersion)")
+                    }
+                }
+            }
+        }
+    }
+}
+
 pluginManagement {
     val flutterSdkPath =
         run {

@@ -1,6 +1,18 @@
 // Flutter plugins ship their own buildscript kotlin_version (often 2.1.x). Force 2.3.0
 val kotlinVersion = "2.3.0"
 
+// Plugins (e.g. audio_session) are included after root build.gradle runs; hook every project.
+gradle.beforeProject {
+    buildscript {
+        ext.set("kotlin_version", kotlinVersion)
+        configurations.matching { it.name == "classpath" }.configureEach {
+            resolutionStrategy {
+                force("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
+            }
+        }
+    }
+}
+
 allprojects {
     repositories {
         google()

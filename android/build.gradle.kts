@@ -21,6 +21,7 @@ subprojects {
             force("org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion")
             force("org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion")
             force("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
+            force("org.jetbrains.kotlin:kotlin-stdlib-common:$kotlinVersion")
         }
     }
 }

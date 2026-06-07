@@ -14,6 +14,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.41.6'
@@ -71,11 +76,70 @@ jobs:
       - name: Sync Android network security config
         run: python3 tool/gen_network_security_config.py
 
+      - name: Verify release build flags
+        run: |
+          grep -q 'org.jetbrains.kotlin.android.*2.3.0' android/settings.gradle.kts
+          grep -q 'LUMIO_SIDELOAD_DEV=true' .github/workflows/release_apk.yml
+          echo "Kotlin 2.3.0 + LUMIO_SIDELOAD_DEV present"
+
       - name: Build release APK
-        run: flutter build apk --release --dart-define-from-file=secrets.json
+        run: |
+          mkdir -p build/debug-info
+          flutter build apk \
+            --release \
+            --split-per-abi \
+            --target-platform=android-arm64 \
+            --obfuscate \
+            --split-debug-info=build/debug-info \
+            --tree-shake-icons \
+            --dart-define-from-file=secrets.json \
+            --dart-define=LUMIO_SIDELOAD_DEV=true \
+            --dart-define=CAP_LOCAL_ONLY_MODE=true
+
+      - name: Report APK size
+        run: |
+          APK=build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          ls -lh "$APK"
+          du -m "$APK" | awk '{print "APK size: " $1 " MB (target 20-35 MB arm64)"}'
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Publish APK to Appwrite (Storage + app_version)
+        env:
+          APPWRITE_ENDPOINT: ${{ secrets.APPWRITE_ENDPOINT }}
+          APPWRITE_PROJECT_ID: ${{ secrets.APPWRITE_PROJECT_ID }}
+          APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
+          APPWRITE_MAIN_ENDPOINT: ${{ secrets.APPWRITE_MAIN_ENDPOINT }}
+          APPWRITE_MAIN_PROJECT_ID: ${{ secrets.APPWRITE_MAIN_PROJECT_ID }}
+          APPWRITE_MAIN_API_KEY: ${{ secrets.APPWRITE_MAIN_API_KEY }}
+          APPWRITE_BUCKET_ID: ${{ secrets.APPWRITE_BUCKET_ID }}
+          APPWRITE_DATABASE_ID: ${{ secrets.APPWRITE_DATABASE_ID }}
+          APPWRITE_COLLECTION_ID: ${{ secrets.APPWRITE_COLLECTION_ID }}
+          APPWRITE_VERSION_DOC_ID: ${{ secrets.APPWRITE_VERSION_DOC_ID }}
+          APP_VERSION: ${{ steps.version.outputs.version }}
+          APK_PATH: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+        run: |
+          set -euo pipefail
+          export APPWRITE_ENDPOINT="${APPWRITE_ENDPOINT:-${APPWRITE_MAIN_ENDPOINT:-https://sgp.cloud.appwrite.io/v1}}"
+          export APPWRITE_PROJECT_ID="${APPWRITE_PROJECT_ID:-${APPWRITE_MAIN_PROJECT_ID:-6a22869200230b1a8bf0}}"
+          export APPWRITE_API_KEY="${APPWRITE_API_KEY:-${APPWRITE_MAIN_API_KEY:-}}"
+          export APPWRITE_BUCKET_ID="${APPWRITE_BUCKET_ID:-lumio.apk}"
+          export APPWRITE_DATABASE_ID="${APPWRITE_DATABASE_ID:-iptv_main}"
+          export APPWRITE_COLLECTION_ID="${APPWRITE_COLLECTION_ID:-app_version}"
+          export APPWRITE_VERSION_DOC_ID="${APPWRITE_VERSION_DOC_ID:-6a24675100155949547f}"
+          if [ -z "${APPWRITE_API_KEY}" ]; then
+            echo "::warning::Skipping Appwrite APK publish — set APPWRITE_API_KEY (SGP)"
+            exit 0
+          fi
+          pip install requests
+          python3 scripts/publish_apk_appwrite.py
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: lumio-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: lumio-release-arm64
+          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk

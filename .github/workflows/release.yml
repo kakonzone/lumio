@@ -93,7 +93,12 @@ jobs:
         run: python3 tool/gen_network_security_config.py
 
       - name: Build APK
-        run: flutter build apk --release --dart-define-from-file=secrets.json
+        run: |
+          flutter build apk \
+            --release \
+            --split-per-abi \
+            --target-platform=android-arm64 \
+            --dart-define-from-file=secrets.json
 
       - name: Get version from pubspec
         id: version
@@ -101,12 +106,42 @@ jobs:
           VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
+      - name: Publish APK to Appwrite (Storage + app_version)
+        env:
+          APPWRITE_ENDPOINT: ${{ secrets.APPWRITE_ENDPOINT }}
+          APPWRITE_PROJECT_ID: ${{ secrets.APPWRITE_PROJECT_ID }}
+          APPWRITE_API_KEY: ${{ secrets.APPWRITE_API_KEY }}
+          APPWRITE_MAIN_ENDPOINT: ${{ secrets.APPWRITE_MAIN_ENDPOINT }}
+          APPWRITE_MAIN_PROJECT_ID: ${{ secrets.APPWRITE_MAIN_PROJECT_ID }}
+          APPWRITE_MAIN_API_KEY: ${{ secrets.APPWRITE_MAIN_API_KEY }}
+          APPWRITE_BUCKET_ID: ${{ secrets.APPWRITE_BUCKET_ID }}
+          APPWRITE_DATABASE_ID: ${{ secrets.APPWRITE_DATABASE_ID }}
+          APPWRITE_COLLECTION_ID: ${{ secrets.APPWRITE_COLLECTION_ID }}
+          APPWRITE_VERSION_DOC_ID: ${{ secrets.APPWRITE_VERSION_DOC_ID }}
+          APP_VERSION: ${{ steps.version.outputs.version }}
+          APK_PATH: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+        run: |
+          set -euo pipefail
+          export APPWRITE_ENDPOINT="${APPWRITE_ENDPOINT:-${APPWRITE_MAIN_ENDPOINT:-https://sgp.cloud.appwrite.io/v1}}"
+          export APPWRITE_PROJECT_ID="${APPWRITE_PROJECT_ID:-${APPWRITE_MAIN_PROJECT_ID:-6a22869200230b1a8bf0}}"
+          export APPWRITE_API_KEY="${APPWRITE_API_KEY:-${APPWRITE_MAIN_API_KEY:-}}"
+          export APPWRITE_BUCKET_ID="${APPWRITE_BUCKET_ID:-lumio.apk}"
+          export APPWRITE_DATABASE_ID="${APPWRITE_DATABASE_ID:-iptv_main}"
+          export APPWRITE_COLLECTION_ID="${APPWRITE_COLLECTION_ID:-app_version}"
+          export APPWRITE_VERSION_DOC_ID="${APPWRITE_VERSION_DOC_ID:-6a24675100155949547f}"
+          if [ -z "${APPWRITE_API_KEY}" ]; then
+            echo "::warning::Skipping Appwrite APK publish — set APPWRITE_API_KEY (SGP)"
+            exit 0
+          fi
+          pip install requests
+          python3 scripts/publish_apk_appwrite.py
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: Release v${{ steps.version.outputs.version }}
-          files: build/app/outputs/flutter-apk/app-release.apk
+          files: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -115,7 +150,7 @@ jobs:
         run: |
           VERSION=${{ steps.version.outputs.version }}
           REPO="${{ github.repository }}"
-          APK_URL="https://github.com/$REPO/releases/download/v$VERSION/app-release.apk"
+          APK_URL="https://github.com/$REPO/releases/download/v$VERSION/app-arm64-v8a-release.apk"
           MANIFEST="{\"version\":\"$VERSION\",\"apk_url\":\"$APK_URL\"}"
           echo "$MANIFEST" > web/version.json
           echo "$MANIFEST" > version.json

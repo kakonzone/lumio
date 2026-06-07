@@ -19,6 +19,11 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.41.6'
@@ -86,6 +91,8 @@ jobs:
           echo "Kotlin 2.1.0 + LUMIO_SIDELOAD_DEV present"
 
       - name: Build release APK
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.caching=true -Dorg.gradle.configureondemand=true"
         run: |
           mkdir -p build/debug-info
           flutter build apk \

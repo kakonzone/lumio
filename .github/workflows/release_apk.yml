@@ -81,9 +81,9 @@ jobs:
 
       - name: Verify release build flags
         run: |
-          grep -q 'org.jetbrains.kotlin.android.*2.3.0' android/settings.gradle.kts
+          grep -q 'org.jetbrains.kotlin.android.*2.1.0' android/settings.gradle.kts
           grep -q 'LUMIO_SIDELOAD_DEV=true' .github/workflows/release_apk.yml
-          echo "Kotlin 2.3.0 + LUMIO_SIDELOAD_DEV present"
+          echo "Kotlin 2.1.0 + LUMIO_SIDELOAD_DEV present"
 
       - name: Build release APK
         run: |

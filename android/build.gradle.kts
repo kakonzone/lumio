@@ -1,4 +1,4 @@
-val kotlinVersion = "2.3.0"
+val kotlinVersion = "2.1.0"
 
 allprojects {
     repositories {

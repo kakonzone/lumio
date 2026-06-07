@@ -1,6 +1,6 @@
 // Flutter plugins ship legacy buildscript { ext.kotlin_version = '2.1.x' } blocks.
 // Register before any project (including plugins) is configured.
-val kotlinVersion = "2.3.0"
+val kotlinVersion = "2.1.0"
 
 gradle.beforeProject {
     ext.set("kotlin_version", kotlinVersion)
@@ -52,7 +52,7 @@ pluginManagement {
                 "kotlin-android",
                 "org.jetbrains.kotlin.jvm",
                 "org.jetbrains.kotlin.multiplatform",
-                -> useVersion("2.3.0")
+                -> useVersion("2.1.0")
             }
         }
     }
@@ -67,7 +67,7 @@ pluginManagement {
 plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
     id("com.android.application") version "8.9.1" apply false
-    id("org.jetbrains.kotlin.android") version "2.3.0" apply false
+    id("org.jetbrains.kotlin.android") version "2.1.0" apply false
     id("com.google.gms.google-services") version "4.4.2" apply false
     id("com.google.firebase.crashlytics") version "3.0.3" apply false
 }

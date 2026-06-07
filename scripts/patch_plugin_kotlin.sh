@@ -3,7 +3,7 @@
 # Root Gradle hooks cannot always override that before buildscript resolves.
 set -euo pipefail
 
-KOTLIN_VERSION="${KOTLIN_VERSION:-2.3.0}"
+KOTLIN_VERSION="${KOTLIN_VERSION:-2.1.0}"
 PUB_CACHE="${PUB_CACHE:-${HOME}/.pub-cache}"
 SEARCH_ROOT="${PUB_CACHE}/hosted/pub.dev"
 

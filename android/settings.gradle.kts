@@ -19,7 +19,11 @@ pluginManagement {
     resolutionStrategy {
         eachPlugin {
             when (requested.id.id) {
-                "org.jetbrains.kotlin.android", "kotlin-android" -> useVersion("2.3.0")
+                "org.jetbrains.kotlin.android",
+                "kotlin-android",
+                "org.jetbrains.kotlin.jvm",
+                "org.jetbrains.kotlin.multiplatform",
+                -> useVersion("2.3.0")
             }
         }
     }

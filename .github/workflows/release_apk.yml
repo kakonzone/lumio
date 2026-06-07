@@ -84,12 +84,23 @@ jobs:
 
       - name: Build release APK
         run: |
+          mkdir -p build/debug-info
           flutter build apk \
             --release \
             --split-per-abi \
             --target-platform=android-arm64 \
+            --obfuscate \
+            --split-debug-info=build/debug-info \
+            --tree-shake-icons \
             --dart-define-from-file=secrets.json \
-            --dart-define=LUMIO_SIDELOAD_DEV=true
+            --dart-define=LUMIO_SIDELOAD_DEV=true \
+            --dart-define=CAP_LOCAL_ONLY_MODE=true
+
+      - name: Report APK size
+        run: |
+          APK=build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          ls -lh "$APK"
+          du -m "$APK" | awk '{print "APK size: " $1 " MB (target 20-35 MB arm64)"}'
 
       - name: Get version from pubspec
         id: version

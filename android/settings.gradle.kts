@@ -17,6 +17,14 @@ gradle.beforeProject {
             }
         }
     }
+    configurations.configureEach {
+        resolutionStrategy {
+            force("org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion")
+            force("org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion")
+            force("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion")
+            force("org.jetbrains.kotlin:kotlin-stdlib-common:$kotlinVersion")
+        }
+    }
 }
 
 pluginManagement {
@@ -47,6 +55,12 @@ pluginManagement {
                 -> useVersion("2.3.0")
             }
         }
+    }
+    
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
     }
 }
 

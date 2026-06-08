@@ -58,6 +58,7 @@ import 'services/monetag_push_service.dart';
 import 'core/performance_tuning.dart';
 import 'widgets/main_shell_bottom_nav.dart';
 import 'widgets/ads_debug_banner.dart';
+import 'widgets/daily_rewarded_prompt.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -179,6 +180,7 @@ class LumioApp extends StatelessWidget {
                     right: 0,
                     child: AdsDebugBanner(),
                   ),
+                  const DailyRewardedPrompt(),
                 ],
               ),
             );

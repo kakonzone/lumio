@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 import '../config/ad_config.dart';
+import 'rewarded_features.dart';
 import 'ad_log.dart';
 import '../models/model.dart';
 import '../services/ad_consent_service.dart';
@@ -674,6 +675,11 @@ class AdManager {
       await _caps.recordRewardedShown();
     }
     return earned;
+  }
+
+  /// LevelPlay rewarded with typed feature enum — returns true when user earns reward.
+  Future<bool> showRewardedFeature({required RewardedFeatures feature}) async {
+    return showRewarded(trigger: feature.toTrigger());
   }
 
   /// Watch rewarded → temporary ad-free window.

@@ -489,6 +489,21 @@ extension _PlayerControls on _PlayerScreenState {
               tooltip: 'Quality',
               onPressed: () => _showQualityDialog(context),
             ),
+            FutureBuilder<bool>(
+              future: _isHdUnlocked(),
+              builder: (context, snapshot) {
+                final isUnlocked = snapshot.data ?? false;
+                if (!isUnlocked) {
+                  return IconButton(
+                    icon: Icon(Icons.lock_open_rounded,
+                        color: Colors.amber.withValues(alpha: 0.9), size: 20),
+                    tooltip: 'HD আনলক করুন',
+                    onPressed: _unlockHdWithRewarded,
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
             if (_qualityBadge.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(right: 6),
@@ -1611,6 +1626,48 @@ extension _PlayerControls on _PlayerScreenState {
       }
     }
   }
+
+  // ── HD Unlock (Rewarded) ───────────────────────────────────────
+  static const String _hdUnlockUntilKey = 'hd_unlock_until_ms';
+
+  Future<bool> _isHdUnlocked() async {
+    final prefs = await SharedPreferences.getInstance();
+    final ms = prefs.getInt(_hdUnlockUntilKey);
+    if (ms == null) return false;
+    final until = DateTime.fromMillisecondsSinceEpoch(ms);
+    return DateTime.now().isBefore(until);
+  }
+
+  Future<void> _unlockHdWithRewarded() async {
+    final earned = await AdManager.instance.showRewardedFeature(
+      feature: RewardedFeatures.hdUnlock,
+    );
+    if (earned) {
+      final until = DateTime.now().add(const Duration(hours: 2));
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_hdUnlockUntilKey, until.millisecondsSinceEpoch);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('HD আনলক করা হয়েছে! ২ ঘন্টার জন্য'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+      // Refresh quality options to show HD
+      _loadPreferredQuality();
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('বিজ্ঞাপন সম্পূর্ণ দেখুন HD আনলক করতে'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+
   List<ChannelModel> _defaultChannelsForCategory() {
     if (_relatedCategory == 'Sports') {
       return _PlayerScreenState._defaultSportsChannels;

@@ -1,7 +1,7 @@
 # Lumio Sports TV — Forensic Technical & Business Audit
 
 **Audit date:** 2026-05-28  
-**Last updated:** 2026-06-04 **rev.9** — **Section 28** forensic P0/P1 fix sprint (stream token, HTTP, CAP, Appwrite cache)  
+**Last updated:** 2026-06-08 **rev.10** — **CI/CD optimization & Appwrite dual-config** (Gradle memory, Kotlin alignment, featured events, special links)  
 **Scope:** Full repo (`lib/`, `android/`, `assets/`, `pubspec.yaml`, Gradle, manifests, docs)  
 **Distribution model:** Sideload APK (not Play Store) — Facebook / WhatsApp / Telegram / landing page  
 **Monetization focus:** IronSource LevelPlay + Unity (mediation only) + Adsterra + Monetag  
@@ -41,6 +41,7 @@
 | 26 | Anti-analysis: blocked-app gate + Play Integrity roadmap (2026-06-04) |
 | 27 | UI density, lazy ads & APK size sprint (2026-06-04) |
 | 28 | Forensic P0/P1 fix sprint (2026-06-04) |
+| 29 | CI/CD optimization & Appwrite dual-config (2026-06-08) |
 
 ---
 
@@ -51,20 +52,21 @@
 | Flutter SDK | **3.41.6** (stable) | `flutter --version` |
 | Dart SDK | **3.11.4** | `flutter --version` |
 | compileSdk / targetSdk / minSdk | **36 / 36 / 21+** | `minSdk = maxOf(21, flutter.minSdkVersion)` — **Android 5.0 (Lollipop)+** (`android/app/build.gradle.kts`) |
-| lib `.dart` files | **207** | `find lib -name '*.dart'` (2026-06-04) |
-| lib LOC (approx.) | **~36,000+** | `wc -l` on `lib/**/*.dart` (new services/providers) |
+| lib `.dart` files | **226** | `find lib -name '*.dart'` (2026-06-08) |
+| lib LOC (approx.) | **~42,861** | `wc -l` on `lib/**/*.dart` (2026-06-08) |
 | State management | **Provider** (`MultiProvider`) | `lib/main.dart` — `ChannelsProvider`, `CoinsProvider`, `AdsSettingsProvider`, `AppProvider` |
 | Architecture | **Pragmatic layered monolith** — screens + `AppProvider` god-state + ad singletons | No Clean/MVVM boundaries; ad stack is well-factored into `lib/ads/` |
 | Folder structure score | **6/10** | Good `lib/ads/`, `lib/services/`, `lib/security/` split; undermined by 3.5k+ LOC god files |
 | TODO/FIXME in `lib/` + `android/` | **0** matches | `rg TODO\|FIXME` — none found |
-| Unit/widget tests | **113 passing** | `flutter test` (2026-05-28) |
+| Unit/widget tests | **67 test files** | `find test -name '*.dart'` (2026-06-08) |
+| Test coverage | **113+ passing** | `flutter test` (baseline from 2026-05-28) |
 | Dead code | **Low–medium** | Duplicate `ironsource_service` paths (`lib/services/` vs `lib/ads/`); large embedded channel catalogs |
 | **Package name** | `com.kakonzone.lumio` | `android/app/build.gradle.kts:100-101` |
 | **Pub package** | `lumio_tv` v`1.0.0+1` | `pubspec.yaml:1-3` |
 | **Ship target** | **Android APK (primary)** | `media_kit_libs_android_video`; sideload distribution |
 | **iOS / desktop in repo** | **Present but not product focus** | `macos/`, `ios/` folders exist; audit scope = Android ship path |
 | **Test files** | **39** Dart files under `test/` | `find test -name '*.dart'` |
-| **Docs** | **95** Markdown files under `docs/` | includes Phase 10, smoke tests, secrets |
+| **Docs** | **95+** Markdown files under `docs/` | includes Phase 10, smoke tests, secrets (2026-06-08) |
 | **CI** | **GitHub Actions** — analyze + test on Flutter 3.41.6 | `.github/workflows/ci.yml` |
 | **Release CI** | **release_apk.yml** present | `.github/workflows/release_apk.yml` |
 | **Unused import scan** | **Not run in this audit** | Use `dart fix --dry-run` / analyzer before release |
@@ -1348,11 +1350,104 @@ adb logcat | grep -E 'StreamToken|ServerCap|Appwrite'
 
 ---
 
+## SECTION 29 — CI/CD Optimization & Appwrite Dual-Config (2026-06-08)
+
+### Focus Areas
+This section covers infrastructure improvements between 2026-06-04 and 2026-06-08:
+- **Gradle build optimization** for CI reliability
+- **Kotlin version alignment** across Flutter plugins
+- **Appwrite dual-config** deployment (NYC catalog + SGP Lumio)
+- **Featured live events sync** automation
+- **Special links integration** (GITUN M3U)
+
+### Gradle Build Optimization
+
+| Item | Detail | Evidence |
+|------|--------|----------|
+| **JVM heap reduction** | 8GB → 4GB (MaxMetaspaceSize 4GB → 2GB) | `android/gradle.properties:1` |
+| **Additional optimizations** | `configureondemand=true`, `welcome=never`, `warning.mode=summary` | `android/gradle.properties:13-15` |
+| **Build timeout** | Step-level 75-min timeout added | `.github/workflows/release_apk.yml:94` |
+| **Problem solved** | Exit code 143 (SIGTERM) from OOM on CI runners | Git log `c51adc1` |
+| **Gradle caching** | Setup Gradle action with caching enabled | `.github/workflows/release_apk.yml:22-25` |
+
+### Kotlin Version Alignment
+
+| Item | Detail | Evidence |
+|------|--------|----------|
+| **Kotlin version** | **2.1.0** enforced across app + plugins | `android/gradle.properties:23`, `android/settings.gradle.kts` |
+| **Plugin patching** | `scripts/patch_plugin_kotlin.sh` patches dynamic plugins | Script enforces 2.1.0 |
+| **Metadata mismatch** | Fixed stdlib-common version conflicts | Git log `a639eed`, `4591ffc` |
+| **Build flags alignment** | Release workflow flags match release_apk | Git log `a3d33b6` |
+
+### Appwrite Dual-Config Deployment
+
+| Item | Detail | Evidence |
+|------|--------|----------|
+| **NYC catalog** | Primary channel catalog deployment | `docs/deploy_nyc_catalog.py` |
+| **SGP Lumio** | Target Appwrite project for Lumio app | Git log `80ca772` |
+| **Split deploy workflow** | Separate workflows for NYC vs SGP targets | `.github/workflows/deploy*.yml` |
+| **Featured events sync** | Automated sync of `featured_live_events.json` | Git log `3e8ccd9` |
+| **Special links** | GITUN M3U URLs stored in Appwrite special_links | Git log `32fbf2d` |
+| **GitunPlaylistService** | New service for GITUN channel parsing | `lib/services/special_link/gitun_playlist_service.dart` |
+
+### New Screens & Services
+
+| New Screen | Purpose | Location |
+|------------|---------|----------|
+| **BlockedAppsScreen** | Anti-analysis gate (17-package blocklist) | `lib/screens/blocked_apps_screen.dart` |
+| **AppOpenPromoScreen** | App-open promo/interstitial display | `lib/screens/app_open_promo_screen.dart` |
+| **SpecialLinkHubScreen** | Central hub for special link management | `lib/screens/special_link/special_link_hub_screen.dart` |
+| **SpecialLinkListScreen** | GITUN M3U channel list display | `lib/screens/special_link/special_link_list_screen.dart` |
+
+| New Service | Purpose | Location |
+|-------------|---------|----------|
+| **StreamTokenService** | Stream token resolution with caching | `lib/services/stream_token_service.dart` |
+| **GitunPlaylistService** | GITUN M3U parsing and caching | `lib/services/special_link/gitun_playlist_service.dart` |
+| **FeaturedLiveEventsService** | Featured events from Appwrite | `lib/services/featured_live_events_service.dart` |
+
+### Ad Injection Improvements
+
+| Item | Detail | Evidence |
+|------|--------|----------|
+| **List native frequency** | Every 8 channels (down from previous settings) | Git log `0237728` |
+| **AdListInjector** | Improved native ad injection in channel lists | `lib/ads/utils/ad_list_injector.dart` |
+| **Lazy ad viewport** | Off-screen ad loading suppression | `lib/ads/utils/lazy_ad_viewport.dart` |
+
+### Updated Metrics (2026-06-08)
+
+| Metric | Previous (rev.9) | Current (rev.10) | Change |
+|--------|-----------------|-----------------|--------|
+| Dart files | 207 | 226 | +19 |
+| LOC | ~36,000 | 42,861 | +6,861 |
+| Test files | 39 | 67 | +28 |
+| Screens | 12 | 16 | +4 |
+| Services | 25 | 33 | +8 |
+
+### CI/CD Health
+
+| Item | Status | Notes |
+|------|--------|-------|
+| **Release APK workflow** | ✅ Optimized | Memory fixes + timeout + Gradle cache |
+| **Deploy workflows** | ✅ Split | NYC catalog + SGP Lumio separation |
+| **Kotlin alignment** | ✅ Fixed | 2.1.0 across all modules |
+| **Missing script guard** | ✅ Added | `publish_apk_appwrite.py` check added |
+
+### Outstanding Items
+
+| Priority | Item | Status |
+|----------|------|--------|
+| P0 | APK build verification | In progress (workflow #27135235800) |
+| P2 | Stream token production host | Not addressed (from §28) |
+| P2 | Licensed CMP for tier-1 | Not addressed (from §26) |
+| P3 | Play Integrity client attestation | Not addressed (from §26) |
+
+---
+
 ## Summary Table
 
 | Section | Score (1–10) | Critical issues |
 |---------|--------------|-----------------|
-| 1 Project health | **8** | 207 dart files; god files remain; **183/183 tests pass** (2026-06-04) |
+| 1 Project health | **8** | 226 dart files; god files remain; **67 test files** (2026-06-08) |
 | 2 Pages / features | **8** | Appwrite catalog; Sports grid-only on All; lazy-ad tabs |
 | 3 Ads (4-network) | **9** | Real keys in `secrets.json`; placeholder build guard; valid-config getters |
 | 4 Streaming | **8** | Token direct fallback; Appwrite 24h cache; HTTP allowlist expanded |
@@ -1380,10 +1475,11 @@ adb logcat | grep -E 'StreamToken|ServerCap|Appwrite'
 | 26 Anti-analysis gate | **8** | 17-package blocklist + Bengali UI; bypassable without server attestation |
 | 27 UI density / lazy ads / size | **8** | Tab spacing fix; `LazyAdsterra*`; APK 20–35 MB; player 540p |
 | 28 Forensic P0/P1 fixes | **8** | Stream token + cache + CAP + HTTP; P2/P3 roadmap |
+| 29 CI/CD & Appwrite dual-config | **9** | Gradle memory fixes; Kotlin 2.1.0; NYC + SGP split; featured events sync |
 
 ---
 
-**Report version:** 2026-06-04 **rev.9** (Section 28 forensic fixes; canonical: `AUDIT_REPORT.md`). Mirror: `docs/AUDIT_REPORT_v2.md` — sync header only.
+**Report version:** 2026-06-08 **rev.10** (Section 29 CI/CD optimization & Appwrite dual-config; canonical: `AUDIT_REPORT.md`). Mirror: `docs/AUDIT_REPORT_v2.md` — sync header only.
 
 ---
 

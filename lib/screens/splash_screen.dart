@@ -7,7 +7,6 @@ import '../ads/ad_manager.dart';
 import '../provider/app_config_provider.dart';
 import '../provider/app_provider.dart';
 import '../services/ad_consent_service.dart';
-import '../widgets/ad_consent_dialog.dart';
 import '../widgets/remote_config_widgets.dart';
 import '../theme/app_theme.dart';
 import '../utils/responsive.dart';
@@ -96,13 +95,6 @@ class _SplashScreenState extends State<SplashScreen> {
     unawaited(AdConsentService.instance.applyStoredConsentToSdk());
     AdConsentService.instance.markSplashConsentGateSatisfied();
     if (!mounted) return;
-
-    if (AdConsentService.instance.needsConsentPrompt) {
-      // ignore: avoid_print
-      print('[AdConsent] showing first-launch dialog');
-      await AdConsentDialog.showIfNeeded(context);
-      if (!mounted) return;
-    }
 
     await Future<void>.delayed(
       const Duration(milliseconds: SplashScreen.brandingMinMs),

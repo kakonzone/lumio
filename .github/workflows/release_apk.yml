@@ -91,7 +91,6 @@ jobs:
           echo "Kotlin 2.1.0 + LUMIO_SIDELOAD_DEV present"
 
       - name: Build release APK
-        timeout-minutes: 75
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.caching=true -Dorg.gradle.configureondemand=true"
         run: |
@@ -144,10 +143,6 @@ jobs:
           export APPWRITE_VERSION_DOC_ID="${APPWRITE_VERSION_DOC_ID:-6a24675100155949547f}"
           if [ -z "${APPWRITE_API_KEY}" ]; then
             echo "::warning::Skipping Appwrite APK publish — set APPWRITE_API_KEY (SGP)"
-            exit 0
-          fi
-          if [ ! -f "scripts/publish_apk_appwrite.py" ]; then
-            echo "::warning::Skipping Appwrite APK publish — scripts/publish_apk_appwrite.py not found"
             exit 0
           fi
           pip install requests

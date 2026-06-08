@@ -91,6 +91,7 @@ jobs:
           echo "Kotlin 2.1.0 + LUMIO_SIDELOAD_DEV present"
 
       - name: Build release APK
+        timeout-minutes: 75
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.caching=true -Dorg.gradle.configureondemand=true"
         run: |

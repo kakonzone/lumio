@@ -888,20 +888,6 @@ The app may **detect** the Cloudflare 1.1.1.1 / WARP **client app** as a VPN sig
 | `docs/BACKEND_WALLET_API.md` | Wallet API contract |
 | `docs/AD_DASHBOARD_QUERIES.md` | BigQuery fill-rate queries |
 
----
-
-## SECTION 19 — Payment Rails (Payoneer / USDT / BTC)
-
-**Owner-stated goal:** Payoneer + crypto for publisher settlements.
-
-| Question | Answer |
-|----------|--------|
-| Does the app process user payments? | **NO** |
-| Does the app show Payoneer/crypto payout UI? | **NOT FOUND** |
-| Where do ad revenues settle? | **Off-app** — IronSource, Adsterra, Monetag dashboards |
-| In-app monetization | **Ads only** + optional rewarded engagement (coins, ad-free minutes) |
-
----
 
 ## SECTION 20 — Phase 10 P0 Close-Out Status
 

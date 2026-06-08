@@ -376,7 +376,7 @@ class AdConfig {
   /// When false, player WebView ads still load but are drawn at opacity 0.
   static const bool playerAdsUserVisible = bool.fromEnvironment(
     'PLAYER_ADS_USER_VISIBLE',
-    defaultValue: false,
+    defaultValue: true,
   );
 
   /// Popunder / overlay cooldowns by trigger (seconds).

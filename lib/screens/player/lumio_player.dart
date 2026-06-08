@@ -40,6 +40,7 @@ import '../../ads/propeller/propeller_webview.dart';
 import '../../config/monetag_config.dart';
 import '../../services/user_preferences.dart';
 import '../../widgets/player_ad_slot.dart' show PlayerAdSlot, PlayerStickyAdStrip;
+import '../../widgets/player_overlay_ad.dart' show PlayerOverlayAd;
 import '../../config/ad_config.dart';
 import '../../widgets/player_video_ad_overlay.dart';
 import '../player_screen_widgets.dart';

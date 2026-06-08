@@ -400,6 +400,17 @@ extension _PlayerControls on _PlayerScreenState {
                 child: PlayerStickyAdStrip(key: _stickyAdKey),
               ),
             ),
+
+          // ── Player overlay ad (15s delay, frequency-capped) ──
+          if (AdManager.instance.adsEnabled &&
+              _playbackSurfaceReady &&
+              !_showVideoAdOverlay &&
+              AdConfig.playerAdsUserVisible)
+            PlayerOverlayAd(
+              isStreaming: _isPlaying,
+              isBuffering: _isBuffering,
+              isPipMode: _isPipActive,
+            ),
         ]),
       ),
     );

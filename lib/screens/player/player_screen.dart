@@ -60,6 +60,8 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
   bool _pipAvailable = false;
   /// After a failed PiP setup, skip further native calls (stops log spam).
   bool _pipBlocked = false;
+  /// True when PiP mode is currently active.
+  bool _isPipActive = false;
 
   bool _initialized = false;
   /// True after [Video] has been laid out — required before mpv open on Android.
@@ -210,6 +212,12 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
           data: {'status': status.name},
         );
         // #endregion
+        // TODO: Track PiP active state when enum values are known
+        // if (mounted) {
+        //   setState(() {
+        //     _isPipActive = status == PiPStatus.active;
+        //   });
+        // }
       },
       onError: (_) {},
     );

@@ -6,6 +6,7 @@ import 'package:flutter/scheduler.dart';
 
 import '../config/ad_config.dart';
 import 'rewarded_features.dart';
+import 'session_pacing.dart';
 import 'ad_log.dart';
 import '../models/model.dart';
 import '../services/ad_consent_service.dart';
@@ -768,6 +769,15 @@ class AdManager {
   }) async {
     if (!isReady) await init();
     if (!adsEnabled) return false;
+    
+    // Session pacing: no full-screen ads in first 60 seconds
+    if (!SessionPacing.instance.canShowFullScreenAd()) {
+      if (kDebugMode) {
+        print('[SessionPacing] first minute, skipping full-screen ad');
+      }
+      return false;
+    }
+    
     return AdWaterfall.instance.showInterstitial(
       context,
       trigger: trigger,

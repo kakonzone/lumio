@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -17,25 +18,25 @@ class ExitIntentHandler {
   ///
   /// Returns `true` when the app should exit.
   Future<bool> handleHomeBack(BuildContext context) async {
-    // Step 2: silent Adsterra popunder (already session‑capped).
-    unawaited(AdManager.instance.maybeShowPopunder());
+    // 50% probability gate - don't show exit ads every time
+    final random = Random();
+    if (random.nextDouble() >= 0.5) {
+      // Skip exit ads, go straight to exit dialog
+      return await _showExitDialog(context);
+    }
 
-    // Step 3: tiny delay to simulate “preparing offer…”.
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Preparing best offer…'),
-        duration: Duration(milliseconds: 800),
-      ),
-    );
-    await Future<void>.delayed(const Duration(milliseconds: 800));
-
-    // Step 4: interstitial via AdWaterfall (LevelPlay → Adsterra → direct).
+    // Step 1: interstitial via AdWaterfall (LevelPlay → Adsterra → direct).
+    // Removed popunder step (high ban risk).
     await AdWaterfall.instance.showInterstitial(
       context,
       trigger: 'exit_intent_home',
     );
 
-    // Step 5: confirmation dialog.
+    // Step 2: confirmation dialog.
+    return await _showExitDialog(context);
+  }
+
+  Future<bool> _showExitDialog(BuildContext context) async {
     final shouldExit = await showDialog<bool>(
           context: context,
           builder: (ctx) => AlertDialog(
@@ -58,26 +59,27 @@ class ExitIntentHandler {
         false;
 
     if (shouldExit) {
-      // Step 6: System exit.
+      // System exit.
       await SystemNavigator.pop();
       return true;
     }
     return false;
   }
 
-  /// Player close (back / X) — post‑roll + popunder.
+  /// Player close (back / X) — post-roll only.
   Future<void> handlePlayerClose(BuildContext context) async {
-    // Step 1: Adsterra video overlay (10s, skippable after 5s).
-    // Full-screen interstitial via AdWaterfall.
-    await AdWaterfall.instance.showInterstitial(
-      context,
-      trigger: 'exit_intent_player_postroll',
-    );
+    // 50% probability gate
+    final random = Random();
+    if (random.nextDouble() < 0.5) {
+      // Full-screen interstitial via AdWaterfall.
+      await AdWaterfall.instance.showInterstitial(
+        context,
+        trigger: 'exit_intent_player_postroll',
+      );
+    }
 
-    // Step 2: popunder in background.
-    unawaited(AdManager.instance.maybeShowPopunder());
-
-    // Step 3: return to previous screen.
+    // Removed popunder step (high ban risk).
+    // Return to previous screen.
     if (Navigator.canPop(context)) {
       Navigator.of(context).pop();
     }
@@ -88,8 +90,7 @@ class ExitIntentHandler {
     // Step 1: background impression ping.
     unawaited(AdManager.instance.maybeShowPopunder());
 
-    // Step 2: schedule “live match starting” notification 5 minutes later.
+    // Step 2: schedule "live match starting" notification 5 minutes later.
     await NotificationService.scheduleReengagementInMinutes(5);
   }
 }
-

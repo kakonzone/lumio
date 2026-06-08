@@ -59,6 +59,7 @@ import 'core/performance_tuning.dart';
 import 'widgets/main_shell_bottom_nav.dart';
 import 'widgets/ads_debug_banner.dart';
 import 'widgets/daily_rewarded_prompt.dart';
+import 'ads/session_pacing.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -79,6 +80,7 @@ void main() async {
     );
   }
   MediaKit.ensureInitialized();
+  SessionPacing.instance.initialize();
   final securityOk = await SecurityManager.instance.initialize();
   // ignore: avoid_print
   print('[Lumio] SecurityManager.initialize() => $securityOk');

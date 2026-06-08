@@ -292,15 +292,15 @@ class AdConfig {
   // ── Per-device caps (shared-WiFi safe — keyed by device fingerprint) ───
   static const int rewardedMaxPerHour = 5;
   static const int adFreeMinutesAfterRewarded = 60;
-  static const int interstitialMaxPerHour = 14;
-  static const int interstitialMinGapSeconds = 35;
+  static const int interstitialMaxPerHour = 6;
+  static const int interstitialMinGapSeconds = 120;
   static const int appOpenMaxPerDay = 5;
   static const int appOpenMinGapHours = 2;
   static const int adsterraDirectLinkMaxPerDay = 3;
-  static const int adsterraPopunderMaxPerSession = 2;
+  static const int adsterraPopunderMaxPerSession = 1;
   static const int adsterraPopunderCooldownSeconds = 90;
   /// No LevelPlay call within this window after Adsterra popunder/background.
-  static const int networkIsolationSeconds = 30;
+  static const int networkIsolationSeconds = 45;
 
   // ── Remote flags (Appwrite global_config) ───────────────────────────────
   static bool get remoteAdsEnabled =>
@@ -328,7 +328,7 @@ class AdConfig {
   static int get interstitialCooldownSeconds =>
       AppConfigService.instance.cachedConfig.interstitialCooldown;
 
-  static const int maxInterstitialsPerSession = 14;
+  static const int maxInterstitialsPerSession = 6;
 
   /// Pre-roll before player: max per session; 1 per channel key per session.
   static const int prerollMaxPerSession = 6;

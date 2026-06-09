@@ -22,27 +22,27 @@ class MainShellBottomNav extends StatelessWidget {
 
   static const _items = [
     _NavSpec(
-      PhosphorIcons.house,
+      PhosphorIcons.house(),
       'Home',
       false,
     ),
     _NavSpec(
-      PhosphorIcons.soccer_ball,
+      PhosphorIcons.soccerBall(),
       'Sports',
       true,
     ),
     _NavSpec(
-      PhosphorIcons.television,
+      PhosphorIcons.television(),
       'Live',
       true,
     ),
     _NavSpec(
-      PhosphorIcons.newspaper,
+      PhosphorIcons.newspaper(),
       'News',
       false,
     ),
     _NavSpec(
-      PhosphorIcons.grid_four,
+      PhosphorIcons.gridFour(),
       'Browse',
       false,
     ),

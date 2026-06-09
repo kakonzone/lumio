@@ -359,10 +359,10 @@ class PredictionCard extends StatelessWidget {
                 ),
                 Text(
                   '${match.winChanceB.toInt()}%',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
-                    color: tokens.AppTokens.success,
+                    color: AppTokens.success,
                   ),
                 ),
               ],
@@ -1142,7 +1142,7 @@ class _WinChanceBar extends StatelessWidget {
               ),
             Expanded(
               flex: chanceB.toInt().clamp(1, 100),
-              child: Container(height: 6, color: tokens.AppTokens.success),
+              child: Container(height: 6, color: AppTokens.success),
             ),
           ],
         ),

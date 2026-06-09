@@ -807,10 +807,10 @@ class _TodayTabState extends State<_TodayTab> with AutomaticKeepAliveClientMixin
                 ),
                 child: Text(
                   'FootyStream · ${DateTime.now().day}/${DateTime.now().month}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
-                    color: tokens.AppTokens.success,
+                    color: AppTokens.success,
                   ),
                 ),
               ),
@@ -1619,7 +1619,7 @@ class _LiveCornerBadge extends StatelessWidget {
               color: onGradient
                   ? AppTokens.accent
                   : (context.isDark
-                      ? tokens.AppTokens.liveRed
+                      ? AppTokens.liveRed
                       : const Color(0xFFC62828)),
               letterSpacing: 0.5,
             ),
@@ -2043,7 +2043,7 @@ class _TodayCard extends StatelessWidget {
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     color:
-                        match.isLive ? AppTokens.accent : tokens.AppTokens.success,
+                        match.isLive ? AppTokens.accent : AppTokens.success,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

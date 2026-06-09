@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/app_config_model.dart';
 import '../screens/splash_screen.dart';
 import '../theme/app_theme.dart';
+import '../theme/tokens/colors.dart' as tokens;
 
 /// Full-screen block when [AppConfigModel.killSwitch] is active.
 class KillSwitchScreen extends StatelessWidget {
@@ -38,7 +39,7 @@ class KillSwitchScreen extends StatelessWidget {
                   errorBuilder: (_, __, ___) => const Icon(
                     Icons.block,
                     size: 72,
-                    color: AppColors.accent,
+                    color: tokens.AppTokens.accent,
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -98,7 +99,7 @@ class MaintenanceScreen extends StatelessWidget {
                 const Icon(
                   Icons.build_circle_outlined,
                   size: 88,
-                  color: AppColors.accent,
+                  color: tokens.AppTokens.accent,
                 ),
                 const SizedBox(height: 28),
                 Text(
@@ -220,12 +221,12 @@ class _AnnouncementBannerState extends State<AnnouncementBanner> {
     }
 
     return Material(
-      color: AppColors.accent.withValues(alpha: 0.15),
+      color: tokens.AppTokens.accent.withValues(alpha: 0.15),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Row(
           children: [
-            const Icon(Icons.campaign_outlined, color: AppColors.accent, size: 20),
+            const Icon(Icons.campaign_outlined, color: tokens.AppTokens.accent, size: 20),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
@@ -233,7 +234,7 @@ class _AnnouncementBannerState extends State<AnnouncementBanner> {
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onSurface,
                   fontSize: 13,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
@@ -291,7 +292,7 @@ class _TickerWidgetState extends State<TickerWidget>
       height: 32,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: AppColors.accent.withValues(alpha: 0.12),
+          color: tokens.AppTokens.accent.withValues(alpha: 0.12),
         ),
         child: ClipRect(
           child: AnimatedBuilder(
@@ -321,7 +322,7 @@ class _TickerWidgetState extends State<TickerWidget>
         child: Text(
           text,
           style: const TextStyle(
-            color: AppColors.accent,
+            color: tokens.AppTokens.accent,
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),

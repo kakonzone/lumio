@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
 
 import '../ads/ad_cold_start_eligibility.dart';
 import '../ads/ad_manager.dart';
@@ -13,6 +15,7 @@ import '../services/ad_safety_service.dart';
 import '../services/server_cap.dart';
 import '../services/ironsource_service.dart';
 import '../theme/app_theme.dart';
+import '../theme/tokens/colors.dart';
 
 /// Ad stack diagnostics — compile with `--dart-define=DIAGNOSTICS_ENABLED=true`.
 class DevDiagnosticsScreen extends StatefulWidget {
@@ -28,16 +31,19 @@ class _DevDiagnosticsScreenState extends State<DevDiagnosticsScreen> {
   List<ZoneValidationResult> _zoneResults = [];
   bool _zoneValidating = false;
   AdColdStartEligibilityReport? _coldStartReport;
+  Map<String, double> _todayRevenue = {};
 
   @override
   void initState() {
     super.initState();
     unawaited(_loadPackageInfo());
     unawaited(_refreshColdStartReport());
+    unawaited(_loadRevenueData());
     _refreshTimer = Timer.periodic(const Duration(seconds: 2), (_) {
       if (mounted) {
         setState(() {});
         unawaited(_refreshColdStartReport());
+        unawaited(_loadRevenueData());
       }
     });
   }
@@ -57,6 +63,35 @@ class _DevDiagnosticsScreenState extends State<DevDiagnosticsScreen> {
     final report = await AdColdStartEligibility.evaluate();
     if (!mounted) return;
     setState(() => _coldStartReport = report);
+  }
+
+  Future<void> _loadRevenueData() async {
+    if (!mounted) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      final revenue = <String, double>{};
+      
+      // Get all keys that start with revenue_estimate for today
+      final keys = prefs.getKeys().where((k) => k.startsWith('revenue_estimate_$today\_'));
+      for (final key in keys) {
+        final value = prefs.getDouble(key) ?? 0.0;
+        // Extract placement from key (format: revenue_estimate_YYYY-MM-DD_placement)
+        final parts = key.split('_');
+        if (parts.length >= 4) {
+          final placement = parts.sublist(3).join('_');
+          revenue[placement] = value;
+        }
+      }
+      
+      if (mounted) {
+        setState(() {
+          _todayRevenue = revenue;
+        });
+      }
+    } catch (e) {
+      debugPrint('[DevDiagnostics] Revenue data load error: $e');
+    }
   }
 
   Future<void> _validateZones() async {
@@ -101,6 +136,13 @@ class _DevDiagnosticsScreenState extends State<DevDiagnosticsScreen> {
           ]),
           _section('Fill rate (1h)', [
             'Interstitial: ${(AdHealthMonitor.instance.getFillRate('interstitial') * 100).toStringAsFixed(1)}%',
+          ]),
+          _section('Revenue estimate (today)', [
+            if (_todayRevenue.isEmpty)
+              'No revenue data yet'
+            else
+              for (final entry in _todayRevenue.entries)
+                '${entry.key}: \$${entry.value.toStringAsFixed(4)}',
           ]),
           _section('Recent load attempts', [
             for (final a in AdHealthMonitor.instance.allRecent(limit: 10))
@@ -185,7 +227,7 @@ class _DevDiagnosticsScreenState extends State<DevDiagnosticsScreen> {
             style: GF.head(
               fontSize: 13,
               fontWeight: FontWeight.w800,
-              color: AppColors.accent,
+              color: AppTokens.accent,
             ),
           ),
           const SizedBox(height: 8),

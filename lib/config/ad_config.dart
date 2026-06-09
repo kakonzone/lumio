@@ -398,9 +398,9 @@ class AdConfig {
 
   /// Adsterra sticky WebView reload interval (app-controlled).
   static const int adsterraStickyRefreshSeconds = 20;
-  static const int nativeListInterval = 8;
-  /// NEWS tab — native every 5 cards (Week 2).
-  static const int nativeListIntervalNews = 5;
+  static const int nativeListInterval = 6;
+  /// NEWS tab — native every 4 cards (Phase 4).
+  static const int nativeListIntervalNews = 4;
   static const int nativeListIntervalAggressive = 4;
 
   /// Sticky Adsterra social bar on all main tabs (Week 2).
@@ -408,14 +408,14 @@ class AdConfig {
 
   /// Per-screen native list density (items between native rows).
   static const Map<AdListScreen, int> nativeDensityByScreen = {
-    AdListScreen.home: 8,
-    AdListScreen.sports: 8,
-    AdListScreen.live: 8,
-    AdListScreen.news: 8,
-    AdListScreen.categories: 8,
-    AdListScreen.categoryDrilldown: 8,
-    AdListScreen.favorites: 8,
-    AdListScreen.defaultList: 8,
+    AdListScreen.home: 6,
+    AdListScreen.sports: 6,
+    AdListScreen.live: 6,
+    AdListScreen.news: 4,
+    AdListScreen.categories: 6,
+    AdListScreen.categoryDrilldown: 6,
+    AdListScreen.favorites: 6,
+    AdListScreen.defaultList: 6,
   };
 
   // ── Natural delay before SDK interstitial ──────────────────────────────

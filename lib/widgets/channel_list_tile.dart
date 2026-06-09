@@ -6,6 +6,7 @@ import '../models/model.dart';
 import '../provider/app_provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/channel_list_style.dart';
+import '../theme/tokens/colors.dart' as tokens;
 import 'channel_avatar.dart';
 
 /// Channel row — solid surface card, LIVE pill, category chip (no gradients).
@@ -62,7 +63,7 @@ class ChannelListTile extends StatelessWidget {
                         height: 44,
                         margin: const EdgeInsets.only(right: 10),
                         decoration: BoxDecoration(
-                          color: AppColors.accent,
+                          color: tokens.AppTokens.accent,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -78,7 +79,7 @@ class ChannelListTile extends StatelessWidget {
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
                               color:
-                                  isPendingTap ? AppColors.accent : context.txt,
+                                  isPendingTap ? tokens.AppTokens.accent : context.txt,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -129,7 +130,7 @@ class ChannelListTile extends StatelessWidget {
                           height: 16,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: AppColors.accent,
+                            color: tokens.AppTokens.accent,
                           ),
                         ),
                       )

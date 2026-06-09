@@ -15,6 +15,7 @@ import '../widgets/section_nav_bar.dart';
 import '../widgets/shell_app_bar.dart';
 import '../widgets/list_skeletons.dart';
 import '../widgets/common/widgets.dart';
+import '../theme/tokens/colors.dart';
 
 /// Sports news hub — ESPN (+ BBC fallback), live scores, ads.
 class NewsScreen extends StatefulWidget {
@@ -124,7 +125,7 @@ class _NewsScreenState extends State<NewsScreen> {
           const ShellAppBar(blendWithScaffold: true),
           Expanded(
             child: RefreshIndicator(
-              color: AppColors.accent,
+              color: AppTokens.accent,
               onRefresh: () async {
                 await prov.ensureMatchesLoaded();
                 await prov.loadNews();
@@ -143,8 +144,8 @@ class _NewsScreenState extends State<NewsScreen> {
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
-                                AppColors.accent.withValues(alpha: 0.9),
-                                AppColors.accent.withValues(alpha: 0.55),
+                                AppTokens.accent.withValues(alpha: 0.9),
+                                AppTokens.accent.withValues(alpha: 0.55),
                               ],
                             ),
                             borderRadius: BorderRadius.circular(12),
@@ -250,7 +251,7 @@ class _NewsScreenState extends State<NewsScreen> {
                               height: 18,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: AppColors.accent,
+                                color: AppTokens.accent,
                               ),
                             )
                           : Text(
@@ -409,7 +410,7 @@ class _NewsSectionHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: AppColors.accent),
+          Icon(icon, size: 18, color: AppTokens.accent),
           const SizedBox(width: 8),
           Expanded(
             child: Text(

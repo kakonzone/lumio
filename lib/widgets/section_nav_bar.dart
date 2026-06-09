@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lumio_tv/theme/app_theme.dart';
+import 'package:lumio_tv/theme/tokens/colors.dart' as tokens;
 
 /// Horizontal pill navigation — theme-aware for Sports, News, and similar screens.
 class SectionNavBar extends StatelessWidget {
@@ -37,7 +38,7 @@ class SectionNavBar extends StatelessWidget {
               onSelected(label);
             },
             borderRadius: BorderRadius.circular(22),
-            splashColor: AppColors.accent.withValues(alpha: 0.15),
+            splashColor: tokens.AppTokens.accent.withValues(alpha: 0.15),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               curve: Curves.easeOut,
@@ -46,8 +47,8 @@ class SectionNavBar extends StatelessWidget {
                 gradient: active
                     ? LinearGradient(
                         colors: isDark
-                            ? [AppColors.accent, const Color(0xFFE65100)]
-                            : [const Color(0xFFFF7A2E), AppColors.accent],
+                            ? [tokens.AppTokens.accent, const Color(0xFFE65100)]
+                            : [const Color(0xFFFF7A2E), tokens.AppTokens.accent],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       )
@@ -61,13 +62,13 @@ class SectionNavBar extends StatelessWidget {
                       ? Colors.transparent
                       : (isDark
                           ? context.brd
-                          : AppColors.borderLight),
+                          : tokens.AppTokens.border),
                   width: 1,
                 ),
                 boxShadow: active
                     ? [
                         BoxShadow(
-                          color: AppColors.accent.withValues(
+                          color: tokens.AppTokens.accent.withValues(
                             alpha: isDark ? 0.35 : 0.28,
                           ),
                           blurRadius: 10,
@@ -138,7 +139,7 @@ class _StatChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: AppColors.accent),
+          Icon(icon, size: 16, color: tokens.AppTokens.accent),
           const SizedBox(width: 6),
           Text(
             label,
@@ -175,8 +176,8 @@ class SectionScreenHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       decoration: BoxDecoration(
         color: isDark
-            ? AppColors.accent.withValues(alpha: 0.1)
-            : AppColors.accentLight.withValues(alpha: 0.65),
+            ? tokens.AppTokens.accent.withValues(alpha: 0.1)
+            : tokens.AppTokens.accentLight.withValues(alpha: 0.65),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

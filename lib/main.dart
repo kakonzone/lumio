@@ -24,6 +24,7 @@ import 'screens/ads_privacy_screen.dart';
 import 'screens/dev_diagnostics_screen.dart';
 import 'ads/adsterra/adsterra_native_cache.dart';
 import 'screens/category_channels_screen.dart';
+import 'services/kill_switch_service.dart';
 import 'screens/splash_screen.dart';
 import 'widgets/app_drawer.dart';
 import 'provider/ad_gate_provider.dart';
@@ -98,6 +99,43 @@ void main() async {
       );
       return;
     }
+  }
+
+  // Kill switch check (Phase 5)
+  await KillSwitchService.instance.initialize();
+  if (!KillSwitchService.instance.appEnabled) {
+    final maintenanceMsg = KillSwitchService.instance.maintenanceMessageBn ?? 
+        'অ্যাপ মেইনটেনেন্সে আছে';
+    print('[Lumio] App disabled via kill switch: $maintenanceMsg');
+    runApp(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.build, size: 64, color: Colors.grey),
+                  const SizedBox(height: 24),
+                  Text(
+                    maintenanceMsg,
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    return;
+  }
+
+  // Disable ads if kill switch says so
+  if (!KillSwitchService.instance.adsEnabled) {
+    AdManager.instance.setKillSwitchActive(true);
   }
 
   _runLumioApp();

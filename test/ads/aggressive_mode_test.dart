@@ -27,9 +27,10 @@ void main() {
       AdConfig.nativeListIntervalAggressive,
     );
     AdPlacementConfig.debugAggressiveModeOverride = false;
+    // News always uses higher density (every 4 articles)
     expect(
       AdPlacementConfig.newsNativeInterval,
-      AdConfig.nativeListInterval,
+      AdConfig.nativeListIntervalNews,
     );
   });
 }

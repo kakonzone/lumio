@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../config/legal_config.dart';
 import '../services/ad_consent_service.dart';
 import '../theme/app_theme.dart';
+import '../theme/tokens/colors.dart' as tokens;
 
 /// Minimal first-launch consent (not a full CMP).
 class AdConsentDialog {
@@ -49,7 +50,7 @@ class AdConsentDialog {
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: AppColors.accent,
+              backgroundColor: tokens.AppTokens.accent,
             ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Accept'),
@@ -66,7 +67,7 @@ class AdConsentDialog {
     return TextSpan(
       text: label,
       style: const TextStyle(
-        color: AppColors.accent,
+        color: tokens.AppTokens.accent,
         fontWeight: FontWeight.w600,
         decoration: TextDecoration.underline,
       ),

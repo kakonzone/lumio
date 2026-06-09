@@ -17,6 +17,7 @@ import 'package:screen_brightness/screen_brightness.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../theme/app_theme.dart';
+import '../../theme/tokens/colors.dart' as tokens;
 import '../../models/model.dart';
 import '../../provider/app_provider.dart';
 import '../../services/hls_quality_service.dart';

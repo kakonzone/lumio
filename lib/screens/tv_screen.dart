@@ -22,6 +22,7 @@ import 'package:lumio_tv/widgets/list_skeletons.dart';
 import 'package:lumio_tv/widgets/home_promo_carousel.dart';
 import 'package:lumio_tv/widgets/home_category_grid.dart';
 import 'package:lumio_tv/core/performance_tuning.dart';
+import 'package:lumio_tv/theme/tokens/colors.dart';
 
 class TvScreen extends StatefulWidget {
   const TvScreen({super.key});
@@ -307,11 +308,11 @@ class _TvSearchSectionState extends State<_TvSearchSection> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.accent.withValues(alpha: 0.12),
+                color: AppTokens.accent.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(Icons.search_rounded,
-                  size: 20, color: AppColors.accent),
+                  size: 20, color: AppTokens.accent),
             ),
             const SizedBox(width: 10),
             const SizedBox(width: 8),
@@ -439,7 +440,7 @@ class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
       valueListenable: widget.highlightCategory,
       builder: (context, highlightCategory, _) {
         return RefreshIndicator(
-          color: AppColors.accent,
+          color: AppTokens.accent,
           onRefresh: prov.refresh,
           child: Builder(
             builder: (scrollContext) => CustomScrollView(
@@ -459,7 +460,7 @@ class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                       child: Material(
-                        color: AppColors.accent.withValues(alpha: 0.12),
+                        color: AppTokens.accent.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(10),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
@@ -471,7 +472,7 @@ class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
                               const Icon(
                                 Icons.cloud_off_rounded,
                                 size: 18,
-                                color: AppColors.accent,
+                                color: AppTokens.accent,
                               ),
                               const SizedBox(width: 8),
                               Expanded(
@@ -538,7 +539,7 @@ class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
                             height: 16,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: AppColors.accent,
+                              color: AppTokens.accent,
                             ),
                           )
                         : _LiveBadge(
@@ -564,7 +565,7 @@ class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
                           style: TextStyle(
                             fontSize: 10,
                             color: prov.featuredLiveEventsFromAppwrite
-                                ? AppColors.accent.withValues(alpha: 0.9)
+                                ? AppTokens.accent.withValues(alpha: 0.9)
                                 : (prov.featuredLiveEventsError != null
                                     ? Colors.orange.shade300
                                     : context.txt3),
@@ -615,7 +616,7 @@ class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
                             height: 16,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: AppColors.accent,
+                              color: AppTokens.accent,
                             ),
                           )
                         : _LiveBadge(label: '${liveEvents.length} events'),
@@ -721,7 +722,7 @@ class _LiveNowTabState extends State<_LiveNowTab>
                       height: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: AppColors.accent,
+                        color: AppTokens.accent,
                       ),
                     )
                   : _LiveBadge(label: '${events.length} events'),
@@ -809,7 +810,7 @@ class _TodayTabState extends State<_TodayTab> with AutomaticKeepAliveClientMixin
                   style: const TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.green,
+                    color: tokens.AppTokens.success,
                   ),
                 ),
               ),
@@ -897,7 +898,7 @@ class _UpcomingTabState extends State<_UpcomingTab>
                   style: const TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.blue,
+                    color: Color(0xFF60A5FA),
                   ),
                 ),
               ),
@@ -972,7 +973,7 @@ class ScoreCardsSection extends StatelessWidget {
                     height: 16,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: AppColors.accent,
+                      color: AppTokens.accent,
                     ),
                   )
                 : matches.isNotEmpty
@@ -990,7 +991,7 @@ class ScoreCardsSection extends StatelessWidget {
                 height: 16,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: AppColors.accent,
+                  color: AppTokens.accent,
                 ),
               ),
             ),
@@ -1106,7 +1107,7 @@ class _ScoreCard extends StatelessWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                     decoration: BoxDecoration(
-                      color: match.isLive ? AppColors.accentDim : context.bg3,
+                      color: match.isLive ? AppTokens.accentDim : context.bg3,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -1114,7 +1115,7 @@ class _ScoreCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 9,
                         fontWeight: FontWeight.w700,
-                        color: match.isLive ? AppColors.accent : context.txt3,
+                        color: match.isLive ? AppTokens.accent : context.txt3,
                       ),
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
@@ -1140,7 +1141,7 @@ class _ScoreCard extends StatelessWidget {
                           fontFamily: 'BarlowCondensed',
                           fontSize: 28,
                           fontWeight: FontWeight.w800,
-                          color: AppColors.accent,
+                          color: AppTokens.accent,
                           height: 1,
                         ),
                       ),
@@ -1338,13 +1339,13 @@ class _LiveEventCardState extends State<_LiveEventCard> {
             ),
             border: Border.all(
               color: effectiveLive
-                  ? AppColors.accent.withValues(alpha: 0.55)
+                  ? AppTokens.accent.withValues(alpha: 0.55)
                   : Colors.white.withValues(alpha: 0.12),
               width: effectiveLive ? 1.4 : 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: (effectiveLive ? AppColors.accent : gradient.first)
+                color: (effectiveLive ? AppTokens.accent : gradient.first)
                     .withValues(alpha: effectiveLive ? 0.28 : 0.18),
                 blurRadius: effectiveLive ? 16 : 10,
                 offset: const Offset(0, 4),
@@ -1530,7 +1531,7 @@ class _LiveEventTeamRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final nameColor = onGradient ? Colors.white : context.txt;
     final scoreColor = onGradient
-        ? (emphasizeScore ? AppColors.accent : Colors.white)
+        ? (emphasizeScore ? AppTokens.accent : Colors.white)
         : (emphasizeScore ? context.scoreLive : context.txt);
 
     return Row(
@@ -1616,9 +1617,9 @@ class _LiveCornerBadge extends StatelessWidget {
               fontSize: 12,
               fontWeight: FontWeight.w800,
               color: onGradient
-                  ? AppColors.accent
+                  ? AppTokens.accent
                   : (context.isDark
-                      ? AppColors.liveRed
+                      ? tokens.AppTokens.liveRed
                       : const Color(0xFFC62828)),
               letterSpacing: 0.5,
             ),
@@ -1698,7 +1699,7 @@ class _LiveEventCardFooterState extends State<_LiveEventCardFooter> {
               BdtTime.formatScheduleSubtitle(widget.match.matchDate),
               style: TextStyle(
                 fontSize: 11,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w400,
                 color: widget.onGradient ? Colors.white60 : context.txt3,
                 height: 1.2,
               ),
@@ -1914,14 +1915,14 @@ class _LiveEventChannelsDialogState extends State<_LiveEventChannelsDialog> {
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w800,
-                                      color: AppColors.accent,
+                                      color: AppTokens.accent,
                                     ),
                                   )
                                 else
                                   Icon(
                                     Icons.play_circle_filled_rounded,
                                     size: 24,
-                                    color: AppColors.accent.withValues(
+                                    color: AppTokens.accent.withValues(
                                       alpha: 0.85,
                                     ),
                                   ),
@@ -1967,7 +1968,7 @@ class _LiveEventChannelsDialogState extends State<_LiveEventChannelsDialog> {
                                     style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w800,
-                                      color: AppColors.accent,
+                                      color: AppTokens.accent,
                                     ),
                                   )
                                 : null,
@@ -2042,7 +2043,7 @@ class _TodayCard extends StatelessWidget {
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     color:
-                        match.isLive ? AppColors.accent : AppColors.green,
+                        match.isLive ? AppTokens.accent : tokens.AppTokens.success,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -2225,7 +2226,7 @@ class _LiveBadge extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
-            color: AppColors.accent, borderRadius: BorderRadius.circular(12)),
+            color: AppTokens.accent, borderRadius: BorderRadius.circular(12)),
         child: Text(
           label,
           style: const TextStyle(
@@ -2268,6 +2269,6 @@ class _PulseDotState extends State<_PulseDot>
             width: 6,
             height: 6,
             decoration: const BoxDecoration(
-                color: AppColors.accent, shape: BoxShape.circle)),
+                color: AppTokens.accent, shape: BoxShape.circle)),
       );
 }

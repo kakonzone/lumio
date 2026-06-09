@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 
 /// Session pacing controls — prevents ad overload in first minute.

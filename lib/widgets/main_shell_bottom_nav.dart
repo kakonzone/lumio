@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:lumio_tv/theme/app_theme.dart';
+import 'package:lumio_tv/theme/tokens/colors.dart' as tokens;
+import 'package:lumio_tv/theme/tokens/spacing.dart' as tokens;
+import 'package:lumio_tv/theme/tokens/radius.dart' as tokens;
+import 'package:lumio_tv/theme/tokens/motion.dart' as tokens;
 
 /// Bottom navigation for Home · Sports · Live · News · Browse.
 class MainShellBottomNav extends StatelessWidget {
@@ -17,89 +22,64 @@ class MainShellBottomNav extends StatelessWidget {
 
   static const _items = [
     _NavSpec(
-      Icons.home_rounded,
-      Icons.home_filled,
+      PhosphorIcons.house,
       'Home',
       false,
-      [Color(0xFF3949AB), Color(0xFF5C6BC0)],
     ),
     _NavSpec(
-      Icons.sports_soccer_rounded,
-      Icons.sports_soccer,
+      PhosphorIcons.soccer_ball,
       'Sports',
       true,
-      [Color(0xFF1B5E20), Color(0xFF43A047)],
     ),
     _NavSpec(
-      Icons.sensors_rounded,
-      Icons.sensors,
+      PhosphorIcons.television,
       'Live',
       true,
-      [Color(0xFFB71C1C), Color(0xFFE53935)],
     ),
     _NavSpec(
-      Icons.newspaper_rounded,
-      Icons.newspaper,
+      PhosphorIcons.newspaper,
       'News',
       false,
-      [Color(0xFF4A148C), Color(0xFF8E24AA)],
     ),
     _NavSpec(
-      Icons.grid_view_rounded,
-      Icons.grid_view,
+      PhosphorIcons.grid_four,
       'Browse',
       false,
-      [Color(0xFFE65100), Color(0xFFFF6F00)],
     ),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.isDark;
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: context.cardSurface,
-        border: Border(top: BorderSide(color: context.brd)),
-        boxShadow: [
-          BoxShadow(
-            color: context.shadowColor,
-            blurRadius: 24,
-            offset: const Offset(0, -8),
-          ),
-        ],
+        color: tokens.AppTokens.surface1,
+        border: Border(top: BorderSide(color: tokens.AppTokens.border)),
       ),
       child: SafeArea(
         top: false,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final compact = constraints.maxWidth < 360;
-            return SizedBox(
-              height: compact ? 62 : 66,
-              child: Row(
-                children: List.generate(_items.length, (i) {
-                  final spec = _items[i];
-                  final active = currentIndex == i;
-                  final showBadge = spec.liveHint &&
-                      !active &&
-                      (liveChannelCount ?? 0) > 0 &&
-                      i == 2;
-                  return Expanded(
-                    child: _NavTile(
-                      spec: spec,
-                      active: active,
-                      compact: compact,
-                      showLiveBadge: showBadge,
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        onTap(i);
-                      },
-                      isDark: isDark,
-                    ),
-                  );
-                }),
-              ),
-            );
-          },
+        child: SizedBox(
+          height: 64,
+          child: Row(
+            children: List.generate(_items.length, (i) {
+              final spec = _items[i];
+              final active = currentIndex == i;
+              final showBadge = spec.liveHint &&
+                  !active &&
+                  (liveChannelCount ?? 0) > 0 &&
+                  i == 2;
+              return Expanded(
+                child: _NavTile(
+                  spec: spec,
+                  active: active,
+                  showLiveBadge: showBadge,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    onTap(i);
+                  },
+                ),
+              );
+            }),
+          ),
         ),
       ),
     );
@@ -108,38 +88,28 @@ class MainShellBottomNav extends StatelessWidget {
 
 class _NavSpec {
   final IconData icon;
-  final IconData activeIcon;
   final String label;
   final bool liveHint;
-  final List<Color> accentGradient;
 
   const _NavSpec(
     this.icon,
-    this.activeIcon,
     this.label,
     this.liveHint,
-    this.accentGradient,
   );
 }
 
 class _NavTile extends StatelessWidget {
   final _NavSpec spec;
   final bool active;
-  final bool compact;
   final bool showLiveBadge;
   final VoidCallback onTap;
-  final bool isDark;
 
   const _NavTile({
     required this.spec,
     required this.active,
-    required this.compact,
     required this.showLiveBadge,
     required this.onTap,
-    required this.isDark,
   });
-
-  Color get _activeColor => spec.accentGradient.last;
 
   @override
   Widget build(BuildContext context) {
@@ -147,108 +117,116 @@ class _NavTile extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        splashColor: _activeColor.withValues(alpha: 0.15),
-        highlightColor: _activeColor.withValues(alpha: 0.08),
+        borderRadius: tokens.RadiusTokens.circularLg,
+        splashColor: tokens.AppTokens.accent.withValues(alpha: 0.15),
+        highlightColor: tokens.AppTokens.accent.withValues(alpha: 0.08),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeOutCubic,
-              padding: EdgeInsets.symmetric(
-                horizontal: compact ? 8 : 12,
-                vertical: compact ? 5 : 6,
-              ),
-              decoration: BoxDecoration(
-                gradient: active
-                    ? LinearGradient(
-                        colors: spec.accentGradient
-                            .map((c) => c.withValues(alpha: isDark ? 0.55 : 0.35))
-                            .toList(),
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      )
-                    : null,
-                color: active ? null : Colors.transparent,
-                borderRadius: BorderRadius.circular(14),
-                border: active
-                    ? Border.all(
-                        color: _activeColor.withValues(alpha: 0.5),
-                        width: 1,
-                      )
-                    : null,
-                boxShadow: active
-                    ? [
-                        BoxShadow(
-                          color: _activeColor.withValues(alpha: 0.35),
-                          blurRadius: 12,
-                          offset: const Offset(0, 3),
-                        ),
-                      ]
-                    : null,
-              ),
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Icon(
-                    active ? spec.activeIcon : spec.icon,
-                    size: active ? 26 : 24,
-                    color: active ? _activeColor : context.txt3,
-                  ),
-                  if (showLiveBadge)
-                    Positioned(
-                      top: -2,
-                      right: -2,
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: AppColors.liveRed,
+            // Animated indicator dot (4px above icon)
+            SizedBox(
+              height: tokens.SpacingTokens.s4,
+              child: AnimatedSwitcher(
+                duration: tokens.MotionTokens.navIndicator,
+                transitionBuilder: (child, animation) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0, -0.5),
+                        end: Offset.zero,
+                      ).animate(CurvedAnimation(
+                        parent: animation,
+                        curve: tokens.MotionTokens.navCurve,
+                      )),
+                      child: child,
+                    ),
+                  );
+                },
+                child: active
+                    ? Container(
+                        key: const ValueKey('indicator'),
+                        width: tokens.SpacingTokens.s4,
+                        height: tokens.SpacingTokens.s4,
+                        decoration: const BoxDecoration(
+                          color: tokens.AppTokens.accent,
                           shape: BoxShape.circle,
-                          border: Border.all(
-                            color: context.cardSurface,
-                            width: 1.5,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.liveRed.withValues(alpha: 0.5),
-                              blurRadius: 4,
-                            ),
-                          ],
                         ),
+                      )
+                    : const SizedBox(
+                        key: ValueKey('empty'),
+                        width: tokens.SpacingTokens.s4,
+                        height: tokens.SpacingTokens.s4,
+                      ),
+              ),
+            ),
+            SizedBox(height: tokens.SpacingTokens.s4),
+            // Icon with live badge
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                AnimatedSwitcher(
+                  duration: tokens.MotionTokens.navIndicator,
+                  transitionBuilder: (child, animation) {
+                    return FadeTransition(
+                      opacity: animation,
+                      child: child,
+                    );
+                  },
+                  child: Icon(
+                    spec.icon,
+                    size: 24,
+                    color: active ? tokens.AppTokens.accent : tokens.AppTokens.textTertiary,
+                    key: ValueKey('${spec.label}_${active}'),
+                  ),
+                ),
+                if (showLiveBadge)
+                  Positioned(
+                    top: -2,
+                    right: -2,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: tokens.AppTokens.liveRed,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: context.cardSurface,
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: tokens.AppTokens.liveRed.withValues(alpha: 0.5),
+                            blurRadius: 4,
+                          ),
+                        ],
                       ),
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
-            const SizedBox(height: 2),
-            FittedBox(
-              fit: BoxFit.scaleDown,
+            SizedBox(height: tokens.SpacingTokens.s4),
+            // Label (11px)
+            AnimatedSwitcher(
+              duration: tokens.MotionTokens.navIndicator,
+              transitionBuilder: (child, animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: child,
+                );
+              },
               child: Text(
                 spec.label,
-                style: GF.body(
-                  fontSize: compact ? 9 : 10,
-                  fontWeight: active ? FontWeight.w800 : FontWeight.w600,
-                  color: active ? _activeColor : context.txt3,
-                  letterSpacing: 0.1,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: active ? tokens.AppTokens.accent : tokens.AppTokens.textTertiary,
+                  letterSpacing: 0,
                 ),
                 maxLines: 1,
+                key: ValueKey('${spec.label}_text_${active}'),
               ),
-            ),
-            SizedBox(
-              height: 3,
-              child: active
-                  ? Container(
-                      width: 18,
-                      height: 2.5,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(colors: spec.accentGradient),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    )
-                  : null,
             ),
           ],
         ),

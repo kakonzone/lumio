@@ -468,7 +468,7 @@ extension _PlayerControls on _PlayerScreenState {
                       style: GF.body(
                         color: Colors.white.withValues(alpha: 0.65),
                         fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w400,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -519,7 +519,7 @@ extension _PlayerControls on _PlayerScreenState {
                 ),
               ),
             _playerOverlayChip(
-              fill: AppColors.accent.withValues(alpha: 0.92),
+              fill: tokens.AppTokens.accent.withValues(alpha: 0.92),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -564,7 +564,7 @@ extension _PlayerControls on _PlayerScreenState {
             style: const TextStyle(
               color: Colors.white,
               fontSize: 16,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
             ),
             textAlign: TextAlign.center,
             maxLines: 2,
@@ -657,12 +657,12 @@ extension _PlayerControls on _PlayerScreenState {
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
                     color: active
-                        ? AppColors.accent
+                        ? tokens.AppTokens.accent
                         : const Color(0xFF14141A),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: active
-                          ? AppColors.accent
+                          ? tokens.AppTokens.accent
                           : const Color(0xFF252530),
                     ),
                   ),
@@ -732,11 +732,11 @@ extension _PlayerControls on _PlayerScreenState {
                         width: 58,
                         height: 58,
                         decoration: BoxDecoration(
-                          color: AppColors.accent.withValues(alpha: 0.95),
+                          color: tokens.AppTokens.accent.withValues(alpha: 0.95),
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.accent.withValues(alpha: 0.45),
+                              color: tokens.AppTokens.accent.withValues(alpha: 0.45),
                               blurRadius: 16,
                               offset: const Offset(0, 4),
                             ),
@@ -792,9 +792,9 @@ extension _PlayerControls on _PlayerScreenState {
             if (!isLive && dur.inMilliseconds > 0)
               SliderTheme(
                 data: SliderTheme.of(context).copyWith(
-                  activeTrackColor: AppColors.accent,
+                  activeTrackColor: tokens.AppTokens.accent,
                   inactiveTrackColor: Colors.white.withValues(alpha: 0.22),
-                  thumbColor: AppColors.accent,
+                  thumbColor: tokens.AppTokens.accent,
                   trackHeight: 3,
                   thumbShape:
                       const RoundSliderThumbShape(enabledThumbRadius: 7),
@@ -822,7 +822,7 @@ extension _PlayerControls on _PlayerScreenState {
                 child: LinearProgressIndicator(
                   value: progress != null ? _safeUnitProgress(progress) : null,
                   backgroundColor: Colors.white.withValues(alpha: 0.22),
-                  valueColor: const AlwaysStoppedAnimation(AppColors.accent),
+                  valueColor: const AlwaysStoppedAnimation(tokens.AppTokens.accent),
                   minHeight: 3,
                 ),
               ),
@@ -843,7 +843,7 @@ extension _PlayerControls on _PlayerScreenState {
                   isLive ? '● LIVE' : _formatDuration(dur),
                   style: TextStyle(
                     color: isLive
-                        ? AppColors.accent
+                        ? tokens.AppTokens.accent
                         : Colors.white.withValues(alpha: 0.7),
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -877,7 +877,7 @@ extension _PlayerControls on _PlayerScreenState {
                 ? Icons.brightness_medium
                 : Icons.brightness_high);
     final color = _draggingVolume
-        ? AppColors.accent
+        ? tokens.AppTokens.accent
         : Colors.yellow.withValues(alpha: 0.9);
 
     return Positioned(
@@ -1003,9 +1003,9 @@ extension _PlayerControls on _PlayerScreenState {
                     Text(
                       widget.subtitle,
                       style: GF.body(
-                        color: AppColors.txt2Dark,
+                        color: tokens.AppTokens.textSecondary,
                         fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w400,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -1021,10 +1021,10 @@ extension _PlayerControls on _PlayerScreenState {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.accentDim,
+                    color: tokens.AppTokens.accentMuted,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: AppColors.accent.withValues(alpha: 0.35),
+                      color: tokens.AppTokens.accent.withValues(alpha: 0.35),
                     ),
                   ),
                   child: Row(
@@ -1035,7 +1035,7 @@ extension _PlayerControls on _PlayerScreenState {
                       Text(
                         'LIVE',
                         style: GF.head(
-                          color: AppColors.accent,
+                          color: tokens.AppTokens.accent,
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 0.6,
@@ -1053,10 +1053,10 @@ extension _PlayerControls on _PlayerScreenState {
                           : 'Connecting…',
                   style: GF.body(
                     color: _initialized
-                        ? AppColors.green
+                        ? tokens.AppTokens.success
                         : _hasError
-                            ? AppColors.red
-                            : AppColors.txt3Dark,
+                            ? tokens.AppTokens.danger
+                            : tokens.AppTokens.textTertiary,
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                   ),
@@ -1072,7 +1072,7 @@ extension _PlayerControls on _PlayerScreenState {
         Text(
           relatedTitle,
           style: GF.head(
-            color: AppColors.txt3Dark,
+            color: tokens.AppTokens.textTertiary,
             fontSize: 12,
             fontWeight: FontWeight.w800,
             letterSpacing: 1.8,
@@ -1129,12 +1129,12 @@ extension _PlayerControls on _PlayerScreenState {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: selected
-                ? AppColors.accent.withValues(alpha: 0.14)
+                ? tokens.AppTokens.accent.withValues(alpha: 0.14)
                 : const Color(0xFF232A38),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: selected
-                  ? AppColors.accent.withValues(alpha: 0.65)
+                  ? tokens.AppTokens.accent.withValues(alpha: 0.65)
                   : const Color(0xFF2E3648),
               width: selected ? 1.5 : 1,
             ),
@@ -1146,14 +1146,14 @@ extension _PlayerControls on _PlayerScreenState {
                 height: 42,
                 decoration: BoxDecoration(
                   color: selected
-                      ? AppColors.accent.withValues(alpha: 0.22)
+                      ? tokens.AppTokens.accent.withValues(alpha: 0.22)
                       : const Color(0xFF1A1F2B),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
                   _qualityIconFor(label),
                   size: 22,
-                  color: selected ? AppColors.accent : Colors.white54,
+                  color: selected ? tokens.AppTokens.accent : Colors.white54,
                 ),
               ),
               const SizedBox(width: 12),
@@ -1191,7 +1191,7 @@ extension _PlayerControls on _PlayerScreenState {
                 selected
                     ? Icons.check_circle_rounded
                     : Icons.circle_outlined,
-                color: selected ? AppColors.accent : Colors.white24,
+                color: selected ? tokens.AppTokens.accent : Colors.white24,
                 size: 22,
               ),
             ],
@@ -1263,12 +1263,12 @@ extension _PlayerControls on _PlayerScreenState {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: AppColors.accent.withValues(alpha: 0.18),
+                            color: tokens.AppTokens.accent.withValues(alpha: 0.18),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Icon(
                             Icons.tune_rounded,
-                            color: AppColors.accent,
+                            color: tokens.AppTokens.accent,
                             size: 22,
                           ),
                         ),
@@ -1405,7 +1405,7 @@ extension _PlayerControls on _PlayerScreenState {
                               if (mounted) _revealControls();
                             },
                             style: FilledButton.styleFrom(
-                              backgroundColor: AppColors.accent,
+                              backgroundColor: tokens.AppTokens.accent,
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(

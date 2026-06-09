@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../config/ad_config.dart';
 import '../provider/app_provider.dart';
 import '../theme/app_theme.dart';
+import '../theme/tokens/colors.dart';
 
 /// Drawer destinations — maps to home tabs or [CategoryChannelsScreen].
 enum AppDrawerDestination {
@@ -32,7 +33,7 @@ extension AppDrawerDestinationX on AppDrawerDestination {
       };
 
   Color accentColor(BuildContext context) => switch (this) {
-        AppDrawerDestination.allChannels => AppColors.accent,
+        AppDrawerDestination.allChannels => AppTokens.accent,
         AppDrawerDestination.sports => const Color(0xFFFF6B1A),
         AppDrawerDestination.entertainment => const Color(0xFF9C27B0),
         AppDrawerDestination.kDrama => const Color(0xFFFF4081),
@@ -164,7 +165,7 @@ class _DrawerHeader extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.accent.withValues(alpha: isDark ? 0.35 : 0.28),
+            color: AppTokens.accent.withValues(alpha: isDark ? 0.35 : 0.28),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -207,7 +208,7 @@ class _DrawerHeader extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.white.withValues(alpha: 0.9),
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],

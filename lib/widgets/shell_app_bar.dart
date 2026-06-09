@@ -4,6 +4,7 @@ import '../core/shell_scope.dart';
 import '../provider/app_provider.dart';
 import '../screens/favorites_screen.dart';
 import '../theme/app_theme.dart';
+import '../theme/tokens/colors.dart' as tokens;
 import '../utils/responsive.dart';
 
 /// Fixed top bar: drawer/back, logo, theme, favourites, notifications.
@@ -210,7 +211,7 @@ class ShellAppBar extends StatelessWidget {
               TextSpan(text: 'LUMIO', style: TextStyle(color: context.txt)),
               const TextSpan(
                 text: 'TV',
-                style: TextStyle(color: AppColors.accent),
+                style: TextStyle(color: tokens.AppTokens.accent),
               ),
             ],
           ),
@@ -250,7 +251,7 @@ class ShellAppBar extends StatelessWidget {
                     width: knob,
                     height: knob,
                     decoration: const BoxDecoration(
-                      color: AppColors.accent,
+                      color: tokens.AppTokens.accent,
                       shape: BoxShape.circle,
                     ),
                     child: Center(
@@ -283,7 +284,7 @@ class ShellAppBar extends StatelessWidget {
                   favCount > 0 ? Icons.favorite : Icons.favorite_border,
                   size: 16,
                   color:
-                      favCount > 0 ? AppColors.accent : context.txt2,
+                      favCount > 0 ? tokens.AppTokens.accent : context.txt2,
                 ),
               ),
               if (favCount > 0)
@@ -293,7 +294,7 @@ class ShellAppBar extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(3),
                     decoration: const BoxDecoration(
-                      color: AppColors.accent,
+                      color: tokens.AppTokens.accent,
                       shape: BoxShape.circle,
                     ),
                     constraints: const BoxConstraints(
@@ -341,7 +342,7 @@ class ShellAppBar extends StatelessWidget {
                 width: 6,
                 height: 6,
                 decoration: const BoxDecoration(
-                  color: AppColors.accent,
+                  color: tokens.AppTokens.accent,
                   shape: BoxShape.circle,
                 ),
               ),

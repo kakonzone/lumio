@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/model.dart';
 import '../provider/app_provider.dart';
 import '../theme/app_theme.dart';
+import '../theme/tokens/colors.dart' as tokens;
 import '../widgets/channel_avatar.dart';
 
 /// Category emoji for player related list rows.
@@ -61,12 +62,12 @@ class PlayerRelatedCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
             color: isPlaying
-                ? AppColors.accent.withValues(alpha: 0.08)
+                ? tokens.AppTokens.accent.withValues(alpha: 0.08)
                 : const Color(0xFF131318),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: isPlaying
-                  ? AppColors.accent.withValues(alpha: 0.55)
+                  ? tokens.AppTokens.accent.withValues(alpha: 0.55)
                   : const Color(0xFF22222E),
               width: isPlaying ? 1.5 : 1,
             ),
@@ -94,9 +95,9 @@ class PlayerRelatedCard extends StatelessWidget {
                         ? channel.category
                         : channel.currentShow,
                     style: GF.body(
-                      color: AppColors.txt3Dark,
+                      color: context.txt3,
                       fontSize: 11,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w400,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -109,13 +110,13 @@ class PlayerRelatedCard extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: AppColors.accent.withValues(alpha: 0.15),
+                  color: tokens.AppTokens.accent.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   'PLAYING',
                   style: GF.head(
-                    color: AppColors.accent,
+                    color: tokens.AppTokens.accent,
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0.5,
@@ -128,14 +129,14 @@ class PlayerRelatedCard extends StatelessWidget {
                 height: 18,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: AppColors.accent,
+                  color: tokens.AppTokens.accent,
                 ),
               )
             else if (showLive)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.accentDim,
+                  color: tokens.AppTokens.accentMuted,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -146,7 +147,7 @@ class PlayerRelatedCard extends StatelessWidget {
                     Text(
                       'LIVE',
                       style: GF.head(
-                        color: AppColors.accent,
+                        color: tokens.AppTokens.accent,
                         fontSize: 9,
                         fontWeight: FontWeight.w800,
                       ),
@@ -159,11 +160,11 @@ class PlayerRelatedCard extends StatelessWidget {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: AppColors.accent,
+                  color: tokens.AppTokens.accent,
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.accent.withValues(alpha: 0.35),
+                      color: tokens.AppTokens.accent.withValues(alpha: 0.35),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -190,7 +191,7 @@ class PlayerSpinner extends StatelessWidget {
         width: 42,
         height: 42,
         child: CircularProgressIndicator(
-          color: AppColors.accent,
+          color: tokens.AppTokens.accent,
           strokeWidth: 3,
         ),
       );
@@ -271,7 +272,7 @@ class _PlayerConnectingDotsState extends State<PlayerConnectingDots> {
                 width: 7,
                 height: 7,
                 decoration: BoxDecoration(
-                  color: AppColors.accent.withValues(
+                  color: tokens.AppTokens.accent.withValues(
                     alpha: 0.35 + (i * 0.2),
                   ),
                   shape: BoxShape.circle,
@@ -321,7 +322,7 @@ class _PlayerLiveDotState extends State<PlayerLiveDot>
           width: 5,
           height: 5,
           decoration: const BoxDecoration(
-            color: AppColors.accent,
+            color: tokens.AppTokens.accent,
             shape: BoxShape.circle,
           ),
         ),
@@ -353,7 +354,7 @@ class PlayerErrorPanel extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             decoration: BoxDecoration(
-              color: AppColors.accent,
+              color: tokens.AppTokens.accent,
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Text(

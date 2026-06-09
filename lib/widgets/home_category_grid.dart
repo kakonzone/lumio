@@ -6,6 +6,7 @@ import 'package:lumio_tv/provider/app_provider.dart';
 import 'package:lumio_tv/screens/category_channels_screen.dart';
 import 'package:lumio_tv/screens/special_link/special_link_hub_screen.dart';
 import 'package:lumio_tv/theme/app_theme.dart';
+import 'package:lumio_tv/theme/tokens/colors.dart' as tokens;
 
 /// Home tab category grid — gradient tiles, counts, staggered entrance.
 class HomeCategoryGrid extends StatefulWidget {
@@ -377,9 +378,9 @@ class _CategoryVisual {
                 Color(0xFF7986CB),
                 Color(0xFF455A64),
               ],
-        glow: AppColors.accent,
+        glow: tokens.AppTokens.accent,
         iconFg: Colors.white,
-        badgeBg: AppColors.accent,
+        badgeBg: tokens.AppTokens.accent,
       );
 }
 
@@ -582,13 +583,13 @@ class _LiveDot extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
           decoration: BoxDecoration(
-            color: AppColors.liveRed.withValues(
+            color: tokens.AppTokens.liveRed.withValues(
               alpha: 0.85 + pulse.value * 0.15,
             ),
             borderRadius: BorderRadius.circular(8),
             boxShadow: [
               BoxShadow(
-                color: AppColors.liveRed.withValues(alpha: 0.4 * pulse.value),
+                color: tokens.AppTokens.liveRed.withValues(alpha: 0.4 * pulse.value),
                 blurRadius: 6,
               ),
             ],

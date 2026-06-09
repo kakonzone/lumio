@@ -6,7 +6,7 @@ class LazyAdViewport extends StatefulWidget {
     super.key,
     required this.placeholderHeight,
     required this.builder,
-    this.preloadPx = 200,
+    this.preloadPx = 400,
   });
 
   final double placeholderHeight;

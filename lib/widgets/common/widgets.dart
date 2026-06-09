@@ -5,6 +5,7 @@ import '../../models/model.dart';
 import '../../provider/app_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/channel_list_style.dart';
+import '../../theme/tokens/colors.dart';
 
 // ═══════════════════════════════════════════════════════════════
 // SCORE CARD — horizontal scroll live match card
@@ -80,7 +81,7 @@ class ScoreCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               color: context.txt2,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
             ),
             overflow: TextOverflow.ellipsis,
           ),
@@ -92,7 +93,7 @@ class ScoreCard extends StatelessWidget {
             fontSize: 18,
             fontWeight: FontWeight.w800,
             color:
-                isLeading && score.isNotEmpty ? AppColors.accent : context.txt,
+                isLeading && score.isNotEmpty ? AppTokens.accent : context.txt,
           ),
         ),
       ],
@@ -305,7 +306,7 @@ class PredictionCard extends StatelessWidget {
               '${match.sport} • ${live ? "LIVE" : "UPCOMING"}'.toUpperCase(),
               style: TextStyle(
                 fontSize: 10,
-                color: live ? AppColors.accent : context.txt3,
+                color: live ? AppTokens.accent : context.txt3,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.7,
               ),
@@ -345,7 +346,7 @@ class PredictionCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.accent,
+                    color: AppTokens.accent,
                   ),
                 ),
                 Text(
@@ -361,7 +362,7 @@ class PredictionCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.green,
+                    color: tokens.AppTokens.success,
                   ),
                 ),
               ],
@@ -416,7 +417,7 @@ class NewsCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.accent,
+                      color: AppTokens.accent,
                       letterSpacing: 1,
                     ),
                   ),
@@ -480,10 +481,10 @@ class CategoryFilterBar extends StatelessWidget {
               duration: const Duration(milliseconds: 200),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
               decoration: BoxDecoration(
-                color: active ? AppColors.accent : context.bg2,
+                color: active ? AppTokens.accent : context.bg2,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: active ? AppColors.accent : context.brd,
+                  color: active ? AppTokens.accent : context.brd,
                 ),
               ),
               child: Text(
@@ -547,7 +548,7 @@ class LiveBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color ?? AppColors.accent,
+        color: color ?? AppTokens.accent,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
@@ -775,7 +776,7 @@ class ErrorView extends StatelessWidget {
                     vertical: 11,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.accent,
+                    color: AppTokens.accent,
                     borderRadius: BorderRadius.circular(24),
                   ),
                   child: const Text(
@@ -923,7 +924,7 @@ class _StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: isLive ? AppColors.accentDim : context.bg3,
+        color: isLive ? AppTokens.accentDim : context.bg3,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
@@ -931,7 +932,7 @@ class _StatusBadge extends StatelessWidget {
         style: TextStyle(
           fontSize: 9,
           fontWeight: FontWeight.w700,
-          color: isLive ? AppColors.accent : context.txt3,
+          color: isLive ? AppTokens.accent : context.txt3,
         ),
       ),
     );
@@ -948,7 +949,7 @@ class _LiveDot extends StatelessWidget {
             height: 6,
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: AppColors.accent,
+                color: AppTokens.accent,
                 shape: BoxShape.circle,
               ),
             ),
@@ -959,7 +960,7 @@ class _LiveDot extends StatelessWidget {
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w700,
-              color: AppColors.accent,
+              color: AppTokens.accent,
             ),
           ),
         ],
@@ -979,7 +980,7 @@ class _PlayCircle extends StatelessWidget {
           width: size,
           height: size,
           decoration: const BoxDecoration(
-            color: AppColors.accent,
+            color: AppTokens.accent,
             shape: BoxShape.circle,
           ),
           child: Center(
@@ -1132,7 +1133,7 @@ class _WinChanceBar extends StatelessWidget {
           children: [
             Expanded(
               flex: chanceA.toInt().clamp(1, 100),
-              child: Container(height: 6, color: AppColors.accent),
+              child: Container(height: 6, color: AppTokens.accent),
             ),
             if (draw > 0)
               Expanded(
@@ -1141,7 +1142,7 @@ class _WinChanceBar extends StatelessWidget {
               ),
             Expanded(
               flex: chanceB.toInt().clamp(1, 100),
-              child: Container(height: 6, color: AppColors.green),
+              child: Container(height: 6, color: tokens.AppTokens.success),
             ),
           ],
         ),

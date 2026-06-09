@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/performance_tuning.dart';
 import '../theme/app_theme.dart';
+import '../theme/tokens/colors.dart' as tokens;
 import 'shell_app_bar.dart';
 
 /// Fixed shell bar + scroll body (single [SafeArea] on the bar only).
@@ -51,7 +52,7 @@ class ShellPageScaffold extends StatelessWidget {
             child: onRefresh == null
                 ? scroll
                 : RefreshIndicator(
-                    color: AppColors.accent,
+                    color: tokens.AppTokens.accent,
                     onRefresh: onRefresh!,
                     child: scroll,
                   ),

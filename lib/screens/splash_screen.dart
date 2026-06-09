@@ -9,6 +9,7 @@ import '../provider/app_provider.dart';
 import '../services/ad_consent_service.dart';
 import '../widgets/remote_config_widgets.dart';
 import '../theme/app_theme.dart';
+import '../theme/tokens/colors.dart' as tokens;
 import '../utils/responsive.dart';
 
 /// Splash: logo visible → remote config → consent (first launch) → home.
@@ -107,7 +108,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = context.watch<AppProvider>().isDark;
-    final bg = isDark ? AppColors.bgDark : const Color(0xFF000000);
+    final bg = isDark ? context.bg : const Color(0xFF000000);
 
     return Scaffold(
       backgroundColor: bg,
@@ -136,7 +137,7 @@ class _SplashScreenState extends State<SplashScreen> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.accent,
+                        color: tokens.AppTokens.accent,
                         letterSpacing: 4,
                       ),
                     ),
@@ -149,7 +150,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.accent.withValues(alpha: 0.9),
+                  color: tokens.AppTokens.accent.withValues(alpha: 0.9),
                   letterSpacing: 3,
                 ),
               ),
@@ -159,7 +160,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 height: 28,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  color: AppColors.accent,
+                  color: tokens.AppTokens.accent,
                 ),
               ),
               const SizedBox(height: 48),

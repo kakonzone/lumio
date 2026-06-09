@@ -16,6 +16,7 @@ import 'ad_cold_start_eligibility.dart';
 import 'cmp_tier1_gate.dart';
 import 'interstitial_placement.dart';
 import '../services/user_preferences.dart';
+import '../services/kill_switch_service.dart';
 import '../utils/channel_tap_key.dart';
 import '../utils/ad_debug_log.dart';
 import 'ad_waterfall.dart';
@@ -82,11 +83,21 @@ class AdManager {
 
   bool get isStreaming => _isStreaming;
   bool get adsEnabled =>
-      isReady &&
+      (isReady &&
       AdSafetyService.instance.adsEnabledRemote &&
       !ServerCap.instance.blocksAdsInRelease &&
       !UserPreferences.removeAdsPurchased &&
-      !_caps.isAdFree;
+      !_caps.isAdFree) &&
+      !_killSwitchActive;
+
+  bool _killSwitchActive = false;
+  bool get killSwitchActive => _killSwitchActive;
+
+  /// Disable all ad surfaces via kill switch (emergency control).
+  void setKillSwitchActive(bool active) {
+    _killSwitchActive = active;
+    adLog(active ? '[KillSwitch] ADS DISABLED via kill switch' : '[KillSwitch] ADS ENABLED');
+  }
 
   bool get levelPlayAdsEnabled =>
       adsEnabled && AdSafetyService.instance.levelPlayEnabledRemote;
@@ -518,7 +529,7 @@ class AdManager {
       }
     }
 
-    if (MonetagConfig.isConfigured) {
+    if (MonetagConfig.isConfigured && KillSwitchService.instance.monetagEnabled) {
       final ok = await PropellerEngine.instance.openSmartlink(
         placement: placement,
         analytics: analytics,
@@ -709,7 +720,8 @@ class AdManager {
 
     if (context != null &&
         context.mounted &&
-        AdSafetyService.instance.adsterraEnabled) {
+        AdSafetyService.instance.adsterraEnabled &&
+        KillSwitchService.instance.monetagEnabled) {
       final monetag = await PropellerEngine.instance.showVignetteDialog(
         context,
         placement: 'tab_switch_monetag',
@@ -724,6 +736,7 @@ class AdManager {
   /// Optional Monetag smartlink before opening external news URL (2nd tap).
   Future<void> maybeMonetizeNewsReadMore() async {
     if (!adsEnabled) return;
+    if (!KillSwitchService.instance.monetagEnabled) return;
     await PropellerEngine.instance.openSmartlink(
       placement: 'news_read_more',
       analytics: analytics,

@@ -262,7 +262,7 @@ class _GradientSlideBody extends StatelessWidget {
                       slide.subtitle!,
                       style: GF.body(
                         fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w400,
                         color: Colors.white.withValues(alpha: 0.88),
                         height: 1.25,
                       ),

@@ -13,7 +13,7 @@ export '../../config/ad_config.dart' show AdListScreen;
 class AdListInjector {
   AdListInjector._();
 
-  static const int defaultInterval = 8;
+  static const int defaultInterval = 6;
 
   static int intervalFor(
     AdListScreen screen, {

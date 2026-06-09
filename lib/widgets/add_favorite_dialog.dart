@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/model.dart';
 import '../provider/app_provider.dart';
 import '../theme/app_theme.dart';
+import '../theme/tokens/colors.dart' as tokens;
 
 /// Long-press confirmation to add a channel to favourites.
 Future<bool> showAddFavoriteDialog(
@@ -51,7 +52,7 @@ Future<bool> showAddFavoriteDialog(
           child: const Text(
             'Add',
             style: TextStyle(
-              color: AppColors.accent,
+              color: tokens.AppTokens.accent,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -66,7 +67,7 @@ Future<bool> showAddFavoriteDialog(
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('${channel.name} added to favourites'),
-        backgroundColor: AppColors.accent,
+        backgroundColor: tokens.AppTokens.accent,
         duration: const Duration(seconds: 2),
       ),
     );

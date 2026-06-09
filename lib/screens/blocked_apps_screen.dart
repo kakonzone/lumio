@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../security/blocked_apps_guard.dart';
 import '../theme/app_theme.dart';
+import '../theme/tokens/colors.dart';
 
 /// Full-screen gate when conflicting analysis/MITM apps are installed.
 class BlockedAppsScreen extends StatefulWidget {
@@ -67,7 +68,7 @@ class _BlockedAppsScreenState extends State<BlockedAppsScreen>
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark,
       home: Scaffold(
-        backgroundColor: AppColors.bgDark,
+        backgroundColor: AppTokens.background,
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
@@ -77,7 +78,7 @@ class _BlockedAppsScreenState extends State<BlockedAppsScreen>
                 const Icon(
                   Icons.shield_outlined,
                   size: 56,
-                  color: AppColors.accent,
+                  color: AppTokens.accent,
                 ),
                 const SizedBox(height: 20),
                 Text(
@@ -107,7 +108,7 @@ class _BlockedAppsScreenState extends State<BlockedAppsScreen>
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(
                         Icons.warning_amber_rounded,
-                        color: AppColors.accent,
+                        color: AppTokens.accent,
                       ),
                       title: Text(
                         _labels[i],
@@ -124,7 +125,7 @@ class _BlockedAppsScreenState extends State<BlockedAppsScreen>
                   onPressed: () =>
                       unawaited(BlockedAppsGuard.openUninstallSettings()),
                   style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.accent,
+                    backgroundColor: AppTokens.accent,
                     foregroundColor: Colors.black,
                     minimumSize: const Size.fromHeight(48),
                   ),

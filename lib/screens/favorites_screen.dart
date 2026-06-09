@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/model.dart';
 import '../provider/app_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/channel_player.dart';
@@ -11,6 +10,10 @@ import '../widgets/shell_app_bar.dart';
 import '../widgets/shell_page_scaffold.dart';
 import '../widgets/ad_list_injector.dart';
 import '../widgets/channel_list_tile.dart';
+import '../widgets/empty_states/empty_state.dart';
+import '../ads/adsterra/adsterra_native.dart';
+import '../ads/utils/lazy_ad_viewport.dart';
+import '../theme/tokens/colors.dart';
 
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
@@ -32,40 +35,7 @@ class FavoritesScreen extends StatelessWidget {
         slivers: [
           SliverFillRemaining(
             hasScrollBody: false,
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.favorite_border,
-                    size: 56,
-                    color: context.txt3,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No favourites yet',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: context.txt,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Categories → Sports or Bangla → hold a channel → Add',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: context.txt3,
-                      height: 1.4,
-                    ),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
+            child: EmptyState.favorites(),
           ),
         ],
       );
@@ -93,6 +63,21 @@ class FavoritesScreen extends StatelessWidget {
           screen: AdListScreen.favorites,
           placementPrefix: 'favorites_list',
           itemBuilder: (ctx, i) {
+            // Inject native ad at index 3
+            if (i == 3 && AdManager.instance.showAdsterraWebViewSlots) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                child: LazyAdViewport(
+                  placeholderHeight: 100,
+                  builder: () => AdsterraNativeBanner(
+                    placement: 'favorites_list_0',
+                    height: 100,
+                    userVisible: AdConfig.playerAdsUserVisible,
+                  ),
+                ),
+              );
+            }
+
             final ch = favorites[i];
             return ChannelListTile(
               channel: ch,
@@ -114,7 +99,7 @@ class FavoritesScreen extends StatelessWidget {
               trailing: IconButton(
                 icon: const Icon(
                   Icons.favorite,
-                  color: AppColors.accent,
+                  color: AppTokens.accent,
                   size: 20,
                 ),
                 onPressed: () => prov.removeFavorite(ch.id),

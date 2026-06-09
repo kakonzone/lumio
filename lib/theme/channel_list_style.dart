@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_theme.dart';
+import 'tokens/colors.dart' as tokens;
 
 /// Single source for channel row colors — used by [ChannelListTile] everywhere.
 class ChannelListStyle {
@@ -27,7 +28,7 @@ class ChannelListStyle {
       case 'kids':
         return const Color(0xFF66BB6A);
       default:
-        return AppColors.accent;
+        return tokens.AppTokens.accent;
     }
   }
 
@@ -42,7 +43,7 @@ class ChannelListStyle {
       borderRadius: BorderRadius.circular(14),
       border: Border.all(
         color: isPendingTap
-            ? AppColors.accent
+            ? tokens.AppTokens.accent
             : (showLive ? context.liveCardBorder : context.brd),
         width: isPendingTap ? 1.5 : 1,
       ),
@@ -58,7 +59,7 @@ class ChannelListStyle {
 
   static BoxDecoration liveBadge() {
     return BoxDecoration(
-      color: AppColors.liveRed,
+      color: tokens.AppTokens.liveRed,
       borderRadius: BorderRadius.circular(6),
     );
   }

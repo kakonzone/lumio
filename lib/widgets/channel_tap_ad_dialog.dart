@@ -7,6 +7,7 @@ import '../ads/adsterra/adsterra_html.dart';
 import '../ads/adsterra/adsterra_webview.dart';
 import '../config/ad_config.dart';
 import '../theme/app_theme.dart';
+import '../theme/tokens/colors.dart' as tokens;
 
 /// Fullscreen in-app Adsterra ad for first channel tap (no external browser).
 class ChannelTapAdDialog extends StatefulWidget {
@@ -102,7 +103,7 @@ class _ChannelTapAdDialogState extends State<ChannelTapAdDialog> {
               onPressed: _canClose ? _close : null,
               style: FilledButton.styleFrom(
                 backgroundColor:
-                    _canClose ? AppColors.accent : Colors.grey.shade800,
+                    _canClose ? tokens.AppTokens.accent : Colors.grey.shade800,
               ),
               child: Text(
                 _canClose ? 'চালিয়ে যান' : '$_waitLeft s',

@@ -5,6 +5,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 import '../config/ad_config.dart';
 import '../services/ad_safety_service.dart';
+import '../services/kill_switch_service.dart';
 import 'ad_log.dart';
 import 'adsterra/adsterra_html.dart';
 import 'utils/ad_webview_navigation_policy.dart';
@@ -236,6 +237,12 @@ class AdWaterfall {
   }
 
   Future<bool> _tryLevelPlayInterstitial(LevelPlayAdService lp) async {
+    // Kill switch check
+    if (!KillSwitchService.instance.levelplayEnabled) {
+      adLog('[AdWaterfall] LevelPlay disabled via kill switch');
+      return false;
+    }
+    
     try {
       if (!lp.isInterstitialReady) {
         final ready = await lp.ensureInterstitialReady(
@@ -256,6 +263,12 @@ class AdWaterfall {
     required int minSeconds,
     VoidCallback? onCompleted,
   }) async {
+    // Kill switch check
+    if (!KillSwitchService.instance.adsterraEnabled) {
+      adLog('[AdWaterfall] Adsterra disabled via kill switch');
+      return false;
+    }
+    
     if (!AdConfig.hasAdsterraWebViewZones &&
         !AdConfig.hasValidAdsterraDirectLink) {
       return false;

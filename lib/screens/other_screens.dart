@@ -22,8 +22,10 @@ import 'package:lumio_tv/utils/live_nav_top_sports.dart';
 import 'package:lumio_tv/utils/live_tab_channels.dart';
 import 'package:lumio_tv/ads/ad_manager.dart';
 import 'package:lumio_tv/ads/widgets/lazy_adsterra_strip.dart';
+import 'package:lumio_tv/ads/widgets/sticky_bottom_native.dart';
 import 'package:lumio_tv/widgets/list_skeletons.dart';
 import 'package:lumio_tv/core/performance_tuning.dart';
+import 'package:lumio_tv/theme/tokens/colors.dart';
 
 // =============================================================================
 // MODEL EXTENSIONS
@@ -221,7 +223,7 @@ class _SportsScreenState extends State<SportsScreen> {
             const ShellAppBar(blendWithScaffold: true),
             Expanded(
               child: RefreshIndicator(
-                color: AppColors.accent,
+                color: AppTokens.accent,
                 onRefresh: prov.refresh,
                 child: CustomScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
@@ -492,7 +494,7 @@ class _SportsScreenState extends State<SportsScreen> {
             ),
             onLongPress: () => showAddFavoriteDialog(context, ch),
             trailing: prov.isFavorite(ch.id)
-                ? const Icon(Icons.favorite, color: AppColors.accent, size: 18)
+                ? const Icon(Icons.favorite, color: AppTokens.accent, size: 18)
                 : null,
           );
         },
@@ -568,7 +570,7 @@ class _LiveScreenState extends State<LiveScreen> {
           const ShellAppBar(blendWithScaffold: true),
           Expanded(
             child: RefreshIndicator(
-              color: AppColors.accent,
+              color: AppTokens.accent,
               onRefresh: prov.refresh,
               child: CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -583,15 +585,15 @@ class _LiveScreenState extends State<LiveScreen> {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: AppColors.liveRedDim,
+                            color: AppTokens.liveRedDim,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: AppColors.liveRed.withValues(alpha: 0.35),
+                              color: AppTokens.liveRed.withValues(alpha: 0.35),
                             ),
                           ),
                           child: const Icon(
                             Icons.sensors_rounded,
-                            color: AppColors.liveRed,
+                            color: AppTokens.liveRed,
                             size: 22,
                           ),
                         ),
@@ -647,7 +649,7 @@ Widget _liveSectionLabel(BuildContext ctx, String label) => Padding(
             width: 3,
             height: 14,
             decoration: BoxDecoration(
-              color: AppColors.accent,
+              color: AppTokens.accent,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -1194,11 +1196,11 @@ class _GenreBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: liveStyle
-            ? AppColors.liveRed.withValues(alpha: 0.92)
+            ? AppTokens.liveRed.withValues(alpha: 0.92)
             : (isLive
                 ? (context.isDark
-                    ? AppColors.accent.withValues(alpha: 0.18)
-                    : AppColors.accentLight)
+                    ? AppTokens.accent.withValues(alpha: 0.18)
+                    : AppTokens.accentLight)
                 : (onGradient
                     ? Colors.white.withValues(alpha: 0.16)
                     : context.bg3)),
@@ -1207,7 +1209,7 @@ class _GenreBadge extends StatelessWidget {
           color: liveStyle
               ? Colors.white.withValues(alpha: 0.35)
               : (isLive
-                  ? AppColors.accent.withValues(alpha: 0.35)
+                  ? AppTokens.accent.withValues(alpha: 0.35)
                   : (onGradient
                       ? Colors.white.withValues(alpha: 0.25)
                       : context.brd)),
@@ -1215,7 +1217,7 @@ class _GenreBadge extends StatelessWidget {
         boxShadow: liveStyle
             ? [
                 BoxShadow(
-                  color: AppColors.liveRed.withValues(alpha: 0.45),
+                  color: AppTokens.liveRed.withValues(alpha: 0.45),
                   blurRadius: 8,
                 ),
               ]
@@ -1228,7 +1230,7 @@ class _GenreBadge extends StatelessWidget {
           fontWeight: FontWeight.w800,
           color: liveStyle
               ? Colors.white
-              : (isLive ? AppColors.accent : (onGradient ? Colors.white70 : context.txt3)),
+              : (isLive ? AppTokens.accent : (onGradient ? Colors.white70 : context.txt3)),
           letterSpacing: 0.25,
         ),
         maxLines: 1,
@@ -1274,7 +1276,7 @@ class CategoriesScreen extends StatelessWidget {
           const ShellAppBar(blendWithScaffold: true),
           Expanded(
             child: RefreshIndicator(
-              color: AppColors.accent,
+              color: AppTokens.accent,
               onRefresh: prov.refresh,
               child: CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -1321,7 +1323,7 @@ class CategoriesScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.accent.withValues(
+                          color: AppTokens.accent.withValues(
                             alpha: context.isDark ? 0.25 : 0.22,
                           ),
                           blurRadius: 14,
@@ -1452,6 +1454,7 @@ class CategoriesScreen extends StatelessWidget {
               ),
             ),
           ),
+          const StickyBottomNative(),
         ],
       ),
     );
@@ -1568,7 +1571,7 @@ class _ChannelCard extends StatelessWidget {
                   height: 14,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: AppColors.accent,
+                    color: AppTokens.accent,
                   ),
                 )
               else if (showLive)
@@ -1578,7 +1581,7 @@ class _ChannelCard extends StatelessWidget {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.accentDim,
+                    color: AppTokens.accentDim,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Text(
@@ -1586,7 +1589,7 @@ class _ChannelCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 9,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.accent,
+                      color: AppTokens.accent,
                     ),
                   ),
                 ),
@@ -1606,7 +1609,7 @@ class _ChannelCard extends StatelessWidget {
             width: 28,
             height: 28,
             decoration: const BoxDecoration(
-              color: AppColors.accent,
+              color: AppTokens.accent,
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.play_arrow, color: Colors.white, size: 16),

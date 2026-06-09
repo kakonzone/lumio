@@ -8,6 +8,7 @@ import '../models/model.dart';
 import '../provider/app_provider.dart';
 import '../screens/news_article_reader_screen.dart';
 import '../theme/app_theme.dart';
+import '../theme/tokens/colors.dart' as tokens;
 import '../utils/lumio_image_cache.dart';
 import '../utils/news_priority.dart';
 
@@ -40,7 +41,7 @@ class NewsHeroCard extends StatelessWidget {
     if (NewsPriority.isCricket(news)) {
       return [const Color(0xFF00897B), const Color(0xFF004D40)];
     }
-    return [AppColors.accent, const Color(0xFFE65100)];
+    return [tokens.AppTokens.accent, const Color(0xFFE65100)];
   }
 
   @override
@@ -62,7 +63,7 @@ class NewsHeroCard extends StatelessWidget {
               colors: _accentGradient.map((c) => c.withValues(alpha: 0.35)).toList(),
             ),
             border: Border.all(
-              color: isPending ? AppColors.accent : Colors.white24,
+              color: isPending ? tokens.AppTokens.accent : Colors.white24,
               width: isPending ? 2 : 1,
             ),
             boxShadow: [
@@ -220,7 +221,7 @@ class NewsArticleTile extends StatelessWidget {
   Color get _accent {
     if (NewsPriority.isWorldCup(news)) return const Color(0xFF1976D2);
     if (NewsPriority.isCricket(news)) return const Color(0xFF00897B);
-    return AppColors.accent;
+    return tokens.AppTokens.accent;
   }
 
   @override
@@ -236,9 +237,9 @@ class NewsArticleTile extends StatelessWidget {
         child: Ink(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            color: isPending ? AppColors.accentDim : context.bg2,
+            color: isPending ? tokens.AppTokens.accentDim : context.bg2,
             border: Border.all(
-              color: isPending ? AppColors.accent : context.brd,
+              color: isPending ? tokens.AppTokens.accent : context.brd,
               width: isPending ? 2 : 1,
             ),
             boxShadow: [
@@ -388,7 +389,7 @@ class _CategoryChip extends StatelessWidget {
   final String label;
   final Color accent;
 
-  const _CategoryChip({required this.label, this.accent = AppColors.accent});
+  const _CategoryChip({required this.label, this.accent = tokens.AppTokens.accent});
 
   @override
   Widget build(BuildContext context) {
@@ -433,7 +434,7 @@ class _NewsImage extends StatelessWidget {
     final cacheW = (memWidth * dpr).round();
 
     if (news.imageUrl.isEmpty) {
-      final c = accent ?? AppColors.accent;
+      final c = accent ?? tokens.AppTokens.accent;
       return Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(

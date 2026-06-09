@@ -51,8 +51,8 @@ class AdPlacementConfig {
     return AdConfig.nativeListInterval;
   }
 
-  /// NEWS list uses the same interval as channel lists.
-  static int get newsNativeInterval => listNativeInterval;
+  /// NEWS list uses higher density (every 4 articles).
+  static int get newsNativeInterval => AdConfig.nativeListIntervalNews;
 
   static Duration get playerMidRollPeriod {
     final policy = AdPolicyConfig.instance;

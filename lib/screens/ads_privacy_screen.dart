@@ -6,6 +6,7 @@ import '../config/ad_config.dart';
 import '../config/legal_config.dart';
 import '../services/ad_consent_service.dart';
 import '../theme/app_theme.dart';
+import '../theme/tokens/colors.dart';
 
 /// Change personalized vs limited ads (drawer → Ads & privacy).
 class AdsPrivacyScreen extends StatefulWidget {
@@ -131,7 +132,7 @@ Widget _legalTile(
 }) {
   return ListTile(
     contentPadding: EdgeInsets.zero,
-    leading: Icon(icon, color: AppColors.accent),
+    leading: Icon(icon, color: AppTokens.accent),
     title: Text(title, style: TextStyle(color: context.txt)),
     subtitle: Text(
       url,

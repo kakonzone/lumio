@@ -15,6 +15,7 @@ import '../config/ad_config.dart';
 import '../widgets/ad_list_injector.dart';
 import '../widgets/channel_list_tile.dart';
 import '../widgets/list_skeletons.dart';
+import '../theme/tokens/colors.dart';
 
 /// Channel list for a category (Sports, Bangla, Movies, …).
 class CategoryChannelsScreen extends StatefulWidget {
@@ -131,7 +132,7 @@ class _CategoryChannelsScreenState extends State<CategoryChannelsScreen> {
                 trailing: prov.isFavorite(ch.id)
                     ? const Icon(
                         Icons.favorite,
-                        color: AppColors.accent,
+                        color: AppTokens.accent,
                         size: 18,
                       )
                     : null,

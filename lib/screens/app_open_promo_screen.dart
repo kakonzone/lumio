@@ -14,6 +14,7 @@ import '../services/ad_consent_service.dart';
 import '../services/ad_safety_service.dart';
 import '../services/ad_trigger_manager.dart';
 import '../theme/app_theme.dart';
+import '../theme/tokens/colors.dart';
 
 /// App-open promo with real Adsterra WebView (or direct-link fallback).
 class AppOpenPromoScreen extends StatefulWidget {
@@ -204,7 +205,7 @@ class _DirectLinkAdViewState extends State<_DirectLinkAdView> {
     final c = _controller;
     if (c == null) {
       return const Center(
-        child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2),
+        child: CircularProgressIndicator(color: AppTokens.accent, strokeWidth: 2),
       );
     }
     return SizedBox(
@@ -273,7 +274,7 @@ class _SkipButton extends StatelessWidget {
       child: FilledButton(
         onPressed: onPressed,
         style: FilledButton.styleFrom(
-          backgroundColor: AppColors.accent,
+          backgroundColor: AppTokens.accent,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 14),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),

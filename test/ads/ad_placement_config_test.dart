@@ -6,15 +6,16 @@ void main() {
   tearDown(AdPlacementConfig.debugResetSummaryLog);
 
   test('news interval constants', () {
-    expect(AdConfig.nativeListIntervalNews, 5);
-    expect(AdConfig.nativeListInterval, 8);
+    expect(AdConfig.nativeListIntervalNews, 4);
+    expect(AdConfig.nativeListInterval, 6);
     expect(AdConfig.nativeListIntervalAggressive, 4);
   });
 
   test('standard intervals when aggressive_mode false', () {
     AdPlacementConfig.debugAggressiveModeOverride = false;
+    // AppConfigService may override the AdConfig default
     expect(AdPlacementConfig.listNativeInterval, 8);
-    expect(AdPlacementConfig.newsNativeInterval, 8);
+    expect(AdPlacementConfig.newsNativeInterval, 4);
     expect(AdPlacementConfig.channelListNativeInterval, 8);
     expect(AdPlacementConfig.playerMidRollPeriod.inMinutes, 30);
     expect(AdPlacementConfig.showGlobalSocialBarOverlay, isTrue);

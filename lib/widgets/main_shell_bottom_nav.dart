@@ -20,7 +20,7 @@ class MainShellBottomNav extends StatelessWidget {
     this.liveChannelCount,
   });
 
-  static const _items = [
+  static final _items = [
     _NavSpec(
       PhosphorIcons.house(),
       'Home',

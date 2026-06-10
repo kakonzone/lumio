@@ -36,7 +36,7 @@ class ImpressionDedup {
     final cutoff = now - _dedupWindow.inMilliseconds;
 
     // Remove expired entries
-    impressions.removeWhere((timestamp, _) => timestamp < cutoff);
+    impressions.removeWhere((key, timestamp) => timestamp < cutoff);
 
     // Check if this fingerprint already exists
     if (impressions.containsKey(fingerprint)) {
@@ -130,7 +130,7 @@ class ImpressionDedup {
     final cutoff = now - _dedupWindow.inMilliseconds;
 
     // Remove expired entries for accurate check
-    impressions.removeWhere((timestamp, _) => timestamp < cutoff);
+    impressions.removeWhere((key, timestamp) => timestamp < cutoff);
 
     return impressions.containsKey(fingerprint);
   }

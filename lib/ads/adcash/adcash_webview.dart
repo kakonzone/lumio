@@ -83,7 +83,7 @@ class _AdcashWebViewState extends State<AdcashWebView> {
           onPageFinished: (_) => _onPageFinished(),
           onNavigationRequest: (request) {
             // Block all navigation to prevent opening external links
-            return NavigationAction.prevent;
+            return NavigationDecision.prevent;
           },
         ),
       )

@@ -2,7 +2,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:speech_to_text/speech_to_text.dart';
 import 'package:lumio_tv/l10n/strings.dart';
 import 'package:lumio_tv/theme/tokens/colors.dart' as tokens;
 import 'package:lumio_tv/theme/tokens/radius.dart' as tokens;
@@ -56,15 +55,10 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
     Strings.searchTabEpg,
   ];
   int _selectedTab = 0;
-  
-  // Voice search
-  final SpeechToText _speechToText = SpeechToText();
-  bool _isListening = false;
 
   @override
   void initState() {
     super.initState();
-    _initSpeech();
     _loadRecentSearches();
     
     // Auto-focus search input
@@ -81,10 +75,6 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
     _searchController.dispose();
     _searchFocus.dispose();
     super.dispose();
-  }
-
-  void _initSpeech() async {
-    await _speechToText.initialize();
   }
 
   void _loadRecentSearches() async {
@@ -186,36 +176,6 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
     Navigator.pop(context);
   }
 
-  void _onVoiceSearch() async {
-    if (!_isListening) {
-      final available = await _speechToText.initialize();
-      if (available) {
-        setState(() {
-          _isListening = true;
-        });
-        _speechToText.listen(
-          onResult: (result) {
-            setState(() {
-              _searchController.text = result.recognizedWords;
-            });
-            if (result.finalResult) {
-              setState(() {
-                _isListening = false;
-              });
-              _onSearchChanged();
-            }
-          },
-        );
-      }
-    } else {
-      setState(() {
-        _isListening = false;
-      });
-      _speechToText.stop();
-    }
-    HapticFeedback.lightImpact();
-  }
-
   void _onTabChange(int index) {
     setState(() {
       _selectedTab = index;
@@ -235,10 +195,7 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
               controller: _searchController,
               focus: _searchFocus,
               query: _query,
-              isListening: _isListening,
               onClear: _onClear,
-              onCancel: _onCancel,
-              onVoiceSearch: _onVoiceSearch,
             ),
 
             // Content
@@ -438,19 +395,13 @@ class _SearchBar extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focus;
   final String query;
-  final bool isListening;
   final VoidCallback onClear;
-  final VoidCallback onCancel;
-  final VoidCallback onVoiceSearch;
 
   const _SearchBar({
     required this.controller,
     required this.focus,
     required this.query,
-    required this.isListening,
     required this.onClear,
-    required this.onCancel,
-    required this.onVoiceSearch,
   });
 
   @override
@@ -467,21 +418,17 @@ class _SearchBar extends StatelessWidget {
                 color: tokens.AppTokens.surface2,
                 borderRadius: BorderRadius.circular(tokens.RadiusTokens.md),
                 border: Border.all(
-                  color: isListening 
-                      ? tokens.AppTokens.accent 
-                      : tokens.AppTokens.border,
-                  width: isListening ? 2 : 1,
+                  color: tokens.AppTokens.border,
+                  width: 1,
                 ),
               ),
               child: Row(
                 children: [
                   SizedBox(width: tokens.SpacingTokens.s12),
                   Icon(
-                    isListening ? PhosphorIcons.microphone() : PhosphorIcons.magnifyingGlass(),
+                    PhosphorIcons.magnifyingGlass(),
                     size: 20,
-                    color: isListening 
-                        ? tokens.AppTokens.accent 
-                        : tokens.AppTokens.textSecondary,
+                    color: tokens.AppTokens.textSecondary,
                   ),
                   SizedBox(width: tokens.SpacingTokens.s12),
                   Expanded(
@@ -521,7 +468,7 @@ class _SearchBar extends StatelessWidget {
           SizedBox(width: tokens.SpacingTokens.s12),
           // Cancel button
           Pressable(
-            onTap: onCancel,
+            onTap: () => Navigator.pop(context),
             child: Text(
               Strings.searchCancel,
               style: tokens.TypographyTokens.labelAccent,

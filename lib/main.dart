@@ -82,7 +82,6 @@ void main() async {
   }
   MediaKit.ensureInitialized();
   SessionPacing.instance.initialize();
-  unawaited(UpdateService.initialize());
   final securityOk = await SecurityManager.instance.initialize();
   // ignore: avoid_print
   print('[Lumio] SecurityManager.initialize() => $securityOk');

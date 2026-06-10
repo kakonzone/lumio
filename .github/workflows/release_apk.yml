@@ -134,7 +134,8 @@ jobs:
           APP_VERSION: ${{ steps.version.outputs.version }}
           APK_PATH: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
         run: |
-          echo "::warning::Skipping Appwrite APK publish — script not implemented yet"
+          pip3 install requests
+          python3 scripts/publish_apk_to_appwrite.py
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4

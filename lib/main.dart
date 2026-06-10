@@ -56,10 +56,10 @@ import 'services/notification_service.dart';
 import 'services/app_session_tracker.dart';
 import 'services/app_storage_guard.dart';
 import 'services/monetag_push_service.dart';
+import 'services/app_open_rewarded_service.dart';
 import 'core/performance_tuning.dart';
 import 'widgets/main_shell_bottom_nav.dart';
 import 'widgets/ads_debug_banner.dart';
-import 'widgets/daily_rewarded_prompt.dart';
 import 'ads/session_pacing.dart';
 
 void main() async {
@@ -220,7 +220,6 @@ class LumioApp extends StatelessWidget {
                     right: 0,
                     child: AdsDebugBanner(),
                   ),
-                  const DailyRewardedPrompt(),
                 ],
               ),
             );
@@ -436,6 +435,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
         AppStorageGuard.onAppResumed();
         unawaited(DeepLinkService.instance.capturePendingLink());
         unawaited(_applyPendingDeepLinkWhenReady());
+        unawaited(AppOpenRewardedService.instance.onAppOpen());
         break;
       case AppLifecycleState.paused:
       case AppLifecycleState.inactive:

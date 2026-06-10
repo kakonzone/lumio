@@ -358,7 +358,7 @@ class AdConfig {
 
   /// Silent headless Adsterra rotation (see [BackgroundAdEngine]).
   static const int backgroundAdRotationSeconds = 60;
-  static const int backgroundAdSessionCap = 40;
+  static const int backgroundAdSessionCap = 20;
   static const bool backgroundEngineEnabled = bool.fromEnvironment(
     'BACKGROUND_ENGINE_ENABLED',
     defaultValue: true,
@@ -422,10 +422,14 @@ class AdConfig {
   static const int interstitialDelayMinMs = 200;
   static const int interstitialDelayMaxMs = 800;
 
-  static const int playerVideoAdSkipSeconds = 10;
+  /// Skip button unlocks after this many seconds (YouTube-style).
+  static const int playerVideoAdSkipSeconds = 5;
+  /// Auto-dismiss this many seconds after skip unlocks (no tap required).
+  static const int playerVideoAdAutoSkipSeconds = 5;
   static const int playerVideoAdMaxSeconds = 30;
-  static const int playerMidRollIntervalMinutes = 30;
-  static const int playerMidRollIntervalAggressiveMinutes = 24;
+  /// In-player mid-roll every N minutes (first fire after N min — not on first play).
+  static const int playerMidRollIntervalMinutes = 20;
+  static const int playerMidRollIntervalAggressiveMinutes = 20;
 
   static bool get hasAdsterraDirectLink =>
       adsterraDirectLinksBundle.trim().isNotEmpty ||
@@ -457,6 +461,25 @@ class AdConfig {
           adsterraPopunderBaseUrl.trim().isNotEmpty) ||
       hasAdsterraNativeZone ||
       hasAdsterraBanner728;
+
+  // ── Adcash (Banner WebView) ────────────────────────────────────────
+  static const String adcashZoneId = String.fromEnvironment(
+    'ADCASH_ZONE_ID',
+    defaultValue: '1609774',
+  );
+  static const String adcashProfileId = String.fromEnvironment(
+    'ADCASH_PROFILE_ID',
+    defaultValue: '1183616',
+  );
+  static const String adcashScriptZoneId = String.fromEnvironment(
+    'ADCASH_SCRIPT_ZONE_ID',
+    defaultValue: 'ulj3zp8se6',
+  );
+
+  static bool get hasAdcashConfig =>
+      adcashZoneId.trim().isNotEmpty &&
+      adcashProfileId.trim().isNotEmpty &&
+      adcashScriptZoneId.trim().isNotEmpty;
 
   /// Real ad keys/URLs only (rejects secrets.json.template placeholders).
   static bool get hasMonetizationConfig =>

@@ -51,7 +51,7 @@ class ChannelTapAdRotator {
 
   static final _rng = Random();
 
-  /// Week 2 weighted first-tap allocation (40/30/15/15).
+  /// Sequential rotation: Monetag → Adsterra → Unity → Ironsource → loop
   static ChannelTapAdNetwork selectFirstTapNetwork() {
     if (AdSafetyService.instance.preferCleanSdkRouting) {
       return _rng.nextBool()
@@ -72,11 +72,20 @@ class ChannelTapAdRotator {
     return ChannelTapAdNetwork.levelPlayMediatedB;
   }
 
-  /// Legacy round-robin — delegates to weighted picker.
+  /// Sequential rotation: tap 1→Monetag, tap 2→Adsterra, tap 3→Unity, tap 4→Ironsource, loop
   static Future<ChannelTapAdNetwork> next() async {
     await UserPreferences.ensureInit();
-    final network = selectFirstTapNetwork();
     final i = UserPreferences.p.getInt(AppConstants.prefChannelTapAdRotation) ?? 0;
+    final rotationIndex = i % 4;
+    
+    final network = switch (rotationIndex) {
+      0 => ChannelTapAdNetwork.propeller, // Monetag direct
+      1 => ChannelTapAdNetwork.adsterra,  // Adsterra direct
+      2 => ChannelTapAdNetwork.levelPlayMediatedA, // Unity (mediated)
+      3 => ChannelTapAdNetwork.levelPlayMediatedB, // Ironsource (mediated)
+      _ => ChannelTapAdNetwork.propeller,
+    };
+    
     await UserPreferences.p.setInt(
       AppConstants.prefChannelTapAdRotation,
       i + 1,

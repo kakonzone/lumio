@@ -362,7 +362,6 @@ extension _PlayerControls on _PlayerScreenState {
             Positioned.fill(
               child: PlayerVideoAdOverlay(
                 onDismiss: _dismissPlayerVideoAd,
-                network: _playerVideoAdNetwork,
               ),
             ),
 

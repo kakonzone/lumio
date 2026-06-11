@@ -310,20 +310,24 @@ def main() -> int:
             api_key=api_key,
         )
         
-        # Step 2: Update version document in Database
-        update_version_document(
-            database_id=APPWRITE_DATABASE_ID,
-            collection_id=APPWRITE_COLLECTION_ID,
-            document_id=APPWRITE_VERSION_DOC_ID,
-            apk_info=apk_info,
-            endpoint=endpoint,
-            project_id=project_id,
-            api_key=api_key,
-        )
+        # Step 2: Update version document in Database (optional)
+        try:
+            update_version_document(
+                database_id=APPWRITE_DATABASE_ID,
+                collection_id=APPWRITE_COLLECTION_ID,
+                document_id=APPWRITE_VERSION_DOC_ID,
+                apk_info=apk_info,
+                endpoint=endpoint,
+                project_id=project_id,
+                api_key=api_key,
+            )
+        except Exception as e:
+            log(f"WARNING: Version document update failed (APK upload succeeded): {e}")
+            log("APK is available for download, skipping version update")
         
         log("=" * 60)
         log("✅ APK publish completed successfully!")
-        log("Update notifications will be triggered in the app")
+        log(f"Download URL: {apk_info['download_url']}")
         log("=" * 60)
         
         return 0

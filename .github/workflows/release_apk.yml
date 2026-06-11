@@ -135,6 +135,7 @@ jobs:
           APK_PATH: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
         run: |
           pip3 install requests
+          export APPWRITE_ENDPOINT="${APPWRITE_ENDPOINT:-https://cloud.appwrite.io/v1}"
           python3 publish_apk_to_appwrite.py
 
       - name: Upload APK artifact

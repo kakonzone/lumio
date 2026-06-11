@@ -131,7 +131,7 @@ jobs:
           APK_PATH: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
         run: |
           set -euo pipefail
-          export APPWRITE_ENDPOINT="${APPWRITE_ENDPOINT:-${APPWRITE_MAIN_ENDPOINT:-https://sgp.cloud.appwrite.io/v1}}"
+          export APPWRITE_ENDPOINT="${APPWRITE_ENDPOINT:-${APPWRITE_MAIN_ENDPOINT:-https://cloud.appwrite.io/v1}}"
           export APPWRITE_PROJECT_ID="${APPWRITE_PROJECT_ID:-${APPWRITE_MAIN_PROJECT_ID:-6a22869200230b1a8bf0}}"
           export APPWRITE_API_KEY="${APPWRITE_API_KEY:-${APPWRITE_MAIN_API_KEY:-}}"
           export APPWRITE_BUCKET_ID="${APPWRITE_BUCKET_ID:-lumio.apk}"

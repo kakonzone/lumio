@@ -123,56 +123,73 @@ def upload_to_appwrite_storage(
     project_id: str,
     api_key: str,
 ) -> dict:
-    """Upload APK to Appwrite Storage with retry logic."""
+    """Upload APK to Appwrite Storage with retry logic and endpoint fallback."""
     log(f"Uploading APK to Appwrite Storage (bucket: {bucket_id})...")
     log(f"Using endpoint: {endpoint}")
     
-    url = f"{endpoint}/storage/buckets/{bucket_id}/files"
-    headers = {
-        "X-Appwrite-Project": project_id,
-        "X-Appwrite-Key": api_key,
-    }
-    
     apk_info = get_apk_info(apk_path)
-    
     session = create_session_with_retry(max_retries=3)
     
-    for attempt in range(3):
-        try:
-            files = {
-                "file": (apk_info["filename"], open(apk_path, "rb"), "application/vnd.android.package-archive"),
-                "fileId": (None, f"lumio-apk-{APP_VERSION}"),
-            }
-            data = {
-                "folderId": (None, ""),
-            }
-            
-            response = session.post(url, headers=headers, files=files, data=data, timeout=300)
-            response.raise_for_status()
-            
-            result = response.json()
-            file_id = result["$id"]
-            download_url = f"{endpoint}/storage/buckets/{bucket_id}/files/{file_id}/view?project={project_id}"
-            
-            log(f"APK uploaded successfully: {file_id}")
-            log(f"Download URL: {download_url}")
-            log(f"Size: {apk_info['size_mb']} MB, SHA256: {apk_info['sha256'][:16]}...")
-            
-            return {
-                "file_id": file_id,
-                "download_url": download_url,
-                "size": apk_info["size"],
-                "sha256": apk_info["sha256"],
-            }
-        except requests.exceptions.RequestException as e:
-            log(f"Upload attempt {attempt + 1}/3 failed: {e}")
-            if attempt < 2:
-                wait_time = (attempt + 1) * 2
-                log(f"Retrying in {wait_time} seconds...")
-                time.sleep(wait_time)
-            else:
-                log(f"ERROR: Failed to upload APK to Appwrite Storage after 3 attempts: {e}")
-                raise
+    # Try primary endpoint, then fallback to global endpoint if it fails
+    endpoints_to_try = [endpoint]
+    
+    # Add global endpoint as fallback if not already using it
+    if "cloud.appwrite.io" not in endpoint:
+        global_endpoint = endpoint.replace("sgp.cloud.appwrite.io", "cloud.appwrite.io")
+        if global_endpoint != endpoint:
+            endpoints_to_try.append(global_endpoint)
+    
+    for idx, current_endpoint in enumerate(endpoints_to_try):
+        if idx > 0:
+            log(f"Falling back to alternate endpoint: {current_endpoint}")
+        
+        url = f"{current_endpoint}/storage/buckets/{bucket_id}/files"
+        headers = {
+            "X-Appwrite-Project": project_id,
+            "X-Appwrite-Key": api_key,
+        }
+        
+        for attempt in range(3):
+            try:
+                files = {
+                    "file": (apk_info["filename"], open(apk_path, "rb"), "application/vnd.android.package-archive"),
+                    "fileId": (None, f"lumio-apk-{APP_VERSION}"),
+                }
+                data = {
+                    "folderId": (None, ""),
+                }
+                
+                response = session.post(url, headers=headers, files=files, data=data, timeout=300)
+                response.raise_for_status()
+                
+                result = response.json()
+                file_id = result["$id"]
+                download_url = f"{current_endpoint}/storage/buckets/{bucket_id}/files/{file_id}/view?project={project_id}"
+                
+                log(f"APK uploaded successfully: {file_id}")
+                log(f"Download URL: {download_url}")
+                log(f"Size: {apk_info['size_mb']} MB, SHA256: {apk_info['sha256'][:16]}...")
+                
+                return {
+                    "file_id": file_id,
+                    "download_url": download_url,
+                    "size": apk_info["size"],
+                    "sha256": apk_info["sha256"],
+                }
+            except requests.exceptions.RequestException as e:
+                log(f"Upload attempt {attempt + 1}/3 failed on {current_endpoint}: {e}")
+                if attempt < 2:
+                    wait_time = (attempt + 1) * 2
+                    log(f"Retrying in {wait_time} seconds...")
+                    time.sleep(wait_time)
+                else:
+                    log(f"Failed on {current_endpoint} after 3 attempts")
+                    if idx < len(endpoints_to_try) - 1:
+                        log(f"Trying next endpoint...")
+                        break
+                    else:
+                        log(f"ERROR: Failed to upload APK to Appwrite Storage on all endpoints: {e}")
+                        raise
 
 
 def update_version_document(
@@ -184,15 +201,8 @@ def update_version_document(
     project_id: str,
     api_key: str,
 ) -> bool:
-    """Update version document in Appwrite Database with retry logic."""
+    """Update version document in Appwrite Database with retry logic and endpoint fallback."""
     log(f"Updating version document {document_id}...")
-    
-    url = f"{endpoint}/databases/{database_id}/collections/{collection_id}/documents/{document_id}"
-    headers = {
-        "X-Appwrite-Project": project_id,
-        "X-Appwrite-Key": api_key,
-        "Content-Type": "application/json",
-    }
     
     # Parse version (e.g., "1.1.0" -> [1, 1, 0])
     version_parts = [int(x) for x in APP_VERSION.split("+")[0].split(".")]
@@ -213,26 +223,51 @@ def update_version_document(
     
     session = create_session_with_retry(max_retries=3)
     
-    for attempt in range(3):
-        try:
-            response = session.patch(url, headers=headers, json=document_data, timeout=30)
-            response.raise_for_status()
-            
-            log(f"Version document updated successfully")
-            log(f"Version: {APP_VERSION}, Download URL: {apk_info['download_url']}")
-            
-            return True
-        except requests.exceptions.RequestException as e:
-            log(f"Update attempt {attempt + 1}/3 failed: {e}")
-            if hasattr(e, 'response') and e.response:
-                log(f"Response: {e.response.text}")
-            if attempt < 2:
-                wait_time = (attempt + 1) * 2
-                log(f"Retrying in {wait_time} seconds...")
-                time.sleep(wait_time)
-            else:
-                log(f"ERROR: Failed to update version document after 3 attempts: {e}")
-                raise
+    # Try primary endpoint, then fallback to global endpoint if it fails
+    endpoints_to_try = [endpoint]
+    
+    # Add global endpoint as fallback if not already using it
+    if "cloud.appwrite.io" not in endpoint:
+        global_endpoint = endpoint.replace("sgp.cloud.appwrite.io", "cloud.appwrite.io")
+        if global_endpoint != endpoint:
+            endpoints_to_try.append(global_endpoint)
+    
+    for idx, current_endpoint in enumerate(endpoints_to_try):
+        if idx > 0:
+            log(f"Falling back to alternate endpoint: {current_endpoint}")
+        
+        url = f"{current_endpoint}/databases/{database_id}/collections/{collection_id}/documents/{document_id}"
+        headers = {
+            "X-Appwrite-Project": project_id,
+            "X-Appwrite-Key": api_key,
+            "Content-Type": "application/json",
+        }
+        
+        for attempt in range(3):
+            try:
+                response = session.patch(url, headers=headers, json=document_data, timeout=30)
+                response.raise_for_status()
+                
+                log(f"Version document updated successfully")
+                log(f"Version: {APP_VERSION}, Download URL: {apk_info['download_url']}")
+                
+                return True
+            except requests.exceptions.RequestException as e:
+                log(f"Update attempt {attempt + 1}/3 failed on {current_endpoint}: {e}")
+                if hasattr(e, 'response') and e.response:
+                    log(f"Response: {e.response.text}")
+                if attempt < 2:
+                    wait_time = (attempt + 1) * 2
+                    log(f"Retrying in {wait_time} seconds...")
+                    time.sleep(wait_time)
+                else:
+                    log(f"Failed on {current_endpoint} after 3 attempts")
+                    if idx < len(endpoints_to_try) - 1:
+                        log(f"Trying next endpoint...")
+                        break
+                    else:
+                        log(f"ERROR: Failed to update version document on all endpoints: {e}")
+                        raise
 
 
 def main() -> int:

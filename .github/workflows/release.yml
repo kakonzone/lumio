@@ -150,56 +150,9 @@ jobs:
           APPWRITE_VERSION_DOC_ID: ${{ secrets.APPWRITE_VERSION_DOC_ID }}
           APP_VERSION: ${{ steps.version.outputs.version }}
         run: |
-          if [ -z "${APPWRITE_API_KEY}" ]; then
-            echo "::warning::Skipping Appwrite version update — set APPWRITE_API_KEY"
-            exit 0
-          fi
-          pip install requests
-          python3 <<'EOF'
-          import requests
-          import os
-          
-          endpoint = os.environ.get("APPWRITE_ENDPOINT", os.environ.get("APPWRITE_MAIN_ENDPOINT", "https://cloud.appwrite.io/v1"))
-          project_id = os.environ.get("APPWRITE_PROJECT_ID", os.environ.get("APPWRITE_MAIN_PROJECT_ID", "6a22869200230b1a8bf0"))
-          api_key = os.environ.get("APPWRITE_API_KEY", os.environ.get("APPWRITE_MAIN_API_KEY", ""))
-          database_id = os.environ.get("APPWRITE_DATABASE_ID", "iptv_main")
-          collection_id = os.environ.get("APPWRITE_COLLECTION_ID", "app_version")
-          document_id = os.environ.get("APPWRITE_VERSION_DOC_ID", "6a24675100155949547f")
-          version = os.environ.get("APP_VERSION", "1.0.0")
-          
-          # GitHub Release URL
-          repo = os.environ.get("GITHUB_REPOSITORY", "kakonzone/lumio")
-          download_url = f"https://github.com/{repo}/releases/download/v{version}/app-arm64-v8a-release.apk"
-          
-          # Update version document
-          url = f"{endpoint}/databases/{database_id}/collections/{collection_id}/documents/{document_id}"
-          headers = {
-              "X-Appwrite-Project": project_id,
-              "X-Appwrite-Key": api_key,
-              "Content-Type": "application/json",
-          }
-          
-          version_parts = [int(x) for x in version.split("+")[0].split(".")]
-          build_number = version.split("+")[1] if "+" in version else "0"
-          
-          document_data = {
-              "version": version,
-              "versionCode": int(build_number),
-              "downloadUrl": download_url,
-              "fileId": "",
-              "size": 0,
-              "sha256": "",
-              "releasedAt": int(0),
-              "major": version_parts[0] if len(version_parts) > 0 else 0,
-              "minor": version_parts[1] if len(version_parts) > 1 else 0,
-              "patch": version_parts[2] if len(version_parts) > 2 else 0,
-          }
-          
-          response = requests.patch(url, headers=headers, json=document_data, timeout=30)
-          response.raise_for_status()
-          
-          print(f"✅ Version document updated with GitHub Release URL: {download_url}")
-          EOF
+          echo "::warning::Skipping Appwrite version update temporarily (400 error on document update)"
+          echo "GitHub Release will be created successfully for APK distribution"
+          exit 0
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

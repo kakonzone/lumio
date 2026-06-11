@@ -137,7 +137,7 @@ jobs:
           VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Publish APK to Appwrite (Storage + app_version)
+      - name: Update version document with GitHub Release URL
         env:
           APPWRITE_ENDPOINT: ${{ secrets.APPWRITE_ENDPOINT }}
           APPWRITE_PROJECT_ID: ${{ secrets.APPWRITE_PROJECT_ID }}
@@ -145,27 +145,61 @@ jobs:
           APPWRITE_MAIN_ENDPOINT: ${{ secrets.APPWRITE_MAIN_ENDPOINT }}
           APPWRITE_MAIN_PROJECT_ID: ${{ secrets.APPWRITE_MAIN_PROJECT_ID }}
           APPWRITE_MAIN_API_KEY: ${{ secrets.APPWRITE_MAIN_API_KEY }}
-          APPWRITE_BUCKET_ID: ${{ secrets.APPWRITE_BUCKET_ID }}
           APPWRITE_DATABASE_ID: ${{ secrets.APPWRITE_DATABASE_ID }}
           APPWRITE_COLLECTION_ID: ${{ secrets.APPWRITE_COLLECTION_ID }}
           APPWRITE_VERSION_DOC_ID: ${{ secrets.APPWRITE_VERSION_DOC_ID }}
           APP_VERSION: ${{ steps.version.outputs.version }}
-          APK_PATH: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
         run: |
-          set -euo pipefail
-          export APPWRITE_ENDPOINT="${APPWRITE_ENDPOINT:-${APPWRITE_MAIN_ENDPOINT:-https://cloud.appwrite.io/v1}}"
-          export APPWRITE_PROJECT_ID="${APPWRITE_PROJECT_ID:-${APPWRITE_MAIN_PROJECT_ID:-6a22869200230b1a8bf0}}"
-          export APPWRITE_API_KEY="${APPWRITE_API_KEY:-${APPWRITE_MAIN_API_KEY:-}}"
-          export APPWRITE_BUCKET_ID="${APPWRITE_BUCKET_ID:-lumio.apk}"
-          export APPWRITE_DATABASE_ID="${APPWRITE_DATABASE_ID:-iptv_main}"
-          export APPWRITE_COLLECTION_ID="${APPWRITE_COLLECTION_ID:-app_version}"
-          export APPWRITE_VERSION_DOC_ID="${APPWRITE_VERSION_DOC_ID:-6a24675100155949547f}"
           if [ -z "${APPWRITE_API_KEY}" ]; then
-            echo "::warning::Skipping Appwrite APK publish — set APPWRITE_API_KEY (SGP)"
+            echo "::warning::Skipping Appwrite version update — set APPWRITE_API_KEY"
             exit 0
           fi
           pip install requests
-          python3 publish_apk_to_appwrite.py
+          python3 <<'EOF'
+          import requests
+          import os
+          
+          endpoint = os.environ.get("APPWRITE_ENDPOINT", os.environ.get("APPWRITE_MAIN_ENDPOINT", "https://cloud.appwrite.io/v1"))
+          project_id = os.environ.get("APPWRITE_PROJECT_ID", os.environ.get("APPWRITE_MAIN_PROJECT_ID", "6a22869200230b1a8bf0"))
+          api_key = os.environ.get("APPWRITE_API_KEY", os.environ.get("APPWRITE_MAIN_API_KEY", ""))
+          database_id = os.environ.get("APPWRITE_DATABASE_ID", "iptv_main")
+          collection_id = os.environ.get("APPWRITE_COLLECTION_ID", "app_version")
+          document_id = os.environ.get("APPWRITE_VERSION_DOC_ID", "6a24675100155949547f")
+          version = os.environ.get("APP_VERSION", "1.0.0")
+          
+          # GitHub Release URL
+          repo = os.environ.get("GITHUB_REPOSITORY", "kakonzone/lumio")
+          download_url = f"https://github.com/{repo}/releases/download/v{version}/app-arm64-v8a-release.apk"
+          
+          # Update version document
+          url = f"{endpoint}/databases/{database_id}/collections/{collection_id}/documents/{document_id}"
+          headers = {
+              "X-Appwrite-Project": project_id,
+              "X-Appwrite-Key": api_key,
+              "Content-Type": "application/json",
+          }
+          
+          version_parts = [int(x) for x in version.split("+")[0].split(".")]
+          build_number = version.split("+")[1] if "+" in version else "0"
+          
+          document_data = {
+              "version": version,
+              "versionCode": int(build_number),
+              "downloadUrl": download_url,
+              "fileId": "",
+              "size": 0,
+              "sha256": "",
+              "releasedAt": int(0),
+              "major": version_parts[0] if len(version_parts) > 0 else 0,
+              "minor": version_parts[1] if len(version_parts) > 1 else 0,
+              "patch": version_parts[2] if len(version_parts) > 2 else 0,
+          }
+          
+          response = requests.patch(url, headers=headers, json=document_data, timeout=30)
+          response.raise_for_status()
+          
+          print(f"✅ Version document updated with GitHub Release URL: {download_url}")
+          EOF
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

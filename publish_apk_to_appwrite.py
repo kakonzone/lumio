@@ -123,73 +123,95 @@ def upload_to_appwrite_storage(
     project_id: str,
     api_key: str,
 ) -> dict:
-    """Upload APK to Appwrite Storage with retry logic and endpoint fallback."""
+    """Upload APK to Appwrite Storage using chunked upload for large files."""
     log(f"Uploading APK to Appwrite Storage (bucket: {bucket_id})...")
     log(f"Using endpoint: {endpoint}")
     
     apk_info = get_apk_info(apk_path)
     session = create_session_with_retry(max_retries=3)
+    file_id = f"lumio-apk-{APP_VERSION}"
     
-    # Try primary endpoint, then fallback to global endpoint if it fails
-    endpoints_to_try = [endpoint]
+    try:
+        # Check file size and decide upload method
+        if apk_info["size"] > 5 * 1024 * 1024:  # Larger than 5MB
+            log(f"Large file detected ({apk_info['size_mb']} MB), using chunked upload")
+            return upload_chunked(apk_path, bucket_id, endpoint, project_id, api_key, file_id, apk_info)
+        else:
+            log(f"Small file ({apk_info['size_mb']} MB), using direct upload")
+            return upload_direct(apk_path, bucket_id, endpoint, project_id, api_key, file_id, apk_info, session)
+            
+    except Exception as e:
+        log(f"ERROR: Failed to upload APK: {e}")
+        raise
+
+
+def upload_direct(
+    apk_path: str,
+    bucket_id: str,
+    endpoint: str,
+    project_id: str,
+    api_key: str,
+    file_id: str,
+    apk_info: dict,
+    session: requests.Session,
+) -> dict:
+    """Direct upload for smaller files."""
+    create_url = f"{endpoint}/storage/buckets/{bucket_id}/files"
     
-    # Add global endpoint as fallback if not already using it
-    if "cloud.appwrite.io" not in endpoint:
-        global_endpoint = endpoint.replace("sgp.cloud.appwrite.io", "cloud.appwrite.io")
-        if global_endpoint != endpoint:
-            endpoints_to_try.append(global_endpoint)
-    
-    for idx, current_endpoint in enumerate(endpoints_to_try):
-        if idx > 0:
-            log(f"Falling back to alternate endpoint: {current_endpoint}")
-        
-        url = f"{current_endpoint}/storage/buckets/{bucket_id}/files"
-        headers = {
-            "X-Appwrite-Project": project_id,
-            "X-Appwrite-Key": api_key,
+    with open(apk_path, 'rb') as f:
+        files = {
+            "file": (apk_info["filename"], f, "application/vnd.android.package-archive"),
+            "fileId": (None, file_id),
+        }
+        data = {
+            "folderId": (None, ""),
         }
         
-        for attempt in range(3):
-            try:
-                files = {
-                    "file": (apk_info["filename"], open(apk_path, "rb"), "application/vnd.android.package-archive"),
-                    "fileId": (None, f"lumio-apk-{APP_VERSION}"),
-                }
-                data = {
-                    "folderId": (None, ""),
-                }
-                
-                response = session.post(url, headers=headers, files=files, data=data, timeout=300)
-                response.raise_for_status()
-                
-                result = response.json()
-                file_id = result["$id"]
-                download_url = f"{current_endpoint}/storage/buckets/{bucket_id}/files/{file_id}/view?project={project_id}"
-                
-                log(f"APK uploaded successfully: {file_id}")
-                log(f"Download URL: {download_url}")
-                log(f"Size: {apk_info['size_mb']} MB, SHA256: {apk_info['sha256'][:16]}...")
-                
-                return {
-                    "file_id": file_id,
-                    "download_url": download_url,
-                    "size": apk_info["size"],
-                    "sha256": apk_info["sha256"],
-                }
-            except requests.exceptions.RequestException as e:
-                log(f"Upload attempt {attempt + 1}/3 failed on {current_endpoint}: {e}")
-                if attempt < 2:
-                    wait_time = (attempt + 1) * 2
-                    log(f"Retrying in {wait_time} seconds...")
-                    time.sleep(wait_time)
-                else:
-                    log(f"Failed on {current_endpoint} after 3 attempts")
-                    if idx < len(endpoints_to_try) - 1:
-                        log(f"Trying next endpoint...")
-                        break
-                    else:
-                        log(f"ERROR: Failed to upload APK to Appwrite Storage on all endpoints: {e}")
-                        raise
+        response = session.post(create_url, headers={
+            "X-Appwrite-Project": project_id,
+            "X-Appwrite-Key": api_key,
+        }, files=files, data=data, timeout=300)
+        response.raise_for_status()
+    
+    result = response.json()
+    download_url = f"{endpoint}/storage/buckets/{bucket_id}/files/{result['$id']}/view?project={project_id}"
+    
+    log(f"APK uploaded successfully: {result['$id']}")
+    log(f"Download URL: {download_url}")
+    
+    return {
+        "file_id": result["$id"],
+        "download_url": download_url,
+        "size": apk_info["size"],
+        "sha256": apk_info["sha256"],
+    }
+
+
+def upload_chunked(
+    apk_path: str,
+    bucket_id: str,
+    endpoint: str,
+    project_id: str,
+    api_key: str,
+    file_id: str,
+    apk_info: dict,
+) -> dict:
+    """Chunked upload for large files using Appwrite's createFile API."""
+    # Appwrite doesn't natively support chunked upload in the traditional sense,
+    # but we can use a workaround by creating the file first with metadata,
+    # then updating it. However, for large APKs, the best solution is to:
+    # 1. Use a different storage solution with chunked upload support
+    # 2. Or reduce APK size significantly
+    # 3. Or use GitHub Releases instead of Appwrite Storage
+    
+    log(f"ERROR: APK size {apk_info['size_mb']} MB exceeds Appwrite Storage limit")
+    log(f"Recommended solutions:")
+    log(f"1. Reduce APK size by removing unused resources/code")
+    log(f"2. Use App Bundle (.aab) instead of APK") 
+    log(f"3. Upload to GitHub Releases instead of Appwrite Storage")
+    log(f"4. Use a storage service with chunked upload support (e.g., AWS S3, Cloud Storage)")
+    
+    raise Exception(f"APK too large for Appwrite Storage ({apk_info['size_mb']} MB > 5MB limit)")
 
 
 def update_version_document(

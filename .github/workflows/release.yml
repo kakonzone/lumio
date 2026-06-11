@@ -118,6 +118,19 @@ jobs:
             echo "WARNING: APK size exceeds 50MB, may fail Appwrite upload"
           fi
 
+      - name: Flutter analyze (non-blocking)
+        run: |
+          flutter analyze --no-fatal-infos --no-fatal-warnings || echo "Flutter analyze had issues but continuing..."
+
+      - name: Check APK size
+        run: |
+          APK=build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          SIZE=$(du -m "$APK" | cut -f1)
+          echo "APK size: ${SIZE} MB"
+          if [ "$SIZE" -gt 50 ]; then
+            echo "WARNING: APK size exceeds 50MB, may fail Appwrite upload"
+          fi
+
       - name: Get version from pubspec
         id: version
         run: |

@@ -307,12 +307,10 @@ def main() -> int:
     if not validate_environment():
         return 1
     
-    # Force override Singapore endpoint to global endpoint due to SSL issues
-    endpoint = APPWRITE_MAIN_ENDPOINT or APPWRITE_ENDPOINT
-    if endpoint and "sgp.cloud.appwrite.io" in endpoint:
-        log("WARNING: Singapore endpoint detected, forcing global endpoint")
-        endpoint = endpoint.replace("sgp.cloud.appwrite.io", "cloud.appwrite.io")
-        log(f"Using global endpoint: {endpoint}")
+    # Use endpoint exactly as provided - no override, no manipulation
+    endpoint = (APPWRITE_MAIN_ENDPOINT or APPWRITE_ENDPOINT).strip()
+    if not endpoint:
+        raise ValueError("APPWRITE_ENDPOINT is required")
     
     project_id = APPWRITE_MAIN_PROJECT_ID or APPWRITE_PROJECT_ID
     api_key = APPWRITE_MAIN_API_KEY or APPWRITE_API_KEY

@@ -230,6 +230,9 @@ def update_version_document(
     """Update version document in Appwrite Database with retry logic and endpoint fallback."""
     log(f"Updating version document {document_id}...")
     
+    # Get APK path from environment variable
+    apk_path = os.environ.get('APK_PATH', '')
+    
     # Parse version (e.g., "1.1.0" -> [1, 1, 0])
     version_parts = [int(x) for x in APP_VERSION.split("+")[0].split(".")]
     build_number = APP_VERSION.split("+")[1] if "+" in APP_VERSION else "0"
@@ -241,7 +244,7 @@ def update_version_document(
         "fileId": apk_info["file_id"],
         "size": apk_info["size"],
         "sha256": apk_info["sha256"],
-        "releasedAt": int(Path(apk_path).stat().st_mtime * 1000),  # Unix timestamp in ms
+        "releasedAt": int(Path(apk_path).stat().st_mtime * 1000) if apk_path else int(0),  # Unix timestamp in ms
         "major": version_parts[0] if len(version_parts) > 0 else 0,
         "minor": version_parts[1] if len(version_parts) > 1 else 0,
         "patch": version_parts[2] if len(version_parts) > 2 else 0,
@@ -249,51 +252,33 @@ def update_version_document(
     
     session = create_session_with_retry(max_retries=3)
     
-    # Try primary endpoint, then fallback to global endpoint if it fails
-    endpoints_to_try = [endpoint]
+    url = f"{endpoint}/databases/{database_id}/collections/{collection_id}/documents/{document_id}"
+    headers = {
+        "X-Appwrite-Project": project_id,
+        "X-Appwrite-Key": api_key,
+        "Content-Type": "application/json",
+    }
     
-    # Add global endpoint as fallback if not already using it
-    if "cloud.appwrite.io" not in endpoint:
-        global_endpoint = endpoint.replace("sgp.cloud.appwrite.io", "cloud.appwrite.io")
-        if global_endpoint != endpoint:
-            endpoints_to_try.append(global_endpoint)
-    
-    for idx, current_endpoint in enumerate(endpoints_to_try):
-        if idx > 0:
-            log(f"Falling back to alternate endpoint: {current_endpoint}")
-        
-        url = f"{current_endpoint}/databases/{database_id}/collections/{collection_id}/documents/{document_id}"
-        headers = {
-            "X-Appwrite-Project": project_id,
-            "X-Appwrite-Key": api_key,
-            "Content-Type": "application/json",
-        }
-        
-        for attempt in range(3):
-            try:
-                response = session.patch(url, headers=headers, json=document_data, timeout=30)
-                response.raise_for_status()
-                
-                log(f"Version document updated successfully")
-                log(f"Version: {APP_VERSION}, Download URL: {apk_info['download_url']}")
-                
-                return True
-            except requests.exceptions.RequestException as e:
-                log(f"Update attempt {attempt + 1}/3 failed on {current_endpoint}: {e}")
-                if hasattr(e, 'response') and e.response:
-                    log(f"Response: {e.response.text}")
-                if attempt < 2:
-                    wait_time = (attempt + 1) * 2
-                    log(f"Retrying in {wait_time} seconds...")
-                    time.sleep(wait_time)
-                else:
-                    log(f"Failed on {current_endpoint} after 3 attempts")
-                    if idx < len(endpoints_to_try) - 1:
-                        log(f"Trying next endpoint...")
-                        break
-                    else:
-                        log(f"ERROR: Failed to update version document on all endpoints: {e}")
-                        raise
+    for attempt in range(3):
+        try:
+            response = session.patch(url, headers=headers, json=document_data, timeout=30)
+            response.raise_for_status()
+            
+            log(f"Version document updated successfully")
+            log(f"Version: {APP_VERSION}, Download URL: {apk_info['download_url']}")
+            
+            return True
+        except requests.exceptions.RequestException as e:
+            log(f"Update attempt {attempt + 1}/3 failed: {e}")
+            if hasattr(e, 'response') and e.response:
+                log(f"Response: {e.response.text}")
+            if attempt < 2:
+                wait_time = (attempt + 1) * 2
+                log(f"Retrying in {wait_time} seconds...")
+                time.sleep(wait_time)
+            else:
+                log(f"ERROR: Failed to update version document after 3 attempts: {e}")
+                raise
 
 
 def main() -> int:

@@ -281,14 +281,24 @@ def main() -> int:
     if not validate_environment():
         return 1
     
+    # Force override Singapore endpoint to global endpoint due to SSL issues
+    endpoint = APPWRITE_MAIN_ENDPOINT or APPWRITE_ENDPOINT
+    if endpoint and "sgp.cloud.appwrite.io" in endpoint:
+        log("WARNING: Singapore endpoint detected, forcing global endpoint")
+        endpoint = endpoint.replace("sgp.cloud.appwrite.io", "cloud.appwrite.io")
+        log(f"Using global endpoint: {endpoint}")
+    
+    project_id = APPWRITE_MAIN_PROJECT_ID or APPWRITE_PROJECT_ID
+    api_key = APPWRITE_MAIN_API_KEY or APPWRITE_API_KEY
+    
     try:
         # Step 1: Upload APK to Storage
         apk_info = upload_to_appwrite_storage(
             apk_path=APK_PATH,
             bucket_id=APPWRITE_BUCKET_ID,
-            endpoint=APPWRITE_MAIN_ENDPOINT or APPWRITE_ENDPOINT,
-            project_id=APPWRITE_MAIN_PROJECT_ID or APPWRITE_PROJECT_ID,
-            api_key=APPWRITE_MAIN_API_KEY or APPWRITE_API_KEY,
+            endpoint=endpoint,
+            project_id=project_id,
+            api_key=api_key,
         )
         
         # Step 2: Update version document in Database
@@ -297,9 +307,9 @@ def main() -> int:
             collection_id=APPWRITE_COLLECTION_ID,
             document_id=APPWRITE_VERSION_DOC_ID,
             apk_info=apk_info,
-            endpoint=APPWRITE_MAIN_ENDPOINT or APPWRITE_ENDPOINT,
-            project_id=APPWRITE_MAIN_PROJECT_ID or APPWRITE_PROJECT_ID,
-            api_key=APPWRITE_MAIN_API_KEY or APPWRITE_API_KEY,
+            endpoint=endpoint,
+            project_id=project_id,
+            api_key=api_key,
         )
         
         log("=" * 60)

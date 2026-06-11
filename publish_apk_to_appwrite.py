@@ -10,9 +10,11 @@ It performs the following:
 
 import hashlib
 import json
+import math
 import os
 import sys
 import time
+import uuid
 from pathlib import Path
 
 import requests
@@ -129,89 +131,91 @@ def upload_to_appwrite_storage(
     
     apk_info = get_apk_info(apk_path)
     session = create_session_with_retry(max_retries=3)
-    file_id = f"lumio-apk-{APP_VERSION}"
     
     try:
-        # Check file size and decide upload method
-        if apk_info["size"] > 5 * 1024 * 1024:  # Larger than 5MB
-            log(f"Large file detected ({apk_info['size_mb']} MB), using chunked upload")
-            return upload_chunked(apk_path, bucket_id, endpoint, project_id, api_key, file_id, apk_info)
-        else:
-            log(f"Small file ({apk_info['size_mb']} MB), using direct upload")
-            return upload_direct(apk_path, bucket_id, endpoint, project_id, api_key, file_id, apk_info, session)
-            
+        # Use chunked upload for large files (Appwrite Education Pack has 150GB limit)
+        file_id = upload_apk_chunked(endpoint, project_id, api_key, bucket_id, apk_path, apk_info, session)
+        
+        download_url = f"{endpoint}/storage/buckets/{bucket_id}/files/{file_id}/download?project={project_id}"
+        
+        log(f"APK uploaded successfully: {file_id}")
+        log(f"Download URL: {download_url}")
+        log(f"Size: {apk_info['size_mb']} MB, SHA256: {apk_info['sha256'][:16]}...")
+        
+        return {
+            "file_id": file_id,
+            "download_url": download_url,
+            "size": apk_info["size"],
+            "sha256": apk_info["sha256"],
+        }
+        
     except Exception as e:
         log(f"ERROR: Failed to upload APK: {e}")
         raise
 
 
-def upload_direct(
-    apk_path: str,
-    bucket_id: str,
+def upload_apk_chunked(
     endpoint: str,
     project_id: str,
     api_key: str,
-    file_id: str,
+    bucket_id: str,
+    apk_path: str,
     apk_info: dict,
     session: requests.Session,
-) -> dict:
-    """Direct upload for smaller files."""
-    create_url = f"{endpoint}/storage/buckets/{bucket_id}/files"
+) -> str:
+    """Upload APK using chunked upload method for large files."""
+    CHUNK_SIZE = 5 * 1024 * 1024  # 5MB chunks
+    file_size = apk_info["size"]
+    total_chunks = math.ceil(file_size / CHUNK_SIZE)
+    
+    # Generate unique file ID (keep consistent with APP_VERSION)
+    file_id = f"lumio-apk-{APP_VERSION}"
+    
+    headers = {
+        'X-Appwrite-Project': project_id,
+        'X-Appwrite-Key': api_key,
+    }
+    
+    log(f"Starting chunked upload: {apk_info['size_mb']} MB in {total_chunks} chunks")
     
     with open(apk_path, 'rb') as f:
-        files = {
-            "file": (apk_info["filename"], f, "application/vnd.android.package-archive"),
-            "fileId": (None, file_id),
-        }
-        data = {
-            "folderId": (None, ""),
-        }
-        
-        response = session.post(create_url, headers={
-            "X-Appwrite-Project": project_id,
-            "X-Appwrite-Key": api_key,
-        }, files=files, data=data, timeout=300)
-        response.raise_for_status()
+        for i in range(total_chunks):
+            start = i * CHUNK_SIZE
+            chunk_data = f.read(CHUNK_SIZE)
+            end = start + len(chunk_data) - 1
+            
+            chunk_headers = {
+                **headers,
+                'Content-Range': f'bytes {start}-{end}/{file_size}',
+                'X-Appwrite-ID': file_id,
+            }
+            
+            files = {
+                'file': (apk_info["filename"], chunk_data, 'application/vnd.android.package-archive')
+            }
+            data = {
+                'fileId': file_id,
+                'folderId': '',
+            }
+            
+            response = session.post(
+                f'{endpoint}/storage/buckets/{bucket_id}/files',
+                headers=chunk_headers,
+                files=files,
+                data=data,
+                timeout=300
+            )
+            
+            log(f'Chunk {i+1}/{total_chunks} uploaded ({end+1}/{file_size} bytes)')
+            
+            if response.status_code not in [200, 201, 202]:
+                error_msg = f'Chunk {i+1} upload failed: {response.status_code}'
+                if hasattr(response, 'text'):
+                    error_msg += f' {response.text}'
+                raise Exception(error_msg)
     
-    result = response.json()
-    download_url = f"{endpoint}/storage/buckets/{bucket_id}/files/{result['$id']}/view?project={project_id}"
-    
-    log(f"APK uploaded successfully: {result['$id']}")
-    log(f"Download URL: {download_url}")
-    
-    return {
-        "file_id": result["$id"],
-        "download_url": download_url,
-        "size": apk_info["size"],
-        "sha256": apk_info["sha256"],
-    }
-
-
-def upload_chunked(
-    apk_path: str,
-    bucket_id: str,
-    endpoint: str,
-    project_id: str,
-    api_key: str,
-    file_id: str,
-    apk_info: dict,
-) -> dict:
-    """Chunked upload for large files using Appwrite's createFile API."""
-    # Appwrite doesn't natively support chunked upload in the traditional sense,
-    # but we can use a workaround by creating the file first with metadata,
-    # then updating it. However, for large APKs, the best solution is to:
-    # 1. Use a different storage solution with chunked upload support
-    # 2. Or reduce APK size significantly
-    # 3. Or use GitHub Releases instead of Appwrite Storage
-    
-    log(f"ERROR: APK size {apk_info['size_mb']} MB exceeds Appwrite Storage limit")
-    log(f"Recommended solutions:")
-    log(f"1. Reduce APK size by removing unused resources/code")
-    log(f"2. Use App Bundle (.aab) instead of APK") 
-    log(f"3. Upload to GitHub Releases instead of Appwrite Storage")
-    log(f"4. Use a storage service with chunked upload support (e.g., AWS S3, Cloud Storage)")
-    
-    raise Exception(f"APK too large for Appwrite Storage ({apk_info['size_mb']} MB > 5MB limit)")
+    log(f'All chunks uploaded successfully!')
+    return file_id
 
 
 def update_version_document(

@@ -69,6 +69,13 @@ def create_session_with_retry(max_retries: int = 3) -> requests.Session:
     session.mount("http://", adapter)
     session.mount("https://", adapter)
     
+    # Disable SSL verification temporarily for Singapore endpoint SSL issues
+    session.verify = False
+    
+    # Suppress SSL warnings
+    import urllib3
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    
     return session
 
 

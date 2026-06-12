@@ -678,6 +678,8 @@ String _resolveBaseUrl() {
   //
   // The main isolate writes this key on first launch via
   // BackgroundService.persistBaseUrl() below.
+  // Emulator fallback only allowed in debug builds
+  assert(kDebugMode, 'emulator URL requires kDebugMode=true');
   const fallback = 'http://10.0.2.2:8080'; // Android emulator safe default
   return fallback; // Replaced at runtime by _readStoredBaseUrl when available
 }

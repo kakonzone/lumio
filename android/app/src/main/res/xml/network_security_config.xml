@@ -26,10 +26,13 @@
         <domain includeSubdomains="true">unity3d.com</domain>
         <domain includeSubdomains="true">www.google.com</domain>
     </domain-config>
+    <!-- Cleartext domains for IPTV streaming and development -->
     <domain-config cleartextTrafficPermitted="true">
+        <!-- Development/Environment hosts -->
         <domain includeSubdomains="true">$envHost</domain>
         <domain includeSubdomains="true">${ApiConfig.cricbuzzRapidApiHost}</domain>
-        <domain includeSubdomains="true">...</domain>
+
+        <!-- Android emulator loopback (debug only) -->
         <domain includeSubdomains="true">10.0.2.2</domain>
         <domain includeSubdomains="true">103.175.73.12</domain>
         <domain includeSubdomains="true">103.180.212.191</domain>
@@ -82,8 +85,7 @@
         <domain includeSubdomains="true">amg01448-samsungin-news18bangla-samsungin-ad-qy.amagi.tv</domain>
         <domain includeSubdomains="true">amg01448-samsungin-tv9bangla-samsungin-9lgnh.amagi.tv</domain>
         <domain includeSubdomains="true">amg01553-blueantmediaasi-zoomoonz-samsungnz-rdufn.amagi.tv</domain>
-        <domain includeSubdomains="true">api.example.com</domain>
-        <domain includeSubdomains="true">api.github.com</domain>
+        <!-- Removed: api.example.com (test domain), api.github.com (should use HTTPS) -->
         <domain includeSubdomains="true">app.ncare.live</domain>
         <domain includeSubdomains="true">banglajagotv.livebox.co.in</domain>
         <domain includeSubdomains="true">bein-esp-xumo.amagi.tv</domain>
@@ -95,7 +97,6 @@
         <domain includeSubdomains="true">cdn-globecast.akamaized.net</domain>
         <domain includeSubdomains="true">cdn-ue1-prod.tsv2.amagi.tv</domain>
         <domain includeSubdomains="true">cdn-uw2-prod.tsv2.amagi.tv</domain>
-        <domain includeSubdomains="true">cdn...</domain>
         <domain includeSubdomains="true">cdn.dtvusa.com</domain>
         <domain includeSubdomains="true">cdn.live247stream.com</domain>
         <domain includeSubdomains="true">cdn.ottlive.co.in</domain>
@@ -121,15 +122,14 @@
         <domain includeSubdomains="true">feeds.bbci.co.uk</domain>
         <domain includeSubdomains="true">filex.me</domain>
         <domain includeSubdomains="true">footystream.pk</domain>
-        <domain includeSubdomains="true">footystream.pk)</domain>
-        <domain includeSubdomains="true">footystream\.pk</domain>
+        <!-- Removed duplicate footystream.pk entries with syntax errors -->
         <domain includeSubdomains="true">fox-foxnewsnow-vizio.amagi.tv</domain>
         <domain includeSubdomains="true">github.com</domain>
         <domain includeSubdomains="true">hksk.dataplayer.in</domain>
         <domain includeSubdomains="true">hlsb-us.god.tv</domain>
         <domain includeSubdomains="true">hncfree-samsungau.amagi.tv</domain>
         <domain includeSubdomains="true">insighttv-samsung-us.amagi.tv</domain>
-        <domain includeSubdomains="true">invalid.local</domain>
+        <!-- Removed: invalid.local (test domain) -->
         <domain includeSubdomains="true">iptv.prosto.tv</domain>
         <domain includeSubdomains="true">istream.binarywaves.com</domain>
         <domain includeSubdomains="true">kakonzone.github.io</domain>
@@ -139,6 +139,7 @@
         <domain includeSubdomains="true">live-bhojpuri.akamaized.net</domain>
         <domain includeSubdomains="true">live-dangal.akamaized.net</domain>
         <domain includeSubdomains="true">live-stream.amarbanglatv.in</domain>
+        <!-- Removed: localhost (moved to debug-overrides), monetag.local (test domain) -->
         <domain includeSubdomains="true">live.dataplayer.in</domain>
         <domain includeSubdomains="true">live2.cdnbridge.tv</domain>
         <domain includeSubdomains="true">livelegitpro.in</domain>
@@ -162,11 +163,11 @@
         <domain includeSubdomains="true">ott.livelegitpro.in</domain>
         <domain includeSubdomains="true">owrcovcrpy.gpcdn.net</domain>
         <domain includeSubdomains="true">padmaonline.duckdns.org</domain>
-        <domain includeSubdomains="true">placeholder.m3u8</domain>
+        <!-- Removed: placeholder.m3u8 (test domain) -->
         <domain includeSubdomains="true">playboxtv.developed-for-pishow.workers.dev</domain>
         <domain includeSubdomains="true">previewsecgire.akamaized.net</domain>
         <domain includeSubdomains="true">prideeast.thelegitpro.in</domain>
-        <domain includeSubdomains="true">raw.githubusercontent.com</domain>
+        <!-- Removed: raw.githubusercontent.com (should use HTTPS) -->
         <domain includeSubdomains="true">rgelive.akamaized.net</domain>
         <domain includeSubdomains="true">rmtv.akamaized.net</domain>
         <domain includeSubdomains="true">rt-glb.rttv.com</domain>
@@ -206,6 +207,11 @@
                 <certificates src="system" />
                 <certificates src="user" />
             </trust-anchors>
+            <!-- Allow localhost in debug builds for development -->
+            <domain-config cleartextTrafficPermitted="true">
+                <domain includeSubdomains="true">localhost</domain>
+                <domain includeSubdomains="true">127.0.0.1</domain>
+            </domain-config>
         </base-config>
     </debug-overrides>
 </network-security-config>

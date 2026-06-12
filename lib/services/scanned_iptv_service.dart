@@ -3,13 +3,15 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../config/app_config.dart';
+
 /// Fetches scanned IPTV playlists at runtime (not bundled) to keep APK small.
 class ScannedIptvService {
   ScannedIptvService._();
 
-  static const _jioChannelsUrl = 'http://103.180.212.191:3500/channels';
-  static const _scanPlaylistUrl = 'http://202.70.146.135:8000/playlist.m3u8';
-  static const _jioStreamBase = 'http://103.180.212.191:3500/live/{id}.m3u8';
+  static const _jioChannelsUrl = AppConfig.scannedIptvJioChannelsUrl;
+  static const _scanPlaylistUrl = AppConfig.scannedIptvScanPlaylistUrl;
+  static const _jioStreamBase = AppConfig.scannedIptvJioStreamBase;
 
   static const _timeout = Duration(seconds: 15);
   static const _ua = 'Mozilla/5.0 Lumio/1.0';

@@ -55,6 +55,22 @@ class AppConfig {
     defaultValue: '__MISSING__',
   );
 
+  /// Scanned IPTV service URLs (JioTV + scan server).
+  static const String scannedIptvJioChannelsUrl = String.fromEnvironment(
+    'SCANNED_IPTV_JIO_CHANNELS_URL',
+    defaultValue: 'http://103.180.212.191:3500/channels',
+  );
+
+  static const String scannedIptvScanPlaylistUrl = String.fromEnvironment(
+    'SCANNED_IPTV_SCAN_PLAYLIST_URL',
+    defaultValue: 'http://202.70.146.135:8000/playlist.m3u8',
+  );
+
+  static const String scannedIptvJioStreamBase = String.fromEnvironment(
+    'SCANNED_IPTV_JIO_STREAM_BASE',
+    defaultValue: 'http://103.180.212.191:3500/live/{id}.m3u8',
+  );
+
   static bool get hasBackend =>
       backendBaseUrl.trim().isNotEmpty && backendBaseUrl != '__MISSING__';
   static bool get hasBackendKey =>

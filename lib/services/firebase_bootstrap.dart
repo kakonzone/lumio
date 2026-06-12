@@ -4,6 +4,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 
+import '../security/security_config.dart';
+
 /// Firebase Core + Crashlytics on cold start.
 class FirebaseBootstrap {
   static const bool firebaseEnabled = bool.fromEnvironment(
@@ -37,6 +39,15 @@ class FirebaseBootstrap {
       await _wireCrashlytics();
       // ignore: avoid_print
       print('[Lumio] Firebase init OK');
+
+      // Security integrity check
+      if (!kDebugMode && SecurityConfig.hmacSecret.isEmpty) {
+        // ignore: avoid_print
+        print('[Lumio] SECURITY WARNING: hmacSecret is empty in release mode');
+        if (kDebugMode) {
+          debugPrint('[Lumio] Set LUMIO_HMAC_SECRET via --dart-define for production');
+        }
+      }
     } catch (e) {
       _initialized = false;
       _crashlyticsWired = false;

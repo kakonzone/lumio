@@ -11,7 +11,6 @@ import '../widgets/add_favorite_dialog.dart';
 import '../widgets/shell_app_bar.dart';
 import '../widgets/shell_page_scaffold.dart';
 import '../ads/utils/webview_pool.dart';
-import '../config/ad_config.dart';
 import '../widgets/ad_list_injector.dart';
 import '../widgets/channel_list_tile.dart';
 import '../widgets/list_skeletons.dart';

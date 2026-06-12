@@ -1,3 +1,5 @@
+library;
+
 /// Toffee channel catalog placeholder (Week 1 security hardening).
 ///
 /// CRITICAL: Do NOT commit `Edge-Cache-Cookie=...Signature=...` values in source.

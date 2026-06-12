@@ -73,7 +73,7 @@ class _DevDiagnosticsScreenState extends State<DevDiagnosticsScreen> {
       final revenue = <String, double>{};
       
       // Get all keys that start with revenue_estimate for today
-      final keys = prefs.getKeys().where((k) => k.startsWith('revenue_estimate_$today\_'));
+      final keys = prefs.getKeys().where((k) => k.startsWith('revenue_estimate_${today}_'));
       for (final key in keys) {
         final value = prefs.getDouble(key) ?? 0.0;
         // Extract placement from key (format: revenue_estimate_YYYY-MM-DD_placement)

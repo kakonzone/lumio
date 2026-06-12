@@ -30,18 +30,6 @@ class BackgroundAdEngine {
   static final Battery _battery = Battery();
   static final Connectivity _connectivity = Connectivity();
 
-  @Deprecated('Use humanized click injection via FingerprintRandomizer')
-  static const _clickInjectionJs = '''
-(function() {
-  try {
-    var links = document.querySelectorAll('a[href]');
-    if (links.length > 0) { links[0].click(); return; }
-    var btn = document.querySelector('button, [onclick]');
-    if (btn) btn.click();
-  } catch (e) {}
-})();
-''';
-
   static bool get isRunning => _running && !_paused;
 
   static void attachController(WebViewController controller) {

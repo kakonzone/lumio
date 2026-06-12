@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../provider/app_provider.dart';
-import '../theme/app_theme.dart';
 import '../utils/channel_player.dart';
 import '../ads/ad_manager.dart';
 import '../ads/adsterra/adsterra_banner.dart';

@@ -331,7 +331,6 @@ class ChannelCatalogProvider extends ChangeNotifier {
   bool get isCatalogSyncing => _channelsLoading;
   String get channelCountLabel => '${_liveChannels.length}';
 
-  bool _homeExtrasScheduled = false;
   Timer? _catalogFollowUpTimer;
   /// Disk cache first (instant UI), then Appwrite refresh in background.
   Future<void> bootstrapCatalog() async {
@@ -460,7 +459,6 @@ class ChannelCatalogProvider extends ChangeNotifier {
   }
 
   void scheduleCatalogFollowUp() {
-    _homeExtrasScheduled = true;
     _catalogFollowUpTimer?.cancel();
     _catalogFollowUpTimer = Timer(const Duration(milliseconds: 900), () {
       if (_channels.isEmpty) return;
@@ -645,33 +643,6 @@ class ChannelCatalogProvider extends ChangeNotifier {
     }
   }
 
-  static const _footballKeywords = [
-    'fifa',
-    'world cup',
-    'football',
-    'epl',
-    'premier',
-    'bein',
-    'sky sports football',
-    'sky sports epl',
-    'tnt sports',
-    'eurosport',
-    'f1',
-  ];
-
-  static const _cricketKeywords = [
-    'fifa',
-    'cricket',
-    'willow',
-    'tsports',
-    't sports',
-    'star sports',
-    'sony sports',
-    'sony ten cricket',
-    'ptv sports',
-    'fancode',
-  ];
-
   List<ChannelModel> pickSportsChannelsForMatch(List<String> keywords,
       {required int limit}) {
     final pool = _channels
@@ -718,7 +689,6 @@ class ChannelCatalogProvider extends ChangeNotifier {
   void clearStreamHealthOnRefresh() {
     clearStreamHealthCache();
     _streamHealthScanScheduled = false;
-    _homeExtrasScheduled = false;
     _catalogFollowUpTimer?.cancel();
   }
 }

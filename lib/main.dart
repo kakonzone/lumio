@@ -109,7 +109,11 @@ void main() async {
   if (!KillSwitchService.instance.appEnabled) {
     final maintenanceMsg = KillSwitchService.instance.maintenanceMessageBn ?? 
         'অ্যাপ মেইনটেনেন্সে আছে';
-    print('[Lumio] App disabled via kill switch: $maintenanceMsg');
+    agentDebugLog(
+      location: 'main.dart:run',
+      message: '[Lumio] App disabled via kill switch: $maintenanceMsg',
+      hypothesisId: 'H-kill-switch',
+    );
     runApp(
       MaterialApp(
         home: Scaffold(

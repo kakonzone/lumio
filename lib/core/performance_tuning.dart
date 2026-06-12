@@ -94,8 +94,8 @@ class PerformanceTuning {
     _applied = true;
     debugPrint(
       '[Performance] tier=$_tier '
-      'imgCache=${imageCacheMaxObjects}/${imageCacheMaxBytes ~/ (1024 * 1024)}MB '
-      'playerBuf=${playerBufferMb}MB',
+      'imgCache=$imageCacheMaxObjects/${imageCacheMaxBytes ~/ 1024 * 1024}MB '
+      'playerBuf=$playerBufferMb MB',
     );
   }
 

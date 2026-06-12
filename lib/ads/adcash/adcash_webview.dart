@@ -5,8 +5,6 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 import '../ad_log.dart';
 import '../../config/ad_config.dart';
-import '../../core/ads/webview_ad_host.dart';
-import '../utils/lumio_webview_config.dart';
 import '../../utils/ad_debug_log.dart';
 
 /// Adcash WebView banner host with zone-based script injection.
@@ -30,7 +28,6 @@ class AdcashWebView extends StatefulWidget {
 
 class _AdcashWebViewState extends State<AdcashWebView> {
   WebViewController? _controller;
-  bool _hasPainted = false;
   bool _loadLogged = false;
 
   String get _adcashHtml {

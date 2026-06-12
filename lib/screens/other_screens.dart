@@ -8,7 +8,6 @@ import 'package:lumio_tv/models/model.dart';
 import 'package:lumio_tv/widgets/channel_avatar.dart';
 import 'package:lumio_tv/widgets/shell_app_bar.dart';
 import 'package:lumio_tv/ads/widgets/floating_native_card.dart';
-import 'package:lumio_tv/config/ad_config.dart';
 import 'package:lumio_tv/widgets/ad_list_injector.dart';
 import 'package:lumio_tv/widgets/channel_list_tile.dart';
 import 'package:lumio_tv/utils/sport_channel_icons.dart';
@@ -60,11 +59,15 @@ extension ChannelUiExt on ChannelModel {
   }
 
   String get formattedViewers {
-    if (viewers >= 1000000)
+    if (viewers >= 1000000) {
       return '${(viewers / 1000000).toStringAsFixed(1)}M viewers';
-    if (viewers >= 1000)
+    }
+    if (viewers >= 1000) {
       return '${(viewers / 1000).toStringAsFixed(1)}K viewers';
-    if (viewers == 0) return '';
+    }
+    if (viewers == 0) {
+      return '';
+    }
     return '$viewers viewers';
   }
 }

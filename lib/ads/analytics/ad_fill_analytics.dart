@@ -71,7 +71,7 @@ class AdFillAnalytics {
     try {
       final prefs = await SharedPreferences.getInstance();
       final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-      final key = 'revenue_estimate_$today\_$placement';
+      final key = 'revenue_estimate_${today}_$placement';
       
       final ecpm = _getEcpmForGeography();
       final revenueEstimate = ecpm / 1000; // Per impression (eCPM is per 1000)

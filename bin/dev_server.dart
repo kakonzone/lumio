@@ -1,3 +1,5 @@
+library;
+
 /// Local Lumio API mock — run with: `dart run bin/dev_server.dart`
 ///
 /// Not linked from Flutter `main()`; does not ship in the APK.

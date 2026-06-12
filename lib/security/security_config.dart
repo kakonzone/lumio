@@ -71,14 +71,7 @@ class SecurityConfig {
     'SSL_PIN_STREAM_TOKEN_BACKUP',
     defaultValue: '__MISSING__',
   );
-  static const String levelPlayPinPrimary = String.fromEnvironment(
-    'SSL_PIN_LEVELPLAY_PRIMARY',
-    defaultValue: '__MISSING__',
-  );
-  static const String levelPlayPinBackup = String.fromEnvironment(
-    'SSL_PIN_LEVELPLAY_BACKUP',
-    defaultValue: '__MISSING__',
-  );
+  // LevelPlay pins removed during deprecation
   static const String supersonicPinPrimary = String.fromEnvironment(
     'SSL_PIN_SUPERSONIC_PRIMARY',
     defaultValue: '__MISSING__',
@@ -102,7 +95,7 @@ class SecurityConfig {
       ];
 
   static Map<String, List<String>> get hostPins => {
-        'app.levelplay.com': _pins(levelPlayPinPrimary, levelPlayPinBackup),
+        // LevelPlay pins removed during deprecation
         'init.supersonic.com': _pins(
           supersonicPinPrimary,
           supersonicPinBackup,

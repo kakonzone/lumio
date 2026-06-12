@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:unity_levelplay_mediation/unity_levelplay_mediation.dart';
 
 import '../config/ad_config.dart';
 import '../ads/ad_log.dart';
@@ -10,7 +9,7 @@ import '../ads/ad_manager.dart';
 import 'ad_consent_privacy.dart';
 import 'ad_trigger_manager.dart';
 
-/// First-launch ads consent + LevelPlay privacy flags (until full CMP).
+/// First-launch ads consent (LevelPlay privacy flags removed during deprecation).
 class AdConsentService {
   AdConsentService._();
   static final AdConsentService instance = AdConsentService._();
@@ -62,8 +61,8 @@ class AdConsentService {
       '[AdConsent] ${_consent!} — ads eligible in '
       '${AdConfig.splashMinMsBeforeAds}ms',
     );
-    await applyToLevelPlaySdk();
-    adLog('[AdConsent] LevelPlay privacy flags applied');
+    // LevelPlay privacy flags removed during deprecation
+    adLog('[AdConsent] Consent stored (LevelPlay privacy removed)');
     unawaited(AdManager.instance.retryInitAfterConsent());
   }
 
@@ -74,12 +73,12 @@ class AdConsentService {
       adLog('[AdConsent] restrictive defaults (no prior choice)');
       return;
     }
-    await applyToLevelPlaySdk();
+    // LevelPlay privacy flags removed during deprecation
     debugPrint(
-      '[AdConsent] stored consent applied to LevelPlay ($_consent)',
+      '[AdConsent] stored consent ($_consent)',
     );
     adLog(
-      '[AdConsent] stored consent applied to LevelPlay ($_consent)',
+      '[AdConsent] stored consent ($_consent)',
     );
   }
 
@@ -94,31 +93,16 @@ class AdConsentService {
     }
   }
 
-  /// LevelPlay 9.2.0: GDPR value = consent granted; CCPA true = opted out of sale.
+  /// LevelPlay privacy flags removed during deprecation.
+  /// Unity Ads uses consent stored in SharedPreferences directly.
   Future<void> applyToLevelPlaySdk() async {
-    try {
-      final flags = AdConsentPrivacyMapping.forConsent(_consent);
-      await LevelPlayPrivacySettings.setGDPRConsents({
-        'LevelPlay': flags.gdprLevelPlay,
-      });
-      await LevelPlayPrivacySettings.setCCPA(flags.ccpaOptOut);
-      await LevelPlayPrivacySettings.setCOPPA(false);
-    } catch (e) {
-      adLog('[AdConsent] LevelPlay privacy apply skipped: $e');
-    }
+    // No-op: Unity Ads reads consent from SharedPreferences
+    adLog('[AdConsent] Unity Ads consent (no LevelPlay privacy flags)');
   }
 
   /// Most restrictive defaults before user chooses (also used when init runs pre-prompt).
   Future<void> applyRestrictiveDefaults() async {
-    try {
-      final flags = AdConsentPrivacyMapping.restrictiveDefaults();
-      await LevelPlayPrivacySettings.setGDPRConsents({
-        'LevelPlay': flags.gdprLevelPlay,
-      });
-      await LevelPlayPrivacySettings.setCCPA(flags.ccpaOptOut);
-      await LevelPlayPrivacySettings.setCOPPA(false);
-    } catch (e) {
-      adLog('[AdConsent] restrictive defaults skipped: $e');
-    }
+    // No-op: Unity Ads uses SharedPreferences for consent
+    adLog('[AdConsent] Unity Ads restrictive defaults (no LevelPlay privacy flags)');
   }
 }

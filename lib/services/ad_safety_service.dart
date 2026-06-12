@@ -249,7 +249,7 @@ class AdSafetyService {
       debugPrint('[RemoteConfig] keys=${rc.getAll().keys.toList()}');
       debugPrint(
         '[RemoteConfig] values: ads_enabled=${rc.getBool(RemoteConfigKeys.adsEnabled)}, '
-        'levelplay_enabled=${rc.getBool(RemoteConfigKeys.levelPlayEnabled)}, '
+        'unity_enabled=${rc.getBool(RemoteConfigKeys.unityEnabled)}, '
         'adsterra_enabled=${rc.getBool(RemoteConfigKeys.adsterraEnabled)}, '
         'vpn_locale_strictness=${rc.getString(RemoteConfigKeys.vpnLocaleStrictness)}',
       );
@@ -257,7 +257,7 @@ class AdSafetyService {
       print(
         '[RemoteConfig] fetchAndActivate activated=$activated '
         'ads=${rc.getBool(RemoteConfigKeys.adsEnabled)} '
-        'levelplay=${rc.getBool(RemoteConfigKeys.levelPlayEnabled)} '
+        'unity=${rc.getBool(RemoteConfigKeys.unityEnabled)} '
         'adsterra=${rc.getBool(RemoteConfigKeys.adsterraEnabled)}',
       );
     } catch (e) {
@@ -278,8 +278,8 @@ class AdSafetyService {
   /// Master kill switch — when false, [AdManager.adsEnabled] is false.
   bool get adsEnabledRemote => AdConfig.remoteAdsEnabled;
 
-  /// LevelPlay SDK layer kill switch.
-  bool get levelPlayEnabledRemote => AdConfig.levelPlayEnabled;
+  /// Unity Ads SDK layer kill switch.
+  bool get unityEnabledRemote => AdConfig.unityEnabled;
 
   bool? _debugAdsterraEnabled;
   int? _debugPopunderSessionCap;

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../config/ad_config.dart';
+import '../services/unity_ads_service.dart';
 import '../services/ad_safety_service.dart';
 import '../services/kill_switch_service.dart';
 import 'ad_log.dart';
@@ -11,23 +12,22 @@ import 'adsterra/adsterra_html.dart';
 import 'utils/ad_webview_navigation_policy.dart';
 import 'adsterra_engine.dart';
 import 'analytics/ad_analytics.dart';
-import 'ironsource_service.dart';
 
-/// Tri-network waterfall: LevelPlay (IronSource + Unity mediation) → Adsterra WebView.
+/// Tri-network waterfall: Unity Ads → Adsterra WebView → Monetag.
 class AdWaterfall {
   AdWaterfall._();
   static final AdWaterfall instance = AdWaterfall._();
 
-  LevelPlayAdService? _levelPlay;
+  UnityAdsService? _unityAds;
   AdAnalytics? _analytics;
 
   final Map<String, int> _sessionFailures = {};
 
   void attach({
-    required LevelPlayAdService levelPlay,
+    required UnityAdsService unityAds,
     required AdAnalytics analytics,
   }) {
-    _levelPlay = levelPlay;
+    _unityAds = unityAds;
     _analytics = analytics;
   }
 
@@ -50,24 +50,21 @@ class AdWaterfall {
     _sessionFailures.remove(network);
   }
 
-  /// Preload LevelPlay interstitial + rewarded (Unity fills via mediation).
+  /// Preload Unity Ads interstitial + rewarded.
   void preloadAll() {
-    final lp = _levelPlay;
-    if (lp == null || !lp.isInitialized) return;
-    lp.loadInterstitial();
-    if (AdConfig.hasLevelPlayRewardedUnit) {
-      lp.loadRewarded();
-    }
+    final ua = _unityAds;
+    if (ua == null || !ua.isInitialized) return;
+    ua.loadInterstitial();
+    ua.loadRewarded();
   }
 
-  /// LevelPlay rewarded only — returns true when user earns reward.
+  /// Unity Ads rewarded only — returns true when user earns reward.
   Future<bool> showRewarded({required String trigger}) async {
     final analytics = _analytics;
-    final lp = _levelPlay;
-    if (lp == null ||
-        !lp.isInitialized ||
-        !AdConfig.hasLevelPlayRewardedUnit ||
-        _isSkipped('levelplay_rewarded')) {
+    final ua = _unityAds;
+    if (ua == null ||
+        !ua.isInitialized ||
+        _isSkipped('unity_rewarded')) {
       unawaited(analytics?.logNoFill(placement: 'rewarded'));
       return false;
     }
@@ -75,54 +72,55 @@ class AdWaterfall {
     unawaited(
       analytics?.logWaterfallAttempt(
         format: 'rewarded',
-        network: 'levelplay',
+        network: 'unity',
         trigger: trigger,
       ),
     );
-    lp.setRewardedTrigger(trigger);
+    ua.setRewardedTrigger(trigger);
 
-    final ok = await _tryLevelPlayRewarded(lp).timeout(
+    final ok = await _tryUnityRewarded(ua).timeout(
       _networkTimeout,
       onTimeout: () {
-        adLog('[AdWaterfall] levelplay rewarded timeout');
+        adLog('[AdWaterfall] unity rewarded timeout');
         return false;
       },
     );
 
     if (ok) {
-      _recordSuccess('levelplay_rewarded');
+      _recordSuccess('unity_rewarded');
       unawaited(
-        analytics?.logFill(network: 'levelplay', placement: 'rewarded'),
+        analytics?.logFill(network: 'unity', placement: 'rewarded'),
       );
       return true;
     }
 
-    _recordFailure('levelplay_rewarded');
+    _recordFailure('unity_rewarded');
     unawaited(
       analytics?.logWaterfallFailure(
         format: 'rewarded',
         trigger: trigger,
-        lastNetwork: 'levelplay',
+        lastNetwork: 'unity',
       ),
     );
     unawaited(analytics?.logNoFill(placement: 'rewarded'));
     return false;
   }
 
-  Future<bool> _tryLevelPlayRewarded(LevelPlayAdService lp) async {
+  Future<bool> _tryUnityRewarded(UnityAdsService ua) async {
     try {
-      if (!lp.isRewardedReady) {
-        final ready = await lp.ensureRewardedReady(timeout: _networkTimeout);
-        if (!ready) return false;
+      if (!ua.isRewardedReady) {
+        await ua.loadRewarded();
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (!ua.isRewardedReady) return false;
       }
-      return await lp.showRewarded();
+      return await ua.showRewarded();
     } catch (e) {
-      adLog('[AdWaterfall] levelplay rewarded error: $e');
+      adLog('[AdWaterfall] unity rewarded error: $e');
       return false;
     }
   }
 
-  /// Interstitial chain: LevelPlay → Adsterra fullscreen WebView → direct link.
+  /// Interstitial chain: Unity Ads → Adsterra fullscreen WebView → direct link.
   ///
   /// Frequency caps must be checked by [AdManager] before calling.
   Future<bool> showInterstitial(
@@ -130,39 +128,39 @@ class AdWaterfall {
     required String trigger,
   }) async {
     final analytics = _analytics;
-    final lp = _levelPlay;
+    final ua = _unityAds;
 
-    if (lp != null && lp.isInitialized && !_isSkipped('levelplay')) {
+    if (ua != null && ua.isInitialized && !_isSkipped('unity')) {
       unawaited(
         analytics?.logWaterfallAttempt(
           format: 'interstitial',
-          network: 'levelplay',
+          network: 'unity',
           trigger: trigger,
         ),
       );
-      lp.setInterstitialTrigger(trigger);
+      ua.setInterstitialTrigger(trigger);
 
-      final lpOk = await _tryLevelPlayInterstitial(lp).timeout(
+      final uaOk = await _tryUnityInterstitial(ua).timeout(
         _networkTimeout,
         onTimeout: () {
-          adLog('[AdWaterfall] levelplay interstitial timeout');
+          adLog('[AdWaterfall] unity interstitial timeout');
           return false;
         },
       );
 
-      if (lpOk) {
-        _recordSuccess('levelplay');
+      if (uaOk) {
+        _recordSuccess('unity');
         unawaited(
-          analytics?.logFill(network: 'levelplay', placement: 'interstitial'),
+          analytics?.logFill(network: 'unity', placement: 'interstitial'),
         );
         return true;
       }
 
-      _recordFailure('levelplay');
+      _recordFailure('unity');
       unawaited(
         analytics?.logWaterfallFallback(
           format: 'interstitial',
-          fromNetwork: 'levelplay',
+          fromNetwork: 'unity',
           toNetwork: 'adsterra',
           trigger: trigger,
           reason: 'no_fill_or_timeout',
@@ -175,7 +173,7 @@ class AdWaterfall {
         analytics?.logWaterfallFailure(
           format: 'interstitial',
           trigger: trigger,
-          lastNetwork: 'levelplay',
+          lastNetwork: 'unity',
         ),
       );
       unawaited(analytics?.logNoFill(placement: 'interstitial'));
@@ -236,23 +234,22 @@ class AdWaterfall {
     return false;
   }
 
-  Future<bool> _tryLevelPlayInterstitial(LevelPlayAdService lp) async {
+  Future<bool> _tryUnityInterstitial(UnityAdsService ua) async {
     // Kill switch check
-    if (!KillSwitchService.instance.levelplayEnabled) {
-      adLog('[AdWaterfall] LevelPlay disabled via kill switch');
+    if (!KillSwitchService.instance.adsEnabled) {
+      adLog('[AdWaterfall] Unity Ads disabled via kill switch');
       return false;
     }
     
     try {
-      if (!lp.isInterstitialReady) {
-        final ready = await lp.ensureInterstitialReady(
-          timeout: _networkTimeout,
-        );
-        if (!ready) return false;
+      if (!ua.isInterstitialReady) {
+        await ua.loadInterstitial();
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (!ua.isInterstitialReady) return false;
       }
-      return await lp.showInterstitial();
+      return await ua.showInterstitial();
     } catch (e) {
-      adLog('[AdWaterfall] levelplay interstitial error: $e');
+      adLog('[AdWaterfall] unity interstitial error: $e');
       return false;
     }
   }

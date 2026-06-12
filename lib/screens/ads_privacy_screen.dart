@@ -41,7 +41,7 @@ class _AdsPrivacyScreenState extends State<AdsPrivacyScreen> {
       body: ListView(
               padding: const EdgeInsets.all(20),
               children: [
-                if (AdConfig.hasLevelPlayRewardedUnit &&
+                if (AdConfig.hasUnityConfig &&
                     AdManager.instance.adsEnabled) ...[
                   const SizedBox(height: 28),
                   Text(

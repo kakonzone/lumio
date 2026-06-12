@@ -13,7 +13,7 @@ import '../config/ad_config.dart';
 import '../services/ad_health_monitor.dart';
 import '../services/ad_safety_service.dart';
 import '../services/server_cap.dart';
-import '../services/ironsource_service.dart';
+import '../services/unity_ads_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/tokens/colors.dart';
 
@@ -106,9 +106,8 @@ class _DevDiagnosticsScreenState extends State<DevDiagnosticsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final lp = LevelPlayAdService.instance;
+    final ua = UnityAdsService.instance;
     final cache = AdsterraNativeCache.instance;
-    final lastErr = lp.lastLoadError;
 
     return Scaffold(
       backgroundColor: context.bg,
@@ -124,15 +123,11 @@ class _DevDiagnosticsScreenState extends State<DevDiagnosticsScreen> {
             'Fingerprint: ${AdSafetyService.instance.deviceFingerprint}',
             'Install ID: ${AdSafetyService.instance.installId}',
           ]),
-          _section('LevelPlay SDK', [
-            'Package: unity_levelplay_mediation 9.2.0',
-            'Init: ${lp.isInitialized}',
-            'Last init error: ${lp.lastInitError ?? '—'}',
-            'Last load error: ${lastErr != null ? '${lastErr.errorCode} ${lastErr.errorMessage}' : '—'}',
-            'Interstitial in flight: ${lp.isInterstitialLoadInFlight}',
-            'Rewarded unit: ${AdConfig.hasLevelPlayRewardedUnit}',
-            'Rewarded ready: ${lp.isRewardedReady}',
-            'Rewarded in flight: ${lp.isRewardedLoadInFlight}',
+          _section('Unity Ads SDK', [
+            'Package: unity_ads_plugin',
+            'Init: ${ua.isInitialized}',
+            'Interstitial ready: ${ua.isInterstitialReady}',
+            'Rewarded ready: ${ua.isRewardedReady}',
           ]),
           _section('Fill rate (1h)', [
             'Interstitial: ${(AdHealthMonitor.instance.getFillRate('interstitial') * 100).toStringAsFixed(1)}%',
@@ -161,7 +156,7 @@ class _DevDiagnosticsScreenState extends State<DevDiagnosticsScreen> {
           if (_coldStartReport != null)
             _section('Post-splash promo (cold start)', [
               _coldStartReport!.logSummary,
-              'LevelPlay: ${_coldStartReport!.canShowLevelPlay}',
+              'Unity: ${_coldStartReport!.canShowUnity}',
               'Adsterra: ${_coldStartReport!.canShowAdsterra}',
               'House fallback: ${_coldStartReport!.canShowHousePromo}',
               'capLocalOnly: ${AdConfig.capLocalOnlyEffective}',
@@ -170,7 +165,7 @@ class _DevDiagnosticsScreenState extends State<DevDiagnosticsScreen> {
                 '${b.codeName}: ${b.message}',
             ]),
           if (AdConfig.diagnosticsEnabled) ...[
-            if (AdConfig.hasLevelPlayRewardedUnit) ...[
+            if (AdConfig.hasUnityConfig) ...[
               const SizedBox(height: 8),
               FilledButton(
                 onPressed: AdManager.instance.adsEnabled

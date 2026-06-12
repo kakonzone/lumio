@@ -11,12 +11,12 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-  <!-- Mediation / network classification (LevelPlay adapters). -->
+  <!-- Mediation / network classification (Unity Ads adapters). -->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
   <!--
     Advertising ID (Android 13+): declared for mediation. Users who opt out in system
     Settings → Privacy → Ads see a zeroed/limited ID; mediation SDKs must respect limitAdTracking.
-    Lumio does not request AD_ID at runtime beyond what LevelPlay pulls via GMS.
+    Lumio does not request AD_ID at runtime beyond what Unity Ads pulls via GMS.
   -->
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
     <!-- API 33+ only; ignored on Android 5–12 at install time -->
@@ -131,14 +131,15 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-        <!-- Must match Dart LevelPlay.init app key (LEVELPLAY_APP_KEY dart-define). -->
-        <meta-data
-            android:name="com.ironsource.sdk.ApplicationKey"
-            android:value="@string/levelplay_app_key" />
 
         <!-- Monetag push (WebView registration — separate from FCM match alerts). -->
         <meta-data
             android:name="lumio.monetag.push.channel"
             android:value="lumio_monetag_push" />
+
+        <!-- Unity Ads Game ID -->
+        <meta-data
+            android:name="unity.ads.game.id"
+            android:value="800000664"/>
     </application>
 </manifest>

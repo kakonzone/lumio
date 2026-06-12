@@ -78,20 +78,22 @@ class ZoneValidator {
 
   List<_ZoneProbe> _inventory() {
     return [
-      _ZoneProbe(
-        network: 'levelplay',
-        zoneId: _mask(AdConfig.interstitialAdUnitId),
-        placement: 'interstitial',
-        format: 'interstitial',
-        probeUrl: AdConfig.interstitialAdUnitId,
-      ),
-      _ZoneProbe(
-        network: 'levelplay',
-        zoneId: _mask(AdConfig.bannerAdUnitId),
-        placement: 'banner',
-        format: 'banner',
-        probeUrl: AdConfig.bannerAdUnitId,
-      ),
+      // LevelPlay zone probes removed during deprecation
+      // TODO: Add Unity Ads zone validation when available
+      // _ZoneProbe(
+      //   network: 'unity',
+      //   zoneId: _mask(AdConfig.interstitialAdUnitId),
+      //   placement: 'interstitial',
+      //   format: 'interstitial',
+      //   probeUrl: AdConfig.interstitialAdUnitId,
+      // ),
+      // _ZoneProbe(
+      //   network: 'unity',
+      //   zoneId: _mask(AdConfig.bannerAdUnitId),
+      //   placement: 'banner',
+      //   format: 'banner',
+      //   probeUrl: AdConfig.bannerAdUnitId,
+      // ),
       _ZoneProbe(
         network: 'adsterra',
         zoneId: 'direct_link',

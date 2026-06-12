@@ -1,12 +1,11 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:unity_levelplay_mediation/unity_levelplay_mediation.dart';
 
 import '../../config/ad_config.dart';
 import '../ad_log.dart';
 import '../../services/ad_safety_service.dart';
 
-/// Firebase analytics for all ad surfaces (LevelPlay clean + Adsterra + funnel).
+/// Firebase analytics for all ad surfaces (Unity Ads clean + Adsterra + funnel).
 ///
 /// Event names must not collide with [firebaseReservedEventNames] — use `lumio_` prefix.
 class AdAnalytics {
@@ -61,7 +60,6 @@ class AdAnalytics {
     'first_click_browser_redirects',
     'channel_click_count',
     'cap_client_fallback',
-    'lumio_levelplay_fill_attempt',
     'ad_waterfall_attempt',
     'ad_waterfall_fallback',
     'ad_waterfall_failure',
@@ -92,34 +90,18 @@ class AdAnalytics {
 
   Future<void> logAppOpenSubstitute() => _event(
         'app_open_substitute',
-        {'network': 'levelplay'},
+        {'network': 'unity'},
       );
 
-  /// GA4-style impression from LevelPlay [LevelPlayAdInfo] (revenue + network).
-  Future<void> logLevelPlayImpression(LevelPlayAdInfo adInfo) => _event(
-        'lumio_ad_impression',
-        {
-          'ad_platform': 'levelplay',
-          'ad_source': adInfo.adNetwork.isNotEmpty
-              ? adInfo.adNetwork
-              : 'ironsource',
-          'ad_format': _normalizeFormat(adInfo.adFormat),
-          'value': adInfo.revenue,
-          'currency': _currency,
-          'placement_name': adInfo.placementName,
-          'ad_unit_id': adInfo.adUnitId,
-        },
-      );
-
-  /// [trigger] examples: `channel_tap_levelplay_a`, `channel_tap_levelplay_b`
+  /// [trigger] examples: `channel_tap_unity_a`, `channel_tap_unity_b`
   Future<void> logInterstitialShown({required String trigger}) => _event(
         'interstitial_shown',
-        {'trigger': trigger, 'network': 'levelplay'},
+        {'trigger': trigger, 'network': 'unity'},
       );
 
   Future<void> logRewardedShown({required String trigger}) => _event(
         'rewarded_shown',
-        {'trigger': trigger, 'network': 'levelplay'},
+        {'trigger': trigger, 'network': 'unity'},
       );
 
   Future<void> logRewardedComplete({
@@ -128,7 +110,7 @@ class AdAnalytics {
   }) =>
       _event('rewarded_complete', {
         'trigger': trigger,
-        'network': 'levelplay',
+        'network': 'unity',
         if (rewardName != null && rewardName.isNotEmpty) 'reward_name': rewardName,
       });
 
@@ -177,13 +159,13 @@ class AdAnalytics {
         'channel_tap_slot',
         {
           'slot': slot,
-          'sdk': slot == 'adsterra' ? 'adsterra' : 'levelplay',
+          'sdk': slot == 'adsterra' ? 'adsterra' : 'unity',
         },
       );
 
   Future<void> logBannerImpression({required String placement}) => _event(
         'banner_impression',
-        {'placement': placement, 'network': 'levelplay'},
+        {'placement': placement, 'network': 'unity'},
       );
 
   Future<void> logAdsterraNativeLoaded({required String placement}) => _event(
@@ -234,21 +216,6 @@ class AdAnalytics {
         'network': network,
         'ad_format': format,
         'placement': placement,
-      });
-
-  Future<void> logLevelPlayFillAttempt({
-    required String format,
-    required String result,
-    int? errorCode,
-    int? attemptN,
-    required int msSinceInit,
-  }) =>
-      _event('lumio_levelplay_fill_attempt', {
-        'format': format,
-        'result': result,
-        if (errorCode != null) 'error_code': errorCode,
-        if (attemptN != null) 'attempt_n': attemptN,
-        'ms_since_init': msSinceInit,
       });
 
   Future<void> logFirstClickBrowser({required String channelId}) => _event(
@@ -333,6 +300,115 @@ class AdAnalytics {
     if (f.contains('native')) return 'native';
     return raw.isEmpty ? 'unknown' : raw;
   }
+
+  // ── Unity Ads Rewarded Analytics ───────────────────────────────────────────
+
+  Future<void> logAdLoaded({
+    required String network,
+    required String format,
+    required String placement,
+  }) =>
+      _event('unity_ad_loaded', {
+        'network': network,
+        'format': format,
+        'placement': placement,
+      });
+
+  Future<void> logAdShown({
+    required String network,
+    required String format,
+    required String placement,
+  }) =>
+      _event('unity_ad_shown', {
+        'network': network,
+        'format': format,
+        'placement': placement,
+      });
+
+  Future<void> logAdCompleted({
+    required String network,
+    required String format,
+    required String placement,
+    required int duration,
+  }) =>
+      _event('unity_ad_completed', {
+        'network': network,
+        'format': format,
+        'placement': placement,
+        'duration_seconds': duration,
+      });
+
+  Future<void> logAdSkipped({
+    required String network,
+    required String format,
+    required String placement,
+    required int skipTime,
+  }) =>
+      _event('unity_ad_skipped', {
+        'network': network,
+        'format': format,
+        'placement': placement,
+        'skip_time_seconds': skipTime,
+      });
+
+  Future<void> logAdFailed({
+    required String network,
+    required String format,
+    required String placement,
+    required String error,
+  }) =>
+      _event('unity_ad_failed', {
+        'network': network,
+        'format': format,
+        'placement': placement,
+        'error_code': error,
+      });
+
+  Future<void> logRewardEarned({
+    required String network,
+    required String placement,
+  }) =>
+      _event('unity_ad_reward_earned', {
+        'network': network,
+        'placement': placement,
+      });
+
+  // ── Pre-roll Analytics ──────────────────────────────────────────────────────
+
+  Future<void> logPreRollAdStarted() => _event('pre_roll_ad_started');
+
+  Future<void> logPreRollAdCompleted({required int duration}) => _event(
+        'pre_roll_ad_completed',
+        {'duration_seconds': duration},
+      );
+
+  Future<void> logPreRollAdSkipped({required int skipTime}) => _event(
+        'pre_roll_ad_skipped',
+        {'skip_time_seconds': skipTime},
+      );
+
+  Future<void> logPreRollAdFailed({required String error}) => _event(
+        'pre_roll_ad_failed',
+        {'error': error},
+      );
+
+  // ── Mid-roll Analytics ─────────────────────────────────────────────────────
+
+  Future<void> logAdIntervalReached() => _event('ad_interval_reached');
+
+  Future<void> logStreamResumedAfterAd({
+    required int adsShown,
+    required String adType,
+  }) =>
+      _event('stream_resumed_after_ad', {
+        'ads_shown': adsShown,
+        'ad_type': adType,
+      });
+
+  // ── Generic Event Helper ───────────────────────────────────────────────────
+
+  Future<void> logEvent(String name, [Map<String, Object>? params]) =>
+      _event(name, params);
 
   Future<void> _event(String name, [Map<String, Object>? params]) async {
     assert(

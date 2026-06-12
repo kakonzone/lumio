@@ -543,14 +543,17 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (AdManager.instance.adsEnabled &&
-                  AdManager.instance.levelPlayReady) ...[
+                  AdManager.instance.unityAdsReady) ...[
                 if (_navIdx == 0)
-                  Selector<AppConfigProvider, bool>(
-                    selector: (_, p) => p.config.bannerEnabled,
-                    builder: (_, bannerOn, __) => bannerOn
-                        ? const AdBannerWidget(placementName: 'home_bottom')
-                        : const SizedBox.shrink(),
-                  ),
+                  // TODO: Replace with Unity Ads or Adsterra banner implementation
+                  // LevelPlay banner removed during IronSource/LevelPlay deprecation
+                  // Selector<AppConfigProvider, bool>(
+                  //   selector: (_, p) => p.config.bannerEnabled,
+                  //   builder: (_, bannerOn, __) => bannerOn
+                  //       ? const AdBannerWidget(placementName: 'home_bottom')
+                  //       : const SizedBox.shrink(),
+                  // ),
+                  const SizedBox.shrink(),
               ],
               MainShellBottomNav(
                 currentIndex: _navIdx,

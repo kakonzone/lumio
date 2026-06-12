@@ -58,7 +58,7 @@ class AdConfig {
   /// `ADS_TEST_MODE` honored only outside release (debug / profile).
   static bool get adsTestModeEffective => !kReleaseMode && testMode;
 
-  /// Block LevelPlay / Adsterra in non-release unless `ADS_ENABLED=true` (or legacy `ADS_TEST_MODE=true`).
+  /// Block Unity Ads / Adsterra in non-release unless `ADS_ENABLED=true` (or legacy `ADS_TEST_MODE=true`).
   static bool get blockAdsInThisBuild =>
       !kReleaseMode && !adsEnabledDefine && !testMode;
 
@@ -255,6 +255,12 @@ class AdConfig {
     defaultValue: 'lumio_fp_migration_v1',
   );
 
+  /// Unity Ads enabled (fallback if Remote Config unavailable). Default: true.
+  static const bool unityEnabled = bool.fromEnvironment(
+    'UNITY_ENABLED',
+    defaultValue: true,
+  );
+
   // ── Per-device caps (shared-WiFi safe — keyed by device fingerprint) ───
   static const int rewardedMaxPerHour = 5;
   static const int adFreeMinutesAfterRewarded = 60;
@@ -315,7 +321,7 @@ class AdConfig {
   /// Delay before optional app-open promo overlay (lets home paint first).
   static const int appOpenPromoDeferMs = 900;
 
-  /// Per-network waterfall attempt timeout (Week 1 — IronSource → Adsterra).
+  /// Per-network waterfall attempt timeout (Week 1 — Unity Ads → Adsterra).
   static const int waterfallTimeoutSeconds = 3;
   static int get waterfallTimeoutMs => waterfallTimeoutSeconds * 1000;
 
@@ -602,11 +608,6 @@ class AdConfig {
       _flag('ADSTERRA_TELEMETRY_URL', adsterraTelemetryUrl),
       _flag('TOFFEE_SUBSCRIBER_TOKEN', toffeeSubscriberToken),
       'hasMonetizationConfig=${hasMonetizationConfig ? '<set>' : '<unset>'}',
-      '=${AppKey && AdUnits ? '<set>' : '<unset>'}',
-      'hasValidAdsterraDirect=${hasValidAdsterraDirectLink ? '<set>' : '<unset>'}',
-      '=${ ? '<set>' : '<unset>'}',
-      '=${ ? '<set>' : '<unset>'}',
-      'hasAdsterraDirectLink=${hasAdsterraDirectLink ? '<set>' : '<unset>'}',
       'hasAdsterraWebViewZones=${hasAdsterraWebViewZones ? '<set>' : '<unset>'}',
     ];
     return lines.join(' ');

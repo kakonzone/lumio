@@ -21,7 +21,7 @@ class AdTriggerManager {
 
   DateTime? _sessionStart;
   DateTime? _adsEligibleAfter;
-  DateTime? _lastIronSourceInterstitial;
+  DateTime? _lastUnityInterstitial;
   DateTime? _lastAdsterraSurfaceEvent;
   DateTime? _lastAppOpenSubstitute;
   DateTime? _adFreeUntil;
@@ -104,7 +104,7 @@ class AdTriggerManager {
     _lastMidrollAt = null;
     _currentChannelStartedAt = null;
     _currentChannelKey = null;
-    _lastIronSourceInterstitial = null;
+    _lastUnityInterstitial = null;
     _lastAdsterraSurfaceEvent = null;
   }
 
@@ -215,8 +215,8 @@ class AdTriggerManager {
     if (_sessionInterstitialsShown >= _policy.interstitialMaxPerSession) {
       return false;
     }
-    if (_lastIronSourceInterstitial != null) {
-      final gap = DateTime.now().difference(_lastIronSourceInterstitial!);
+    if (_lastUnityInterstitial != null) {
+      final gap = DateTime.now().difference(_lastUnityInterstitial!);
       if (gap.inSeconds <
           scaledCooldownSeconds(_policy.interstitialSessionCooldownSeconds)) {
         return false;
@@ -241,7 +241,7 @@ class AdTriggerManager {
         }
         return const InterstitialCapResult.allowed();
       case InterstitialPlacement.channelTap:
-        if (!await canShowIronSourceInterstitial(
+        if (!await canShowUnityInterstitial(
           isStreaming: false,
           removeAds: removeAds,
         )) {
@@ -311,8 +311,8 @@ class AdTriggerManager {
     if (adsEligibleAfter != null && DateTime.now().isBefore(adsEligibleAfter)) {
       return false;
     }
-    if (_lastIronSourceInterstitial != null) {
-      final gap = DateTime.now().difference(_lastIronSourceInterstitial!);
+    if (_lastUnityInterstitial != null) {
+      final gap = DateTime.now().difference(_lastUnityInterstitial!);
       if (gap.inSeconds < scaledCooldownSeconds(_policy.interstitialMinGapSeconds)) {
         return false;
       }
@@ -367,7 +367,7 @@ class AdTriggerManager {
   }) async {
     if (removeAds || isAdFree) return false;
     if (AdSafetyService.instance.adsBlockedInDebug) return false;
-    if (!AdConfig.hasLevelPlayRewardedUnit) return false;
+    if (!AdConfig.hasUnityConfig) return false;
     if (_networkIsolationActive) return false;
     final adsEligibleAfter = _adsEligibleAfter;
     if (adsEligibleAfter != null && DateTime.now().isBefore(adsEligibleAfter)) {
@@ -389,7 +389,7 @@ class AdTriggerManager {
     await _incrementHourly(_hourlyRewardedPrefix);
   }
 
-  Future<bool> canShowIronSourceInterstitial({
+  Future<bool> canShowUnityInterstitial({
     required bool isStreaming,
     required bool removeAds,
   }) async {
@@ -422,15 +422,15 @@ class AdTriggerManager {
   @visibleForTesting
   int get debugSessionInterstitialsShown => _sessionInterstitialsShown;
 
-  /// Call only from LevelPlay `onAdDisplayed` (not on close/timeout).
+  /// Call only from Unity Ads `onAdDisplayed` (not on close/timeout).
   Future<void> recordInterstitialShown() async {
-    _lastIronSourceInterstitial = DateTime.now();
+    _lastUnityInterstitial = DateTime.now();
     _sessionInterstitialsShown++;
     await _incrementHourly('lumio_is_inter');
   }
 
   /// Alias — prefer [recordInterstitialShown].
-  Future<void> recordIronSourceInterstitialShown() => recordInterstitialShown();
+  Future<void> recordUnityInterstitialShown() => recordInterstitialShown();
 
   /// App-open substitute (interstitial) — 3/day, 4h gap.
   Future<bool> canShowAppOpenSubstitute({required bool removeAds}) async {
@@ -461,11 +461,11 @@ class AdTriggerManager {
     return ServerCapService.instance.allowsPlacement('interstitial');
   }
 
-  /// Call only from LevelPlay `onAdDisplayed` for app-open substitute.
+  /// Call only from Unity Ads `onAdDisplayed` for app-open substitute.
   Future<void> recordAppOpenSubstituteShown() async {
     _lastAppOpenSubstitute = DateTime.now();
     await _incrementDaily('lumio_app_open');
-    await recordIronSourceInterstitialShown();
+    await recordUnityInterstitialShown();
   }
 
   Future<bool> canShowAdsterraDirectLink() async {

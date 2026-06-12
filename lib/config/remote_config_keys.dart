@@ -4,7 +4,7 @@ class RemoteConfigKeys {
 
   // Kill switches
   static const String adsEnabled = 'ads_enabled';
-  static const String levelPlayEnabled = 'levelplay_enabled';
+  static const String unityEnabled = 'unity_enabled';
   static const String adsterraEnabled = 'adsterra_enabled';
   static const String popunderSessionCap = 'popunder_session_cap';
   static const String aggressiveMode = 'aggressive_mode';
@@ -31,7 +31,7 @@ class RemoteConfigKeys {
 
   static const Map<String, Object> defaults = {
     adsEnabled: true,
-    levelPlayEnabled: true,
+    unityEnabled: true,
     adsterraEnabled: true,
     popunderSessionCap: 1,
     aggressiveMode: false,

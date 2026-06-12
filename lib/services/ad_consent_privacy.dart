@@ -1,12 +1,12 @@
-/// LevelPlay privacy flag mapping for ads consent (testable, no SDK calls).
+/// Consent flag mapping for ads consent (testable, no SDK calls).
 ///
-/// LevelPlay 9.2.0 semantics:
-/// - [gdprLevelPlay] `true` = consent **granted** for personalized ads.
-/// - [ccpaOptOut] `true` = user **opted out** of sale (CCPA).
+/// Previously used for LevelPlay privacy flags.
+/// TODO: Update for Unity Ads consent mechanism when available.
 class AdConsentPrivacyMapping {
   AdConsentPrivacyMapping._();
 
-  /// Maps stored consent (`granted` | `denied` | null) to SDK flags.
+  /// Maps stored consent (`granted` | `denied` | null) to consent flags.
+  /// Stub for future Unity Ads consent mapping.
   static ({bool gdprLevelPlay, bool ccpaOptOut}) forConsent(String? consent) {
     switch (consent) {
       case 'granted':
@@ -18,7 +18,8 @@ class AdConsentPrivacyMapping {
     }
   }
 
-  /// Before user chooses — restrictive (no sale opt-out flag until Limited is chosen).
+  /// Before user chooses — restrictive defaults.
+  /// Stub for future Unity Ads consent mapping.
   static ({bool gdprLevelPlay, bool ccpaOptOut}) restrictiveDefaults() {
     return (gdprLevelPlay: false, ccpaOptOut: false);
   }

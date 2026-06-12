@@ -98,8 +98,7 @@ class AdManager {
     adLog(active ? '[KillSwitch] ADS DISABLED via kill switch' : '[KillSwitch] ADS ENABLED');
   }
 
-  bool get unityAdsEnabled =>
-      adsEnabled && AdSafetyService.instance.levelPlayEnabledRemote;
+  bool get unityAdsEnabled => adsEnabled;
 
   /// Adsterra WebView banners/natives — false when zones unset or ads off (no black placeholders).
   bool get showAdsterraWebViewSlots =>
@@ -230,8 +229,8 @@ class AdManager {
     print(
       '[LumioAds] ready=$isReady adsEnabled=$adsEnabled '
       'initialized=$_initialized streaming=$_isStreaming '
-      'levelPlayReady=$levelPlayReady '
-      'rewardedReady=$levelPlayRewardedReady '
+      'unityAdsReady=$unityAdsReady '
+      'unityRewardedReady=$unityRewardedReady '
       'blocksCap=${ServerCap.instance.blocksAdsInRelease} '
       'capLocal=${AdConfig.capLocalOnlyEffective} '
       'rcAds=${safety.adsEnabledRemote} '
@@ -584,22 +583,7 @@ class AdManager {
     return const NewsArticleTapResult(opened: true);
   }
 
-  Future<void> _playWithPreroll({
-    BuildContext? context,
-    required String channelKey,
-    required Future<void> Function() onPlay,
-  }) async {
-    if (adsEnabled && context != null && context.mounted) {
-      await showPlacementInterstitial(
-        context: context,
-        placement: InterstitialPlacement.preroll,
-        channelKey: channelKey,
-      );
-    }
-    await onPlay();
-  }
-
-  /// Gated interstitial with placement caps + analytics (LevelPlay → Adsterra waterfall).
+  /// Gated interstitial with placement caps + analytics (Unity Ads → Adsterra waterfall).
   Future<bool> showPlacementInterstitial({
     BuildContext? context,
     required InterstitialPlacement placement,
@@ -708,7 +692,7 @@ class AdManager {
 
   Future<bool> onSportsTabSelected({BuildContext? context}) async {
     if (!adsEnabled) return false;
-    if (!await _caps.canShowIronSourceInterstitial(
+    if (!await _caps.canShowUnityInterstitial(
       isStreaming: _isStreaming,
       removeAds: UserPreferences.removeAdsPurchased,
     )) {
@@ -749,7 +733,7 @@ class AdManager {
     }
 
     var consumed = false;
-    if (await _caps.canShowIronSourceInterstitial(
+    if (await _caps.canShowUnityInterstitial(
       isStreaming: false,
       removeAds: UserPreferences.removeAdsPurchased,
     )) {

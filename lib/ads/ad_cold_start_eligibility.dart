@@ -26,7 +26,6 @@ enum AdColdStartBlockerCode {
   interstitialHourlyCap,
   serverCapPlacementDenied,
   vpnAdsterraDisabled,
-  levelPlayDisabledRemote,
   noThirdPartyFill,
 }
 
@@ -42,7 +41,7 @@ class AdColdStartBlocker {
   final AdColdStartBlockerCode code;
   final String message;
 
-  /// Blocks LevelPlay + Adsterra.
+  /// Blocks Unity Ads + Adsterra.
   final bool blocksThirdParty;
 
   /// Blocks in-app promo screen entirely (rare).
@@ -55,20 +54,20 @@ class AdColdStartBlocker {
 class AdColdStartEligibilityReport {
   const AdColdStartEligibilityReport({
     required this.blockers,
-    required this.canShowLevelPlay,
+    required this.canShowUnity,
     required this.canShowAdsterra,
     required this.canShowHousePromo,
     this.capReason,
   });
 
   final List<AdColdStartBlocker> blockers;
-  final bool canShowLevelPlay;
+  final bool canShowUnity;
   final bool canShowAdsterra;
   final bool canShowHousePromo;
   final String? capReason;
 
   bool get canShowAnyPromo =>
-      canShowLevelPlay || canShowAdsterra || canShowHousePromo;
+      canShowUnity || canShowAdsterra || canShowHousePromo;
 
   AdColdStartBlocker? get primaryBlocker {
     for (final b in blockers) {
@@ -83,7 +82,7 @@ class AdColdStartEligibilityReport {
   String get logSummary {
     if (canShowAnyPromo) {
       final parts = <String>[
-        if (canShowLevelPlay) 'levelplay',
+        if (canShowUnity) 'unity',
         if (canShowAdsterra) 'adsterra',
         if (canShowHousePromo) 'house',
       ];
@@ -243,25 +242,13 @@ class AdColdStartEligibility {
       );
     }
 
-    if (!safety.levelPlayEnabledRemote) {
-      blockers.add(
-        const AdColdStartBlocker(
-          code: AdColdStartBlockerCode.levelPlayDisabledRemote,
-          message: 'Remote Config levelplay_enabled=false',
-          blocksThirdParty: true,
-          blocksHousePromo: false,
-        ),
-      );
-    }
-
     final blocksAll = blockers.any((b) => b.blocksHousePromo);
     final blocksThirdParty =
         blockers.any((b) => b.blocksThirdParty) || blocksAll;
 
-    final canLevelPlay = !blocksThirdParty &&
-        manager.levelPlayAdsEnabled &&
-        AdConfig.hasValidLevelPlayAppKey &&
-        AdConfig.hasValidLevelPlayAdUnits;
+    final canUnity = !blocksThirdParty &&
+        manager.unityAdsEnabled &&
+        AdConfig.hasUnityConfig;
 
     final canAdsterra = !blocksThirdParty &&
         safety.adsterraEnabledForColdStart &&
@@ -276,7 +263,7 @@ class AdColdStartEligibility {
 
     return AdColdStartEligibilityReport(
       blockers: blockers,
-      canShowLevelPlay: canLevelPlay,
+      canShowUnity: canUnity,
       canShowAdsterra: canAdsterra,
       canShowHousePromo: canHouse,
       capReason: capReason,

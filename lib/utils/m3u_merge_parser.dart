@@ -1,7 +1,32 @@
+import 'package:flutter/foundation.dart';
 import '../config/channel_categories.dart';
 import '../models/model.dart';
 import 'channel_name_normalizer.dart';
 import 'channel_playback_links.dart';
+
+/// Top-level function for use with compute() isolate - Appwrite variant.
+List<ChannelModel> parseM3uAppwriteIsolate(String content) {
+  return M3uMergeParser.parse(
+    content,
+    idPrefix: 'appwrite',
+    mapCategory: M3uMergeParser.categoryForGroup,
+  );
+}
+
+/// Top-level function for use with compute() isolate - Gitun variant.
+List<ChannelModel> parseM3uGitunIsolate(
+  (String, String, bool, String) params,
+) {
+  final (content, idPrefix, includeAllChannels, gitunOnlyCategory) = params;
+  return M3uMergeParser.parse(
+    content,
+    idPrefix: idPrefix,
+    mapCategory: includeAllChannels
+        ? M3uMergeParser.categoryForGroup
+        : (_, __) => gitunOnlyCategory,
+    mapCountry: (_, __) => 'International',
+  );
+}
 
 /// Parses M3U playlists and merges duplicate channel names into multi-link entries.
 class M3uMergeParser {

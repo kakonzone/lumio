@@ -371,6 +371,7 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
               return false;
             },
             child: ListView.builder(
+              addAutomaticKeepAlives: true,
               itemCount: _results.length,
               itemBuilder: (context, index) {
                 final result = _results[index];

@@ -4,10 +4,10 @@ import 'package:flutter/foundation.dart';
 
 import '../config/appwrite_config.dart';
 import '../models/model.dart';
-import '../utils/channel_playback_links.dart';
 import '../utils/m3u_merge_parser.dart';
 import 'appwrite_channel_mapper.dart';
-import 'special_link/special_link_cache.dart';
+import 'special_link/special_link_cache.dart'
+    show parseM3uAppwriteIsolate;
 
 /// Main app channel catalog via Appwrite Databases (replaces GitHub M3U for home/sports/live).
 class AppwriteService {
@@ -161,11 +161,7 @@ class AppwriteService {
       final body = AppwriteChannelMapper.playlistBody(doc.data);
       if (body == null || body.trim().isEmpty) return const [];
 
-      return M3uMergeParser.parse(
-        body,
-        idPrefix: 'appwrite',
-        mapCategory: M3uMergeParser.categoryForGroup,
-      );
+      return compute(parseM3uAppwriteIsolate, body);
     } on AppwriteException catch (e) {
       lastFetchError ??= _friendlyAppwriteError(e);
       if (kDebugMode) {

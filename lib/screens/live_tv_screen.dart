@@ -154,6 +154,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
 
   Widget _buildPortraitCategories() {
     return ListView.builder(
+      addAutomaticKeepAlives: true,
       itemCount: _categories.length,
       itemBuilder: (context, index) {
         final category = _categories[index];
@@ -235,6 +236,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
         // Channel list
         Expanded(
           child: ListView.builder(
+            addAutomaticKeepAlives: true,
             itemCount: _channels.length,
             itemBuilder: (context, index) {
               final channel = _channels[index];
@@ -354,6 +356,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
         // Programs list
         Expanded(
           child: ListView.builder(
+            addAutomaticKeepAlives: true,
             itemCount: _programs.length,
             itemBuilder: (context, index) {
               final program = _programs[index];

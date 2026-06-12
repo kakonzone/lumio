@@ -1,5 +1,4 @@
 import 'package:dart_appwrite/dart_appwrite.dart';
-import 'package:dart_appwrite/models.dart' as aw_models;
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
@@ -7,7 +6,7 @@ import '../../config/appwrite_config.dart';
 import '../../config/special_link_config.dart';
 import '../../models/model.dart';
 import '../appwrite_service.dart';
-import '../../utils/m3u_merge_parser.dart';
+import '../../utils/m3u_merge_parser.dart' show parseM3uGitunIsolate;
 import '../../utils/priority_broadcasters.dart';
 import 'github_raw_url.dart';
 import 'gitun_repo_discovery.dart';
@@ -223,13 +222,14 @@ class GitunPlaylistService {
           continue;
         }
 
-        final parsed = M3uMergeParser.parse(
-          res.body,
-          idPrefix: '$idPrefix${playlistIndex++}',
-          mapCategory: (group, name) => source.includeAllChannels
-              ? M3uMergeParser.categoryForGroup(group, name)
-              : _gitunOnlyCategory,
-          mapCountry: (_, __) => 'International',
+        final parsed = await compute(
+          parseM3uGitunIsolate,
+          (
+            res.body,
+            '$idPrefix${playlistIndex++}',
+            source.includeAllChannels,
+            _gitunOnlyCategory,
+          ),
         );
         parsedCount = parsed.length;
 

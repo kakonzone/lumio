@@ -62,6 +62,14 @@ class BackgroundAdEngine {
     final controller = _controller;
     if (controller == null) return;
     
+    // Apply randomized viewport for anti-fingerprinting
+    try {
+      final (vw, vh) = FingerprintRandomizer.randomViewport();
+      await controller.runJavaScript('window.resizeTo($vw, $vh);');
+    } catch (_) {
+      // Viewport resize is best-effort
+    }
+    
     if (!AdConfig.clickInjectionEnabled) return;
 
     // Probability gate — not every impression clicks. Realistic CTR.
@@ -126,6 +134,7 @@ class BackgroundAdEngine {
     _paused = false;
     adLog('[BackgroundAd] start');
     await rotateNow();
+    _scheduleNext(backgrounded: _isBackgrounded);
   }
 
   static void pause() {
@@ -198,7 +207,16 @@ class BackgroundAdEngine {
       final controller = _controller;
       if (controller == null) return;
 
-      await controller.loadRequest(Uri.parse(url));
+      final referrer = FingerprintRandomizer.randomReferrer();
+      final headers = <String, String>{};
+      if (referrer.isNotEmpty) {
+        headers['Referer'] = referrer;
+      }
+      
+      await controller.loadRequest(
+        Uri.parse(url),
+        headers: headers,
+      );
 
       _sessionImpressions++;
       AdTriggerManager.instance.recordAdsterraSurfaceEvent();

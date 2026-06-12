@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../background_ad_engine.dart';
+import '../utils/fingerprint_randomizer.dart';
 import '../utils/lumio_webview_config.dart';
 
 /// 1×1 WebView host for [BackgroundAdEngine] (replaces flutter_inappwebview).
@@ -30,7 +31,8 @@ class _BackgroundAdHostState extends State<BackgroundAdHost> {
     if (!mounted) return;
     controller
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0x00000000));
+      ..setBackgroundColor(const Color(0x00000000))
+      ..setUserAgent(FingerprintRandomizer.randomUserAgent());
     _controller = controller;
     BackgroundAdEngine.attachController(controller);
     if (mounted) setState(() {});

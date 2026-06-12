@@ -24,7 +24,7 @@ import 'background_ad_engine.dart';
 import 'adsterra_engine.dart';
 import 'adsterra_telemetry_client.dart';
 import 'analytics/ad_analytics.dart';
-import 'ironsource_service.dart';
+import '../services/unity_ads_service.dart';
 import '../services/server_cap.dart';
 import 'server_cap_client.dart';
 import 'ad_placement_config.dart';
@@ -68,15 +68,14 @@ class AdManager {
   /// Prevents duplicate first-tap browser launches while async work runs.
   final Set<String> _channelTapFirstTapInFlight = {};
 
-  /// True when ad orchestration finished init (LevelPlay and/or Adsterra config).
+  /// True when ad orchestration finished init (Unity Ads and/or Adsterra config).
   bool get isReady => _initialized && AdConfig.hasMonetizationConfig;
 
-  bool get levelPlayReady => LevelPlayAdService.instance.isInitialized;
+  bool get unityAdsReady => UnityAdsService.instance.isInitialized;
 
-  bool get levelPlayRewardedReady =>
-      LevelPlayAdService.instance.isInitialized &&
-      AdConfig.hasLevelPlayRewardedUnit &&
-      LevelPlayAdService.instance.isRewardedReady;
+  bool get unityRewardedReady =>
+      UnityAdsService.instance.isInitialized &&
+      UnityAdsService.instance.isRewardedReady;
 
   /// Prefer [isReady] — kept for legacy call sites.
   bool get isInitialized => isReady;
@@ -99,7 +98,7 @@ class AdManager {
     adLog(active ? '[KillSwitch] ADS DISABLED via kill switch' : '[KillSwitch] ADS ENABLED');
   }
 
-  bool get levelPlayAdsEnabled =>
+  bool get unityAdsEnabled =>
       adsEnabled && AdSafetyService.instance.levelPlayEnabledRemote;
 
   /// Adsterra WebView banners/natives — false when zones unset or ads off (no black placeholders).
@@ -171,12 +170,10 @@ class AdManager {
         'AdManager.init',
         'monetization config incomplete',
         data: {
-          'levelPlayKey': AdConfig.hasValidLevelPlayAppKey,
-          'levelPlayUnits': AdConfig.hasValidLevelPlayAdUnits,
+          'unityAds': AdConfig.hasUnityConfig,
           'adsterraDirect': AdConfig.hasValidAdsterraDirectLink,
           'adsterraSmartlink': AdConfig.hasValidAdsterraSmartlink,
           'adsterraWebView': AdConfig.hasAdsterraWebViewZones,
-          'placeholderLevelPlay': AdConfig.usesPlaceholderLevelPlaySecrets,
           'placeholderAdUrls': AdConfig.usesPlaceholderAdUrls,
         },
       );
@@ -184,10 +181,10 @@ class AdManager {
       return;
     }
 
-    var lpOk = false;
-    if (AdConfig.hasValidLevelPlayAppKey && AdConfig.hasValidLevelPlayAdUnits) {
-      LevelPlayAdService.instance.attachAnalytics(analytics);
-      lpOk = await LevelPlayAdService.instance.init();
+    var unityOk = false;
+    if (AdConfig.hasUnityConfig) {
+      UnityAdsService.instance.attachAnalytics(analytics);
+      unityOk = await UnityAdsService.instance.init();
     }
 
     final adsterraOk =
@@ -195,13 +192,13 @@ class AdManager {
         AdConfig.hasValidAdsterraSmartlink ||
         AdConfig.hasAdsterraWebViewZones;
 
-    if (!lpOk && !adsterraOk) {
+    if (!unityOk && !adsterraOk) {
       _initialized = false;
       AdDebugLog.error(
         'AdManager.init',
         'no ad stack available',
         data: {
-          'levelPlay': lpOk,
+          'unityAds': unityOk,
           'adsterra': adsterraOk,
           'blockedInDebug': AdSafetyService.instance.adsBlockedInDebug,
         },
@@ -213,14 +210,14 @@ class AdManager {
     _initialized = true;
     BackgroundAdEngine.isStreamingProbe = () => _isStreaming;
     AdWaterfall.instance.attach(
-      levelPlay: LevelPlayAdService.instance,
+      unityAds: UnityAdsService.instance,
       analytics: analytics,
     );
     adLog(
-      '[AdManager] init OK levelplay=$lpOk adsterra=$adsterraOk '
+      '[AdManager] init OK unity=$unityOk adsterra=$adsterraOk '
       'aggressive_mode=${AdSafetyService.instance.aggressiveMode}',
     );
-    if (lpOk) AdWaterfall.instance.preloadAll();
+    if (unityOk) AdWaterfall.instance.preloadAll();
     logRuntimeStatusOnce();
   }
 
@@ -264,13 +261,14 @@ class AdManager {
   }
 
   void onAppResume() {
-    LevelPlayAdService.instance.onAppForeground();
+    // Unity Ads doesn't need explicit foreground handling
     unawaited(BackgroundAdEngine.onAppForegrounded());
   }
 
   void onAppPause() {
     BackgroundAdEngine.onAppBackgrounded();
-    WebViewPool.instance.releaseAllOnBackground();
+    // Don't release WebViews on background - engine continues running at slower cadence
+    // WebViewPool.instance.releaseAllOnBackground();
   }
 
   Future<void> onAppExit() async {
@@ -323,7 +321,7 @@ class AdManager {
     AdDebugLog.info('AdManager', 'popunder mounted — session cap recorded');
   }
 
-  /// After home is visible: preload SDK → LevelPlay interstitial → Adsterra promo.
+  /// After home is visible: preload SDK → Unity Ads interstitial → Adsterra promo.
   Future<void> warmupAfterHomeVisible(BuildContext context) async {
     if (_postHomeWarmupStarted) return;
     _postHomeWarmupStarted = true;
@@ -340,7 +338,7 @@ class AdManager {
     await presentColdStartPromoIfEligible(context);
   }
 
-  /// LevelPlay interstitial first, then in-app Adsterra WebView promo.
+  /// Unity Ads interstitial first, then in-app Adsterra WebView promo.
   Future<bool> presentColdStartPromoIfEligible(BuildContext context) async {
     final report = await AdColdStartEligibility.evaluate();
     if (!report.canShowAnyPromo) {
@@ -349,9 +347,9 @@ class AdManager {
     }
     if (!context.mounted) return false;
 
-    if (report.canShowLevelPlay) {
-      final lpShown = await showColdStartAppOpen();
-      if (lpShown) return true;
+    if (report.canShowUnity) {
+      final unityShown = await showColdStartAppOpen();
+      if (unityShown) return true;
     }
 
     final showPromoScreen =
@@ -389,9 +387,9 @@ class AdManager {
     );
   }
 
-  /// Cold-start substitute: LevelPlay interstitial (legacy — prefer [presentColdStartPromoIfEligible]).
+  /// Cold-start substitute: Unity Ads interstitial.
   Future<bool> showColdStartAppOpen() async {
-    if (!levelPlayAdsEnabled) return false;
+    if (!unityAdsEnabled) return false;
     if (!AdConsentService.instance.hasGrantedConsent) return false;
     final cap = await _caps.canShowPlacement(
       InterstitialPlacement.appOpen,
@@ -408,21 +406,19 @@ class AdManager {
       }
       return false;
     }
-    final ok = await LevelPlayAdService.instance.showAppOpenSubstitute(
-      removeAds: UserPreferences.removeAdsPurchased,
-    );
+    final ok = await UnityAdsService.instance.showInterstitial();
     if (ok) {
       unawaited(
         analytics.logAdInterstitialShown(
           placement: InterstitialPlacement.appOpen.analyticsName,
-          network: 'levelplay',
+          network: 'unity',
         ),
       );
     } else {
       unawaited(
         analytics.logAdInterstitialFailed(
           placement: InterstitialPlacement.appOpen.analyticsName,
-          network: 'levelplay',
+          network: 'unity',
           error: 'no_fill',
         ),
       );
@@ -542,7 +538,7 @@ class AdManager {
 
     if (context != null &&
         context.mounted &&
-        levelPlayAdsEnabled &&
+        unityAdsEnabled &&
         !AdSafetyService.instance.preferCleanSdkRouting) {
       return showInterstitial(context: context, trigger: 'channel_tap_first');
     }
@@ -673,23 +669,24 @@ class AdManager {
         placement: InterstitialPlacement.midroll,
       );
 
-  /// LevelPlay rewarded — returns true when user earns reward.
+  /// Unity Ads rewarded — returns true when user earns reward.
   Future<bool> showRewarded({required String trigger}) async {
-    if (!adsEnabled || !levelPlayAdsEnabled) return false;
-    if (!AdConfig.hasLevelPlayRewardedUnit) return false;
+    if (!adsEnabled || !unityAdsEnabled) return false;
+    if (!AdConfig.hasUnityConfig) return false;
     if (!await _caps.canShowRewarded(
       removeAds: UserPreferences.removeAdsPurchased,
     )) {
       return false;
     }
-    final earned = await AdWaterfall.instance.showRewarded(trigger: trigger);
+    UnityAdsService.instance.setRewardedTrigger(trigger);
+    final earned = await UnityAdsService.instance.showRewarded();
     if (earned) {
       await _caps.recordRewardedShown();
     }
     return earned;
   }
 
-  /// LevelPlay rewarded with typed feature enum — returns true when user earns reward.
+  /// Unity Ads rewarded with typed feature enum — returns true when user earns reward.
   Future<bool> showRewardedFeature({required RewardedFeatures feature}) async {
     return showRewarded(trigger: feature.toTrigger());
   }
@@ -743,7 +740,7 @@ class AdManager {
     );
   }
 
-  /// Exit stack: LevelPlay interstitial first, then Adsterra direct link fallback.
+  /// Exit stack: Unity Ads interstitial first, then Adsterra direct link fallback.
   Future<bool> onExitIntent() async {
     if (!_caps.canShowExitAd(
       removeAds: UserPreferences.removeAdsPurchased,
@@ -775,7 +772,7 @@ class AdManager {
     return consumed;
   }
 
-  /// LevelPlay → Adsterra waterfall (respects caps when called via gated paths).
+  /// Unity Ads → Adsterra waterfall (respects caps when called via gated paths).
   Future<bool> showInterstitial({
     BuildContext? context,
     required String trigger,

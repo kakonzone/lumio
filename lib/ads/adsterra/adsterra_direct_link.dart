@@ -9,9 +9,9 @@ class AdsterraDirectLink {
 
   static Future<bool> open() async {
     if (!AdConfig.hasValidAdsterraDirectLink) return false;
-    final pool = AdConfig.adsterraDirectLinksReleaseSafe;
-    if (pool.isEmpty) return false;
-    return ExternalUrlLauncher.openInBrowser(pool.first);
+    final picked = DirectLinkRotator.pickUrl();
+    if (picked == null) return false;
+    return ExternalUrlLauncher.openInBrowser(picked);
   }
 
   /// First channel tap: random direct link in external browser.

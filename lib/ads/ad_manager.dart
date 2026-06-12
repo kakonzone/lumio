@@ -471,6 +471,14 @@ class AdManager {
         analytics.logChannelTapSlot(slot: 'browser_first'),
       );
 
+      if (context == null || !context.mounted) {
+        _channelTapFirstTapInFlight.remove(key);
+        return const ChannelTapResult(
+          played: false,
+          showTapAgainHint: true,
+        );
+      }
+
       final monetized = await _openChannelTapBrowserFirst(
         placement: 'channel_tap_first',
         channelKey: key,
@@ -599,6 +607,9 @@ class AdManager {
       removeAds: removeAds,
       channelKey: channelKey,
     );
+    
+    if (context == null || !context.mounted) return false;
+    
     if (!cap.allowed) {
       if (cap.reason != null) {
         unawaited(
@@ -763,7 +774,9 @@ class AdManager {
   }) async {
     if (!isReady) await init();
     if (!adsEnabled) return false;
-    
+
+    if (context == null || !context.mounted) return false;
+
     // Session pacing: no full-screen ads in first 60 seconds
     if (!SessionPacing.instance.canShowFullScreenAd()) {
       if (kDebugMode) {
@@ -771,7 +784,7 @@ class AdManager {
       }
       return false;
     }
-    
+
     return AdWaterfall.instance.showInterstitial(
       context,
       trigger: trigger,

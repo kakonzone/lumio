@@ -19,6 +19,7 @@ extension _PlayerControls on _PlayerScreenState {
     } catch (_) {}
   }
   void _setFitMode(PlayerFitMode mode) {
+    if (!mounted) return;
     setState(() => _fitMode = mode);
     unawaited(_persistFitMode(mode));
     _revealControls();
@@ -72,6 +73,7 @@ extension _PlayerControls on _PlayerScreenState {
       badge = h > 0 ? _formatHeightLabel(h) : '${_selectedTargetHeight}p';
     }
     if (badge != _qualityBadge) {
+      if (!mounted) return;
       setState(() => _qualityBadge = badge);
       agentDebugLog(
         location: 'player_screen.dart:_updateQualityBadge',
@@ -105,6 +107,7 @@ extension _PlayerControls on _PlayerScreenState {
     }
   }
   void _toggleControls() {
+    if (!mounted) return;
     setState(() => _showControls = !_showControls);
     if (_showControls) {
       _startHideTimer();
@@ -113,6 +116,7 @@ extension _PlayerControls on _PlayerScreenState {
     }
   }
   void _revealControls({bool restartTimer = true}) {
+    if (!mounted) return;
     if (!_showControls) setState(() => _showControls = true);
     if (restartTimer) _startHideTimer();
   }
@@ -152,6 +156,7 @@ extension _PlayerControls on _PlayerScreenState {
     _startHideTimer();
   }
   void _toggleFullscreen() {
+    if (!mounted) return;
     setState(() => _isFullscreen = !_isFullscreen);
     if (_isFullscreen) {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
@@ -176,6 +181,7 @@ extension _PlayerControls on _PlayerScreenState {
     _showSeekOverlay(rewind ? '⏪ 10s' : '10s ⏩', rewind);
   }
   void _showSeekOverlay(String label, bool leftSide) {
+    if (!mounted) return;
     setState(() {
       _seekOverlayLabel = label;
       _seekOverlayOpacity = 1.0;
@@ -224,6 +230,7 @@ extension _PlayerControls on _PlayerScreenState {
         'channel': next.name,
       },
     );
+    if (!mounted) return;
     setState(() => _channelSwipeOverlay = next.name);
     Timer(const Duration(milliseconds: 800), () {
       if (mounted) setState(() => _channelSwipeOverlay = null);
@@ -259,6 +266,7 @@ extension _PlayerControls on _PlayerScreenState {
     final playerH = MediaQuery.of(context).size.width * 9 / 16;
     final delta = (_dragStartY - d.localPosition.dy) / playerH;
     final newVal = (_dragStartVal + delta).clamp(0.0, 1.0);
+    if (!mounted) return;
     setState(() {
       if (_draggingVolume) {
         _volume = newVal;
@@ -371,7 +379,10 @@ extension _PlayerControls on _PlayerScreenState {
               (AdConfig.hasAdsterraWebViewZones || MonetagConfig.isConfigured))
             Positioned.fill(
               child: GestureDetector(
-                onTap: () => setState(() => _pauseAdVisible = false),
+                onTap: () {
+                  if (!mounted) return;
+                  setState(() => _pauseAdVisible = false);
+                },
                 child: ColoredBox(
                   color: Colors.black.withValues(
                     alpha: AdConfig.playerAdsUserVisible ? 0.72 : 0,
@@ -789,14 +800,16 @@ extension _PlayerControls on _PlayerScreenState {
                   value: sliderValue,
                   min: 0.0,
                   max: 1.0,
-                  onChanged: (v) =>
-                      setState(() => _scrubValue = _safeUnitProgress(v)),
+                  onChanged: (v) {
+                    if (!mounted) return;
+                    setState(() => _scrubValue = _safeUnitProgress(v));
                   onChangeEnd: (v) {
                     final safe = _safeUnitProgress(v);
                     final maxMs =
                         dur.inMilliseconds.toDouble().clamp(1.0, double.infinity);
                     final targetMs = (safe * maxMs).round().clamp(0, dur.inMilliseconds);
                     _player.seek(Duration(milliseconds: targetMs));
+                    if (!mounted) return;
                     setState(() => _scrubValue = null);
                   },
                 ),
@@ -1457,6 +1470,7 @@ extension _PlayerControls on _PlayerScreenState {
     final sw = Stopwatch()..start();
     var applyPath = 'unknown';
     try {
+      if (!mounted) return;
       setState(() {
         _selectedQuality = label;
         _selectedTargetHeight = targetH;
@@ -1593,6 +1607,7 @@ extension _PlayerControls on _PlayerScreenState {
       _applyingQuality = false;
       if (mounted) {
         _updateQualityBadge();
+        if (!mounted) return;
         setState(() {});
         // #region agent log
         _debugSessionLog(

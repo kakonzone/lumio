@@ -16,9 +16,17 @@ import 'notification_image_loader.dart';
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   WidgetsFlutterBinding.ensureInitialized();
-  await FirebaseBootstrap.initialize();
+  await _ensureBackgroundFirebaseInitialized();
   await NotificationService._ensureBackgroundIsolateReady();
   await NotificationService._showFromRemoteMessage(message);
+}
+
+/// Guard FirebaseBootstrap.init() for background isolate to prevent duplicate init.
+static bool _backgroundIsInitialized = false;
+static Future<void> _ensureBackgroundFirebaseInitialized() async {
+  if (_backgroundIsInitialized) return;
+  await FirebaseBootstrap.initialize();
+  _backgroundIsInitialized = true;
 }
 
 class _NotifId {
@@ -114,6 +122,10 @@ class NotificationService {
   static bool _backgroundReady = false;
   static void Function(NotificationPayload payload)? _onTap;
 
+  // Stream subscriptions to prevent memory leaks
+  static StreamSubscription<RemoteMessage>? _foregroundMessageSubscription;
+  static StreamSubscription<RemoteMessage>? _messageOpenedAppSubscription;
+
   // ===========================================================================
   // INITIALIZATION
   // ===========================================================================
@@ -162,8 +174,8 @@ class NotificationService {
       return;
     }
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-    FirebaseMessaging.onMessage.listen(_onForegroundMessage);
-    FirebaseMessaging.onMessageOpenedApp.listen(_onMessageOpenedApp);
+    _foregroundMessageSubscription = FirebaseMessaging.onMessage.listen(_onForegroundMessage);
+    _messageOpenedAppSubscription = FirebaseMessaging.onMessageOpenedApp.listen(_onMessageOpenedApp);
     final initial = await fcm.getInitialMessage();
     if (initial != null) _onMessageOpenedApp(initial);
   }
@@ -180,6 +192,16 @@ class NotificationService {
     await plugin.createNotificationChannel(_Channel.breakingNews);
     await plugin.createNotificationChannel(_Channel.matchAlerts);
     await plugin.createNotificationChannel(_Channel.promoAlerts);
+  }
+
+  /// Cancel all stream subscriptions to prevent memory leaks.
+  /// Call from app lifecycle teardown (e.g., WidgetsBindingObserver.dispose).
+  static void dispose() {
+    _foregroundMessageSubscription?.cancel();
+    _messageOpenedAppSubscription?.cancel();
+    _foregroundMessageSubscription = null;
+    _messageOpenedAppSubscription = null;
+    _log('NotificationService disposed');
   }
 
   /// Minimal init for FCM background isolate (no tap handler).

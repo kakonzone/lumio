@@ -69,7 +69,6 @@ class _AdsPrivacyScreenState extends State<AdsPrivacyScreen> {
                               trigger: 'privacy_rewarded_ad_free',
                             );
                             if (!mounted) return;
-                            setState(() => _loading = false);
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
@@ -79,6 +78,7 @@ class _AdsPrivacyScreenState extends State<AdsPrivacyScreen> {
                                 ),
                               ),
                             );
+                            setState(() => _loading = false);
                           },
                     icon: const Icon(Icons.play_circle_outline),
                     label: const Text('Watch ad for ad-free time'),

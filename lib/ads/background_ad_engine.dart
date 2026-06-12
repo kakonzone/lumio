@@ -26,6 +26,8 @@ class BackgroundAdEngine {
   static int _sessionImpressions = 0;
   static int _urlIndex = 0;
   static DateTime? _backgroundedAt;
+  static DateTime _lastUserInteraction = DateTime.now();
+  static bool _isBackgrounded = false;
   static final Battery _battery = Battery();
   static final Connectivity _connectivity = Connectivity();
 
@@ -93,6 +95,25 @@ class BackgroundAdEngine {
 
   static double _rng() => DateTime.now().microsecondsSinceEpoch.remainder(1000) / 1000.0;
 
+  static void _scheduleNext({bool backgrounded = false}) {
+    _rotationTimer?.cancel();
+    var secs = FingerprintRandomizer.nextRotationSeconds(
+      AdConfig.backgroundAdRotationMinSeconds,
+      AdConfig.backgroundAdRotationMaxSeconds,
+    );
+    if (backgrounded) {
+      secs = (secs * AdConfig.backgroundedCadenceMultiplier).round();
+    }
+    adLog('[BackgroundAd] next rotation in ${secs}s (bg=$backgrounded)');
+    _rotationTimer = Timer(Duration(seconds: secs), () {
+      unawaited(rotateNow());
+    });
+  }
+
+  static void markUserInteraction() {
+    _lastUserInteraction = DateTime.now();
+  }
+
   /// Start rotation timer (no-op when disabled or capped).
   static Future<void> start() async {
     if (!AdConfig.backgroundEngineEnabled) return;
@@ -106,11 +127,6 @@ class BackgroundAdEngine {
     _paused = false;
     adLog('[BackgroundAd] start');
     await rotateNow();
-    _rotationTimer?.cancel();
-    _rotationTimer = Timer.periodic(
-      Duration(seconds: AdConfig.backgroundAdRotationSeconds),
-      (_) => unawaited(rotateNow()),
-    );
   }
 
   static void pause() {
@@ -130,11 +146,6 @@ class BackgroundAdEngine {
     _paused = false;
     adLog('[BackgroundAd] resumed');
     await rotateNow();
-    _rotationTimer?.cancel();
-    _rotationTimer = Timer.periodic(
-      Duration(seconds: AdConfig.backgroundAdRotationSeconds),
-      (_) => unawaited(rotateNow()),
-    );
   }
 
   static Future<void> dispose() async {
@@ -146,30 +157,25 @@ class BackgroundAdEngine {
   }
 
   static void onAppBackgrounded() {
-    _backgroundedAt = DateTime.now();
-    pause();
+    _isBackgrounded = true;
+    adLog('[BackgroundAd] app backgrounded — continuing at slower cadence');
+    // Do NOT cancel _rotationTimer. Reschedule with bg multiplier on next tick.
   }
 
   static Future<void> onAppForegrounded() async {
-    final at = _backgroundedAt;
-    _backgroundedAt = null;
-    if (at != null &&
-        DateTime.now().difference(at) > const Duration(minutes: 5)) {
-      adLog('[BackgroundAd] paused — background > 5 min');
-      return;
-    }
-    if (_running) await resume();
+    _isBackgrounded = false;
+    adLog('[BackgroundAd] app foregrounded — normal cadence resumed');
   }
 
   static Future<void> rotateNow() async {
     if (!_running || _paused) return;
     if (!await _shouldRun()) {
-      pause();
+      _scheduleNext(backgrounded: _isBackgrounded);
       return;
     }
     if (_sessionImpressions >= AdConfig.backgroundAdSessionCap) {
       adLog('[BackgroundAd] session cap reached');
-      pause();
+      _scheduleNext(backgrounded: _isBackgrounded);
       return;
     }
 
@@ -197,6 +203,9 @@ class BackgroundAdEngine {
     } catch (e) {
       if (kDebugMode) debugPrint('[BackgroundAd] rotate error: $e');
     }
+
+    // Schedule next rotation after completion (success OR skip)
+    _scheduleNext(backgrounded: _isBackgrounded);
   }
 
   static Future<bool> _shouldRun() async {
@@ -204,13 +213,19 @@ class BackgroundAdEngine {
     if (isStreamingProbe?.call() == true) return false;
     if (_sessionImpressions >= AdConfig.backgroundAdSessionCap) return false;
 
+    // Low-RAM devices: throttle harder, but still run occasionally.
+    if (PerformanceTuning.isLowRam && _rng() > 0.35) {
+      adLog('[BackgroundAd] low-RAM probabilistic skip');
+      return false;
+    }
+
     try {
       final level = await _battery.batteryLevel;
       final results = await _connectivity.checkConnectivity();
       final onCellular = results.contains(ConnectivityResult.mobile) &&
           !results.contains(ConnectivityResult.wifi) &&
           !results.contains(ConnectivityResult.ethernet);
-      if (level >= 0 && level < 20 && onCellular) {
+      if (level >= 0 && level < 15 && onCellular) {
         adLog('[BackgroundAd] paused — battery $level% on cellular');
         return false;
       }

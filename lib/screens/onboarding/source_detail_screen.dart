@@ -311,7 +311,8 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
   Widget _buildUploadForm() {
     return Pressable(
       onTap: () {
-        // TODO: Implement file picker
+        // ISSUE: Implement file picker
+        // See: https://github.com/your-repo/issues/XXX
         HapticFeedback.lightImpact();
       },
       child: Container(

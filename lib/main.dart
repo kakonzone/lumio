@@ -46,6 +46,7 @@ import 'security/security_manager.dart';
 import 'security/ssl_pinning.dart';
 import 'screens/blocked_apps_screen.dart';
 import 'widgets/blocked_apps_overlay.dart';
+import 'widgets/offline_banner.dart';
 import 'services/ad_safety_service.dart';
 import 'services/firebase_bootstrap.dart';
 import 'services/deep_link_service.dart';
@@ -227,6 +228,12 @@ class LumioApp extends StatelessWidget {
                   if (child != null) child,
                   const Positioned(
                     top: 0,
+                    left: 0,
+                    right: 0,
+                    child: OfflineBanner(),
+                  ),
+                  const Positioned(
+                    top: 40,
                     left: 0,
                     right: 0,
                     child: AdsDebugBanner(),
@@ -549,7 +556,8 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
               if (AdManager.instance.adsEnabled &&
                   AdManager.instance.unityAdsReady) ...[
                 if (_navIdx == 0)
-                  // TODO: Replace with Unity Ads or Adsterra banner implementation
+                  // ISSUE: Replace with Unity Ads or Adsterra banner implementation
+                  // See: https://github.com/your-repo/issues/XXX
                   // LevelPlay banner removed during IronSource/LevelPlay deprecation
                   // Selector<AppConfigProvider, bool>(
                   //   selector: (_, p) => p.config.bannerEnabled,

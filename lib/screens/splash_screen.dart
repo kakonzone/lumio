@@ -11,6 +11,7 @@ import '../widgets/remote_config_widgets.dart';
 import '../theme/app_theme.dart';
 import '../theme/tokens/colors.dart' as tokens;
 import '../utils/responsive.dart';
+import 'generic_error_screen.dart';
 
 /// Splash: logo visible → remote config → consent (first launch) → home.
 class SplashScreen extends StatefulWidget {
@@ -46,6 +47,20 @@ class _SplashScreenState extends State<SplashScreen> {
     } catch (e, st) {
       // ignore: avoid_print
       print('[Splash] error: $e\n$st');
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => GenericErrorScreen(
+            title: 'Initialization Failed',
+            message: 'An error occurred during app startup',
+            details: e.toString(),
+            onRetry: () {
+              Navigator.of(context).pushReplacementNamed('/');
+            },
+          ),
+        ),
+      );
+      return;
     }
     if (!mounted) return;
     // ignore: avoid_print

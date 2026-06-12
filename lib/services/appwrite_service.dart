@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../config/appwrite_config.dart';
 import '../models/model.dart';
 import '../utils/m3u_merge_parser.dart';
+import '../utils/retry.dart';
 import 'appwrite_channel_mapper.dart';
 import 'special_link/special_link_cache.dart'
     show parseM3uAppwriteIsolate;
@@ -47,10 +48,22 @@ class AppwriteService {
 
     var channels = <ChannelModel>[];
     try {
-      channels = await _fetchChannelDocuments();
-      if (channels.isEmpty && lastFetchError == null) {
-        channels = await _fetchPlaylistM3u();
-      }
+      channels = await RetryHelper.retry(
+        fn: () async {
+          final fetched = await _fetchChannelDocuments();
+          if (fetched.isEmpty && lastFetchError == null) {
+            return await _fetchPlaylistM3u();
+          }
+          return fetched;
+        },
+        maxAttempts: 3,
+        initialDelayMs: 1000,
+        onRetry: (attempt, delay) {
+          if (kDebugMode) {
+            debugPrint('[Appwrite] Retry attempt $attempt after ${delay}ms');
+          }
+        },
+      );
     } on AppwriteException catch (e) {
       lastFetchError = _friendlyAppwriteError(e);
       if (kDebugMode) {

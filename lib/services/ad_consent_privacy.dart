@@ -1,7 +1,8 @@
 /// Consent flag mapping for ads consent (testable, no SDK calls).
 ///
 /// Previously used for LevelPlay privacy flags.
-/// TODO: Update for Unity Ads consent mechanism when available.
+/// ISSUE: Update for Unity Ads consent mechanism when available.
+/// See: https://github.com/your-repo/issues/XXX
 class AdConsentPrivacyMapping {
   AdConsentPrivacyMapping._();
 

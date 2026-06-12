@@ -200,7 +200,8 @@ class EmptyState extends StatelessWidget {
   Widget _buildIllustration() {
     // If custom SVG path is provided, use it (for future implementation)
     if (customIllustration != null) {
-      // TODO: Implement SVG rendering once flutter_svg is integrated
+      // ISSUE: Implement SVG rendering once flutter_svg is integrated
+      // See: https://github.com/your-repo/issues/XXX
       // For now, fallback to icon
       return _buildIcon();
     }

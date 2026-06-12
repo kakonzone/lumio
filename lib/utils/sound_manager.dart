@@ -73,7 +73,8 @@ class SoundManager {
     if (!_isEnabled) return;
     
     try {
-      // TODO: Uncomment when audio assets are added
+      // ISSUE: Uncomment when audio assets are added
+      // See: https://github.com/your-repo/issues/XXX
       // await _playAsset(type);
       
       // For now, just haptic feedback

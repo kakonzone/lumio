@@ -293,7 +293,8 @@ class _NewYearConfettiState extends State<NewYearConfetti> {
   @override
   void initState() {
     super.initState();
-    // TODO: Trigger confetti animation here
+    // ISSUE: Trigger confetti animation here
+    // See: https://github.com/your-repo/issues/XXX
     // Use confetti package: https://pub.dev/packages/confetti
   }
 

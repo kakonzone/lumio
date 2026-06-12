@@ -212,7 +212,8 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
           data: {'status': status.name},
         );
         // #endregion
-        // TODO: Track PiP active state when enum values are known
+        // ISSUE: Track PiP active state when enum values are known
+        // See: https://github.com/your-repo/issues/XXX
         // if (mounted) {
         //   setState(() {
         //     _isPipActive = status == PiPStatus.active;

@@ -79,7 +79,8 @@ class ZoneValidator {
   List<_ZoneProbe> _inventory() {
     return [
       // LevelPlay zone probes removed during deprecation
-      // TODO: Add Unity Ads zone validation when available
+      // ISSUE: Add Unity Ads zone validation when available
+      // See: https://github.com/your-repo/issues/XXX
       // _ZoneProbe(
       //   network: 'unity',
       //   zoneId: _mask(AdConfig.interstitialAdUnitId),

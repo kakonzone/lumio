@@ -1,5 +1,6 @@
 // DEPRECATED: LevelPlay banner widget - removed during IronSource/LevelPlay deprecation
-// TODO: Replace with Unity Ads or Adsterra banner implementation
+// ISSUE: Replace with Unity Ads or Adsterra banner implementation
+// See: https://github.com/your-repo/issues/XXX
 //
 // import 'dart:async';
 //

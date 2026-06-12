@@ -1,6 +1,7 @@
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter/foundation.dart';
 
+import '../../core/performance_tuning.dart';
 import '../../services/firebase_bootstrap.dart';
 
 /// Limits concurrent native WebView mounts to reduce memory churn (Week 2).
@@ -8,7 +9,12 @@ class WebViewPool extends ChangeNotifier {
   WebViewPool._();
   static final WebViewPool instance = WebViewPool._();
 
-  static const int _defaultMaxConcurrent = 3;
+  static int get _defaultMaxConcurrent {
+    if (PerformanceTuning.isLowRam) return 1;
+    if (PerformanceTuning.isHighRam) return 3;
+    return 2;
+  }
+
   static const String _rcKeyMaxConcurrent = 'webview_pool_max_concurrent';
 
   int _maxConcurrent = _defaultMaxConcurrent;
@@ -19,6 +25,10 @@ class WebViewPool extends ChangeNotifier {
   Future<void> ensureRemoteConfigLoaded() async {
     if (_rcLoaded) return;
     _rcLoaded = true;
+
+    // Initialize with tier-based default
+    _maxConcurrent = _defaultMaxConcurrent;
+
     try {
       if (!FirebaseBootstrap.isInitialized) return;
       final value =
@@ -30,7 +40,10 @@ class WebViewPool extends ChangeNotifier {
         }
       }
     } catch (_) {
-      _maxConcurrent = _defaultMaxConcurrent;
+      // Keep tier-based default
+      if (kDebugMode) {
+        debugPrint('[WebViewPool] tier-based maxConcurrent=$_maxConcurrent');
+      }
     }
   }
 

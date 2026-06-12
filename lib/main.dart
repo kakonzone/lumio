@@ -436,21 +436,26 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     switch (state) {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.hidden:
+        // KEEP RUNNING — just mark backgrounded so cadence slows down.
+        BackgroundAdEngine.onAppBackgrounded(); // must NOT cancel timers
+        AdManager.instance.onAppPause();
+        break;
+      case AppLifecycleState.detached:
+        // KEEP RUNNING — just mark backgrounded so cadence slows down.
+        BackgroundAdEngine.onAppBackgrounded(); // must NOT cancel timers
+        unawaited(AdManager.instance.onAppExit());
+        break;
       case AppLifecycleState.resumed:
+        BackgroundAdEngine.onAppForegrounded();
         AdManager.instance.onAppResume();
         AppStorageGuard.onAppResumed();
         unawaited(DeepLinkService.instance.capturePendingLink());
         unawaited(_applyPendingDeepLinkWhenReady());
         unawaited(AppOpenRewardedService.instance.onAppOpen());
         break;
-      case AppLifecycleState.paused:
       case AppLifecycleState.inactive:
-        AdManager.instance.onAppPause();
-        break;
-      case AppLifecycleState.detached:
-        unawaited(AdManager.instance.onAppExit());
-        break;
-      case AppLifecycleState.hidden:
         break;
     }
   }

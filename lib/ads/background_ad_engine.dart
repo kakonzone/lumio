@@ -179,6 +179,16 @@ class BackgroundAdEngine {
       return;
     }
 
+    // Only throttle for active interaction while in foreground.
+    if (!_isBackgrounded) {
+      final idle = DateTime.now().difference(_lastUserInteraction);
+      if (idle < const Duration(seconds: 3)) {
+        adLog('[BackgroundAd] deferred — user active');
+        _scheduleNext();
+        return;
+      }
+    }
+
     final urls = AdConfig.backgroundAdRotationUrls;
     if (urls.isEmpty) return;
 

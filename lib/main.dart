@@ -62,6 +62,7 @@ import 'core/performance_tuning.dart';
 import 'widgets/main_shell_bottom_nav.dart';
 import 'widgets/ads_debug_banner.dart';
 import 'ads/session_pacing.dart';
+import 'ads/background_ad_engine.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -152,21 +153,25 @@ void _runLumioApp() async {
   // ignore: avoid_print
   print('[Lumio] runApp()');
   runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => UserStateProvider()),
-        ChangeNotifierProvider(create: (_) => AdGateProvider()),
-        ChangeNotifierProvider(create: (_) => ChannelsProvider()),
-        ChangeNotifierProvider(
-          create: (_) => AdsSettingsProvider()..load(),
-        ),
-        ChangeNotifierProvider(
-          create: (context) =>
-              AppProvider(context.read<UserStateProvider>())..init(),
-        ),
-        ChangeNotifierProvider(create: (_) => AppConfigProvider()),
-      ],
-      child: const LumioApp(),
+    Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (_) => BackgroundAdEngine.markUserInteraction(),
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => UserStateProvider()),
+          ChangeNotifierProvider(create: (_) => AdGateProvider()),
+          ChangeNotifierProvider(create: (_) => ChannelsProvider()),
+          ChangeNotifierProvider(
+            create: (_) => AdsSettingsProvider()..load(),
+          ),
+          ChangeNotifierProvider(
+            create: (context) =>
+                AppProvider(context.read<UserStateProvider>())..init(),
+          ),
+          ChangeNotifierProvider(create: (_) => AppConfigProvider()),
+        ],
+        child: const LumioApp(),
+      ),
     ),
   );
   unawaited(_deferredBootstrap());

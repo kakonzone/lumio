@@ -15,9 +15,15 @@ class PerformanceTuning {
   static DeviceRamTier _tier = DeviceRamTier.normal;
   static bool _applied = false;
 
+  // New simple RAM detection for ad engine optimization
+  static int? _cachedTotalRamMb;
+  static bool _isLowRam = false;
+  static bool _isHighRam = false;
+
   static DeviceRamTier get tier => _tier;
-  static bool get isLowRam => _tier == DeviceRamTier.low;
-  static bool get isHighRam => _tier == DeviceRamTier.high;
+  static bool get isLowRam => _tier == DeviceRamTier.low || _isLowRam;
+  static bool get isHighRam => _tier == DeviceRamTier.high || _isHighRam;
+  static bool get isNormalRam => !isLowRam && !isHighRam;
 
   /// In-memory decoded images (Flutter ImageCache).
   static int get imageCacheMaxObjects =>
@@ -30,15 +36,15 @@ class PerformanceTuning {
   static int get imageCacheMaxBytes {
     if (kReleaseMode) {
       return switch (_tier) {
-        DeviceRamTier.low => 16 * 1024 * 1024,
-        DeviceRamTier.normal => 28 * 1024 * 1024,
-        DeviceRamTier.high => 40 * 1024 * 1024,
+        DeviceRamTier.low => 8 * 1024 * 1024,   // Reduced from 16MB for better performance
+        DeviceRamTier.normal => 16 * 1024 * 1024, // Reduced from 28MB
+        DeviceRamTier.high => 32 * 1024 * 1024,   // Reduced from 40MB
       };
     }
     return switch (_tier) {
-      DeviceRamTier.low => 24 * 1024 * 1024,
-      DeviceRamTier.normal => 48 * 1024 * 1024,
-      DeviceRamTier.high => 72 * 1024 * 1024,
+      DeviceRamTier.low => 12 * 1024 * 1024,
+      DeviceRamTier.normal => 24 * 1024 * 1024,
+      DeviceRamTier.high => 48 * 1024 * 1024,
     };
   }
 
@@ -61,9 +67,9 @@ class PerformanceTuning {
   /// ListView pre-build window — lower = less RAM, slightly more scroll work.
   static double get listCacheExtent =>
       switch (_tier) {
-        DeviceRamTier.low => 200,
-        DeviceRamTier.normal => 320,
-        DeviceRamTier.high => 420,
+        DeviceRamTier.low => 150,   // Reduced from 200 for better performance
+        DeviceRamTier.normal => 250, // Reduced from 320
+        DeviceRamTier.high => 350,   // Reduced from 420
       };
 
   /// media_kit buffer (MB) — lower on 2GB phones reduces OOM during playback.
@@ -91,6 +97,31 @@ class PerformanceTuning {
       'imgCache=${imageCacheMaxObjects}/${imageCacheMaxBytes ~/ (1024 * 1024)}MB '
       'playerBuf=${playerBufferMb}MB',
     );
+  }
+
+  /// New RAM detection method for ad engine optimization
+  static Future<int?> getTotalRamMb() async {
+    if (_cachedTotalRamMb != null) return _cachedTotalRamMb;
+    try {
+      if (Platform.isAndroid) {
+        final raw = await _channel.invokeMethod<Object>('getDeviceProfile');
+        if (raw is! Map) return null;
+        final map = Map<Object?, Object?>.from(raw);
+        final mb = (map['totalRamMb'] as num?)?.toInt();
+        _cachedTotalRamMb = mb;
+        return mb;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// Initialize simple RAM flags for ad engine use
+  static Future<void> initialize() async {
+    final ram = await getTotalRamMb();
+    if (ram == null) return;
+    _isLowRam = ram < 2048;
+    _isHighRam = ram >= 6144;
+    debugPrint('[Performance] RAM detection: ${ram}MB, lowRam=$_isLowRam, highRam=$_isHighRam');
   }
 
   static Future<DeviceRamTier> _readAndroidRamTier() async {

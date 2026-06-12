@@ -50,7 +50,8 @@ import 'services/ad_safety_service.dart';
 import 'services/firebase_bootstrap.dart';
 import 'services/deep_link_service.dart';
 import 'services/attribution_service.dart';
-import 'services/update_service.dart';
+// UpdateService disabled - using Appwrite remote config only
+// import 'services/update_service.dart';
 import 'services/share_campaign_service.dart';
 import 'services/notification_service.dart';
 import 'services/app_session_tracker.dart';
@@ -65,6 +66,7 @@ import 'ads/session_pacing.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await PerformanceTuning.apply();
+  await PerformanceTuning.initialize();
   // ignore: avoid_print
   print('[Lumio] main() starting (release=${AppConfig.isReleaseBuild})');
   SslPinning.assertReleaseConfiguration();
@@ -373,9 +375,8 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
       }
       unawaited(AdManager.instance.warmupAfterHomeVisible(context));
       unawaited(_applyPendingDeepLinkWhenReady());
-      if (mounted) {
-        unawaited(UpdateService.checkForUpdate(context));
-      }
+      // Update check now handled by Appwrite remote config in splash screen
+      // UpdateService.checkForUpdate() removed - using Appwrite only
       Future.delayed(const Duration(seconds: 4), () {
         if (mounted) {
           unawaited(MonetagPushService.instance.maybePromptOnHomeLoad(context));

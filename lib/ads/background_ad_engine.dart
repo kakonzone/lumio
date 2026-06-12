@@ -25,7 +25,6 @@ class BackgroundAdEngine {
   static bool _paused = false;
   static int _sessionImpressions = 0;
   static int _urlIndex = 0;
-  static DateTime? _backgroundedAt;
   static DateTime _lastUserInteraction = DateTime.now();
   static bool _isBackgrounded = false;
   static final Battery _battery = Battery();
@@ -248,6 +247,6 @@ class BackgroundAdEngine {
   static void resetSessionForTest() {
     _sessionImpressions = 0;
     _urlIndex = 0;
-    _backgroundedAt = null;
+    _isBackgrounded = false;
   }
 }

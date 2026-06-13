@@ -194,10 +194,6 @@ class UnityAdsService {
     } catch (e, st) {
       _lastLoadError = e.toString();
       adLog('[UnityAds] rewarded load error: $e\n$st');
-    }
-    } catch (e, st) {
-      _lastLoadError = e.toString();
-      adLog('[UnityAds] rewarded load error: $e\n$st');
       _analytics?.logAdFailed(
         network: 'unity',
         format: 'rewarded',

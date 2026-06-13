@@ -341,6 +341,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
             ),
           ),
           child: ListView.builder(
+            addAutomaticKeepAlives: true,
             scrollDirection: Axis.horizontal,
             padding: EdgeInsets.symmetric(
               horizontal: tokens.SpacingTokens.s8,

@@ -508,6 +508,7 @@ class _SearchTabs extends StatelessWidget {
         ),
       ),
       child: ListView.builder(
+        addAutomaticKeepAlives: true,
         scrollDirection: Axis.horizontal,
         itemCount: tabs.length,
         itemBuilder: (context, index) {

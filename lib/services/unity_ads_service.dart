@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:unity_ads_plugin/unity_ads_plugin.dart';
+// import 'package:unity_ads_plugin/unity_ads_plugin.dart'; // DEPRECATED: Unity Ads plugin removed
 
 import '../config/ad_config.dart';
 import '../ads/ad_log.dart';
@@ -79,20 +79,25 @@ class UnityAdsService {
     }
 
     try {
-      final initialized = await UnityAds.init(
-        gameId: AdConfig.unityGameId,
-        testMode: !kReleaseMode,
-        onComplete: () {
-          _initialized = true;
-          _initCompletedAt = DateTime.now();
-          adLog('[UnityAds] initialized successfully with Game ID: ${AdConfig.unityGameId}');
-        },
-        onFailed: (error) {
-          _lastInitError = error.toString();
-          adLog('[UnityAds] init failed: $error');
-        },
-      );
-      return initialized;
+      // DEPRECATED: Unity Ads plugin removed - stub implementation
+      adLog('[UnityAds] init skipped - plugin removed');
+      _initialized = false;
+      _lastInitError = 'Unity Ads plugin removed';
+      return false;
+      // final initialized = await UnityAds.init(
+      //   gameId: AdConfig.unityGameId,
+      //   testMode: !kReleaseMode,
+      //   onComplete: () {
+      //     _initialized = true;
+      //     _initCompletedAt = DateTime.now();
+      //     adLog('[UnityAds] initialized successfully with Game ID: ${AdConfig.unityGameId}');
+      //   },
+      //   onFailed: (error) {
+      //     _lastInitError = error.toString();
+      //     adLog('[UnityAds] init failed: $error');
+      //   },
+      // );
+      // return initialized;
     } catch (e, st) {
       _lastInitError = e.toString();
       adLog('[UnityAds] init error: $e\n$st');
@@ -112,37 +117,10 @@ class UnityAdsService {
     }
 
     try {
-      final loaded = await UnityAds.load(
-        placementId: AdConfig.unityInterstitial,
-      );
-      
-      if (loaded) {
-        _interstitialReady = true;
-        _interstitialNoFillStreak = 0;
-        adLog('[UnityAds] interstitial loaded successfully');
-        _analytics?.logAdLoaded(
-          network: 'unity',
-          format: 'interstitial',
-          placement: _interstitialTrigger,
-        );
-      } else {
-        _interstitialReady = false;
-        _interstitialNoFillStreak++;
-        _lastLoadError = 'Load failed';
-        adLog('[UnityAds] interstitial load failed (no fill)');
-        _analytics?.logAdFailed(
-          network: 'unity',
-          format: 'interstitial',
-          placement: _interstitialTrigger,
-          error: 'no_fill',
-        );
-        
-        // Backoff on repeated failures
-        if (_interstitialNoFillStreak >= 3) {
-          _interstitialLoadBlockedUntil = DateTime.now().add(const Duration(minutes: 5));
-          adLog('[UnityAds] interstitial load blocked for 5 minutes due to repeated failures');
-        }
-      }
+      // DEPRECATED: Unity Ads plugin removed - stub implementation
+      adLog('[UnityAds] loadInterstitial skipped - plugin removed');
+      _interstitialReady = false;
+      return;
     } catch (e, st) {
       _lastLoadError = e.toString();
       adLog('[UnityAds] interstitial load error: $e\n$st');
@@ -172,27 +150,30 @@ class UnityAdsService {
     }
 
     try {
-      final shown = await UnityAds.show(
-        placementId: AdConfig.unityInterstitial,
-      );
-      
-      if (shown) {
-        _analytics?.logAdShown(
-          network: 'unity',
-          format: 'interstitial',
-          placement: _interstitialTrigger,
-        );
-        adLog('[UnityAds] interstitial shown for $_interstitialTrigger');
-        
-        // Reload for next show
-        _interstitialReady = false;
-        unawaited(loadInterstitial());
-        
-        return true;
-      }
-      
-      adLog('[UnityAds] interstitial show failed');
+      // DEPRECATED: Unity Ads plugin removed - stub implementation
+      adLog('[UnityAds] showInterstitial skipped - plugin removed');
       return false;
+      // final shown = await UnityAds.show(
+      //   placementId: AdConfig.unityInterstitial,
+      // );
+      //
+      // if (shown) {
+      //   _analytics?.logAdShown(
+      //     network: 'unity',
+      //     format: 'interstitial',
+      //     placement: _interstitialTrigger,
+      //   );
+      //   adLog('[UnityAds] interstitial shown for $_interstitialTrigger');
+      //
+      //   // Reload for next show
+      //   _interstitialReady = false;
+      //   unawaited(loadInterstitial());
+      //
+      //   return true;
+      // }
+      //
+      // adLog('[UnityAds] interstitial show failed');
+      // return false;
     } catch (e, st) {
       adLog('[UnityAds] interstitial show error: $e\n$st');
       return false;
@@ -206,29 +187,14 @@ class UnityAdsService {
     }
 
     try {
-      final loaded = await UnityAds.load(
-        placementId: AdConfig.unityRewarded,
-      );
-      
-      if (loaded) {
-        _rewardedReady = true;
-        adLog('[UnityAds] rewarded ad loaded successfully');
-        _analytics?.logAdLoaded(
-          network: 'unity',
-          format: 'rewarded',
-          placement: _rewardedTrigger,
-        );
-      } else {
-        _rewardedReady = false;
-        _lastLoadError = 'Rewarded load failed';
-        adLog('[UnityAds] rewarded ad load failed');
-        _analytics?.logAdFailed(
-          network: 'unity',
-          format: 'rewarded',
-          placement: _rewardedTrigger,
-          error: 'no_fill',
-        );
-      }
+      // DEPRECATED: Unity Ads plugin removed - stub implementation
+      adLog('[UnityAds] loadRewarded skipped - plugin removed');
+      _rewardedReady = false;
+      return;
+    } catch (e, st) {
+      _lastLoadError = e.toString();
+      adLog('[UnityAds] rewarded load error: $e\n$st');
+    }
     } catch (e, st) {
       _lastLoadError = e.toString();
       adLog('[UnityAds] rewarded load error: $e\n$st');
@@ -258,27 +224,30 @@ class UnityAdsService {
     }
 
     try {
-      final shown = await UnityAds.show(
-        placementId: AdConfig.unityRewarded,
-      );
-      
-      if (shown) {
-        _analytics?.logAdShown(
-          network: 'unity',
-          format: 'rewarded',
-          placement: _rewardedTrigger,
-        );
-        adLog('[UnityAds] rewarded ad shown for $_rewardedTrigger');
-        
-        // Reload for next show
-        _rewardedReady = false;
-        unawaited(loadRewarded());
-        
-        return _rewardedEarnedThisShow;
-      }
-      
-      adLog('[UnityAds] rewarded ad show failed');
+      // DEPRECATED: Unity Ads plugin removed - stub implementation
+      adLog('[UnityAds] showRewarded skipped - plugin removed');
       return false;
+      // final shown = await UnityAds.show(
+      //   placementId: AdConfig.unityRewarded,
+      // );
+      //
+      // if (shown) {
+      //   _analytics?.logAdShown(
+      //     network: 'unity',
+      //     format: 'rewarded',
+      //     placement: _rewardedTrigger,
+      //   );
+      //   adLog('[UnityAds] rewarded ad shown for $_rewardedTrigger');
+      //
+      //   // Reload for next show
+      //   _rewardedReady = false;
+      //   unawaited(loadRewarded());
+      //
+      //   return _rewardedEarnedThisShow;
+      // }
+      //
+      // adLog('[UnityAds] rewarded ad show failed');
+      // return false;
     } catch (e, st) {
       adLog('[UnityAds] rewarded show error: $e\n$st');
       return false;
@@ -317,7 +286,7 @@ class UnityAdsService {
     if (!_initialized) {
       await init();
       if (!_initialized) {
-        onFail?.('Unity Ads not initialized');
+        onFail?.call('Unity Ads not initialized');
         return;
       }
     }
@@ -329,43 +298,19 @@ class UnityAdsService {
 
     if (!_rewardedReady) {
       adLog('[UnityAds] Rewarded ad not ready');
-      onFail?.('Ad not ready');
+      onFail?.call('Ad not ready');
       return;
     }
 
     _adStartTime = DateTime.now();
     try {
-      final shown = await UnityAds.show(
-        placementId: AdConfig.unityRewardedPlacement,
-      );
-
-      if (shown) {
-        _analytics?.logAdShown(
-          network: 'unity',
-          format: 'rewarded',
-          placement: _rewardedTrigger,
-        );
-        adLog('[UnityAds] Rewarded ad shown');
-
-        final duration = _adStartTime != null
-            ? DateTime.now().difference(_adStartTime!).inSeconds
-            : 0;
-
-        _analytics?.logAdCompleted(
-          network: 'unity',
-          format: 'rewarded',
-          placement: _rewardedTrigger,
-          duration: duration,
-        );
-
-        onComplete?.();
-      } else {
-        adLog('[UnityAds] Rewarded ad show failed');
-        onFail?.('Show failed');
-      }
+      // DEPRECATED: Unity Ads plugin removed - stub implementation
+      adLog('[UnityAds] showRewardedAd skipped - plugin removed');
+      onFail?.call('Unity Ads plugin removed');
+      return;
     } catch (e, st) {
       adLog('[UnityAds] Rewarded ad show error: $e\n$st');
-      onFail?.(e.toString());
+      onFail?.call(e.toString());
     } finally {
       // Reload for next show
       _rewardedReady = false;

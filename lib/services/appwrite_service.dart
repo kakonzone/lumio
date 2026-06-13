@@ -7,7 +7,7 @@ import '../models/model.dart';
 import '../utils/m3u_merge_parser.dart';
 import '../utils/retry.dart';
 import 'appwrite_channel_mapper.dart';
-import 'special_link/special_link_cache.dart' show parseM3uAppwriteIsolate;
+import 'special_link/special_link_cache.dart';
 
 /// Main app channel catalog via Appwrite Databases (replaces GitHub M3U for home/sports/live).
 class AppwriteService {

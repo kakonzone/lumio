@@ -22,8 +22,8 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 /// Guard FirebaseBootstrap.init() for background isolate to prevent duplicate init.
-static bool _backgroundIsInitialized = false;
-static Future<void> _ensureBackgroundFirebaseInitialized() async {
+bool _backgroundIsInitialized = false;
+Future<void> _ensureBackgroundFirebaseInitialized() async {
   if (_backgroundIsInitialized) return;
   await FirebaseBootstrap.initialize();
   _backgroundIsInitialized = true;

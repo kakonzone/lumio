@@ -803,6 +803,7 @@ extension _PlayerControls on _PlayerScreenState {
                   onChanged: (v) {
                     if (!mounted) return;
                     setState(() => _scrubValue = _safeUnitProgress(v));
+                  },
                   onChangeEnd: (v) {
                     final safe = _safeUnitProgress(v);
                     final maxMs =

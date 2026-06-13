@@ -35,7 +35,8 @@ class LiveNavTopSports {
       keywords: ['sony sports ten 5', 'sony ten 5', 'ten 5'],
     ),
     _Slot(label: 'Caze TV', keywords: ['caze tv', 'caze']),
-    _Slot(label: 'Asports HD', keywords: ['asports', 'a sports hd', 'a sports']),
+    _Slot(
+        label: 'Asports HD', keywords: ['asports', 'a sports hd', 'a sports']),
     _Slot(
       label: 'T Sports',
       keywords: ['t sports', 'tsports', 't-sports'],

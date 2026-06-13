@@ -79,7 +79,8 @@ class AttributionService {
           if (source != null && source.isNotEmpty) 'utm_source': source,
           if (medium != null && medium.isNotEmpty) 'utm_medium': medium,
           if (campaign != null && campaign.isNotEmpty) 'utm_campaign': campaign,
-          if (channelId != null && channelId.isNotEmpty) 'channel_id': channelId,
+          if (channelId != null && channelId.isNotEmpty)
+            'channel_id': channelId,
           'link_host': uri.host,
         },
       );

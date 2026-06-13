@@ -9,22 +9,26 @@ extension _PlayerFailover on _PlayerScreenState {
     if (until != null && DateTime.now().isBefore(until)) return false;
     return true;
   }
+
   void _suppressFailoverFor(Duration duration) {
     _failoverSuppressedUntil = DateTime.now().add(duration);
     _resetBufferingWatchdog();
     _bufferingStartedAt = null;
   }
+
   void _resetBufferingWatchdog() {
     _bufferingStartedAt = null;
     _bufferingWatchdog?.cancel();
     _bufferingWatchdog = null;
   }
+
   void _scheduleFailoverCheck() {
     if (!_canRunFailover) return;
     _bufferingWatchdog?.cancel();
     _bufferingWatchdog = Timer(_PlayerScreenState._bufferingTimeout, () async {
       if (!mounted || _bufferingStartedAt == null || !_canRunFailover) return;
-      if (DateTime.now().difference(_bufferingStartedAt!) < _PlayerScreenState._bufferingTimeout) {
+      if (DateTime.now().difference(_bufferingStartedAt!) <
+          _PlayerScreenState._bufferingTimeout) {
         return;
       }
       if (_failoverAttempts >= _PlayerScreenState._maxFailoverAttempts) {
@@ -44,6 +48,7 @@ extension _PlayerFailover on _PlayerScreenState {
       await _attemptFailover();
     });
   }
+
   void _showFailoverExhaustedUi() {
     if (!mounted) return;
     agentDebugLog(
@@ -57,6 +62,7 @@ extension _PlayerFailover on _PlayerScreenState {
       _isBuffering = false;
     });
   }
+
   Future<void> _retryCurrentLink() async {
     final url = _currentUrl ?? _masterUrl;
     if (url.isEmpty) return;
@@ -71,10 +77,12 @@ extension _PlayerFailover on _PlayerScreenState {
     }
     await _openStreamUrl(url, _activeHeaders);
   }
+
   Future<void> _attemptFailover() async {
     if (!mounted || !_canRunFailover) return;
     if (_lastFailoverAt != null &&
-        DateTime.now().difference(_lastFailoverAt!) < _PlayerScreenState._failoverCooldown) {
+        DateTime.now().difference(_lastFailoverAt!) <
+            _PlayerScreenState._failoverCooldown) {
       return;
     }
     _lastFailoverAt = DateTime.now();
@@ -91,7 +99,10 @@ extension _PlayerFailover on _PlayerScreenState {
         location: 'player_screen.dart:_attemptFailover',
         message: 'retry single link',
         hypothesisId: 'H-failover-single',
-        data: {'attempt': _failoverAttempts, 'urlTail': _masterUrl.split('/').last},
+        data: {
+          'attempt': _failoverAttempts,
+          'urlTail': _masterUrl.split('/').last
+        },
       );
       // #endregion
       await _retryCurrentLink();
@@ -127,6 +138,7 @@ extension _PlayerFailover on _PlayerScreenState {
     }
     _showFailoverExhaustedUi();
   }
+
   Future<bool> _trySchemeFlipForCurrentLink() async {
     final url = _currentUrl ?? _masterUrl;
     final alt = _schemeAlternateUrl(url);

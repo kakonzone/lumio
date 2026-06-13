@@ -35,7 +35,8 @@ class _LazyAdViewportState extends State<LazyAdViewport> {
     final topLeft = box.localToGlobal(Offset.zero);
     final bottom = topLeft.dy + box.size.height;
     final viewportH = MediaQuery.sizeOf(context).height;
-    final near = bottom >= -widget.preloadPx && topLeft.dy <= viewportH + widget.preloadPx;
+    final near = bottom >= -widget.preloadPx &&
+        topLeft.dy <= viewportH + widget.preloadPx;
 
     if (near != _nearViewport) {
       setState(() => _nearViewport = near);
@@ -46,7 +47,8 @@ class _LazyAdViewportState extends State<LazyAdViewport> {
   Widget build(BuildContext context) {
     return NotificationListener<ScrollNotification>(
       onNotification: (_) {
-        WidgetsBinding.instance.addPostFrameCallback((_) => _updateVisibility());
+        WidgetsBinding.instance
+            .addPostFrameCallback((_) => _updateVisibility());
         return false;
       },
       child: _nearViewport

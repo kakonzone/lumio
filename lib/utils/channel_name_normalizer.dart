@@ -156,17 +156,15 @@ class ChannelNameNormalizer {
   static String _titleCase(String input) {
     if (input.isEmpty) return input;
     final words = input.split(RegExp(r'\s+'));
-    return words
-        .map((w) {
-          if (w.isEmpty) return w;
-          final lower = w.toLowerCase();
-          if (lower == 'hd' || lower == 'fhd' || lower == '4k' || lower == 'tv') {
-            return lower == 'tv' ? 'TV' : lower.toUpperCase();
-          }
-          if (lower == 'btv') return 'BTV';
-          if (lower.startsWith('tsport')) return 'T Sports';
-          return '${w[0].toUpperCase()}${w.substring(1)}';
-        })
-        .join(' ');
+    return words.map((w) {
+      if (w.isEmpty) return w;
+      final lower = w.toLowerCase();
+      if (lower == 'hd' || lower == 'fhd' || lower == '4k' || lower == 'tv') {
+        return lower == 'tv' ? 'TV' : lower.toUpperCase();
+      }
+      if (lower == 'btv') return 'BTV';
+      if (lower.startsWith('tsport')) return 'T Sports';
+      return '${w[0].toUpperCase()}${w.substring(1)}';
+    }).join(' ');
   }
 }

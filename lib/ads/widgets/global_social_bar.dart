@@ -48,7 +48,6 @@ class _GlobalSocialBarState extends State<GlobalSocialBar>
   }
 }
 
-
 /// Shell-level host: one social bar instance above bottom navigation.
 class GlobalSocialBarHost extends StatelessWidget {
   const GlobalSocialBarHost({super.key});

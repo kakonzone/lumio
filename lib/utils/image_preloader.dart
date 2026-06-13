@@ -2,9 +2,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 /// Image preloading utilities
-/// 
+///
 /// Preloads images to improve perceived performance.
-/// 
+///
 /// Usage:
 /// - Preload home hero images on app start
 /// - Preload next-in-row tiles when user scrolls within 200px of edge
@@ -19,7 +19,7 @@ class ImagePreloader {
     try {
       final imageProvider = CachedNetworkImageProvider(imageUrl);
       await precacheImage(imageProvider, _getNavigatorContext());
-      
+
       _imageProviders[imageUrl] = imageProvider;
       _preloadedUrls.add(imageUrl);
     } catch (e) {
@@ -52,7 +52,7 @@ class ImagePreloader {
   }
 
   /// Get navigator context for precaching
-  /// 
+  ///
   /// This should be called from a context that has a navigator
   static BuildContext _getNavigatorContext() {
     // In a real app, this would access the current navigator context
@@ -73,7 +73,7 @@ class ImagePreloader {
     try {
       final imageProvider = CachedNetworkImageProvider(imageUrl);
       await precacheImage(imageProvider, context);
-      
+
       _imageProviders[imageUrl] = imageProvider;
       _preloadedUrls.add(imageUrl);
     } catch (e) {
@@ -92,7 +92,7 @@ class ImagePreloader {
 }
 
 /// Scroll-based image preloader
-/// 
+///
 /// Preloads images when user scrolls within threshold of edge.
 class ScrollImagePreloader extends StatefulWidget {
   final List<String> imageUrls;
@@ -134,19 +134,19 @@ class _ScrollImagePreloaderState extends State<ScrollImagePreloader> {
 
   void _handleScroll() {
     if (_scrollController == null) return;
-    
+
     final position = _scrollController!.position;
     final pixels = position.pixels;
-    
+
     // Calculate which images are near the viewport
     final itemHeight = 100; // Estimated, should be calculated
-    
+
     for (int i = 0; i < widget.imageUrls.length; i++) {
       if (_preloadedIndices.contains(i.toString())) continue;
-      
+
       final itemPosition = i * itemHeight;
       final distanceFromViewport = (itemPosition - pixels).abs();
-      
+
       // Preload if within threshold
       if (distanceFromViewport <= widget.preloadThreshold) {
         final imageUrl = widget.imageUrls[i];
@@ -163,7 +163,7 @@ class _ScrollImagePreloaderState extends State<ScrollImagePreloader> {
 }
 
 /// App initialization image preloader
-/// 
+///
 /// Preloads hero images on app start.
 class AppImagePreloader extends StatefulWidget {
   final List<String> heroImageUrls;
@@ -188,7 +188,7 @@ class _AppImagePreloaderState extends State<AppImagePreloader> {
 
   Future<void> _preloadHeroImages() async {
     if (widget.heroImageUrls.isEmpty) return;
-    
+
     try {
       await ImagePreloader.preloadListWithContext(
         context,

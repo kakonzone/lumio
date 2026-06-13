@@ -70,9 +70,8 @@ class _SpecialLinkListScreenState extends State<SpecialLinkListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final countLabel = _channels.isEmpty
-        ? 'GITUN playlists'
-        : '${_channels.length} channels';
+    final countLabel =
+        _channels.isEmpty ? 'GITUN playlists' : '${_channels.length} channels';
 
     return ShellPageScaffold(
       onRefresh: () => _load(forceRefresh: true),

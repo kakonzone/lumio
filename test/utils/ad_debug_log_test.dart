@@ -4,7 +4,8 @@ import 'package:lumio_tv/utils/ad_debug_log.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('agentDebugLogToFile does not throw without path_provider plugin', () async {
+  test('agentDebugLogToFile does not throw without path_provider plugin',
+      () async {
     await expectLater(
       agentDebugLogToFile(
         sessionId: 'test',

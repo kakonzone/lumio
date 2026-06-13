@@ -19,8 +19,10 @@ Future<void> openChannelPlayer(
   BuildContext context, {
   required ChannelModel channel,
   String? subtitle,
+
   /// Category list the user browsed from (e.g. Bangla → filters Bangladesh).
   String? browseCategory,
+
   /// Open a specific backup link (live-event popup per-link tap).
   String? initialStreamUrl,
 }) async {
@@ -177,8 +179,7 @@ void openStreamPlayer(
   }
 
   final prov = context.read<AppProvider>();
-  final channel =
-      prov.channelForStream(url) ?? prov.findChannel(name: title);
+  final channel = prov.channelForStream(url) ?? prov.findChannel(name: title);
   final relatedCategory = channel != null
       ? prov.categoryForRelated(
           channel,

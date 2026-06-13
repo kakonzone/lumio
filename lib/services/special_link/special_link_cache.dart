@@ -29,8 +29,7 @@ class SpecialLinkCache {
   Future<void> writeAppCatalogChannels(List<ChannelModel> channels) =>
       _write(_appCatalogBodyKey, _appCatalogTsKey, channels);
 
-  Future<List<ChannelModel>?> readGitunChannels() =>
-      _read(
+  Future<List<ChannelModel>?> readGitunChannels() => _read(
         _gitunBodyKey,
         _gitunTsKey,
         maxAge: SpecialLinkConfig.gitunCacheTtl,
@@ -59,7 +58,8 @@ class SpecialLinkCache {
     try {
       final list = jsonDecode(raw) as List<dynamic>;
       return list
-          .map((e) => ChannelModel.fromJson(Map<String, dynamic>.from(e as Map)))
+          .map(
+              (e) => ChannelModel.fromJson(Map<String, dynamic>.from(e as Map)))
           .where((c) => c.streamUrl.isNotEmpty)
           .toList();
     } catch (_) {

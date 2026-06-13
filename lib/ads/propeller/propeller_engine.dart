@@ -140,9 +140,8 @@ class _PropellerVignetteDialogState extends State<_PropellerVignetteDialog> {
             right: 12,
             bottom: 24,
             child: FilledButton(
-              onPressed: _canClose
-                  ? () => Navigator.of(context).pop(true)
-                  : null,
+              onPressed:
+                  _canClose ? () => Navigator.of(context).pop(true) : null,
               child: Text(_canClose ? 'Continue' : '$wait s'),
             ),
           ),

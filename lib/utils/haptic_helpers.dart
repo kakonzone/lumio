@@ -2,7 +2,7 @@
 import 'package:flutter/services.dart';
 
 /// Haptic feedback helpers for different interaction types.
-/// 
+///
 /// Usage:
 /// ```dart
 /// Haptics.selectionChange();

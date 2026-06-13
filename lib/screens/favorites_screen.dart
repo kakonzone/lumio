@@ -65,7 +65,8 @@ class FavoritesScreen extends StatelessWidget {
             // Inject native ad at index 3
             if (i == 3 && AdManager.instance.showAdsterraWebViewSlots) {
               return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 child: LazyAdViewport(
                   placeholderHeight: 100,
                   builder: () => AdsterraNativeBanner(

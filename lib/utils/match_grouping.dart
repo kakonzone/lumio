@@ -3,8 +3,7 @@ import '../models/model.dart';
 /// Groups scoreboard matches into international vs premier-league buckets.
 class MatchGrouping {
   static bool isPremierLeagueMatch(MatchModel m) {
-    final blob =
-        '${m.channel} ${m.time} ${m.teamA} ${m.teamB}'.toLowerCase();
+    final blob = '${m.channel} ${m.time} ${m.teamA} ${m.teamB}'.toLowerCase();
     if (m.sport == 'Football') {
       return blob.contains('premier league');
     }

@@ -69,8 +69,8 @@ class PriorityBroadcasters {
 
   /// 0 = FIFA … 5 = Willow; [notPriority] = everyone else.
   static int rank(ChannelModel channel) {
-    final blob =
-        '${channel.name} ${channel.currentShow} ${channel.category}'.toLowerCase();
+    final blob = '${channel.name} ${channel.currentShow} ${channel.category}'
+        .toLowerCase();
     for (final tier in _tiers) {
       if (_containsAny(blob, tier.keywords)) return tier.rank;
     }

@@ -51,7 +51,8 @@ class StreamTokenService {
   http.Client get _http => httpClientOverride ?? http.Client();
 
   Uri? _tokenEndpointUri() {
-    final base = (baseUrlOverrideForTest ?? AppConfig.streamTokenBaseUrl).trim();
+    final base =
+        (baseUrlOverrideForTest ?? AppConfig.streamTokenBaseUrl).trim();
     if (base.isEmpty || base == '__MISSING__') {
       if (!_loggedMissingBase) {
         _loggedMissingBase = true;
@@ -66,7 +67,8 @@ class StreamTokenService {
     if (parsed == null || parsed.scheme != 'https') return null;
 
     final path = parsed.path.toLowerCase();
-    if (path.endsWith('/v1/stream-token') || path.endsWith('/v1/stream/token')) {
+    if (path.endsWith('/v1/stream-token') ||
+        path.endsWith('/v1/stream/token')) {
       return parsed;
     }
     final prefix = parsed.path.endsWith('/') ? parsed.path : '${parsed.path}/';
@@ -118,9 +120,8 @@ class StreamTokenService {
     } catch (_) {
       // Platform plugins unavailable (e.g. unit tests).
     }
-    final installId = safety.installId == 'unknown'
-        ? 'test_install'
-        : safety.installId;
+    final installId =
+        safety.installId == 'unknown' ? 'test_install' : safety.installId;
     final fingerprint = safety.deviceFingerprint == 'unknown'
         ? 'test_fingerprint'
         : safety.deviceFingerprint;
@@ -128,7 +129,8 @@ class StreamTokenService {
     final body = <String, dynamic>{
       'channelId': channelId,
       'channel_id': channelId,
-      if (originalUrl != null && originalUrl.isNotEmpty) 'source_url': originalUrl,
+      if (originalUrl != null && originalUrl.isNotEmpty)
+        'source_url': originalUrl,
       'installId': installId,
       'fingerprint': fingerprint,
     };
@@ -219,11 +221,9 @@ class StreamTokenService {
     final expiresIn = map['expiresIn'] is int
         ? map['expiresIn'] as int
         : int.tryParse('${map['expiresIn']}') ?? 3600;
-    final serverTtl =
-        expiresIn > 60 ? expiresIn - _cacheSkew.inSeconds : 300;
-    final ttlSeconds = serverTtl < _maxCacheTtl.inSeconds
-        ? serverTtl
-        : _maxCacheTtl.inSeconds;
+    final serverTtl = expiresIn > 60 ? expiresIn - _cacheSkew.inSeconds : 300;
+    final ttlSeconds =
+        serverTtl < _maxCacheTtl.inSeconds ? serverTtl : _maxCacheTtl.inSeconds;
     final expiresAt = DateTime.now().add(Duration(seconds: ttlSeconds));
 
     final result = StreamTokenResult(
@@ -264,9 +264,8 @@ class StreamTokenService {
     return dio.post<dynamic>(
       path,
       data: body,
-      queryParameters: tokenUri.queryParameters.isEmpty
-          ? null
-          : tokenUri.queryParameters,
+      queryParameters:
+          tokenUri.queryParameters.isEmpty ? null : tokenUri.queryParameters,
       options: Options(
         headers: const {'Content-Type': 'application/json'},
         sendTimeout: _requestTimeout,

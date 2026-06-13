@@ -60,19 +60,25 @@ void main() {
           'id': 'a',
           'teamA': 'A',
           'teamB': 'B',
-          'channels': [{'name': 'X', 'url': 'https://x.m3u8'}],
+          'channels': [
+            {'name': 'X', 'url': 'https://x.m3u8'}
+          ],
         },
         {
           'id': 'b',
           'teamA': 'C',
           'teamB': 'D',
-          'channels': [{'name': 'Y', 'url': 'https://y.m3u8'}],
+          'channels': [
+            {'name': 'Y', 'url': 'https://y.m3u8'}
+          ],
         },
         {
           'id': 'c',
           'teamA': 'E',
           'teamB': 'F',
-          'channels': [{'name': 'Z', 'url': 'https://z.m3u8'}],
+          'channels': [
+            {'name': 'Z', 'url': 'https://z.m3u8'}
+          ],
         },
       ],
     });

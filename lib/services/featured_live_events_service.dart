@@ -104,9 +104,8 @@ class FeaturedLiveEventsService {
     final remoteUpdatedAt = entry.updatedAt;
     final cachedUpdatedAt =
         await FeaturedLiveEventsCache.instance.readRemoteUpdatedAt();
-    final cached = !forceRefresh
-        ? await FeaturedLiveEventsCache.instance.read()
-        : null;
+    final cached =
+        !forceRefresh ? await FeaturedLiveEventsCache.instance.read() : null;
 
     final useRemotePayload = entry.payload != null &&
         shouldFetchAppwritePayload(
@@ -171,8 +170,7 @@ class FeaturedLiveEventsService {
     required bool forceRefresh,
     String? errorMessage,
   }) async {
-    final stale =
-        await FeaturedLiveEventsCache.instance.read(ignoreTtl: true);
+    final stale = await FeaturedLiveEventsCache.instance.read(ignoreTtl: true);
     if (stale != null && stale.events.isNotEmpty) {
       _logLoaded(
         source: FeaturedLiveEventsSource.cache,
@@ -281,10 +279,9 @@ class FeaturedLiveEventsPayload {
     }
 
     return FeaturedLiveEventsPayload(
-      sectionTitle:
-          (json['sectionTitle'] as String?)?.trim().isNotEmpty == true
-              ? (json['sectionTitle'] as String).trim()
-              : 'World Cup 2026',
+      sectionTitle: (json['sectionTitle'] as String?)?.trim().isNotEmpty == true
+          ? (json['sectionTitle'] as String).trim()
+          : 'World Cup 2026',
       sectionSubtitle: (json['sectionSubtitle'] as String?)?.trim() ?? '',
       maxCards: maxCards,
       events: events,
@@ -329,10 +326,7 @@ LiveEventMatch? _parseEvent(Map<String, dynamic> j) {
 
   final teamA = (j['teamA'] as String?)?.trim();
   final teamB = (j['teamB'] as String?)?.trim();
-  if (teamA == null ||
-      teamA.isEmpty ||
-      teamB == null ||
-      teamB.isEmpty) {
+  if (teamA == null || teamA.isEmpty || teamB == null || teamB.isEmpty) {
     return null;
   }
 

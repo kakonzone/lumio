@@ -83,9 +83,7 @@ class LumioAppDrawer extends StatelessWidget {
 
   static int liveCount(AppProvider prov, AppDrawerDestination dest) {
     final cat = dest.categoryName;
-    final list = cat == null
-        ? prov.channels
-        : prov.byCategory(cat);
+    final list = cat == null ? prov.channels : prov.byCategory(cat);
     return list.where((c) => c.streamUrl.isNotEmpty).length;
   }
 
@@ -478,7 +476,8 @@ class _FooterAction extends StatelessWidget {
         label,
         style: GF.body(fontSize: 14, color: context.txt2),
       ),
-      trailing: Icon(Icons.chevron_right_rounded, size: 18, color: context.txt3),
+      trailing:
+          Icon(Icons.chevron_right_rounded, size: 18, color: context.txt3),
       onTap: onTap,
     );
   }

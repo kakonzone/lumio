@@ -11,7 +11,7 @@ import 'package:lumio_tv/widgets/common/pressable.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Source detail screen - Screen 3 of onboarding
-/// 
+///
 /// Features:
 /// - Form for selected method with proper validation
 /// - Submit triggers loading state with skeleton

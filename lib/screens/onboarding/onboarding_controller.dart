@@ -34,15 +34,15 @@ class OnboardingController {
     bool? adultContentEnabled,
   }) async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     if (language != null) {
       await prefs.setString(_preferredLanguageKey, language);
     }
-    
+
     if (interests != null) {
       await prefs.setStringList(_contentInterestsKey, interests);
     }
-    
+
     if (adultContentEnabled != null) {
       await prefs.setBool(_adultContentEnabledKey, adultContentEnabled);
     }

@@ -13,12 +13,12 @@ import 'package:lumio_tv/widgets/common/pressable.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Live TV screen with 3-panel layout
-/// 
+///
 /// Landscape layout:
 /// - LEFT PANEL (240px): Category rail
 /// - CENTER PANEL (320px): Channel list with filter chips
 /// - RIGHT PANEL (fills remaining): EPG timeline
-/// 
+///
 /// Portrait mode:
 /// - Single column with tabs: Categories | Channels | Guide
 class LiveTvScreen extends StatefulWidget {
@@ -48,7 +48,8 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
   @override
   Widget build(BuildContext context) {
     // Check orientation
-    final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
+    final isPortrait =
+        MediaQuery.of(context).orientation == Orientation.portrait;
 
     if (isPortrait) {
       return _buildPortraitLayout();
@@ -86,7 +87,8 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
             onFavoriteToggle: (channelId) {
               // Toggle favorite logic
               setState(() {
-                final channel = _channels.firstWhere((ch) => ch.id == channelId);
+                final channel =
+                    _channels.firstWhere((ch) => ch.id == channelId);
                 final index = _channels.indexOf(channel);
                 _channels[index] = ChannelItem(
                   id: channel.id,
@@ -141,10 +143,10 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
         children: [
           // Categories tab
           _buildPortraitCategories(),
-          
+
           // Channels tab
           _buildPortraitChannels(),
-          
+
           // Guide tab
           _buildPortraitGuide(),
         ],
@@ -170,7 +172,8 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
           child: Container(
             height: 64,
             decoration: BoxDecoration(
-              color: isSelected ? tokens.AppTokens.surface2 : Colors.transparent,
+              color:
+                  isSelected ? tokens.AppTokens.surface2 : Colors.transparent,
               border: Border(
                 bottom: BorderSide(
                   color: tokens.AppTokens.border,
@@ -256,7 +259,9 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                 child: Container(
                   height: 72,
                   decoration: BoxDecoration(
-                    color: isSelected ? tokens.AppTokens.surface2 : Colors.transparent,
+                    color: isSelected
+                        ? tokens.AppTokens.surface2
+                        : Colors.transparent,
                     border: Border(
                       bottom: BorderSide(
                         color: tokens.AppTokens.border,
@@ -288,7 +293,8 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                               ),
                               SizedBox(height: tokens.SpacingTokens.s4),
                               Text(
-                                channel.currentProgram ?? Strings.channelNoProgram,
+                                channel.currentProgram ??
+                                    Strings.channelNoProgram,
                                 style: tokens.TypographyTokens.captionSecondary,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -401,9 +407,8 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
           borderRadius: BorderRadius.circular(tokens.RadiusTokens.md),
           border: Border(
             left: BorderSide(
-              color: program.isLive
-                  ? tokens.AppTokens.accent
-                  : Colors.transparent,
+              color:
+                  program.isLive ? tokens.AppTokens.accent : Colors.transparent,
               width: 3,
             ),
           ),
@@ -428,7 +433,8 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                     ),
                     decoration: BoxDecoration(
                       color: tokens.AppTokens.liveRed,
-                      borderRadius: BorderRadius.circular(tokens.RadiusTokens.xs),
+                      borderRadius:
+                          BorderRadius.circular(tokens.RadiusTokens.xs),
                     ),
                     child: Text(
                       Strings.liveIndicator,
@@ -567,7 +573,8 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                           height: 48,
                           decoration: BoxDecoration(
                             color: tokens.AppTokens.accent,
-                            borderRadius: BorderRadius.circular(tokens.RadiusTokens.md),
+                            borderRadius:
+                                BorderRadius.circular(tokens.RadiusTokens.md),
                           ),
                           child: Center(
                             child: Row(
@@ -600,7 +607,8 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                           height: 48,
                           decoration: BoxDecoration(
                             color: tokens.AppTokens.surface3,
-                            borderRadius: BorderRadius.circular(tokens.RadiusTokens.md),
+                            borderRadius:
+                                BorderRadius.circular(tokens.RadiusTokens.md),
                           ),
                           child: Center(
                             child: Row(

@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:lumio_tv/theme/tokens/motion.dart' as tokens;
 
 /// A pressable widget that wraps any child with press animations and haptic feedback.
-/// 
+///
 /// Features:
 /// - Scale to 0.96 and opacity to 0.8 on tap down (100ms)
 /// - Spring back animation on tap up (200ms with curveSpring)

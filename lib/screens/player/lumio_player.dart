@@ -40,7 +40,8 @@ import '../../ads/adsterra/adsterra_native.dart';
 import '../../ads/propeller/propeller_webview.dart';
 import '../../config/monetag_config.dart';
 import '../../services/user_preferences.dart';
-import '../../widgets/player_ad_slot.dart' show PlayerAdSlot, PlayerStickyAdStrip;
+import '../../widgets/player_ad_slot.dart'
+    show PlayerAdSlot, PlayerStickyAdStrip;
 import '../../widgets/player_overlay_ad.dart' show PlayerOverlayAd;
 import '../../ads/rewarded_features.dart';
 import '../../config/ad_config.dart';

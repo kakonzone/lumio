@@ -46,7 +46,8 @@ class NewsHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isPending = context.watch<AppProvider>().isPendingNewsArticle(news.id);
+    final isPending =
+        context.watch<AppProvider>().isPendingNewsArticle(news.id);
     final priority = NewsPriority.priorityLabel(news);
 
     return Material(
@@ -60,7 +61,9 @@ class NewsHeroCard extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: _accentGradient.map((c) => c.withValues(alpha: 0.35)).toList(),
+              colors: _accentGradient
+                  .map((c) => c.withValues(alpha: 0.35))
+                  .toList(),
             ),
             border: Border.all(
               color: isPending ? tokens.AppTokens.accent : Colors.white24,
@@ -226,7 +229,8 @@ class NewsArticleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isPending = context.watch<AppProvider>().isPendingNewsArticle(news.id);
+    final isPending =
+        context.watch<AppProvider>().isPendingNewsArticle(news.id);
     final priority = NewsPriority.priorityLabel(news);
 
     return Material(
@@ -389,7 +393,8 @@ class _CategoryChip extends StatelessWidget {
   final String label;
   final Color accent;
 
-  const _CategoryChip({required this.label, this.accent = tokens.AppTokens.accent});
+  const _CategoryChip(
+      {required this.label, this.accent = tokens.AppTokens.accent});
 
   @override
   Widget build(BuildContext context) {

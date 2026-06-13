@@ -7,8 +7,10 @@ import 'package:lumio_tv/services/vpn_signal_service.dart';
 
 void main() {
   test('legacy fingerprint migrates to stable installId', () {
-    final a = AdSafetyService.deriveInstallIdFromLegacyFingerprint('abc123legacy');
-    final b = AdSafetyService.deriveInstallIdFromLegacyFingerprint('abc123legacy');
+    final a =
+        AdSafetyService.deriveInstallIdFromLegacyFingerprint('abc123legacy');
+    final b =
+        AdSafetyService.deriveInstallIdFromLegacyFingerprint('abc123legacy');
     expect(a, b);
     expect(a.length, 36);
     expect(a.contains('-'), isTrue);

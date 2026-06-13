@@ -26,7 +26,8 @@ class ChannelListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Selector<AppProvider, ({bool showLive, bool checking, bool isPendingTap})>(
+    return Selector<AppProvider,
+        ({bool showLive, bool checking, bool isPendingTap})>(
       selector: (_, p) => (
         showLive: p.isStreamLive(channel),
         checking: p.isStreamHealthPending(channel),
@@ -78,8 +79,9 @@ class ChannelListTile extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
-                              color:
-                                  isPendingTap ? tokens.AppTokens.accent : context.txt,
+                              color: isPendingTap
+                                  ? tokens.AppTokens.accent
+                                  : context.txt,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,

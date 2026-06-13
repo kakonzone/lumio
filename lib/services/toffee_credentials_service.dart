@@ -70,7 +70,8 @@ class ToffeeCredentialsService {
     try {
       final base = AppConfig.backendBaseUrl.trim();
       if (base.isEmpty) return;
-      final normalized = base.endsWith('/') ? base.substring(0, base.length - 1) : base;
+      final normalized =
+          base.endsWith('/') ? base.substring(0, base.length - 1) : base;
       final uri = Uri.parse('$normalized/api/v1/stream-creds');
       if (!uri.hasScheme || uri.host.isEmpty) {
         if (kDebugMode) {
@@ -88,7 +89,8 @@ class ToffeeCredentialsService {
       ).timeout(const Duration(seconds: 6));
 
       if (res.statusCode != 200) {
-        if (kDebugMode) debugPrint('[ToffeeCreds] refresh failed http=${res.statusCode}');
+        if (kDebugMode)
+          debugPrint('[ToffeeCreds] refresh failed http=${res.statusCode}');
         return;
       }
 
@@ -101,7 +103,11 @@ class ToffeeCredentialsService {
       DateTime? expiry;
       if (expiresRaw is String) expiry = DateTime.tryParse(expiresRaw);
 
-      if (linear == null || live == null || linear.isEmpty || live.isEmpty || expiry == null) {
+      if (linear == null ||
+          live == null ||
+          linear.isEmpty ||
+          live.isEmpty ||
+          expiry == null) {
         if (kDebugMode) debugPrint('[ToffeeCreds] refresh invalid payload');
         return;
       }
@@ -118,7 +124,8 @@ class ToffeeCredentialsService {
       } catch (_) {}
 
       if (kDebugMode) {
-        debugPrint('[ToffeeCreds] refreshed; expiresAt=${_expiresAt!.toIso8601String()}');
+        debugPrint(
+            '[ToffeeCreds] refreshed; expiresAt=${_expiresAt!.toIso8601String()}');
       }
     } catch (e) {
       if (kDebugMode) debugPrint('[ToffeeCreds] refresh exception: $e');
@@ -139,8 +146,8 @@ class ToffeeCredentialsService {
 
     final uri = Uri.tryParse(streamUrl);
     final host = (uri?.host ?? '').toLowerCase();
-    final live = host.contains('mprod-cdn.toffeelivelive.com') || host.contains('toffeelivelive.com');
+    final live = host.contains('mprod-cdn.toffeelivelive.com') ||
+        host.contains('toffeelivelive.com');
     return live ? (_liveCookie ?? '') : (_linearCookie ?? '');
   }
 }
-

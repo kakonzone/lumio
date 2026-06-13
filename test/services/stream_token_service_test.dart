@@ -23,7 +23,8 @@ void main() {
 
   group('StreamTokenService.fetchToken', () {
     test('200 returns token and caches stream URL', () async {
-      StreamTokenService.instance.httpClientOverride = MockClient((request) async {
+      StreamTokenService.instance.httpClientOverride =
+          MockClient((request) async {
         expect(request.url.path, contains('stream-token'));
         final body = jsonDecode(request.body as String) as Map<String, dynamic>;
         expect(body['channelId'], 'ch_1');
@@ -52,7 +53,8 @@ void main() {
     });
 
     test('401 returns null', () async {
-      StreamTokenService.instance.httpClientOverride = MockClient((request) async {
+      StreamTokenService.instance.httpClientOverride =
+          MockClient((request) async {
         return http.Response('unauthorized', 401);
       });
 
@@ -63,7 +65,8 @@ void main() {
     });
 
     test('network error falls back to originalUrl when set', () async {
-      StreamTokenService.instance.httpClientOverride = MockClient((request) async {
+      StreamTokenService.instance.httpClientOverride =
+          MockClient((request) async {
         throw Exception('socket failed');
       });
 

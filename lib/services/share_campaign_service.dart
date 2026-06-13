@@ -17,7 +17,9 @@ class ShareCampaignService {
       'campaign': campaign,
       if (tab.isNotEmpty) 'tab': tab,
     };
-    final query = q.entries.map((e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&');
+    final query = q.entries
+        .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
+        .join('&');
     return 'lumio://open?$query';
   }
 
@@ -28,7 +30,8 @@ class ShareCampaignService {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Invite link copied — share on Facebook, WhatsApp, or Telegram'),
+        content: Text(
+            'Invite link copied — share on Facebook, WhatsApp, or Telegram'),
         duration: Duration(seconds: 3),
       ),
     );

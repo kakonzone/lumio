@@ -17,7 +17,8 @@ class AdsterraDirectLink {
   /// First channel tap: random direct link in external browser.
   static Future<bool> openChannelTapInBrowser() async {
     if (!AdConfig.hasValidAdsterraDirectLink) {
-      adLog('[AdsterraDirectLink] channel_tap — no valid ADSTERRA_DIRECT_LINK(S)');
+      adLog(
+          '[AdsterraDirectLink] channel_tap — no valid ADSTERRA_DIRECT_LINK(S)');
       return false;
     }
     final picked = DirectLinkRotator.pickUrl();

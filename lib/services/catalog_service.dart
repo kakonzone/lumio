@@ -11,15 +11,13 @@ import 'special_link/special_link_cache.dart';
 /// CPU-heavy catalog normalization — off main isolate when list is large.
 List<ChannelModel> normalizeAndExpandCatalogIsolate(List<ChannelModel> raw) {
   var list = ChannelHubProcessor.expand(ChannelCatalog.normalizeAll(raw));
-  list = list
-      .map((ch) {
-        final primary = ch.streamUrl.trim();
-        if (primary.isEmpty) return ch;
-        final upgraded = StreamUrlUpgrade.preferHttps(primary);
-        if (upgraded == primary) return ch;
-        return ch.copyWith(streamUrl: upgraded);
-      })
-      .toList();
+  list = list.map((ch) {
+    final primary = ch.streamUrl.trim();
+    if (primary.isEmpty) return ch;
+    final upgraded = StreamUrlUpgrade.preferHttps(primary);
+    if (upgraded == primary) return ch;
+    return ch.copyWith(streamUrl: upgraded);
+  }).toList();
   return PriorityBroadcasters.sort(list);
 }
 

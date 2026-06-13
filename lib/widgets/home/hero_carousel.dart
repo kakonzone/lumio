@@ -11,7 +11,7 @@ import 'package:lumio_tv/theme/tokens/motion.dart' as tokens;
 import 'package:lumio_tv/utils/haptic_helpers.dart' as haptics;
 
 /// Hero carousel widget with editorial layout for home screen.
-/// 
+///
 /// Features:
 /// - 60% viewport height
 /// - Full-bleed background image with gradient overlay
@@ -50,7 +50,7 @@ class _HeroCarouselState extends State<HeroCarousel>
       duration: const Duration(seconds: 8),
       vsync: this,
     );
-    
+
     if (widget.items.isNotEmpty) {
       _startAutoRotation();
     }
@@ -67,7 +67,7 @@ class _HeroCarouselState extends State<HeroCarousel>
   void _startAutoRotation() {
     _rotationTimer?.cancel();
     _rotationController.reset();
-    
+
     _rotationController.forward().then((_) {
       if (mounted && widget.items.length > 1) {
         _rotateToNext();
@@ -77,7 +77,7 @@ class _HeroCarouselState extends State<HeroCarousel>
 
   void _rotateToNext() {
     if (!mounted) return;
-    
+
     final nextIndex = (_currentIndex + 1) % widget.items.length;
     _pageController.animateToPage(
       nextIndex,
@@ -150,7 +150,7 @@ class _HeroSlide extends StatelessWidget {
             color: tokens.AppTokens.surface2,
           ),
         ),
-        
+
         // Gradient overlay (bottom 40% fades to background black)
         Positioned.fill(
           child: DecoratedBox(
@@ -170,7 +170,7 @@ class _HeroSlide extends StatelessWidget {
             ),
           ),
         ),
-        
+
         // Content (asymmetric layout, anchored bottom-left)
         Positioned(
           left: tokens.SpacingTokens.s24,
@@ -196,10 +196,9 @@ class _HeroSlide extends StatelessWidget {
                     style: tokens.TypographyTokens.captionPrimary,
                   ),
                 ),
-              
-              if (item.isLive)
-                const SizedBox(height: tokens.SpacingTokens.s12),
-              
+
+              if (item.isLive) const SizedBox(height: tokens.SpacingTokens.s12),
+
               // Display font heading
               Text(
                 item.title,
@@ -207,9 +206,9 @@ class _HeroSlide extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-              
+
               const SizedBox(height: tokens.SpacingTokens.s8),
-              
+
               // Body text (current program)
               Text(
                 item.subtitle,
@@ -217,9 +216,9 @@ class _HeroSlide extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-              
+
               const SizedBox(height: tokens.SpacingTokens.s24),
-              
+
               // Button row
               Row(
                 children: [
@@ -239,9 +238,9 @@ class _HeroSlide extends StatelessWidget {
                     ),
                     child: Text(strings.Strings.continueText),
                   ),
-                  
+
                   const SizedBox(width: tokens.SpacingTokens.s12),
-                  
+
                   // More Info button (ghost)
                   OutlinedButton(
                     onPressed: onMoreInfo,

@@ -70,7 +70,9 @@ class ChannelPlaybackLinks {
   ) {
     final members = <ChannelModel>[hub];
     for (final ch in catalog) {
-      if (ch.hubGroupId == hub.id && !ch.isHubParent && ch.streamUrl.isNotEmpty) {
+      if (ch.hubGroupId == hub.id &&
+          !ch.isHubParent &&
+          ch.streamUrl.isNotEmpty) {
         members.add(ch);
       }
     }
@@ -89,8 +91,7 @@ class ChannelPlaybackLinks {
     final out = <ChannelModel>[];
     for (final ch in catalog) {
       if (ch.streamUrl.isEmpty || ch.isHubParent) continue;
-      if (_isAppwriteMergeGroup(groupId) &&
-          ch.hubGroupId == groupId) {
+      if (_isAppwriteMergeGroup(groupId) && ch.hubGroupId == groupId) {
         out.add(ch);
         continue;
       }

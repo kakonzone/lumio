@@ -35,7 +35,8 @@ class WhatsNewManager {
     final prefs = await SharedPreferences.getInstance();
     _lastSeenVersion = prefs.getString('last_seen_version');
     _currentVersion = await _getCurrentVersion();
-    _dismissedFeatures = prefs.getStringList('dismissed_features')?.toSet() ?? {};
+    _dismissedFeatures =
+        prefs.getStringList('dismissed_features')?.toSet() ?? {};
   }
 
   /// Get current app version
@@ -45,7 +46,7 @@ class WhatsNewManager {
   }
 
   /// Check if "What's New" should be shown
-  /// 
+  ///
   /// Returns true if:
   /// - This is a version update from last seen
   /// - There are features to show
@@ -54,14 +55,14 @@ class WhatsNewManager {
     if (_currentVersion == null) return false;
     if (_lastSeenVersion == _currentVersion) return false; // Same version
     if (features.isEmpty) return false;
-    
+
     return true;
   }
 
   /// Mark current version as seen
   Future<void> markVersionSeen() async {
     if (_currentVersion == null) return;
-    
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('last_seen_version', _currentVersion!);
     _lastSeenVersion = _currentVersion;
@@ -70,9 +71,10 @@ class WhatsNewManager {
   /// Mark a feature as dismissed
   Future<void> dismissFeature(String featureId) async {
     _dismissedFeatures.add(featureId);
-    
+
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList('dismissed_features', _dismissedFeatures.toList());
+    await prefs.setStringList(
+        'dismissed_features', _dismissedFeatures.toList());
   }
 
   /// Check if a feature has been dismissed
@@ -83,7 +85,7 @@ class WhatsNewManager {
   /// Reset dismissed features (for testing or major version bump)
   Future<void> resetDismissedFeatures() async {
     _dismissedFeatures.clear();
-    
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('dismissed_features');
   }
@@ -91,7 +93,7 @@ class WhatsNewManager {
   /// Reset last seen version (for testing)
   Future<void> resetLastSeenVersion() async {
     _lastSeenVersion = null;
-    
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('last_seen_version');
   }
@@ -104,7 +106,7 @@ class WhatsNewManager {
 }
 
 /// "What's New" sheet widget
-/// 
+///
 /// Slide-down sheet shown on app update with feature highlights
 class WhatsNewSheet extends StatefulWidget {
   final List<WhatsNewFeature> features;
@@ -157,7 +159,7 @@ class _WhatsNewSheetState extends State<WhatsNewSheet> {
                   ),
                 ),
               ),
-              
+
               // Header
               Padding(
                 padding: const EdgeInsets.all(16),
@@ -179,7 +181,7 @@ class _WhatsNewSheetState extends State<WhatsNewSheet> {
                   ],
                 ),
               ),
-              
+
               // Feature list
               Expanded(
                 child: ListView.separated(
@@ -199,7 +201,7 @@ class _WhatsNewSheetState extends State<WhatsNewSheet> {
                   },
                 ),
               ),
-              
+
               // Footer
               Padding(
                 padding: const EdgeInsets.all(16),
@@ -250,11 +252,11 @@ class _WhatsNewSheetState extends State<WhatsNewSheet> {
       final manager = WhatsNewManager();
       await manager.markVersionSeen();
     }
-    
+
     if (widget.onDismiss != null) {
       widget.onDismiss!();
     }
-    
+
     if (mounted) {
       Navigator.of(context).pop();
     }
@@ -264,7 +266,7 @@ class _WhatsNewSheetState extends State<WhatsNewSheet> {
     if (widget.onFeatureTap != null) {
       widget.onFeatureTap!();
     }
-    
+
     if (feature.navigationRoute != null && mounted) {
       Navigator.of(context).pop();
       Navigator.of(context).pushNamed(feature.navigationRoute!);
@@ -305,7 +307,7 @@ class _FeatureTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 16),
-            
+
             // Content
             Expanded(
               child: Column(
@@ -332,7 +334,7 @@ class _FeatureTile extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             // Arrow if navigable
             if (feature.navigationRoute != null)
               Icon(
@@ -348,7 +350,7 @@ class _FeatureTile extends StatelessWidget {
 }
 
 /// Widget to show "What's New" sheet on app start
-/// 
+///
 /// Usage in main.dart or root widget:
 /// ```dart
 /// WhatsNewChecker(
@@ -387,7 +389,7 @@ class _WhatsNewCheckerState extends State<WhatsNewChecker> {
   Future<void> _initialize() async {
     final manager = WhatsNewManager();
     await manager.initialize();
-    
+
     if (mounted) {
       if (manager.shouldShowWhatsNew(widget.features)) {
         WidgetsBinding.instance.addPostFrameCallback((_) {

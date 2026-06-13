@@ -45,7 +45,8 @@ class FirebaseBootstrap {
         // ignore: avoid_print
         print('[Lumio] SECURITY WARNING: hmacSecret is empty in release mode');
         if (kDebugMode) {
-          debugPrint('[Lumio] Set LUMIO_HMAC_SECRET via --dart-define for production');
+          debugPrint(
+              '[Lumio] Set LUMIO_HMAC_SECRET via --dart-define for production');
         }
       }
     } catch (e) {
@@ -63,7 +64,8 @@ class FirebaseBootstrap {
   }
 
   @visibleForTesting
-  static Future<void> wireCrashlyticsForTest({required bool firebaseAvailable}) async {
+  static Future<void> wireCrashlyticsForTest(
+      {required bool firebaseAvailable}) async {
     _initialized = firebaseAvailable;
     _crashlyticsWired = false;
     if (!firebaseAvailable) return;

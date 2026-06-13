@@ -11,8 +11,7 @@ class UiStateProvider extends ChangeNotifier {
   bool isPendingChannelTap(String channelKey) =>
       channelKey.isNotEmpty && _pendingChannelTapId == channelKey;
 
-  bool isPendingChannelTapChannel(ChannelModel channel) =>
-      isPendingChannelTap(
+  bool isPendingChannelTapChannel(ChannelModel channel) => isPendingChannelTap(
         channel.id.isNotEmpty ? channel.id : channel.name,
       );
 

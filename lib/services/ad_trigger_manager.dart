@@ -277,7 +277,8 @@ class AdTriggerManager {
     return const InterstitialCapResult.allowed();
   }
 
-  Future<InterstitialCapResult> _canShowMidroll({required bool removeAds}) async {
+  Future<InterstitialCapResult> _canShowMidroll(
+      {required bool removeAds}) async {
     if (removeAds || isAdFree) {
       return const InterstitialCapResult.denied('ad_free');
     }
@@ -313,7 +314,8 @@ class AdTriggerManager {
     }
     if (_lastUnityInterstitial != null) {
       final gap = DateTime.now().difference(_lastUnityInterstitial!);
-      if (gap.inSeconds < scaledCooldownSeconds(_policy.interstitialMinGapSeconds)) {
+      if (gap.inSeconds <
+          scaledCooldownSeconds(_policy.interstitialMinGapSeconds)) {
         return false;
       }
     }
@@ -591,5 +593,4 @@ class AdTriggerManager {
   }
 
   void recordExitAdShown() => _exitAdShown = true;
-
 }

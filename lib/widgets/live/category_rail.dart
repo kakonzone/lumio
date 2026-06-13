@@ -9,7 +9,7 @@ import 'package:lumio_tv/widgets/common/pressable.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Category rail widget for left panel in Live TV screen
-/// 
+///
 /// Features:
 /// - 240px wide (fixed)
 /// - Surface1 background
@@ -56,10 +56,13 @@ class CategoryRail extends StatelessWidget {
             child: Container(
               height: 44,
               decoration: BoxDecoration(
-                color: isSelected ? tokens.AppTokens.surface2 : Colors.transparent,
+                color:
+                    isSelected ? tokens.AppTokens.surface2 : Colors.transparent,
                 border: Border(
                   left: BorderSide(
-                    color: isSelected ? tokens.AppTokens.accent : Colors.transparent,
+                    color: isSelected
+                        ? tokens.AppTokens.accent
+                        : Colors.transparent,
                     width: 3,
                   ),
                 ),
@@ -79,7 +82,7 @@ class CategoryRail extends StatelessWidget {
                           : tokens.AppTokens.textSecondary,
                     ),
                     SizedBox(width: tokens.SpacingTokens.s12),
-                    
+
                     // Label
                     Text(
                       category.label,

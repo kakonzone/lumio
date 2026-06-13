@@ -11,7 +11,7 @@ import 'package:lumio_tv/widgets/common/pressable.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Channel list widget for center panel in Live TV screen
-/// 
+///
 /// Features:
 /// - 320px wide
 /// - Search/filter input at top
@@ -133,13 +133,16 @@ class _ChannelListState extends State<ChannelList> {
                   _FilterChip(
                     label: Strings.epgFilterFavorites,
                     isSelected: _selectedFilter == Strings.epgFilterFavorites,
-                    onTap: () => _handleFilterChange(Strings.epgFilterFavorites),
+                    onTap: () =>
+                        _handleFilterChange(Strings.epgFilterFavorites),
                   ),
                   SizedBox(width: tokens.SpacingTokens.s8),
                   _FilterChip(
                     label: Strings.epgFilterRecentlyWatched,
-                    isSelected: _selectedFilter == Strings.epgFilterRecentlyWatched,
-                    onTap: () => _handleFilterChange(Strings.epgFilterRecentlyWatched),
+                    isSelected:
+                        _selectedFilter == Strings.epgFilterRecentlyWatched,
+                    onTap: () =>
+                        _handleFilterChange(Strings.epgFilterRecentlyWatched),
                   ),
                 ],
               ),
@@ -168,7 +171,9 @@ class _ChannelListState extends State<ChannelList> {
                   child: Container(
                     height: 64,
                     decoration: BoxDecoration(
-                      color: isSelected ? tokens.AppTokens.surface2 : Colors.transparent,
+                      color: isSelected
+                          ? tokens.AppTokens.surface2
+                          : Colors.transparent,
                     ),
                     child: Padding(
                       padding: EdgeInsets.symmetric(
@@ -203,8 +208,10 @@ class _ChannelListState extends State<ChannelList> {
                                   children: [
                                     Expanded(
                                       child: Text(
-                                        channel.currentProgram ?? Strings.channelNoProgram,
-                                        style: tokens.TypographyTokens.captionSecondary,
+                                        channel.currentProgram ??
+                                            Strings.channelNoProgram,
+                                        style: tokens
+                                            .TypographyTokens.captionSecondary,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
@@ -218,7 +225,8 @@ class _ChannelListState extends State<ChannelList> {
                                         ),
                                         decoration: BoxDecoration(
                                           color: tokens.AppTokens.liveRed,
-                                          borderRadius: BorderRadius.circular(tokens.RadiusTokens.xs),
+                                          borderRadius: BorderRadius.circular(
+                                              tokens.RadiusTokens.xs),
                                         ),
                                         child: Text(
                                           Strings.liveIndicator,
@@ -234,13 +242,16 @@ class _ChannelListState extends State<ChannelList> {
                                 ),
 
                                 // Progress bar (if program has progress)
-                                if (channel.programProgress != null && channel.programProgress! > 0) ...[
+                                if (channel.programProgress != null &&
+                                    channel.programProgress! > 0) ...[
                                   SizedBox(height: tokens.SpacingTokens.s4),
                                   ClipRRect(
-                                    borderRadius: BorderRadius.circular(tokens.RadiusTokens.xs),
+                                    borderRadius: BorderRadius.circular(
+                                        tokens.RadiusTokens.xs),
                                     child: LinearProgressIndicator(
                                       value: channel.programProgress,
-                                      backgroundColor: tokens.AppTokens.surface3,
+                                      backgroundColor:
+                                          tokens.AppTokens.surface3,
                                       valueColor: AlwaysStoppedAnimation<Color>(
                                         tokens.AppTokens.accent,
                                       ),
@@ -298,7 +309,8 @@ class _ChannelLogo extends StatelessWidget {
                 imageUrl: imageUrl!,
                 fit: BoxFit.cover,
                 placeholder: (context, url) => _LogoFallback(channelName),
-                errorWidget: (context, url, error) => _LogoFallback(channelName),
+                errorWidget: (context, url, error) =>
+                    _LogoFallback(channelName),
               )
             : _LogoFallback(channelName),
       ),
@@ -355,9 +367,8 @@ class _FilterChip extends StatelessWidget {
               : tokens.AppTokens.surface2,
           borderRadius: BorderRadius.circular(tokens.RadiusTokens.md),
           border: Border.all(
-            color: isSelected
-                ? tokens.AppTokens.accent
-                : tokens.AppTokens.border,
+            color:
+                isSelected ? tokens.AppTokens.accent : tokens.AppTokens.border,
             width: 1,
           ),
         ),

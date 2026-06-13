@@ -67,19 +67,19 @@ class _SourceFormState extends State<SourceForm> {
 
     try {
       await Future.delayed(const Duration(milliseconds: 500));
-      
+
       final url = _urlController.text.trim();
-      final name = _nameController.text.trim().isEmpty 
-          ? null 
+      final name = _nameController.text.trim().isEmpty
+          ? null
           : _nameController.text.trim();
-      
+
       widget.onSubmit(url, name);
-      
+
       HapticFeedback.heavyImpact();
     } catch (e) {
       setState(() => _isLoading = false);
       HapticFeedback.heavyImpact();
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -95,13 +95,13 @@ class _SourceFormState extends State<SourceForm> {
     if (value == null || value.trim().isEmpty) {
       return 'Please enter a playlist URL';
     }
-    
+
     final url = value.trim();
-    
+
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       return 'URL must start with http:// or https://';
     }
-    
+
     return null;
   }
 
@@ -123,7 +123,9 @@ class _SourceFormState extends State<SourceForm> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  widget.mode == SourceFormMode.onboarding ? 'Add Source' : 'Source URL',
+                  widget.mode == SourceFormMode.onboarding
+                      ? 'Add Source'
+                      : 'Source URL',
                   style: TextStyle(
                     color: tokens.AppTokens.textPrimary,
                     fontSize: 16,
@@ -170,9 +172,9 @@ class _SourceFormState extends State<SourceForm> {
               ],
             ),
           ),
-          
+
           SizedBox(height: tokens.SpacingTokens.s16),
-          
+
           // Name Input (only in settings mode)
           if (widget.mode == SourceFormMode.settings) ...[
             Container(
@@ -226,7 +228,7 @@ class _SourceFormState extends State<SourceForm> {
             ),
             SizedBox(height: tokens.SpacingTokens.s16),
           ],
-          
+
           // Info section (onboarding only)
           if (widget.mode == SourceFormMode.onboarding) ...[
             Container(
@@ -261,7 +263,7 @@ class _SourceFormState extends State<SourceForm> {
             ),
             SizedBox(height: tokens.SpacingTokens.s24),
           ],
-          
+
           // Action buttons
           Row(
             children: [
@@ -288,7 +290,7 @@ class _SourceFormState extends State<SourceForm> {
                 ),
                 SizedBox(width: tokens.SpacingTokens.s12),
               ],
-              
+
               // Submit button
               Expanded(
                 flex: widget.mode == SourceFormMode.settings ? 1 : 2,
@@ -319,7 +321,9 @@ class _SourceFormState extends State<SourceForm> {
                       : Text(
                           widget.mode == SourceFormMode.onboarding
                               ? 'Next'
-                              : (widget.isEditing == true ? 'Update Source' : 'Add Source'),
+                              : (widget.isEditing == true
+                                  ? 'Update Source'
+                                  : 'Add Source'),
                           style: const TextStyle(
                             fontWeight: FontWeight.w600,
                           ),
@@ -328,7 +332,7 @@ class _SourceFormState extends State<SourceForm> {
               ),
             ],
           ),
-          
+
           // Skip button (onboarding only)
           if (widget.mode == SourceFormMode.onboarding) ...[
             SizedBox(height: tokens.SpacingTokens.s16),

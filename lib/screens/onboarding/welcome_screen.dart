@@ -11,7 +11,7 @@ import 'package:lumio_tv/widgets/common/pressable.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Welcome screen - Screen 1 of onboarding
-/// 
+///
 /// Features:
 /// - Display size heading: "Welcome to Lumio"
 /// - Body: "Your IPTV, finally with taste."

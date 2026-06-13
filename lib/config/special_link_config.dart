@@ -11,12 +11,14 @@ class SpecialLinkConfig {
   /// GITUN GitHub sources live in Appwrite `special_links` (see `data/special_links.json`).
   /// Deploy syncs them; the app reads URLs from Appwrite then fetches M3U.
 
-  @Deprecated('Sources are in Appwrite special_links — edit data/special_links.json')
+  @Deprecated(
+      'Sources are in Appwrite special_links — edit data/special_links.json')
   static const gitunAutoDiscoverRepos = <GitunAutoRepo>[
     GitunAutoRepo(owner: 'yIsus-mEx', repo: 'Sports.M3U8', branch: 'main'),
   ];
 
-  @Deprecated('Sources are in Appwrite special_links — edit data/special_links.json')
+  @Deprecated(
+      'Sources are in Appwrite special_links — edit data/special_links.json')
   static const gitunPlaylistSources = <GitunPlaylistSource>[
     GitunPlaylistSource(
       pageUrl:
@@ -24,8 +26,7 @@ class SpecialLinkConfig {
       sportsOnly: true,
     ),
     GitunPlaylistSource(
-      pageUrl:
-          'https://github.com/yIsus-mEx/Sports.M3U8/blob/main/TVTVHD.m3u8',
+      pageUrl: 'https://github.com/yIsus-mEx/Sports.M3U8/blob/main/TVTVHD.m3u8',
       sportsOnly: true,
     ),
     GitunPlaylistSource(
@@ -34,8 +35,7 @@ class SpecialLinkConfig {
       sportsOnly: true,
     ),
     GitunPlaylistSource(
-      pageUrl:
-          'https://github.com/yIsus-mEx/Sports.M3U8/blob/main/Roxie.m3u8',
+      pageUrl: 'https://github.com/yIsus-mEx/Sports.M3U8/blob/main/Roxie.m3u8',
       sportsOnly: true,
     ),
     GitunPlaylistSource(

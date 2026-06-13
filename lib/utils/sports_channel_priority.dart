@@ -84,9 +84,8 @@ class SportsChannelPriority {
     if (_matchesAny(country, _indiaCountry)) return india;
     if (_matchesAny(country, _pakistanCountry)) return pakistan;
 
-    final blob =
-        '${channel.name} ${channel.currentShow} ${channel.category}'
-            .toLowerCase();
+    final blob = '${channel.name} ${channel.currentShow} ${channel.category}'
+        .toLowerCase();
 
     if (_containsAny(blob, _bangladeshNameHints)) return bangladesh;
     if (_containsAny(blob, _pakistanNameHints)) return pakistan;
@@ -128,8 +127,7 @@ class SportsChannelPriority {
     }
     return [
       for (final r in [bangladesh, india, pakistan, other])
-        if (buckets[r]?.isNotEmpty ?? false)
-          (region: r, channels: buckets[r]!),
+        if (buckets[r]?.isNotEmpty ?? false) (region: r, channels: buckets[r]!),
     ];
   }
 

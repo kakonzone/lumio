@@ -71,9 +71,11 @@ class _DevDiagnosticsScreenState extends State<DevDiagnosticsScreen> {
       final prefs = await SharedPreferences.getInstance();
       final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
       final revenue = <String, double>{};
-      
+
       // Get all keys that start with revenue_estimate for today
-      final keys = prefs.getKeys().where((k) => k.startsWith('revenue_estimate_${today}_'));
+      final keys = prefs
+          .getKeys()
+          .where((k) => k.startsWith('revenue_estimate_${today}_'));
       for (final key in keys) {
         final value = prefs.getDouble(key) ?? 0.0;
         // Extract placement from key (format: revenue_estimate_YYYY-MM-DD_placement)
@@ -83,7 +85,7 @@ class _DevDiagnosticsScreenState extends State<DevDiagnosticsScreen> {
           revenue[placement] = value;
         }
       }
-      
+
       if (mounted) {
         setState(() {
           _todayRevenue = revenue;
@@ -142,8 +144,8 @@ class _DevDiagnosticsScreenState extends State<DevDiagnosticsScreen> {
           _section('Recent load attempts', [
             for (final a in AdHealthMonitor.instance.allRecent(limit: 10))
               '${a.at.toIso8601String().substring(11, 19)} '
-              '${a.format} ${a.result}'
-              '${a.errorCode != null ? ' (${a.errorCode})' : ''}',
+                  '${a.format} ${a.result}'
+                  '${a.errorCode != null ? ' (${a.errorCode})' : ''}',
           ]),
           _section('Adsterra cache', [
             'Hits: ${cache.hits}',
@@ -199,7 +201,7 @@ class _DevDiagnosticsScreenState extends State<DevDiagnosticsScreen> {
               _section('Zone validation', [
                 for (final z in _zoneResults)
                   '${z.network} ${z.placement} ${z.zoneId}: '
-                  '${z.result} (${z.latencyMs}ms) ${z.formatDetected}',
+                      '${z.result} (${z.latencyMs}ms) ${z.formatDetected}',
               ]),
           ],
           if (_packageInfo != null)

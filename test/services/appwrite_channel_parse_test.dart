@@ -29,7 +29,8 @@ void main() {
     expect(ch.userStreamLinks.length, 2);
   });
 
-  test('merges Appwrite rows with same mergeKey into one multi-link channel', () {
+  test('merges Appwrite rows with same mergeKey into one multi-link channel',
+      () {
     final a = AppwriteChannelMapper.fromDocument(_doc(
       id: 'a',
       name: 'T Sports HD',

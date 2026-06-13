@@ -154,7 +154,8 @@ class AdColdStartEligibility {
       blockers.add(
         const AdColdStartBlocker(
           code: AdColdStartBlockerCode.adManagerNotReady,
-          message: 'AdManager.init() did not complete — check LumioAds logcat line',
+          message:
+              'AdManager.init() did not complete — check LumioAds logcat line',
           blocksHousePromo: true,
         ),
       );
@@ -246,9 +247,8 @@ class AdColdStartEligibility {
     final blocksThirdParty =
         blockers.any((b) => b.blocksThirdParty) || blocksAll;
 
-    final canUnity = !blocksThirdParty &&
-        manager.unityAdsEnabled &&
-        AdConfig.hasUnityConfig;
+    final canUnity =
+        !blocksThirdParty && manager.unityAdsEnabled && AdConfig.hasUnityConfig;
 
     final canAdsterra = !blocksThirdParty &&
         safety.adsterraEnabledForColdStart &&
@@ -288,7 +288,8 @@ class AdColdStartEligibility {
     }
   }
 
-  static String _capBlockerMessage(AdColdStartBlockerCode code, String? reason) {
+  static String _capBlockerMessage(
+      AdColdStartBlockerCode code, String? reason) {
     return switch (code) {
       AdColdStartBlockerCode.appOpenDailyCap =>
         'App-open shown ${AdConfig.appOpenMaxPerDay}x today — try tomorrow',

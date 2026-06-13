@@ -9,7 +9,7 @@ import 'package:lumio_tv/theme/tokens/typography.dart' as tokens;
 import 'package:lumio_tv/widgets/common/pressable.dart';
 
 /// EPG timeline widget for right panel in Live TV screen
-/// 
+///
 /// Features:
 /// - Horizontal timeline with time markers (every 30 min)
 /// - "Now" red vertical line, animated to current time
@@ -124,7 +124,8 @@ class _EpgTimelineState extends State<EpgTimeline> {
                       color: tokens.AppTokens.liveRed,
                       boxShadow: [
                         BoxShadow(
-                          color: tokens.AppTokens.liveRed.withValues(alpha: 0.3),
+                          color:
+                              tokens.AppTokens.liveRed.withValues(alpha: 0.3),
                           blurRadius: 4,
                           spreadRadius: 2,
                         ),
@@ -250,9 +251,8 @@ class _ProgramBlock extends StatelessWidget {
           borderRadius: BorderRadius.circular(tokens.RadiusTokens.sm),
           border: Border(
             left: BorderSide(
-              color: program.isLive
-                  ? tokens.AppTokens.accent
-                  : Colors.transparent,
+              color:
+                  program.isLive ? tokens.AppTokens.accent : Colors.transparent,
               width: 3,
             ),
           ),
@@ -285,7 +285,8 @@ class _ProgramBlock extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: tokens.AppTokens.liveRed,
-                      borderRadius: BorderRadius.circular(tokens.RadiusTokens.xs),
+                      borderRadius:
+                          BorderRadius.circular(tokens.RadiusTokens.xs),
                     ),
                     child: Text(
                       Strings.liveIndicator,
@@ -347,8 +348,10 @@ class EpgProgram {
 
   /// Get formatted time range
   String get timeRange {
-    final start = '${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}';
-    final end = '${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')}';
+    final start =
+        '${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}';
+    final end =
+        '${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')}';
     return '$start - $end';
   }
 

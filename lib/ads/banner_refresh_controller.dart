@@ -19,7 +19,8 @@ class BannerRefreshController {
     // Future: Read from Firebase Remote Config key 'banner_refresh_interval_seconds'
     // For now, use default 60 seconds
     if (kDebugMode) {
-      print('[BannerRefresh] interval=$_defaultRefreshSeconds seconds (default)');
+      print(
+          '[BannerRefresh] interval=$_defaultRefreshSeconds seconds (default)');
     }
   }
 

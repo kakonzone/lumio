@@ -90,7 +90,8 @@ class SecurityConfig {
   );
 
   static List<String> _pins(String primary, String backup) => [
-        if (primary.trim().isNotEmpty && primary != '__MISSING__') primary.trim(),
+        if (primary.trim().isNotEmpty && primary != '__MISSING__')
+          primary.trim(),
         if (backup.trim().isNotEmpty && backup != '__MISSING__') backup.trim(),
       ];
 

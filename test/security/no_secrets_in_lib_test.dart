@@ -4,7 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// R01 — fail CI if JWT/Bearer literals reappear under lib/.
 void main() {
-  test('lib/ contains no hardcoded JWT subscriber tokens or Bearer secrets', () {
+  test('lib/ contains no hardcoded JWT subscriber tokens or Bearer secrets',
+      () {
     final libRoot = Directory('lib');
     expect(libRoot.existsSync(), isTrue);
 

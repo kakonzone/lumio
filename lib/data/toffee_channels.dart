@@ -17,4 +17,3 @@ class ToffeeChannels {
 
   static List<ChannelModel> get all => const <ChannelModel>[];
 }
-

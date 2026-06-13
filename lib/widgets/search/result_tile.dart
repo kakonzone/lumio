@@ -92,7 +92,7 @@ class ResultTile extends StatelessWidget {
                     title: result.title,
                     matchedQuery: result.matchedQuery,
                   ),
-                  
+
                   if (result.subtitle != null) ...[
                     SizedBox(height: tokens.SpacingTokens.s4),
                     Text(
@@ -102,7 +102,7 @@ class ResultTile extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
-                  
+
                   if (result.metadata != null) ...[
                     SizedBox(height: tokens.SpacingTokens.s4),
                     Text(
@@ -156,7 +156,8 @@ class _Thumbnail extends StatelessWidget {
                   height: 64,
                   borderRadius: BorderRadius.circular(tokens.RadiusTokens.sm),
                 ),
-                errorWidget: (context, url, error) => _ThumbnailFallback(type: type),
+                errorWidget: (context, url, error) =>
+                    _ThumbnailFallback(type: type),
               )
             : _ThumbnailFallback(type: type),
       ),
@@ -319,7 +320,7 @@ class _TypeIndicator extends StatelessWidget {
 /// Skeleton tile for loading state
 class ResultTileSkeleton extends StatelessWidget {
   const ResultTileSkeleton({super.key});
-  
+
   @override
   Widget build(BuildContext context) {
     return Container(

@@ -19,7 +19,7 @@ enum EmptyStateIllustration {
 }
 
 /// A reusable empty state widget with illustration, title, subtitle, and optional action.
-/// 
+///
 /// Features:
 /// - Supports SVG illustrations (via flutter_svg) or Phosphor icons as fallback
 /// - Proper typography hierarchy (title size for heading, body size for subtitle)
@@ -29,19 +29,19 @@ enum EmptyStateIllustration {
 class EmptyState extends StatelessWidget {
   /// The illustration to display (icon type for now, SVG path for future)
   final EmptyStateIllustration illustration;
-  
+
   /// Optional custom SVG asset path (overrides icon if provided)
   final String? customIllustration;
-  
+
   /// The main heading text (title size)
   final String title;
-  
+
   /// The supporting subtitle text (body size, TextSecondary)
   final String subtitle;
-  
+
   /// Optional label for the action button
   final String? actionLabel;
-  
+
   /// Optional callback when action button is pressed
   final VoidCallback? onAction;
 
@@ -164,25 +164,25 @@ class EmptyState extends StatelessWidget {
           children: [
             // Illustration
             _buildIllustration(),
-            
+
             SizedBox(height: tokens.SpacingTokens.s24),
-            
+
             // Title
             Text(
               title,
               style: tokens.TypographyTokens.titlePrimary,
               textAlign: TextAlign.center,
             ),
-            
+
             SizedBox(height: tokens.SpacingTokens.s12),
-            
+
             // Subtitle
             Text(
               subtitle,
               style: tokens.TypographyTokens.bodySecondary,
               textAlign: TextAlign.center,
             ),
-            
+
             // Action button (if provided)
             if (actionLabel != null && onAction != null) ...[
               SizedBox(height: tokens.SpacingTokens.s24),
@@ -212,7 +212,7 @@ class EmptyState extends StatelessWidget {
 
   Widget _buildIcon() {
     IconData iconData;
-    
+
     switch (illustration) {
       case EmptyStateIllustration.search:
         iconData = PhosphorIcons.magnifyingGlass();

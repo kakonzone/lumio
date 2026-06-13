@@ -28,10 +28,12 @@ class VpnDetectionInput {
   final bool vpnInterfaceDetected;
   final bool vpnTransportDetected;
   final bool dnsLeakSuspicious;
+
   /// Proxy for ASN catalog when IP→ASN lookup is unavailable on-device.
   final bool vpnAppInstalled;
   final bool localeMismatch;
   final bool tzMismatch;
+
   /// Set when server or future client supplies ASN ∈ [VpnAsnCatalog.top50].
   final bool asnMatched;
 

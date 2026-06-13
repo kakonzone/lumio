@@ -13,10 +13,11 @@ enum PersonalityMoment {
 }
 
 /// Manager for personality moments
-/// 
+///
 /// Subtle, tasteful moments that add character without being intrusive
 class PersonalityMomentsManager {
-  static final PersonalityMomentsManager _instance = PersonalityMomentsManager._internal();
+  static final PersonalityMomentsManager _instance =
+      PersonalityMomentsManager._internal();
   factory PersonalityMomentsManager() => _instance;
   PersonalityMomentsManager._internal();
 
@@ -30,7 +31,8 @@ class PersonalityMomentsManager {
     final prefs = await SharedPreferences.getInstance();
     _firstFavoriteAdded = prefs.getBool('first_favorite_added') ?? false;
     _totalWatchedHours = prefs.getInt('total_watched_hours') ?? 0;
-    _milestone100HoursShown = prefs.getBool('milestone_100_hours_shown') ?? false;
+    _milestone100HoursShown =
+        prefs.getBool('milestone_100_hours_shown') ?? false;
   }
 
   /// Check if first favorite has been added
@@ -45,7 +47,7 @@ class PersonalityMomentsManager {
   /// Mark first favorite as added
   Future<void> markFirstFavoriteAdded() async {
     _firstFavoriteAdded = true;
-    
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('first_favorite_added', true);
   }
@@ -53,10 +55,10 @@ class PersonalityMomentsManager {
   /// Increment watched hours
   Future<void> incrementWatchedHours() async {
     _totalWatchedHours++;
-    
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('total_watched_hours', _totalWatchedHours);
-    
+
     // Check for milestone
     if (_totalWatchedHours == 100 && !_milestone100HoursShown) {
       _milestone100HoursShown = true;
@@ -77,7 +79,7 @@ class PersonalityMomentsManager {
   /// Reset first favorite (for testing)
   Future<void> resetFirstFavorite() async {
     _firstFavoriteAdded = false;
-    
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('first_favorite_added');
   }
@@ -85,7 +87,7 @@ class PersonalityMomentsManager {
   /// Reset milestone (for testing)
   Future<void> resetMilestone() async {
     _milestone100HoursShown = false;
-    
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('milestone_100_hours_shown');
   }
@@ -93,7 +95,7 @@ class PersonalityMomentsManager {
   /// Reset watched hours (for testing)
   Future<void> resetWatchedHours() async {
     _totalWatchedHours = 0;
-    
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('total_watched_hours', 0);
   }
@@ -270,7 +272,7 @@ class Milestone100HoursMoment extends StatelessWidget {
 }
 
 /// Widget to trigger first favorite moment
-/// 
+///
 /// Wrap your favorite button with this:
 /// ```dart
 /// FirstFavoriteTrigger(
@@ -306,7 +308,7 @@ class _FirstFavoriteTriggerState extends State<FirstFavoriteTrigger> {
   Future<void> _checkMoment() async {
     final manager = PersonalityMomentsManager();
     await manager.initialize();
-    
+
     if (mounted) {
       setState(() {
         _shouldShowMoment = manager.shouldShowFirstFavoriteMoment();
@@ -320,9 +322,9 @@ class _FirstFavoriteTriggerState extends State<FirstFavoriteTrigger> {
         _shouldShowMoment = false;
       });
     }
-    
+
     widget.onTap();
-    
+
     if (_shouldShowMoment) {
       final manager = PersonalityMomentsManager();
       await manager.markFirstFavoriteAdded();
@@ -340,7 +342,7 @@ class _FirstFavoriteTriggerState extends State<FirstFavoriteTrigger> {
         ),
       );
     }
-    
+
     return GestureDetector(
       onTap: _handleTap,
       child: widget.child,
@@ -358,7 +360,8 @@ class Milestone100HoursChecker extends StatefulWidget {
   });
 
   @override
-  State<Milestone100HoursChecker> createState() => _Milestone100HoursCheckerState();
+  State<Milestone100HoursChecker> createState() =>
+      _Milestone100HoursCheckerState();
 }
 
 class _Milestone100HoursCheckerState extends State<Milestone100HoursChecker> {
@@ -371,7 +374,7 @@ class _Milestone100HoursCheckerState extends State<Milestone100HoursChecker> {
   Future<void> _checkMilestone() async {
     final manager = PersonalityMomentsManager();
     await manager.initialize();
-    
+
     if (manager.shouldShow100HoursMoment() && mounted) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _showMilestoneToast();
@@ -389,7 +392,7 @@ class _Milestone100HoursCheckerState extends State<Milestone100HoursChecker> {
         behavior: SnackBarBehavior.floating,
       ),
     );
-    
+
     SoundManager.achievement();
   }
 

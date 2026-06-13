@@ -6,5 +6,6 @@ class AppConstants {
   static const String prefAdFreeUntil = 'lumio_ad_free_until';
   static const String prefChannelClickDay = 'lumio_channel_click_day';
   static const String prefChannelClickPrefix = 'lumio_channel_click_';
-  static const String prefChannelTapAdRotation = 'lumio_channel_tap_ad_rotation';
+  static const String prefChannelTapAdRotation =
+      'lumio_channel_tap_ad_rotation';
 }

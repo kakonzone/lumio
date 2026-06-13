@@ -29,6 +29,7 @@ class AdsterraWebView extends StatefulWidget {
   final String placement;
   final bool fullWidth;
   final String? cachedHtml;
+
   /// When false, WebView still mounts/loads but is drawn at opacity 0 (player strip).
   final bool userVisible;
 
@@ -69,8 +70,8 @@ class _AdsterraWebViewState extends State<AdsterraWebView> {
 
   Future<void> _mountWebView() async {
     _loadGuardTimer?.cancel();
-    final cached = widget.cachedHtml ??
-        AdsterraNativeCache.instance.get(widget.placement);
+    final cached =
+        widget.cachedHtml ?? AdsterraNativeCache.instance.get(widget.placement);
     final html = cached ?? widget.html;
     if (cached == null) {
       AdsterraNativeCache.instance.put(widget.placement, widget.html);
@@ -164,11 +165,13 @@ class _AdsterraWebViewState extends State<AdsterraWebView> {
     if (_clickLogged || _disposed) return;
     final lower = url.toLowerCase();
     if (lower.startsWith('about:') || lower.startsWith('data:')) return;
-    final base = AdsterraHtml.baseUrlForPlacement(widget.placement).toLowerCase();
+    final base =
+        AdsterraHtml.baseUrlForPlacement(widget.placement).toLowerCase();
     if (lower.startsWith(base)) return;
     _clickLogged = true;
-    final format =
-        _isBannerPlacement(widget.placement) ? 'banner_webview' : 'native_webview';
+    final format = _isBannerPlacement(widget.placement)
+        ? 'banner_webview'
+        : 'native_webview';
     unawaited(
       AdManager.instance.analytics.logClick(
         network: 'adsterra',

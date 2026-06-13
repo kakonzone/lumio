@@ -7,7 +7,7 @@ import 'package:lumio_tv/theme/tokens/typography.dart' as tokens;
 import 'package:lumio_tv/widgets/settings/settings_row.dart';
 
 /// A settings section widget with header and grouped rows.
-/// 
+///
 /// Features:
 /// - Section header with caption size, weight 600, uppercase, letterSpacing 0.08em
 /// - 24px top padding, 8px bottom padding, 16px horizontal padding
@@ -17,7 +17,7 @@ import 'package:lumio_tv/widgets/settings/settings_row.dart';
 class SettingsSection extends StatelessWidget {
   /// Section title (displayed as header)
   final String title;
-  
+
   /// List of setting rows in this section
   final List<Widget> rows;
 
@@ -61,7 +61,8 @@ class SettingsSection extends StatelessWidget {
               for (int i = 0; i < rows.length; i++) ...[
                 // Mark last row to hide bottom divider
                 if (rows[i] is SettingsRow)
-                  (rows[i] as SettingsRow).copyWith(isLast: i == rows.length - 1)
+                  (rows[i] as SettingsRow)
+                      .copyWith(isLast: i == rows.length - 1)
                 else
                   rows[i],
               ],

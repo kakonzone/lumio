@@ -36,9 +36,7 @@ class AdHealthMonitor {
     _prune();
     final relevant = _attempts
         .where(
-          (a) =>
-              a.format == format &&
-              a.result != 'loading',
+          (a) => a.format == format && a.result != 'loading',
         )
         .toList(growable: false);
     if (relevant.isEmpty) return 0;

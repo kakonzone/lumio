@@ -23,7 +23,8 @@ void main() {
     expect(
       violations,
       isEmpty,
-      reason: 'Move http URLs to HTTPS or add path to cleartext_allowlist.dart: '
+      reason:
+          'Move http URLs to HTTPS or add path to cleartext_allowlist.dart: '
           '${violations.join(', ')}',
     );
   });

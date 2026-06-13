@@ -172,9 +172,8 @@ class ScoreService {
     String url,
   ) async {
     try {
-      final res = await http
-          .get(Uri.parse(url), headers: {'User-Agent': _ua})
-          .timeout(const Duration(seconds: 10));
+      final res = await http.get(Uri.parse(url),
+          headers: {'User-Agent': _ua}).timeout(const Duration(seconds: 10));
       if (res.statusCode != 200) {
         return ScoreTournamentGroup(tournament: name, matches: const []);
       }
@@ -237,9 +236,8 @@ class ScoreService {
 
       final scoreA = _espnCompetitorScore(home);
       final scoreB = _espnCompetitorScore(away);
-      final detail = type['shortDetail'] as String? ??
-          type['detail'] as String? ??
-          '';
+      final detail =
+          type['shortDetail'] as String? ?? type['detail'] as String? ?? '';
 
       String status;
       String timeLabel;
@@ -275,18 +273,16 @@ class ScoreService {
 
   static Future<List<ScoreTournamentGroup>> _fetchCricbuzzRapidLive() async {
     try {
-      final res = await http
-          .get(
-            Uri.parse(
-              'https://${ApiConfig.cricbuzzRapidApiHost}/matches/v1/live',
-            ),
-            headers: {
-              'User-Agent': _ua,
-              'x-rapidapi-host': ApiConfig.cricbuzzRapidApiHost,
-              'x-rapidapi-key': ApiConfig.cricbuzzRapidApiKey,
-            },
-          )
-          .timeout(const Duration(seconds: 12));
+      final res = await http.get(
+        Uri.parse(
+          'https://${ApiConfig.cricbuzzRapidApiHost}/matches/v1/live',
+        ),
+        headers: {
+          'User-Agent': _ua,
+          'x-rapidapi-host': ApiConfig.cricbuzzRapidApiHost,
+          'x-rapidapi-key': ApiConfig.cricbuzzRapidApiKey,
+        },
+      ).timeout(const Duration(seconds: 12));
       if (res.statusCode != 200) return [];
       final data = jsonDecode(res.body);
       final matches = _parseCricbuzzRapid(data);
@@ -316,8 +312,8 @@ class ScoreService {
           '';
       if (teamA.isEmpty && teamB.isEmpty) continue;
 
-      final state = (m['state'] as String? ?? m['status'] as String? ?? '')
-          .toLowerCase();
+      final state =
+          (m['state'] as String? ?? m['status'] as String? ?? '').toLowerCase();
       final isLive =
           state.contains('live') || state.contains('play') || state == 'in';
 
@@ -355,7 +351,8 @@ class ScoreService {
     void walk(dynamic node) {
       if (node is Map) {
         if (node.containsKey('team1Name') ||
-            (node['team1'] is Map && (node['team1'] as Map).containsKey('teamName'))) {
+            (node['team1'] is Map &&
+                (node['team1'] as Map).containsKey('teamName'))) {
           out.add(Map<String, dynamic>.from(node));
           return;
         }
@@ -394,9 +391,8 @@ class ScoreService {
     required bool isTeam1,
   }) {
     final key = isTeam1 ? 'team1' : 'team2';
-    final direct = isTeam1
-        ? m['team1Score'] as String?
-        : m['team2Score'] as String?;
+    final direct =
+        isTeam1 ? m['team1Score'] as String? : m['team2Score'] as String?;
     if (direct != null && direct.trim().isNotEmpty) return direct.trim();
 
     final team = m[key];

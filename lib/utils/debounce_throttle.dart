@@ -2,24 +2,24 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 /// Debounce and throttle utilities
-/// 
+///
 /// Provides performance optimization for frequently called operations.
 class DebounceThrottle {
   /// Debounce a function call
-  /// 
-  /// Delays execution until after wait milliseconds have elapsed 
+  ///
+  /// Delays execution until after wait milliseconds have elapsed
   /// since the last time the debounced function was invoked.
   static Function debounce(
     Function callback, {
     Duration duration = const Duration(milliseconds: 300),
   }) {
     Timer? timer;
-    
+
     return () {
       if (timer?.isActive ?? false) {
         timer!.cancel();
       }
-      
+
       timer = Timer(duration, callback as void Function());
     };
   }
@@ -30,18 +30,18 @@ class DebounceThrottle {
     Duration duration = const Duration(milliseconds: 300),
   }) {
     Timer? timer;
-    
+
     return (param) {
       if (timer?.isActive ?? false) {
         timer!.cancel();
       }
-      
+
       timer = Timer(duration, () => callback(param));
     };
   }
 
   /// Throttle a function call
-  /// 
+  ///
   /// Executes function at most once every wait milliseconds.
   static Function throttle(
     Function callback, {
@@ -49,13 +49,13 @@ class DebounceThrottle {
   }) {
     bool isThrottled = false;
     Timer? timer;
-    
+
     return () {
       if (isThrottled) return;
-      
+
       callback();
       isThrottled = true;
-      
+
       timer?.cancel();
       timer = Timer(duration, () {
         isThrottled = false;
@@ -70,13 +70,13 @@ class DebounceThrottle {
   }) {
     bool isThrottled = false;
     Timer? timer;
-    
+
     return (param) {
       if (isThrottled) return;
-      
+
       callback(param);
       isThrottled = true;
-      
+
       timer?.cancel();
       timer = Timer(duration, () {
         isThrottled = false;
@@ -85,7 +85,7 @@ class DebounceThrottle {
   }
 
   /// Frame-rate throttled function (16ms)
-  /// 
+  ///
   /// Executes at most once per frame (60fps).
   /// Use for gestures like brightness/volume sliders.
   static Function throttleFrame(Function callback) {
@@ -105,7 +105,7 @@ class DebounceThrottle {
 }
 
 /// Debounced text field widget
-/// 
+///
 /// Text field with built-in debounce for onChanged callback.
 class DebouncedTextField extends StatefulWidget {
   final TextEditingController? controller;
@@ -167,9 +167,9 @@ class _DebouncedTextFieldState extends State<DebouncedTextField> {
 
   void _onChanged(String value) {
     _lastValue = value;
-    
+
     _debounceTimer?.cancel();
-    
+
     _debounceTimer = Timer(widget.debounceDuration, () {
       if (widget.onChanged != null) {
         widget.onChanged!(_lastValue);
@@ -195,7 +195,7 @@ class _DebouncedTextFieldState extends State<DebouncedTextField> {
 }
 
 /// Throttled gesture detector
-/// 
+///
 /// GestureDetector that throttles tap and double-tap callbacks.
 class ThrottledGestureDetector extends StatelessWidget {
   final Widget child;
@@ -221,7 +221,7 @@ class ThrottledGestureDetector extends StatelessWidget {
             duration: throttleDuration,
           ) as GestureTapCallback?
         : null;
-    
+
     final throttledOnDoubleTap = onDoubleTap != null
         ? DebounceThrottle.throttle(
             () => onDoubleTap!(),
@@ -239,7 +239,7 @@ class ThrottledGestureDetector extends StatelessWidget {
 }
 
 /// Frame-throttled slider
-/// 
+///
 /// Slider that only updates value once per frame (16ms).
 /// Use for brightness/volume controls to prevent jank.
 class FrameThrottledSlider extends StatefulWidget {
@@ -291,7 +291,7 @@ class _FrameThrottledSliderState extends State<FrameThrottledSlider> {
 }
 
 /// Settings autosave utility
-/// 
+///
 /// Debounces settings changes with 500ms delay.
 /// Use for settings that should save automatically.
 class SettingsAutosave {
@@ -304,9 +304,9 @@ class SettingsAutosave {
   /// Queue a setting change for autosave
   void queueChange(String key, dynamic value) {
     _pendingChanges[key] = value;
-    
+
     _autosaveTimer?.cancel();
-    
+
     _autosaveTimer = Timer(const Duration(milliseconds: 500), () {
       if (_pendingChanges.isNotEmpty) {
         final changes = Map<String, dynamic>.from(_pendingChanges);
@@ -319,7 +319,7 @@ class SettingsAutosave {
   /// Force immediate save
   Future<void> forceSave() async {
     _autosaveTimer?.cancel();
-    
+
     if (_pendingChanges.isNotEmpty) {
       final changes = Map<String, dynamic>.from(_pendingChanges);
       _pendingChanges.clear();
@@ -334,7 +334,7 @@ class SettingsAutosave {
   }
 
   /// Get pending changes
-  Map<String, dynamic> get pendingChanges => 
+  Map<String, dynamic> get pendingChanges =>
       Map<String, dynamic>.from(_pendingChanges);
 
   /// Clear pending changes without saving

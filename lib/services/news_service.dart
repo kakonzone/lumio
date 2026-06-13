@@ -14,7 +14,8 @@ class NewsService {
       'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/124.0.0.0';
 
   static const _espnFeeds = <String, String>{
-    'Top Stories': 'https://site.api.espn.com/apis/site/v2/sports/news?limit=20',
+    'Top Stories':
+        'https://site.api.espn.com/apis/site/v2/sports/news?limit=20',
     'Cricket':
         'https://site.api.espn.com/apis/site/v2/sports/cricket/news?limit=22',
     'Football':
@@ -48,9 +49,8 @@ class NewsService {
     MapEntry<String, String> feed,
   ) async {
     try {
-      final res = await http
-          .get(Uri.parse(feed.value), headers: {'User-Agent': _ua})
-          .timeout(const Duration(seconds: 12));
+      final res = await http.get(Uri.parse(feed.value),
+          headers: {'User-Agent': _ua}).timeout(const Duration(seconds: 12));
       if (res.statusCode != 200) return [];
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       final articles = data['articles'] as List? ?? [];
@@ -115,9 +115,8 @@ class NewsService {
 
   static Future<List<NewsModel>> _fetchBbcSportRss() async {
     try {
-      final res = await http
-          .get(Uri.parse(_bbcSportRss), headers: {'User-Agent': _ua})
-          .timeout(const Duration(seconds: 12));
+      final res = await http.get(Uri.parse(_bbcSportRss),
+          headers: {'User-Agent': _ua}).timeout(const Duration(seconds: 12));
       if (res.statusCode != 200) return [];
       return _parseRssItems(res.body, source: 'BBC Sport', idPrefix: 'bbc');
     } catch (_) {

@@ -48,13 +48,15 @@ class M3uMergeParser {
     void flushOrphanUrls() {
       if (orphanUrls.isEmpty) return;
       final key = '__orphan_${orphanUrls.first.hashCode}';
-      final b = byName.putIfAbsent(key, () => _Builder(
-            id: '${idPrefix}_orphan_${byName.length}',
-            name: 'Multi Link ${byName.length + 1}',
-            category: 'Entertainment',
-            country: 'India',
-            group: '',
-          ));
+      final b = byName.putIfAbsent(
+          key,
+          () => _Builder(
+                id: '${idPrefix}_orphan_${byName.length}',
+                name: 'Multi Link ${byName.length + 1}',
+                category: 'Entertainment',
+                country: 'India',
+                group: '',
+              ));
       for (final u in orphanUrls) {
         b.addUrl(u);
       }
@@ -92,7 +94,8 @@ class M3uMergeParser {
           name: name,
           category: mapCategory?.call(pendingGroup, name) ??
               categoryForGroup(pendingGroup, name),
-          country: mapCountry?.call(pendingGroup, name) ?? _defaultCountry(pendingGroup, name),
+          country: mapCountry?.call(pendingGroup, name) ??
+              _defaultCountry(pendingGroup, name),
           group: pendingGroup,
           logo: pendingLogo,
         ),
@@ -105,14 +108,19 @@ class M3uMergeParser {
 
     flushOrphanUrls();
 
-    return byName.values.map((b) => b.build()).where((c) => c.streamUrl.isNotEmpty).toList();
+    return byName.values
+        .map((b) => b.build())
+        .where((c) => c.streamUrl.isNotEmpty)
+        .toList();
   }
 
   static String _nameKey(String name) =>
       ChannelPlaybackLinks.mergeKeyForName(name);
 
   static bool _isStreamLine(String line) =>
-      line.startsWith('http') || line.startsWith('rtmp') || line.startsWith('rtsp');
+      line.startsWith('http') ||
+      line.startsWith('rtmp') ||
+      line.startsWith('rtsp');
 
   static String _afterComma(String l) {
     final i = l.lastIndexOf(',');
@@ -120,7 +128,8 @@ class M3uMergeParser {
   }
 
   static String _attr(String l, String k) =>
-      RegExp('$k="([^"]*)"', caseSensitive: false).firstMatch(l)?.group(1) ?? '';
+      RegExp('$k="([^"]*)"', caseSensitive: false).firstMatch(l)?.group(1) ??
+      '';
 
   /// Public alias for playlist importers (e.g. owner M3U on GitHub).
   static String categoryForGroup(String group, String name) =>

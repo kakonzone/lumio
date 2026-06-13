@@ -167,7 +167,9 @@ class _PlayerOverlayAdState extends State<PlayerOverlayAd> {
                   child: Icon(
                     Icons.close,
                     size: 16,
-                    color: _canDismiss ? Colors.white : Colors.white.withOpacity(0.3),
+                    color: _canDismiss
+                        ? Colors.white
+                        : Colors.white.withOpacity(0.3),
                   ),
                 ),
               ),

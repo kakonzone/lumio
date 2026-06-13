@@ -46,7 +46,8 @@ void main() {
     expect(flags.ccpaOptOut, restrictive.ccpaOptOut);
   });
 
-  test('applyStoredConsentToSdk with granted does not need restrictive path', () async {
+  test('applyStoredConsentToSdk with granted does not need restrictive path',
+      () async {
     SharedPreferences.setMockInitialValues({
       AdConsentService.prefConsentKey: 'granted',
     });
@@ -71,7 +72,8 @@ void main() {
     await AdTriggerManager.instance.waitUntilAdsEligible();
     expect(AdTriggerManager.instance.debugIsAdsEligible, isTrue);
     // updated for rc1: splash delay follows capLocalOnlyEffective profile
-    expect(AdConfig.splashMinMsBeforeAds, AdConfig.capLocalOnlyEffective ? 400 : 2500);
+    expect(AdConfig.splashMinMsBeforeAds,
+        AdConfig.capLocalOnlyEffective ? 400 : 2500);
   });
 
   test('markSplashConsentGateSatisfied marks ad eligibility', () async {

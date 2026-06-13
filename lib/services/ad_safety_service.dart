@@ -16,6 +16,7 @@ import 'vpn_signal_service.dart';
 /// Routing hint from combined VPN / geo signals.
 enum AdRoutingPreference {
   standard,
+
   /// ≥2 fraud signals — prefer LevelPlay over Adsterra.
   preferCleanSdk,
 }
@@ -51,7 +52,8 @@ class AdSafetyService {
       _debugAdsBlockedInDebug ?? AdConfig.blockAdsInThisBuild;
 
   @visibleForTesting
-  void debugSetAdsBlockedInDebug(bool? value) => _debugAdsBlockedInDebug = value;
+  void debugSetAdsBlockedInDebug(bool? value) =>
+      _debugAdsBlockedInDebug = value;
 
   String get deviceFingerprint => _fingerprint ?? 'unknown';
 
@@ -211,7 +213,8 @@ class AdSafetyService {
   void _logAdBuildGating() {
     if (kReleaseMode) return;
     if (AdConfig.adsEnabledDefine) {
-      debugPrint('[AdSafety] ADS_ENABLED=true — ads enabled in non-release build');
+      debugPrint(
+          '[AdSafety] ADS_ENABLED=true — ads enabled in non-release build');
       return;
     }
     if (AdConfig.adsTestModeEffective) {
@@ -238,9 +241,8 @@ class AdSafetyService {
       await _remote!.setConfigSettings(
         RemoteConfigSettings(
           fetchTimeout: const Duration(seconds: 10),
-          minimumFetchInterval: kReleaseMode
-              ? const Duration(hours: 12)
-              : Duration.zero,
+          minimumFetchInterval:
+              kReleaseMode ? const Duration(hours: 12) : Duration.zero,
         ),
       );
       final activated = await _remote!.fetchAndActivate();
@@ -307,12 +309,14 @@ class AdSafetyService {
   bool get _adsterraEnabledFromRemote => AdConfig.adsterraEnabled;
 
   @visibleForTesting
-  void debugSetAdsterraEnabled(bool? enabled) => _debugAdsterraEnabled = enabled;
+  void debugSetAdsterraEnabled(bool? enabled) =>
+      _debugAdsterraEnabled = enabled;
 
   int get popunderSessionCap {
     if (_debugPopunderSessionCap != null) return _debugPopunderSessionCap!;
     if (!_remoteReady || _remote == null) {
-      return RemoteConfigKeys.defaults[RemoteConfigKeys.popunderSessionCap] as int;
+      return RemoteConfigKeys.defaults[RemoteConfigKeys.popunderSessionCap]
+          as int;
     }
     return _remote!.getInt(RemoteConfigKeys.popunderSessionCap);
   }

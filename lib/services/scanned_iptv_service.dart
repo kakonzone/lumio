@@ -50,18 +50,16 @@ http://202.70.146.135:8000/play/a04c/index.m3u8
     final parts = <String>[_manualM3u.trim()];
 
     try {
-      final scan = await http
-          .get(Uri.parse(_scanPlaylistUrl), headers: {'User-Agent': _ua})
-          .timeout(_timeout);
+      final scan = await http.get(Uri.parse(_scanPlaylistUrl),
+          headers: {'User-Agent': _ua}).timeout(_timeout);
       if (scan.statusCode == 200 && scan.body.contains('#EXTM3U')) {
         parts.add(scan.body.trim());
       }
     } catch (_) {}
 
     try {
-      final jio = await http
-          .get(Uri.parse(_jioChannelsUrl), headers: {'User-Agent': _ua})
-          .timeout(_timeout);
+      final jio = await http.get(Uri.parse(_jioChannelsUrl),
+          headers: {'User-Agent': _ua}).timeout(_timeout);
       if (jio.statusCode == 200) {
         final m3u = _jioJsonToM3u(jio.body);
         if (m3u.isNotEmpty) parts.add(m3u);
@@ -101,7 +99,8 @@ http://202.70.146.135:8000/play/a04c/index.m3u8
 
   static String _cleanName(String raw) {
     var name = raw.trim();
-    name = name.replaceAll(RegExp(r'\s*-\s*Rs\s+[\d.]+\s*$', caseSensitive: false), '');
+    name = name.replaceAll(
+        RegExp(r'\s*-\s*Rs\s+[\d.]+\s*$', caseSensitive: false), '');
     if (name.startsWith(' ')) name = name.trimLeft();
     return name.trim().replaceFirst(RegExp(r'^\s*&'), '&');
   }

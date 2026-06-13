@@ -6,7 +6,7 @@ import 'package:lumio_tv/theme/tokens/radius.dart' as tokens;
 import 'package:lumio_tv/widgets/common/skeleton.dart';
 
 /// Cached image widget with fade-in transitions and skeleton loading
-/// 
+///
 /// Features:
 /// - Cached network images with memory cache
 /// - Fade-in transition (300ms) on load
@@ -57,7 +57,8 @@ class CachedImage extends StatelessWidget {
           height: height,
           decoration: BoxDecoration(
             color: tokens.AppTokens.surface2,
-            borderRadius: borderRadius ?? BorderRadius.circular(tokens.RadiusTokens.sm),
+            borderRadius:
+                borderRadius ?? BorderRadius.circular(tokens.RadiusTokens.sm),
           ),
           child: Icon(
             Icons.broken_image,

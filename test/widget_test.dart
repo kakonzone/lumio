@@ -6,7 +6,8 @@ import 'package:lumio_tv/config/ad_config.dart';
 void main() {
   test('ad config constants are pinned', () {
     // updated for rc1: 400ms when local-cap/sideload profile is active
-    expect(AdConfig.splashMinMsBeforeAds, AdConfig.capLocalOnlyEffective ? 400 : 2500);
+    expect(AdConfig.splashMinMsBeforeAds,
+        AdConfig.capLocalOnlyEffective ? 400 : 2500);
     expect(AdConfig.nativeListIntervalNews, 4);
     expect(AdPlacementConfig.channelListNativeInterval, isNonNegative);
   });

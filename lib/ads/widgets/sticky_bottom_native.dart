@@ -16,8 +16,9 @@ class StickyBottomNative extends StatefulWidget {
 }
 
 class _StickyBottomNativeState extends State<StickyBottomNative> {
-  static const String _dismissedSessionKeyPrefix = 'sticky_native_dismissed_session_';
-  
+  static const String _dismissedSessionKeyPrefix =
+      'sticky_native_dismissed_session_';
+
   bool _visible = true;
   String? _currentSessionId;
 
@@ -32,7 +33,7 @@ class _StickyBottomNativeState extends State<StickyBottomNative> {
     final prefs = await SharedPreferences.getInstance();
     final key = '$_dismissedSessionKeyPrefix$_currentSessionId';
     final wasDismissed = prefs.getBool(key) ?? false;
-    
+
     if (wasDismissed && mounted) {
       setState(() {
         _visible = false;
@@ -44,7 +45,7 @@ class _StickyBottomNativeState extends State<StickyBottomNative> {
     final prefs = await SharedPreferences.getInstance();
     final key = '$_dismissedSessionKeyPrefix$_currentSessionId';
     await prefs.setBool(key, true);
-    
+
     if (mounted) {
       setState(() {
         _visible = false;

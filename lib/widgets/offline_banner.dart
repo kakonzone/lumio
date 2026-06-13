@@ -23,15 +23,15 @@ class _OfflineBannerState extends State<OfflineBanner> {
   Future<void> _initConnectivity() async {
     final connectivityResults = await Connectivity().checkConnectivity();
     _updateConnectionStatus(connectivityResults);
-    
-    _connectivitySubscription = Connectivity()
-        .onConnectivityChanged
-        .listen(_updateConnectionStatus);
+
+    _connectivitySubscription =
+        Connectivity().onConnectivityChanged.listen(_updateConnectionStatus);
   }
 
   void _updateConnectionStatus(List<ConnectivityResult> results) {
-    final isOffline = results.every((result) => result == ConnectivityResult.none);
-    
+    final isOffline =
+        results.every((result) => result == ConnectivityResult.none);
+
     if (mounted && isOffline != _isOffline) {
       setState(() {
         _isOffline = isOffline;
@@ -48,7 +48,7 @@ class _OfflineBannerState extends State<OfflineBanner> {
   @override
   Widget build(BuildContext context) {
     if (!_isOffline) return const SizedBox.shrink();
-    
+
     return Container(
       width: double.infinity,
       color: Colors.orange[900],

@@ -113,8 +113,10 @@ class SportChannelIcons {
   ];
 
   static const _sportRules = <_SportRule>[
-    _SportRule('Formula 1', ['formula 1', 'formula one', ' f1', 'sky f1', 'motogp']),
-    _SportRule('Basketball', ['basketball', ' nba', 'ncaa', 'euroleague basket']),
+    _SportRule(
+        'Formula 1', ['formula 1', 'formula one', ' f1', 'sky f1', 'motogp']),
+    _SportRule(
+        'Basketball', ['basketball', ' nba', 'ncaa', 'euroleague basket']),
     _SportRule('Tennis', [
       'tennis',
       'wimbledon',

@@ -16,8 +16,7 @@ class GeoTargeting {
 
   static String currentCountryCode() {
     try {
-      return ui.PlatformDispatcher.instance.locale.countryCode
-              ?.toLowerCase() ??
+      return ui.PlatformDispatcher.instance.locale.countryCode?.toLowerCase() ??
           '';
     } catch (_) {
       return '';

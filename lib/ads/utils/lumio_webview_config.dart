@@ -8,7 +8,8 @@ Future<WebViewController> createLumioWebViewController({
   bool aggressiveNoCache = false,
 }) async {
   late final PlatformWebViewControllerCreationParams params;
-  if (Platform.isAndroid && WebViewPlatform.instance is AndroidWebViewPlatform) {
+  if (Platform.isAndroid &&
+      WebViewPlatform.instance is AndroidWebViewPlatform) {
     params = AndroidWebViewControllerCreationParams();
   } else {
     params = const PlatformWebViewControllerCreationParams();

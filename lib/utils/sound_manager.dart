@@ -14,7 +14,7 @@ enum SoundType {
 }
 
 /// Manager for playing UI sounds
-/// 
+///
 /// Sounds sourced from Material Sound Library (royalty-free)
 /// Disabled by default, can be enabled in Settings → Display
 class SoundManager {
@@ -29,7 +29,7 @@ class SoundManager {
   /// Initialize the sound manager and load user preference
   Future<void> initialize() async {
     if (_isInitialized) return;
-    
+
     try {
       await _loadPreference();
       _isInitialized = true;
@@ -64,19 +64,19 @@ class SoundManager {
   bool get isEnabled => _isEnabled;
 
   /// Play a sound of the given type
-  /// 
+  ///
   /// This is a placeholder implementation. To enable actual sounds:
   /// 1. Add audio files to assets/audio/ directory
   /// 2. Update pubspec.yaml to include audio assets
   /// 3. Uncomment the asset loading and playback logic
   Future<void> play(SoundType type) async {
     if (!_isEnabled) return;
-    
+
     try {
       // ISSUE: Uncomment when audio assets are added
       // See: https://github.com/your-repo/issues/XXX
       // await _playAsset(type);
-      
+
       // For now, just haptic feedback
       _playHaptic(type);
     } catch (e) {
@@ -118,14 +118,14 @@ class SoundManager {
   /// Play audio asset (placeholder implementation)
   Future<void> _playAsset(SoundType type) async {
     final assetPath = _getAssetPath(type);
-    
+
     if (assetPath == null) return;
-    
+
     await _audioPlayer.play(AssetSource(assetPath));
   }
 
   /// Get asset path for sound type
-  /// 
+  ///
   /// Assets should be placed in assets/audio/ directory:
   /// - tab_switch.mp3 (300ms)
   /// - success.mp3 (400ms)

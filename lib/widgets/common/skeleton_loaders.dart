@@ -6,7 +6,7 @@ import 'package:lumio_tv/theme/tokens/radius.dart' as tokens;
 import 'package:lumio_tv/widgets/common/skeleton.dart';
 
 /// Additional skeleton loaders for specific UI patterns
-/// 
+///
 /// These are specialized skeleton patterns for the Lumio app's
 /// specific UI components like movie cards, channel rows, etc.
 class SkeletonLoaders {
@@ -170,12 +170,14 @@ class SkeletonLoaders {
           SkeletonShapes.title(height: 32),
           SizedBox(height: tokens.SpacingTokens.s24),
           // Cards
-          ...List.generate(3, (index) => Column(
-            children: [
-              SkeletonShapes.card(height: 120),
-              SizedBox(height: tokens.SpacingTokens.s16),
-            ],
-          )),
+          ...List.generate(
+              3,
+              (index) => Column(
+                    children: [
+                      SkeletonShapes.card(height: 120),
+                      SizedBox(height: tokens.SpacingTokens.s16),
+                    ],
+                  )),
         ],
       ),
     );

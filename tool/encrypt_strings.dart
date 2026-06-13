@@ -16,15 +16,16 @@ import 'dart:io';
 void main(List<String> args) {
   final inputPath = _arg(args, '--input') ?? 'tool/secrets_input.json';
   final xorKey = int.parse(_arg(args, '--xor-key') ?? '0xA7');
-  final outCpp = _arg(args, '--out-cpp') ??
-      'android/app/src/main/cpp/generated_secrets.h';
-  final outDart = _arg(args, '--out-dart') ??
-      'lib/security/generated_secrets.dart';
+  final outCpp =
+      _arg(args, '--out-cpp') ?? 'android/app/src/main/cpp/generated_secrets.h';
+  final outDart =
+      _arg(args, '--out-dart') ?? 'lib/security/generated_secrets.dart';
 
   final file = File(inputPath);
   if (!file.existsSync()) {
     stderr.writeln('Input not found: $inputPath');
-    stderr.writeln('Create tool/secrets_input.json from tool/secrets_input.example.json');
+    stderr.writeln(
+        'Create tool/secrets_input.json from tool/secrets_input.example.json');
     exit(1);
   }
 

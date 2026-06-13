@@ -60,7 +60,9 @@ void main() {
 
       expect(
         privacyCalls['setGDPRConsents'],
-        {'networkConsents': {'LevelPlay': true}},
+        {
+          'networkConsents': {'LevelPlay': true}
+        },
       );
       expect(privacyCalls['setCCPA'], {'value': false});
       expect(privacyCalls['setCOPPA'], {'value': false});
@@ -73,7 +75,9 @@ void main() {
 
       expect(
         privacyCalls['setGDPRConsents'],
-        {'networkConsents': {'LevelPlay': false}},
+        {
+          'networkConsents': {'LevelPlay': false}
+        },
       );
       expect(privacyCalls['setCCPA'], {'value': true});
     });
@@ -83,7 +87,9 @@ void main() {
 
       expect(
         privacyCalls['setGDPRConsents'],
-        {'networkConsents': {'LevelPlay': false}},
+        {
+          'networkConsents': {'LevelPlay': false}
+        },
       );
       expect(privacyCalls['setCCPA'], {'value': false});
     });

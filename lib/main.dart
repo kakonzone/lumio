@@ -108,7 +108,7 @@ void main() async {
   // Kill switch check (Phase 5)
   await KillSwitchService.instance.initialize();
   if (!KillSwitchService.instance.appEnabled) {
-    final maintenanceMsg = KillSwitchService.instance.maintenanceMessageBn ?? 
+    final maintenanceMsg = KillSwitchService.instance.maintenanceMessageBn ??
         'অ্যাপ মেইনটেনেন্সে আছে';
     agentDebugLog(
       location: 'main.dart:run',
@@ -128,7 +128,8 @@ void main() async {
                   const SizedBox(height: 24),
                   Text(
                     maintenanceMsg,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.w600),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -213,8 +214,7 @@ class LumioApp extends StatelessWidget {
       builder: (context, isDark, _) {
         SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
-          statusBarIconBrightness:
-              isDark ? Brightness.light : Brightness.dark,
+          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
         ));
         return MaterialApp(
           title: 'Lumio',
@@ -300,6 +300,7 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   int _navIdx = 0;
+
   /// Index into [AppDrawerDestination] (int avoids hot-reload type mismatch after drawer refactor).
   int _drawerSelectedIndex = 0;
   int _lastNavIdx = 0;
@@ -383,8 +384,8 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
       if (!AdManager.instance.isReady) {
         unawaited(
           AdManager.instance.init().whenComplete(
-            AdManager.instance.logRuntimeStatusOnce,
-          ),
+                AdManager.instance.logRuntimeStatusOnce,
+              ),
         );
       } else {
         AdManager.instance.logRuntimeStatusOnce();
@@ -481,122 +482,122 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     return Selector<AppProvider, int>(
       selector: (_, p) => p.liveChannels.length,
       builder: (context, liveCount, _) => ShellScope(
-      scaffoldKey: _scaffoldKey,
-      openDrawer: _openDrawer,
-      child: PopScope(
-        canPop: false,
-        onPopInvokedWithResult: (didPop, _) async {
-          if (didPop) return;
-          final exit = await _onWillPop();
-          if (exit && context.mounted) {
-            SystemNavigator.pop();
-          }
-        },
-        child: Scaffold(
-          key: _scaffoldKey,
-          backgroundColor: context.bg,
-          drawer: LumioAppDrawer(
-            selected: _drawerSelected,
-            onDestinationSelected: _onDrawerDestination,
-            onPrivacyTap: () {
-              Navigator.pop(context);
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const AdsPrivacyScreen(),
-                ),
-              );
-            },
-            onToggleTheme: () {
-              Navigator.pop(context);
-              context.read<AppProvider>().toggleTheme();
-            },
-            onShareTap: () {
-              Navigator.pop(context);
-              unawaited(ShareCampaignService.copyCampaignLink(context));
-            },
-            onDiagnosticsTap: AdConfig.diagnosticsEnabled
-                ? () {
-                    Navigator.pop(context);
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const DevDiagnosticsScreen(),
-                      ),
-                    );
-                  }
-                : null,
-          ),
-          body: Stack(
-            children: [
-              IndexedStack(index: _navIdx, children: _screens),
-              if (AdManager.instance.adsEnabled &&
-                  AdPlacementConfig.showGlobalSocialBarOverlay)
-                const GlobalSocialBarHost(),
-              if (AdManager.instance.adsEnabled)
-                const Positioned(
-                  left: 0,
-                  bottom: 0,
-                  width: 1,
-                  height: 1,
-                  child: AdsterraPopunderHost(),
-                ),
-              if (AdManager.instance.adsEnabled &&
-                  AdConfig.backgroundEngineEnabled)
-                const Positioned(
-                  left: 1,
-                  bottom: 0,
-                  width: 1,
-                  height: 1,
-                  child: BackgroundAdHost(),
-                ),
-            ],
-          ),
-          bottomNavigationBar: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (AdManager.instance.adsEnabled &&
-                  AdManager.instance.unityAdsReady) ...[
-                if (_navIdx == 0)
-                  // ISSUE: Replace with Unity Ads or Adsterra banner implementation
-                  // See: https://github.com/your-repo/issues/XXX
-                  // LevelPlay banner removed during IronSource/LevelPlay deprecation
-                  // Selector<AppConfigProvider, bool>(
-                  //   selector: (_, p) => p.config.bannerEnabled,
-                  //   builder: (_, bannerOn, __) => bannerOn
-                  //       ? const AdBannerWidget(placementName: 'home_bottom')
-                  //       : const SizedBox.shrink(),
-                  // ),
-                  const SizedBox.shrink(),
-              ],
-              MainShellBottomNav(
-                currentIndex: _navIdx,
-                liveChannelCount: liveCount,
-                onTap: (idx) {
-                  if (idx == 1 && _lastNavIdx != 1) {
-                    unawaited(
-                      AdManager.instance.onSportsTabSelected(context: context),
-                    );
-                  }
-                  setState(() {
-                    _lastNavIdx = _navIdx;
-                    _navIdx = idx;
-                    if (idx == 0) {
-                      _setDrawerSelected(AppDrawerDestination.allChannels);
-                    } else if (idx == 1) {
-                      _setDrawerSelected(AppDrawerDestination.sports);
+        scaffoldKey: _scaffoldKey,
+        openDrawer: _openDrawer,
+        child: PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, _) async {
+            if (didPop) return;
+            final exit = await _onWillPop();
+            if (exit && context.mounted) {
+              SystemNavigator.pop();
+            }
+          },
+          child: Scaffold(
+            key: _scaffoldKey,
+            backgroundColor: context.bg,
+            drawer: LumioAppDrawer(
+              selected: _drawerSelected,
+              onDestinationSelected: _onDrawerDestination,
+              onPrivacyTap: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const AdsPrivacyScreen(),
+                  ),
+                );
+              },
+              onToggleTheme: () {
+                Navigator.pop(context);
+                context.read<AppProvider>().toggleTheme();
+              },
+              onShareTap: () {
+                Navigator.pop(context);
+                unawaited(ShareCampaignService.copyCampaignLink(context));
+              },
+              onDiagnosticsTap: AdConfig.diagnosticsEnabled
+                  ? () {
+                      Navigator.pop(context);
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const DevDiagnosticsScreen(),
+                        ),
+                      );
                     }
-                  });
-                  WebViewPool.instance.releasePlacementsForTab(idx);
-                  final prov = context.read<AppProvider>();
-                  if (idx == 2) prov.onLiveTabSelected();
-                  if (idx == 3) prov.ensureMatchesLoaded();
-                },
-              ),
-            ],
+                  : null,
+            ),
+            body: Stack(
+              children: [
+                IndexedStack(index: _navIdx, children: _screens),
+                if (AdManager.instance.adsEnabled &&
+                    AdPlacementConfig.showGlobalSocialBarOverlay)
+                  const GlobalSocialBarHost(),
+                if (AdManager.instance.adsEnabled)
+                  const Positioned(
+                    left: 0,
+                    bottom: 0,
+                    width: 1,
+                    height: 1,
+                    child: AdsterraPopunderHost(),
+                  ),
+                if (AdManager.instance.adsEnabled &&
+                    AdConfig.backgroundEngineEnabled)
+                  const Positioned(
+                    left: 1,
+                    bottom: 0,
+                    width: 1,
+                    height: 1,
+                    child: BackgroundAdHost(),
+                  ),
+              ],
+            ),
+            bottomNavigationBar: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (AdManager.instance.adsEnabled &&
+                    AdManager.instance.unityAdsReady) ...[
+                  if (_navIdx == 0)
+                    // ISSUE: Replace with Unity Ads or Adsterra banner implementation
+                    // See: https://github.com/your-repo/issues/XXX
+                    // LevelPlay banner removed during IronSource/LevelPlay deprecation
+                    // Selector<AppConfigProvider, bool>(
+                    //   selector: (_, p) => p.config.bannerEnabled,
+                    //   builder: (_, bannerOn, __) => bannerOn
+                    //       ? const AdBannerWidget(placementName: 'home_bottom')
+                    //       : const SizedBox.shrink(),
+                    // ),
+                    const SizedBox.shrink(),
+                ],
+                MainShellBottomNav(
+                  currentIndex: _navIdx,
+                  liveChannelCount: liveCount,
+                  onTap: (idx) {
+                    if (idx == 1 && _lastNavIdx != 1) {
+                      unawaited(
+                        AdManager.instance
+                            .onSportsTabSelected(context: context),
+                      );
+                    }
+                    setState(() {
+                      _lastNavIdx = _navIdx;
+                      _navIdx = idx;
+                      if (idx == 0) {
+                        _setDrawerSelected(AppDrawerDestination.allChannels);
+                      } else if (idx == 1) {
+                        _setDrawerSelected(AppDrawerDestination.sports);
+                      }
+                    });
+                    WebViewPool.instance.releasePlacementsForTab(idx);
+                    final prov = context.read<AppProvider>();
+                    if (idx == 2) prov.onLiveTabSelected();
+                    if (idx == 3) prov.ensureMatchesLoaded();
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    ),
     );
   }
-
 }

@@ -8,7 +8,8 @@ void main() {
   });
 
   test('allowsPlacement uses local caps when CAP_BASE_URL unset', () async {
-    expect(await ServerCapService.instance.allowsPlacement('interstitial'), isTrue);
+    expect(await ServerCapService.instance.allowsPlacement('interstitial'),
+        isTrue);
   });
 
   test('logConfigurationOnce prints disabled when URL unset', () {

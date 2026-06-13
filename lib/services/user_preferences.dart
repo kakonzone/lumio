@@ -46,10 +46,10 @@ class UserPreferences {
     if (storedDay != dayKey) {
       p.setString(AppConstants.prefChannelClickDay, dayKey);
       final keys = p.getKeys().where(
-        (k) =>
-            k.startsWith(AppConstants.prefChannelClickPrefix) &&
-            k != AppConstants.prefChannelClickDay,
-      );
+            (k) =>
+                k.startsWith(AppConstants.prefChannelClickPrefix) &&
+                k != AppConstants.prefChannelClickDay,
+          );
       for (final k in keys) {
         p.remove(k);
       }

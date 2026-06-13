@@ -35,7 +35,8 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Favourites header no vertical overflow at 320px', (tester) async {
+  testWidgets('Favourites header no vertical overflow at 320px',
+      (tester) async {
     await tester.pumpWidget(
       MediaQuery(
         data: const MediaQueryData(size: Size(320, 640)),
@@ -53,7 +54,8 @@ void main() {
                   ShellAppBar(
                     showBack: true,
                     title: 'Favourites',
-                    subtitle: 'Long subtitle that should wrap without blowing layout',
+                    subtitle:
+                        'Long subtitle that should wrap without blowing layout',
                   ),
                   Expanded(child: SizedBox()),
                 ],
@@ -67,7 +69,8 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('ShellAppBar no overflow with back title at 360px', (tester) async {
+  testWidgets('ShellAppBar no overflow with back title at 360px',
+      (tester) async {
     await tester.pumpWidget(
       _wrapShellAppBar(
         width: 360,

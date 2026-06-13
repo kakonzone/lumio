@@ -42,8 +42,8 @@ class ClickFraudFilter {
     final now = DateTime.now();
 
     // Clean old timestamps
-    _clickTimestamps.removeWhere((timestamp) =>
-        now.difference(timestamp) > _minuteWindow);
+    _clickTimestamps
+        .removeWhere((timestamp) => now.difference(timestamp) > _minuteWindow);
 
     // Check clicks per minute limit
     if (_clickTimestamps.length >= _maxClicksPerMinute) {
@@ -59,8 +59,9 @@ class ClickFraudFilter {
     }
 
     // Check rapid-click pattern
-    final recentClicks = _clickTimestamps.where((timestamp) =>
-        now.difference(timestamp) <= _rapidClickWindow).length;
+    final recentClicks = _clickTimestamps
+        .where((timestamp) => now.difference(timestamp) <= _rapidClickWindow)
+        .length;
 
     if (recentClicks >= _rapidClickThreshold) {
       _logAnomaly(
@@ -124,8 +125,9 @@ class ClickFraudFilter {
   /// Get current click count (within last minute)
   int getCurrentClickCount() {
     final now = DateTime.now();
-    return _clickTimestamps.where((timestamp) =>
-        now.difference(timestamp) <= _minuteWindow).length;
+    return _clickTimestamps
+        .where((timestamp) => now.difference(timestamp) <= _minuteWindow)
+        .length;
   }
 
   /// Reset filter state (for testing)

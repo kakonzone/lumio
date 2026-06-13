@@ -33,14 +33,13 @@ class SearchChip extends StatelessWidget {
           vertical: tokens.SpacingTokens.s12,
         ),
         decoration: BoxDecoration(
-          color: isSelected 
-              ? tokens.AppTokens.accentMuted 
+          color: isSelected
+              ? tokens.AppTokens.accentMuted
               : tokens.AppTokens.surface2,
           borderRadius: BorderRadius.circular(tokens.RadiusTokens.lg),
           border: Border.all(
-            color: isSelected 
-                ? tokens.AppTokens.accent 
-                : tokens.AppTokens.border,
+            color:
+                isSelected ? tokens.AppTokens.accent : tokens.AppTokens.border,
             width: 1,
           ),
         ),
@@ -50,8 +49,8 @@ class SearchChip extends StatelessWidget {
             if (onRemove != null) ...[
               Text(
                 label,
-                style: isSelected 
-                    ? tokens.TypographyTokens.labelAccent 
+                style: isSelected
+                    ? tokens.TypographyTokens.labelAccent
                     : tokens.TypographyTokens.labelPrimary,
               ),
               SizedBox(width: tokens.SpacingTokens.s8),
@@ -60,16 +59,16 @@ class SearchChip extends StatelessWidget {
                 child: Icon(
                   PhosphorIcons.x(),
                   size: 16,
-                  color: isSelected 
-                      ? tokens.AppTokens.accent 
+                  color: isSelected
+                      ? tokens.AppTokens.accent
                       : tokens.AppTokens.textSecondary,
                 ),
               ),
             ] else
               Text(
                 label,
-                style: isSelected 
-                    ? tokens.TypographyTokens.labelAccent 
+                style: isSelected
+                    ? tokens.TypographyTokens.labelAccent
                     : tokens.TypographyTokens.labelPrimary,
               ),
           ],
@@ -236,7 +235,8 @@ class CategoryGrid extends StatelessWidget {
                       if (category.image != null)
                         Positioned.fill(
                           child: ClipRRect(
-                            borderRadius: BorderRadius.circular(tokens.RadiusTokens.md),
+                            borderRadius:
+                                BorderRadius.circular(tokens.RadiusTokens.md),
                             child: Image.network(
                               category.image!,
                               fit: BoxFit.cover,
@@ -254,12 +254,13 @@ class CategoryGrid extends StatelessWidget {
                             color: tokens.AppTokens.surface3,
                           ),
                         ),
-                      
+
                       // Gradient overlay
                       Positioned.fill(
                         child: Container(
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(tokens.RadiusTokens.md),
+                            borderRadius:
+                                BorderRadius.circular(tokens.RadiusTokens.md),
                             gradient: LinearGradient(
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
@@ -271,7 +272,7 @@ class CategoryGrid extends StatelessWidget {
                           ),
                         ),
                       ),
-                      
+
                       // Category label
                       Positioned(
                         bottom: tokens.SpacingTokens.s12,

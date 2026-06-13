@@ -47,7 +47,8 @@ class GitunRepoDiscovery {
       }
       urls.sort();
       if (kDebugMode) {
-        debugPrint('[GITUN] discovered ${urls.length} playlists in $owner/$repo');
+        debugPrint(
+            '[GITUN] discovered ${urls.length} playlists in $owner/$repo');
       }
       return urls;
     } catch (e) {

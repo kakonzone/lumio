@@ -2,7 +2,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Service for managing search history with SharedPreferences.
-/// 
+///
 /// Features:
 /// - Max 10 recent searches
 /// - Deduplication (adding existing query moves it to top)
@@ -19,7 +19,7 @@ class SearchHistory {
   }
 
   /// Add a query to search history
-  /// 
+  ///
   /// Moves existing query to top if already present
   /// Maintains max 10 items
   static Future<void> add(String query) async {

@@ -1148,4 +1148,3 @@ class _WinChanceBar extends StatelessWidget {
         ),
       );
 }
-

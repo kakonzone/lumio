@@ -71,8 +71,8 @@ class ZoneValidator {
     AdDebugLog.info(
       'ZoneValidator',
       'lumio_zone_validation ${row.network} zone=${row.zoneId} '
-      'placement=${row.placement} result=${row.result} '
-      'latency_ms=${row.latencyMs} format=${row.formatDetected}',
+          'placement=${row.placement} result=${row.result} '
+          'latency_ms=${row.latencyMs} format=${row.formatDetected}',
     );
   }
 

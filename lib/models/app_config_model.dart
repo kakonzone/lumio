@@ -74,8 +74,8 @@ class AppConfigModel {
       jsonPayload: _nullableStr(map, 'json_payload', 'jsonPayload'),
       updatedAt: _nullableStr(map, 'updated_at', 'updatedAt'),
       adsEnabled: _bool(map, 'ads_enabled', 'adsEnabled', defaultValue: true),
-      levelplayEnabled:
-          _bool(map, 'levelplay_enabled', 'levelplayEnabled', defaultValue: true),
+      levelplayEnabled: _bool(map, 'levelplay_enabled', 'levelplayEnabled',
+          defaultValue: true),
       adsterraEnabled:
           _bool(map, 'adsterra_enabled', 'adsterraEnabled', defaultValue: true),
       monetagEnabled:
@@ -86,8 +86,9 @@ class AppConfigModel {
           _bool(map, 'banner_enabled', 'bannerEnabled', defaultValue: true),
       popunderEnabled:
           _bool(map, 'popunder_enabled', 'popunderEnabled', defaultValue: true),
-      interstitialCooldown:
-          _int(map, 'interstitial_cooldown', 'interstitialCooldown', defaultValue: 90),
+      interstitialCooldown: _int(
+          map, 'interstitial_cooldown', 'interstitialCooldown',
+          defaultValue: 90),
       channelTapsBeforeAd: _int(
         map,
         'channel_taps_before_ad',
@@ -100,9 +101,10 @@ class AppConfigModel {
         'listNativeInterval',
         defaultValue: 8,
       ),
-      spinWheelEnabled:
-          _bool(map, 'spin_wheel_enabled', 'spinWheelEnabled', defaultValue: true),
-      newsEnabled: _bool(map, 'news_enabled', 'newsEnabled', defaultValue: true),
+      spinWheelEnabled: _bool(map, 'spin_wheel_enabled', 'spinWheelEnabled',
+          defaultValue: true),
+      newsEnabled:
+          _bool(map, 'news_enabled', 'newsEnabled', defaultValue: true),
       specialLinkEnabled: _bool(
         map,
         'special_link_enabled',
@@ -128,13 +130,14 @@ class AppConfigModel {
           _str(map, 'latest_version', 'latestVersion', defaultValue: '1.0.0'),
       minimumVersion:
           _str(map, 'minimum_version', 'minimumVersion', defaultValue: '1.0.0'),
-      forceUpdate: _bool(map, 'force_update', 'forceUpdate', defaultValue: false),
+      forceUpdate:
+          _bool(map, 'force_update', 'forceUpdate', defaultValue: false),
       updateUrl: _nullableStr(map, 'update_url', 'updateUrl'),
       updateMessage: _nullableStr(map, 'update_message', 'updateMessage'),
       killSwitch: _bool(map, 'kill_switch', 'killSwitch', defaultValue: false),
       killMessage: _nullableStr(map, 'kill_message', 'killMessage'),
-      maintenanceMode:
-          _bool(map, 'maintenance_mode', 'maintenanceMode', defaultValue: false),
+      maintenanceMode: _bool(map, 'maintenance_mode', 'maintenanceMode',
+          defaultValue: false),
       maintenanceMessage:
           _nullableStr(map, 'maintenance_message', 'maintenanceMessage'),
     );

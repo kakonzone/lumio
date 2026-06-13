@@ -107,8 +107,7 @@ class AdListInjector {
         (AdManager.instance.showAdsterraWebViewSlots &&
             !AdManager.instance.isStreaming &&
             !AdManager.instance.adChromeHidden.value);
-    final effectiveInterval =
-        intervalFor(screen, intervalOverride: interval);
+    final effectiveInterval = intervalFor(screen, intervalOverride: interval);
     if (!adsOn || effectiveInterval <= 0 || channelsSoFar <= 0) return null;
     if (channelsSoFar % effectiveInterval != 0) return null;
     final slot = channelsSoFar ~/ effectiveInterval;
@@ -157,8 +156,7 @@ class AdListInjector {
         (AdManager.instance.showAdsterraWebViewSlots &&
             !AdManager.instance.isStreaming &&
             !AdManager.instance.adChromeHidden.value);
-    final effectiveInterval =
-        intervalFor(screen, intervalOverride: interval);
+    final effectiveInterval = intervalFor(screen, intervalOverride: interval);
     final inject = adsOn && effectiveInterval > 0 && itemCount > 0;
     final total = inject
         ? totalCount(
@@ -203,8 +201,7 @@ class AdListInjector {
         (AdManager.instance.showAdsterraWebViewSlots &&
             !AdManager.instance.isStreaming &&
             !AdManager.instance.adChromeHidden.value);
-    final effectiveInterval =
-        intervalFor(screen, intervalOverride: interval);
+    final effectiveInterval = intervalFor(screen, intervalOverride: interval);
     final inject = adsOn && effectiveInterval > 0 && itemCount > 0;
     final total = inject
         ? totalCount(

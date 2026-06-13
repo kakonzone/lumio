@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:lumio_tv/theme/tokens/motion.dart' as tokens;
 
 /// Custom page transition utilities for consistent app navigation.
-/// 
+///
 /// Features:
 /// - Fade + slight slide (16px upward) for standard navigation
 /// - Shared element transitions via Hero widgets
@@ -115,7 +115,8 @@ class _FadeSlideUpTransition extends StatelessWidget {
 
     return SlideTransition(
       position: Tween<Offset>(
-        begin: const Offset(0, 0.04), // 16px upward (roughly 4% of screen height)
+        begin:
+            const Offset(0, 0.04), // 16px upward (roughly 4% of screen height)
         end: Offset.zero,
       ).animate(CurvedAnimation(
         parent: animation,
@@ -197,7 +198,8 @@ class AppHero extends StatelessWidget {
         type: MaterialType.transparency,
         child: child,
       ),
-      flightShuttleBuilder: (flightContext, animation, direction, fromContext, toContext) {
+      flightShuttleBuilder:
+          (flightContext, animation, direction, fromContext, toContext) {
         return DefaultTextStyle(
           style: DefaultTextStyle.of(toContext).style,
           child: toContext.widget,

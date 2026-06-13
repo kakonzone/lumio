@@ -56,16 +56,14 @@ class FootyStreamService {
 
   static Future<String?> _getHtml(String url) async {
     try {
-      final res = await http
-          .get(
-            Uri.parse(url),
-            headers: {
-              'User-Agent': _ua,
-              'Accept': 'text/html,application/xhtml+xml',
-              'Accept-Language': 'en',
-            },
-          )
-          .timeout(const Duration(seconds: 14));
+      final res = await http.get(
+        Uri.parse(url),
+        headers: {
+          'User-Agent': _ua,
+          'Accept': 'text/html,application/xhtml+xml',
+          'Accept-Language': 'en',
+        },
+      ).timeout(const Duration(seconds: 14));
       if (res.statusCode != 200) return null;
       return res.body;
     } catch (_) {
@@ -202,9 +200,7 @@ class FootyStreamService {
     if (l.contains('formula') || l.contains('f1')) return 'Formula 1';
     if (l.contains('moto')) return 'MotoGP';
     if (l.contains('ufc') || l.contains('boxing')) return 'Combat';
-    if (l.contains('roland') ||
-        l.contains('atp') ||
-        l.contains('tennis')) {
+    if (l.contains('roland') || l.contains('atp') || l.contains('tennis')) {
       return 'Tennis';
     }
     if (l.contains('rugby')) return 'Rugby';

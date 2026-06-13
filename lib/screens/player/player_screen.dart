@@ -53,19 +53,24 @@ class PlayerScreen extends StatefulWidget {
   State<PlayerScreen> createState() => _PlayerScreenState();
 }
 
-class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver {
+class _PlayerScreenState extends State<PlayerScreen>
+    with WidgetsBindingObserver {
   late final Player _player;
   late final VideoController _videoCtrl;
   final Floating _floating = Floating();
   bool _pipAvailable = false;
+
   /// After a failed PiP setup, skip further native calls (stops log spam).
   bool _pipBlocked = false;
+
   /// True when PiP mode is currently active.
   bool _isPipActive = false;
 
   bool _initialized = false;
+
   /// True after [Video] has been laid out — required before mpv open on Android.
   bool _videoSurfaceMounted = false;
+
   /// Stays true after first successful open — keeps in-player WebViews mounted.
   bool _playbackSurfaceReady = false;
   bool _hasError = false;
@@ -110,7 +115,8 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
   DateTime? _failoverSuppressedUntil;
   static const int _maxFailoverAttempts = 3;
   static const Duration _connectTimeout = Duration(
-    milliseconds: int.fromEnvironment('STREAM_CONNECT_TIMEOUT_MS', defaultValue: 6000),
+    milliseconds:
+        int.fromEnvironment('STREAM_CONNECT_TIMEOUT_MS', defaultValue: 6000),
   );
   static const Duration _bufferingTimeout = Duration(seconds: 12);
   static const Duration _failoverCooldown = Duration(seconds: 5);
@@ -163,7 +169,6 @@ class _PlayerScreenState extends State<PlayerScreen> with WidgetsBindingObserver
   StreamSubscription<bool>? _playingSub;
   StreamSubscription? _tracksSub;
   StreamSubscription<PiPStatus>? _pipStatusSub;
-
 
   @override
   void initState() {

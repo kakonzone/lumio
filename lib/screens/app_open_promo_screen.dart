@@ -127,7 +127,8 @@ class _AppOpenPromoScreenState extends State<AppOpenPromoScreen> {
                       ),
                     ),
                     const Spacer(),
-                    _CountdownBadge(seconds: _secondsLeft.clamp(0, _countdownTotal)),
+                    _CountdownBadge(
+                        seconds: _secondsLeft.clamp(0, _countdownTotal)),
                   ],
                 ),
               ),
@@ -205,7 +206,8 @@ class _DirectLinkAdViewState extends State<_DirectLinkAdView> {
     final c = _controller;
     if (c == null) {
       return const Center(
-        child: CircularProgressIndicator(color: AppTokens.accent, strokeWidth: 2),
+        child:
+            CircularProgressIndicator(color: AppTokens.accent, strokeWidth: 2),
       );
     }
     return SizedBox(
@@ -255,7 +257,8 @@ class _CountdownBadge extends StatelessWidget {
       child: Center(
         child: Text(
           seconds > 0 ? '$seconds' : '·',
-          style: GF.head(fontSize: 15, fontWeight: FontWeight.w800, color: Colors.white),
+          style: GF.head(
+              fontSize: 15, fontWeight: FontWeight.w800, color: Colors.white),
         ),
       ),
     );
@@ -277,7 +280,8 @@ class _SkipButton extends StatelessWidget {
           backgroundColor: AppTokens.accent,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
         child: Text(
           'Skip',

@@ -12,5 +12,6 @@ class RadiusTokens {
   static const BorderRadius circularSm = BorderRadius.all(Radius.circular(sm));
   static const BorderRadius circularMd = BorderRadius.all(Radius.circular(md));
   static const BorderRadius circularLg = BorderRadius.all(Radius.circular(lg));
-  static const BorderRadius circularFull = BorderRadius.all(Radius.circular(full));
+  static const BorderRadius circularFull =
+      BorderRadius.all(Radius.circular(full));
 }

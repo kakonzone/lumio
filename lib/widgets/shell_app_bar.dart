@@ -14,10 +14,13 @@ class ShellAppBar extends StatelessWidget {
   final String? title;
   final String? subtitle;
   final bool showBack;
+
   /// Home screen: LUMIO+TV brand dead-center on the bar.
   final bool centerLumioTvBrand;
+
   /// Match [Scaffold] body color so no dark strip appears under the bar.
   final bool blendWithScaffold;
+
   /// When [showBack], do not paint [subtitle] under the toolbar (put it in scroll).
   final bool hideSubtitleInBar;
 
@@ -43,9 +46,8 @@ class ShellAppBar extends StatelessWidget {
     final prov = context.watch<AppProvider>();
     final favCount = prov.favoriteCount;
 
-    final showSubtitleBelow = subtitle != null &&
-        showBack &&
-        !hideSubtitleInBar;
+    final showSubtitleBelow =
+        subtitle != null && showBack && !hideSubtitleInBar;
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -283,8 +285,7 @@ class ShellAppBar extends StatelessWidget {
                 child: Icon(
                   favCount > 0 ? Icons.favorite : Icons.favorite_border,
                   size: 16,
-                  color:
-                      favCount > 0 ? tokens.AppTokens.accent : context.txt2,
+                  color: favCount > 0 ? tokens.AppTokens.accent : context.txt2,
                 ),
               ),
               if (favCount > 0)

@@ -25,7 +25,8 @@ class SecurityNative {
   /// APK সাইনিং সার্টিফিকেট SHA-256 (hex, uppercase)
   static Future<String?> getApkSignatureSha256() async {
     try {
-      final result = await _channel.invokeMethod<String>('getApkSignatureSha256');
+      final result =
+          await _channel.invokeMethod<String>('getApkSignatureSha256');
       return result?.toUpperCase();
     } on PlatformException {
       return null;

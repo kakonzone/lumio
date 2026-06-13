@@ -22,12 +22,11 @@ class ExternalUrlLauncher {
 
     if (Platform.isAndroid) {
       try {
-        final nativeOk =
-            await _channel.invokeMethod<bool>(
-                  'openUrlInBrowser',
-                  <String, String>{'url': uri.toString()},
-                ) ==
-                true;
+        final nativeOk = await _channel.invokeMethod<bool>(
+              'openUrlInBrowser',
+              <String, String>{'url': uri.toString()},
+            ) ==
+            true;
         if (nativeOk) {
           debugPrint('[ExternalUrlLauncher] opened via Android Intent');
           return true;

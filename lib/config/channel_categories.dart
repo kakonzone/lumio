@@ -163,9 +163,7 @@ class ChannelCategoryRegistry {
     final g = group.trim().toLowerCase();
     if (g.isEmpty) return fromChannelName(channelName);
     if (g == 'sports' || g.contains('sport')) return 'Sports';
-    if (g == 'bangladesh' ||
-        g.contains('bangla') ||
-        g.contains('bangladesh')) {
+    if (g == 'bangladesh' || g.contains('bangla') || g.contains('bangladesh')) {
       return 'Bangladesh';
     }
     if (g.contains('pakistan') || g == 'pk') return 'Pakistan';
@@ -189,7 +187,9 @@ class ChannelCategoryRegistry {
     if (g.contains('korea') || g.contains('k-drama') || g.contains('kdrama')) {
       return 'KDrama';
     }
-    if (g.contains('entertain') || g.contains('drama') || g.contains('general')) {
+    if (g.contains('entertain') ||
+        g.contains('drama') ||
+        g.contains('general')) {
       return 'Entertainment';
     }
     if (g == 'live tv' || g == 'live' || g == 'livetv') {
@@ -503,8 +503,9 @@ class ChannelCategoryRegistry {
     if (input.isEmpty) return input;
     return input
         .split(RegExp(r'\s+'))
-        .map((w) =>
-            w.isEmpty ? w : '${w[0].toUpperCase()}${w.substring(1).toLowerCase()}')
+        .map((w) => w.isEmpty
+            ? w
+            : '${w[0].toUpperCase()}${w.substring(1).toLowerCase()}')
         .join(' ');
   }
 }

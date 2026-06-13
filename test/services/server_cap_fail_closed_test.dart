@@ -19,7 +19,8 @@ void main() {
   test('allowsPlacement true when cap URL unset', () async {
     ServerCap.debugTreatAsConfigured = false;
     expect(await ServerCap.instance.allowsPlacement('interstitial'), isTrue);
-    expect(await ServerCapService.instance.allowsPlacement('interstitial'), isTrue);
+    expect(await ServerCapService.instance.allowsPlacement('interstitial'),
+        isTrue);
   });
 
   test('allowsPlacement false when configured and fail-closed', () async {
@@ -27,7 +28,8 @@ void main() {
     ServerCap.instance.debugSetFailClosed(true);
     expect(ServerCap.instance.isFailClosed, isTrue);
     expect(await ServerCap.instance.allowsPlacement('interstitial'), isFalse);
-    expect(await ServerCapService.instance.allowsPlacement('interstitial'), isFalse);
+    expect(await ServerCapService.instance.allowsPlacement('interstitial'),
+        isFalse);
   });
 
   test('allowsPlacement true when configured, sync ok, under limit', () async {
@@ -37,7 +39,8 @@ void main() {
     expect(await ServerCap.instance.allowsPlacement('interstitial'), isTrue);
   });
 
-  test('fail-closed clears after successful debug cache + no fail flag', () async {
+  test('fail-closed clears after successful debug cache + no fail flag',
+      () async {
     ServerCap.debugTreatAsConfigured = true;
     ServerCap.instance.debugSetFailClosed(false);
     ServerCap.instance.debugSetCache({'interstitial': 2});

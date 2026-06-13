@@ -7,7 +7,7 @@ import 'package:lumio_tv/widgets/common/pressable.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// A settings row widget with icon, title, optional subtitle, and trailing widget.
-/// 
+///
 /// Features:
 /// - 56px height for consistent touch targets
 /// - Leading icon (Phosphor regular weight, 20px, TextSecondary)
@@ -19,22 +19,22 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 class SettingsRow extends StatelessWidget {
   /// Leading icon (Phosphor icon)
   final IconData leadingIcon;
-  
+
   /// Main title text (body size)
   final String title;
-  
+
   /// Optional subtitle text (caption, TextTertiary)
   final String? subtitle;
-  
+
   /// Optional value text to display (caption, TextSecondary)
   final String? value;
-  
+
   /// Optional trailing widget (Switch, custom widget, etc.)
   final Widget? trailing;
-  
+
   /// Callback when row is tapped
   final VoidCallback? onTap;
-  
+
   /// Whether this is the last row in a section (no bottom divider)
   final bool isLast;
 

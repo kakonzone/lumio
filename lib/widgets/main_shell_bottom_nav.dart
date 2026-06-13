@@ -177,7 +177,9 @@ class _NavTile extends StatelessWidget {
                   child: Icon(
                     spec.icon,
                     size: 24,
-                    color: active ? tokens.AppTokens.accent : tokens.AppTokens.textTertiary,
+                    color: active
+                        ? tokens.AppTokens.accent
+                        : tokens.AppTokens.textTertiary,
                     key: ValueKey('${spec.label}_${active}'),
                   ),
                 ),
@@ -197,7 +199,8 @@ class _NavTile extends StatelessWidget {
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: tokens.AppTokens.liveRed.withValues(alpha: 0.5),
+                            color:
+                                tokens.AppTokens.liveRed.withValues(alpha: 0.5),
                             blurRadius: 4,
                           ),
                         ],
@@ -221,7 +224,9 @@ class _NavTile extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  color: active ? tokens.AppTokens.accent : tokens.AppTokens.textTertiary,
+                  color: active
+                      ? tokens.AppTokens.accent
+                      : tokens.AppTokens.textTertiary,
                   letterSpacing: 0,
                 ),
                 maxLines: 1,

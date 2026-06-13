@@ -62,6 +62,7 @@ class AdManager {
       }
     }
   }
+
   bool _postHomeWarmupStarted = false;
   bool _loggedRuntimeStatus = false;
 
@@ -83,10 +84,10 @@ class AdManager {
   bool get isStreaming => _isStreaming;
   bool get adsEnabled =>
       (isReady &&
-      AdSafetyService.instance.adsEnabledRemote &&
-      !ServerCap.instance.blocksAdsInRelease &&
-      !UserPreferences.removeAdsPurchased &&
-      !_caps.isAdFree) &&
+          AdSafetyService.instance.adsEnabledRemote &&
+          !ServerCap.instance.blocksAdsInRelease &&
+          !UserPreferences.removeAdsPurchased &&
+          !_caps.isAdFree) &&
       !_killSwitchActive;
 
   bool _killSwitchActive = false;
@@ -95,7 +96,9 @@ class AdManager {
   /// Disable all ad surfaces via kill switch (emergency control).
   void setKillSwitchActive(bool active) {
     _killSwitchActive = active;
-    adLog(active ? '[KillSwitch] ADS DISABLED via kill switch' : '[KillSwitch] ADS ENABLED');
+    adLog(active
+        ? '[KillSwitch] ADS DISABLED via kill switch'
+        : '[KillSwitch] ADS ENABLED');
   }
 
   bool get unityAdsEnabled => adsEnabled;
@@ -104,8 +107,7 @@ class AdManager {
   bool get showAdsterraWebViewSlots =>
       adsEnabled && AdConfig.hasAdsterraWebViewZones;
 
-  bool get isUserAdFree =>
-      UserPreferences.removeAdsPurchased || _caps.isAdFree;
+  bool get isUserAdFree => UserPreferences.removeAdsPurchased || _caps.isAdFree;
 
   /// Retry after consent dialog when first init was blocked or privacy flags updated.
   Future<void> retryInitAfterConsent() async {
@@ -186,8 +188,7 @@ class AdManager {
       unityOk = await UnityAdsService.instance.init();
     }
 
-    final adsterraOk =
-        AdConfig.hasValidAdsterraDirectLink ||
+    final adsterraOk = AdConfig.hasValidAdsterraDirectLink ||
         AdConfig.hasValidAdsterraSmartlink ||
         AdConfig.hasAdsterraWebViewZones;
 
@@ -351,8 +352,7 @@ class AdManager {
       if (unityShown) return true;
     }
 
-    final showPromoScreen =
-        report.canShowAdsterra || report.canShowHousePromo;
+    final showPromoScreen = report.canShowAdsterra || report.canShowHousePromo;
     if (!showPromoScreen) {
       unawaited(
         analytics.logAdInterstitialFailed(
@@ -532,7 +532,8 @@ class AdManager {
       }
     }
 
-    if (MonetagConfig.isConfigured && KillSwitchService.instance.monetagEnabled) {
+    if (MonetagConfig.isConfigured &&
+        KillSwitchService.instance.monetagEnabled) {
       final ok = await PropellerEngine.instance.openSmartlink(
         placement: placement,
         analytics: analytics,
@@ -561,8 +562,8 @@ class AdManager {
         ? article.id.trim()
         : article.title.hashCode.toString();
 
-    final showBrowserFirst = adsEnabled &&
-        !AdTriggerManager.instance.hasNewsArticleAdShown(id);
+    final showBrowserFirst =
+        adsEnabled && !AdTriggerManager.instance.hasNewsArticleAdShown(id);
 
     if (showBrowserFirst) {
       final browserOk = await AdsterraEngine.instance.openNewsArticleBrowser(
@@ -607,9 +608,9 @@ class AdManager {
       removeAds: removeAds,
       channelKey: channelKey,
     );
-    
+
     if (context == null || !context.mounted) return false;
-    
+
     if (!cap.allowed) {
       if (cap.reason != null) {
         unawaited(
@@ -791,11 +792,9 @@ class AdManager {
     );
   }
 
-  int get maxInterstitials =>
-      GeoTargeting.adjustedMaxInterstitials(
+  int get maxInterstitials => GeoTargeting.adjustedMaxInterstitials(
         AdConfig.maxInterstitialsPerSession,
       );
-
 }
 
 class ChannelTapResult {

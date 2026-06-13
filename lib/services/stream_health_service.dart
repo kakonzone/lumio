@@ -39,7 +39,8 @@ class StreamHealthService {
     if (links.isEmpty) return false;
     for (final link in links) {
       if (link.url.isEmpty) continue;
-      if (await isUrlActive(link.url, headers: link.headers, timeout: timeout)) {
+      if (await isUrlActive(link.url,
+          headers: link.headers, timeout: timeout)) {
         return true;
       }
     }
@@ -61,22 +62,18 @@ class StreamHealthService {
     };
 
     try {
-      final head = await http
-          .head(uri, headers: httpHeaders)
-          .timeout(timeout);
+      final head = await http.head(uri, headers: httpHeaders).timeout(timeout);
       if (head.statusCode == 200 || head.statusCode == 206) return true;
     } catch (_) {}
 
     try {
-      final get = await http
-          .get(
-            uri,
-            headers: {
-              ...httpHeaders,
-              'Range': 'bytes=0-0',
-            },
-          )
-          .timeout(timeout);
+      final get = await http.get(
+        uri,
+        headers: {
+          ...httpHeaders,
+          'Range': 'bytes=0-0',
+        },
+      ).timeout(timeout);
       return get.statusCode == 200 || get.statusCode == 206;
     } catch (_) {
       return false;

@@ -45,8 +45,7 @@ class AdPlacementConfig {
     if (debugAggressiveModeOverride == true || aggressiveMode) {
       return AdConfig.nativeListIntervalAggressive;
     }
-    final remote =
-        AppConfigService.instance.cachedConfig.listNativeInterval;
+    final remote = AppConfigService.instance.cachedConfig.listNativeInterval;
     if (remote > 0) return remote;
     return AdConfig.nativeListInterval;
   }

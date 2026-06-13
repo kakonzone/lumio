@@ -9,18 +9,16 @@ class AdPolicyConfig {
   AdPolicyConfig._();
   static final AdPolicyConfig instance = AdPolicyConfig._();
 
-  FirebaseRemoteConfig? get _rc =>
-      AdSafetyService.instance.remoteConfigReady
-          ? FirebaseRemoteConfig.instance
-          : null;
+  FirebaseRemoteConfig? get _rc => AdSafetyService.instance.remoteConfigReady
+      ? FirebaseRemoteConfig.instance
+      : null;
 
   double get aggressiveModeMultiplier {
     if (!AdSafetyService.instance.aggressiveMode) return 1.0;
-    final fallback =
-        RemoteConfigKeys.defaults[RemoteConfigKeys.aggressiveModeMultiplier]!
-            as double;
-    final raw = _rc?.getDouble(RemoteConfigKeys.aggressiveModeMultiplier) ??
-        fallback;
+    final fallback = RemoteConfigKeys
+        .defaults[RemoteConfigKeys.aggressiveModeMultiplier]! as double;
+    final raw =
+        _rc?.getDouble(RemoteConfigKeys.aggressiveModeMultiplier) ?? fallback;
     return raw.clamp(0.5, 2.0);
   }
 
@@ -68,7 +66,8 @@ class AdPolicyConfig {
       );
 
   String get monetagPushZoneId {
-    final fromRc = _rc?.getString(RemoteConfigKeys.monetagPushZoneId).trim() ?? '';
+    final fromRc =
+        _rc?.getString(RemoteConfigKeys.monetagPushZoneId).trim() ?? '';
     if (fromRc.isNotEmpty) return fromRc;
     return '';
   }

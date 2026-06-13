@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:lumio_tv/theme/tokens/colors.dart' as tokens;
 
 /// Custom refresh indicator that matches app design
-/// 
+///
 /// Features:
 /// - Accent color for indicator
 /// - Background color matching app theme

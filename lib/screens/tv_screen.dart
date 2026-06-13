@@ -31,7 +31,8 @@ class TvScreen extends StatefulWidget {
   TvScreenState createState() => TvScreenState();
 }
 
-class TvScreenState extends State<TvScreen> with SingleTickerProviderStateMixin {
+class TvScreenState extends State<TvScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabs;
   final _highlightCategory = ValueNotifier<String?>(null);
   final _searchSectionKey = GlobalKey<_TvSearchSectionState>();
@@ -169,9 +170,8 @@ class TvScreenState extends State<TvScreen> with SingleTickerProviderStateMixin 
         height: 46,
         padding: const EdgeInsets.all(3),
         decoration: BoxDecoration(
-          color: context.isDark
-              ? context.bg3.withValues(alpha: 0.9)
-              : context.bg2,
+          color:
+              context.isDark ? context.bg3.withValues(alpha: 0.9) : context.bg2,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: context.brd),
           boxShadow: [
@@ -237,9 +237,8 @@ class TvScreenState extends State<TvScreen> with SingleTickerProviderStateMixin 
                               label,
                               style: GF.body(
                                 fontSize: 11,
-                                fontWeight: active
-                                    ? FontWeight.w800
-                                    : FontWeight.w600,
+                                fontWeight:
+                                    active ? FontWeight.w800 : FontWeight.w600,
                                 color: active ? Colors.white : context.txt3,
                               ),
                             ),
@@ -428,8 +427,8 @@ class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
     final prov = context.watch<AppProvider>();
     final liveEvents = prov.sortedLiveEvents;
     final featuredEvents = prov.featuredLiveEvents;
-    final showFeaturedSection = prov.featuredLiveEventsLoading ||
-        featuredEvents.isNotEmpty;
+    final showFeaturedSection =
+        prov.featuredLiveEventsLoading || featuredEvents.isNotEmpty;
     final showLiveEventsSection =
         prov.liveEventsLoading || liveEvents.isNotEmpty;
     final cats = prov.homeCategoryTiles.isNotEmpty
@@ -494,186 +493,188 @@ class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
                     ),
                   ),
                 if (prov.channelsLoading && prov.channels.isEmpty)
-                const SliverToBoxAdapter(child: ChannelListSkeleton(count: 5)),
-              if (AdManager.instance.adsEnabled)
-                SliverToBoxAdapter(
-                  child: LazyAdViewport(
-                    placeholderHeight: 110,
-                    builder: () => const Padding(
-                      padding: EdgeInsets.fromLTRB(16, 0, 16, 10),
-                      child: AdsterraNativeBanner(
-                        height: 100,
-                        placement: 'home_native_top',
+                  const SliverToBoxAdapter(
+                      child: ChannelListSkeleton(count: 5)),
+                if (AdManager.instance.adsEnabled)
+                  SliverToBoxAdapter(
+                    child: LazyAdViewport(
+                      placeholderHeight: 110,
+                      builder: () => const Padding(
+                        padding: EdgeInsets.fromLTRB(16, 0, 16, 10),
+                        child: AdsterraNativeBanner(
+                          height: 100,
+                          placement: 'home_native_top',
+                        ),
                       ),
                     ),
                   ),
-                ),
-              const SliverPadding(
-                padding: EdgeInsets.only(top: 14),
-                sliver: SliverToBoxAdapter(
-                  child: HomeSectionHeader(
-                    title: 'Browse',
-                    subtitle: 'Tap a category to explore live channels',
+                const SliverPadding(
+                  padding: EdgeInsets.only(top: 14),
+                  sliver: SliverToBoxAdapter(
+                    child: HomeSectionHeader(
+                      title: 'Browse',
+                      subtitle: 'Tap a category to explore live channels',
+                    ),
                   ),
                 ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                sliver: SliverToBoxAdapter(
-                  child: HomeCategoryGrid(
-                    prov: prov,
-                    categories: cats,
-                    highlightCategory: highlightCategory,
-                    onCategoryTap: widget.onCategoryTap,
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                  sliver: SliverToBoxAdapter(
+                    child: HomeCategoryGrid(
+                      prov: prov,
+                      categories: cats,
+                      highlightCategory: highlightCategory,
+                      onCategoryTap: widget.onCategoryTap,
+                    ),
                   ),
                 ),
-              ),
-              if (showFeaturedSection) ...[
-                const SliverToBoxAdapter(child: SizedBox(height: 16)),
-                SliverToBoxAdapter(
-                  child: _SectionHeader(
-                    title: prov.featuredLiveEventsSectionTitle,
-                    trailing: prov.featuredLiveEventsLoading
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppTokens.accent,
+                if (showFeaturedSection) ...[
+                  const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                  SliverToBoxAdapter(
+                    child: _SectionHeader(
+                      title: prov.featuredLiveEventsSectionTitle,
+                      trailing: prov.featuredLiveEventsLoading
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppTokens.accent,
+                              ),
+                            )
+                          : _LiveBadge(
+                              label: '${featuredEvents.length} featured',
                             ),
-                          )
-                        : _LiveBadge(
-                            label: '${featuredEvents.length} featured',
-                          ),
+                    ),
                   ),
-                ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (prov.featuredLiveEventsSectionSubtitle.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (prov.featuredLiveEventsSectionSubtitle.isNotEmpty)
+                            Text(
+                              prov.featuredLiveEventsSectionSubtitle,
+                              style:
+                                  TextStyle(fontSize: 11, color: context.txt3),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           Text(
-                            prov.featuredLiveEventsSectionSubtitle,
-                            style: TextStyle(fontSize: 11, color: context.txt3),
-                            maxLines: 2,
+                            prov.featuredLiveEventsStatusLine,
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: prov.featuredLiveEventsFromAppwrite
+                                  ? AppTokens.accent.withValues(alpha: 0.9)
+                                  : (prov.featuredLiveEventsError != null
+                                      ? Colors.orange.shade300
+                                      : context.txt3),
+                            ),
+                            maxLines: 3,
                             overflow: TextOverflow.ellipsis,
                           ),
-                        Text(
-                          prov.featuredLiveEventsStatusLine,
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: prov.featuredLiveEventsFromAppwrite
-                                ? AppTokens.accent.withValues(alpha: 0.9)
-                                : (prov.featuredLiveEventsError != null
-                                    ? Colors.orange.shade300
-                                    : context.txt3),
-                          ),
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                if (prov.featuredLiveEventsLoading &&
-                    !prov.hasFeaturedLiveEventsData &&
-                    featuredEvents.isEmpty)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-                      child: Text(
-                        'Loading featured matches…',
-                        style: TextStyle(fontSize: 12, color: context.txt3),
+                        ],
                       ),
                     ),
-                  )
-                else
-                  SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) => RepaintBoundary(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          child: _LiveEventCard(event: featuredEvents[index]),
+                  ),
+                  if (prov.featuredLiveEventsLoading &&
+                      !prov.hasFeaturedLiveEventsData &&
+                      featuredEvents.isEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                        child: Text(
+                          'Loading featured matches…',
+                          style: TextStyle(fontSize: 12, color: context.txt3),
                         ),
                       ),
-                      childCount: featuredEvents.length,
-                    ),
-                  ),
-              ],
-              if (showLiveEventsSection) ...[
-                const SliverToBoxAdapter(child: SizedBox(height: 16)),
-                SliverToBoxAdapter(
-                  child: _SectionHeader(
-                    title: 'All Live Events',
-                    trailing: prov.liveEventsLoading
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppTokens.accent,
+                    )
+                  else
+                    SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) => RepaintBoundary(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
                             ),
-                          )
-                        : _LiveBadge(label: '${liveEvents.length} events'),
-                  ),
-                ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
-                    child: Text(
-                      'FootyStream + ESPN/Cricbuzz — same match shown once',
-                      style: TextStyle(fontSize: 11, color: context.txt3),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                            child: _LiveEventCard(event: featuredEvents[index]),
+                          ),
+                        ),
+                        childCount: featuredEvents.length,
+                      ),
+                    ),
+                ],
+                if (showLiveEventsSection) ...[
+                  const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                  SliverToBoxAdapter(
+                    child: _SectionHeader(
+                      title: 'All Live Events',
+                      trailing: prov.liveEventsLoading
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppTokens.accent,
+                              ),
+                            )
+                          : _LiveBadge(label: '${liveEvents.length} events'),
                     ),
                   ),
-                ),
-                if (prov.liveEventsLoading &&
-                    !prov.hasLiveEventsData &&
-                    liveEvents.isEmpty)
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                      padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
                       child: Text(
-                        'Loading live events…',
-                        style: TextStyle(fontSize: 12, color: context.txt3),
+                        'FootyStream + ESPN/Cricbuzz — same match shown once',
+                        style: TextStyle(fontSize: 11, color: context.txt3),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                  )
-                else
-                  SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) => RepaintBoundary(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          child: _LiveEventCard(event: liveEvents[index]),
+                  ),
+                  if (prov.liveEventsLoading &&
+                      !prov.hasLiveEventsData &&
+                      liveEvents.isEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                        child: Text(
+                          'Loading live events…',
+                          style: TextStyle(fontSize: 12, color: context.txt3),
                         ),
                       ),
-                      childCount: liveEvents.length,
+                    )
+                  else
+                    SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) => RepaintBoundary(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            child: _LiveEventCard(event: liveEvents[index]),
+                          ),
+                        ),
+                        childCount: liveEvents.length,
+                      ),
                     ),
-                  ),
-              ],
-              if (AdManager.instance.adsEnabled)
-                SliverToBoxAdapter(
-                  child: LazyAdViewport(
-                    placeholderHeight: 98,
-                    builder: () => const Padding(
-                      padding: EdgeInsets.fromLTRB(16, 8, 16, 10),
-                      child: AdsterraBanner728(
-                        placement: 'home_bottom_banner',
+                ],
+                if (AdManager.instance.adsEnabled)
+                  SliverToBoxAdapter(
+                    child: LazyAdViewport(
+                      placeholderHeight: 98,
+                      builder: () => const Padding(
+                        padding: EdgeInsets.fromLTRB(16, 8, 16, 10),
+                        child: AdsterraBanner728(
+                          placement: 'home_bottom_banner',
+                        ),
                       ),
                     ),
                   ),
-                ),
-              const SliverToBoxAdapter(child: SizedBox(height: 72)),
+                const SliverToBoxAdapter(child: SizedBox(height: 72)),
               ],
             ),
           ),
@@ -716,49 +717,50 @@ class _LiveNowTabState extends State<_LiveNowTab>
               padding: const EdgeInsets.only(top: 14),
               child: _SectionHeader(
                 title: 'All Live Events',
-              trailing: prov.liveEventsLoading
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppTokens.accent,
-                      ),
-                    )
-                  : _LiveBadge(label: '${events.length} events'),
+                trailing: prov.liveEventsLoading
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppTokens.accent,
+                        ),
+                      )
+                    : _LiveBadge(label: '${events.length} events'),
+              ),
             ),
           ),
-        ),
-        if (prov.liveEventsLoading && !prov.hasLiveEventsData && empty)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-              child: Text(
-                'Loading live events…',
-                style: TextStyle(fontSize: 12, color: context.txt3),
+          if (prov.liveEventsLoading && !prov.hasLiveEventsData && empty)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                child: Text(
+                  'Loading live events…',
+                  style: TextStyle(fontSize: 12, color: context.txt3),
+                ),
+              ),
+            )
+          else if (empty)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                child: Text(
+                  'আজকে কোনো live event নেই',
+                  style: TextStyle(fontSize: 12, color: context.txt3),
+                ),
+              ),
+            )
+          else
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: _LiveEventCard(event: events[index]),
+                ),
+                childCount: events.length,
               ),
             ),
-          )
-        else if (empty)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-              child: Text(
-                'আজকে কোনো live event নেই',
-                style: TextStyle(fontSize: 12, color: context.txt3),
-              ),
-            ),
-          )
-        else
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) => Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: _LiveEventCard(event: events[index]),
-              ),
-              childCount: events.length,
-            ),
-          ),
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],
       ),
@@ -775,7 +777,8 @@ class _TodayTab extends StatefulWidget {
   State<_TodayTab> createState() => _TodayTabState();
 }
 
-class _TodayTabState extends State<_TodayTab> with AutomaticKeepAliveClientMixin {
+class _TodayTabState extends State<_TodayTab>
+    with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
 
@@ -797,57 +800,59 @@ class _TodayTabState extends State<_TodayTab> with AutomaticKeepAliveClientMixin
               padding: const EdgeInsets.only(top: 14),
               child: _SectionHeader(
                 title: "Today's Schedule",
-              trailing: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF1B5E20), Color(0xFF0D3D1A)],
+                trailing: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF1B5E20), Color(0xFF0D3D1A)],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  'FootyStream · ${DateTime.now().day}/${DateTime.now().month}',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: AppTokens.success,
+                  child: Text(
+                    'FootyStream · ${DateTime.now().day}/${DateTime.now().month}',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: AppTokens.success,
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-            child: Text(
-              'Today: FootyStream schedule merged with ESPN/Cricbuzz scores',
-              style: TextStyle(fontSize: 11, color: context.txt3),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+              child: Text(
+                'Today: FootyStream schedule merged with ESPN/Cricbuzz scores',
+                style: TextStyle(fontSize: 11, color: context.txt3),
+              ),
             ),
           ),
-        ),
-        SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              final m = matches[index];
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                child: _TodayCard(
-                  match: m,
-                  onTap: () => widget.onPlay(
-                    context,
-                    url: m.streamUrl,
-                    title: '${m.teamA} vs ${m.teamB}',
-                    subtitle: '${m.sport} • ${m.channel}',
-                    category: 'Sports',
-                    browseCategory: 'Sports',
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final m = matches[index];
+                return Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: _TodayCard(
+                    match: m,
+                    onTap: () => widget.onPlay(
+                      context,
+                      url: m.streamUrl,
+                      title: '${m.teamA} vs ${m.teamB}',
+                      subtitle: '${m.sport} • ${m.channel}',
+                      category: 'Sports',
+                      browseCategory: 'Sports',
+                    ),
                   ),
-                ),
-              );
-            },
-            childCount: matches.length,
+                );
+              },
+              childCount: matches.length,
+            ),
           ),
-        ),
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],
       ),
@@ -887,46 +892,48 @@ class _UpcomingTabState extends State<_UpcomingTab>
               padding: const EdgeInsets.only(top: 14),
               child: _SectionHeader(
                 title: 'Upcoming Events',
-              trailing: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1A1A3A),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '${matches.length} events',
-                  style: const TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF60A5FA),
+                trailing: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1A3A),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${matches.length} events',
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF60A5FA),
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-        SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              final m = matches[index];
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                child: _UpcomingCard(
-                  match: m,
-                  onTap: () => widget.onPlay(
-                    context,
-                    url: m.streamUrl,
-                    title: '${m.teamA} vs ${m.teamB}',
-                    subtitle: '${m.sport} • ${m.time}',
-                    category: 'Sports',
-                    browseCategory: 'Sports',
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final m = matches[index];
+                return Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: _UpcomingCard(
+                    match: m,
+                    onTap: () => widget.onPlay(
+                      context,
+                      url: m.streamUrl,
+                      title: '${m.teamA} vs ${m.teamB}',
+                      subtitle: '${m.sport} • ${m.time}',
+                      category: 'Sports',
+                      browseCategory: 'Sports',
+                    ),
                   ),
-                ),
-              );
-            },
-            childCount: matches.length,
+                );
+              },
+              childCount: matches.length,
+            ),
           ),
-        ),
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],
       ),
@@ -1151,7 +1158,9 @@ class _ScoreCard extends StatelessWidget {
                   _teamLine(context, match.teamA),
                   const SizedBox(height: 4),
                   _teamLine(context, match.teamB),
-                  if (!_hasScores && !match.isLive && match.time.isNotEmpty) ...[
+                  if (!_hasScores &&
+                      !match.isLive &&
+                      match.time.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     Text(
                       match.time,
@@ -1257,8 +1266,7 @@ class _LiveEventCardState extends State<_LiveEventCard> {
 
   bool _needsTick(MatchModel m) {
     if (m.isLive || m.isFinished) return false;
-    return m.isUpcoming ||
-        BdtTime.untilKickoff(m.matchDate).inSeconds > 0;
+    return m.isUpcoming || BdtTime.untilKickoff(m.matchDate).inSeconds > 0;
   }
 
   void _startTick() {
@@ -1315,8 +1323,7 @@ class _LiveEventCardState extends State<_LiveEventCard> {
     final event = widget.event;
     final m = event.match;
     final effectiveLive = m.isLive ||
-        (m.isUpcoming &&
-            BdtTime.untilKickoff(m.matchDate).inSeconds <= 0);
+        (m.isUpcoming && BdtTime.untilKickoff(m.matchDate).inSeconds <= 0);
     final finished = m.isFinished;
     final showFooter = _showScheduleFooter(m, effectiveLive, finished);
     final hasScores = m.scoreA.trim().isNotEmpty || m.scoreB.trim().isNotEmpty;
@@ -1439,8 +1446,7 @@ class _LiveEventCardState extends State<_LiveEventCard> {
                       m.scoreA,
                       showScores: hasScores || effectiveLive || finished,
                     ),
-                    emphasizeScore:
-                        effectiveLive && m.scoreA.trim().isNotEmpty,
+                    emphasizeScore: effectiveLive && m.scoreA.trim().isNotEmpty,
                     onGradient: true,
                   ),
                   const SizedBox(height: 12),
@@ -1452,8 +1458,7 @@ class _LiveEventCardState extends State<_LiveEventCard> {
                       m.scoreB,
                       showScores: hasScores || effectiveLive || finished,
                     ),
-                    emphasizeScore:
-                        effectiveLive && m.scoreB.trim().isNotEmpty,
+                    emphasizeScore: effectiveLive && m.scoreB.trim().isNotEmpty,
                     onGradient: true,
                   ),
                   if (showFooter) ...[
@@ -1494,9 +1499,7 @@ class _SportChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
       decoration: BoxDecoration(
-        color: onGradient
-            ? Colors.white.withValues(alpha: 0.16)
-            : context.bg3,
+        color: onGradient ? Colors.white.withValues(alpha: 0.16) : context.bg3,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: onGradient
@@ -1739,7 +1742,8 @@ class _LiveEventChannelsDialogState extends State<_LiveEventChannelsDialog> {
     );
   }
 
-  List<({ChannelModel ch, StreamLink link})> _linkRows(List<ChannelModel> channels) {
+  List<({ChannelModel ch, StreamLink link})> _linkRows(
+      List<ChannelModel> channels) {
     final rows = <({ChannelModel ch, StreamLink link})>[];
     final seenUrls = <String>{};
     for (final ch in channels) {
@@ -1852,7 +1856,8 @@ class _LiveEventChannelsDialogState extends State<_LiveEventChannelsDialog> {
             Divider(height: 1, color: context.brd),
             if (linkRows.isEmpty)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
                 child: Text(
                   'No channels found for this match',
                   style: TextStyle(fontSize: 14, color: context.txt3),
@@ -1884,7 +1889,8 @@ class _LiveEventChannelsDialogState extends State<_LiveEventChannelsDialog> {
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         ch.name,
@@ -2042,8 +2048,7 @@ class _TodayCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color:
-                        match.isLive ? AppTokens.accent : AppTokens.success,
+                    color: match.isLive ? AppTokens.accent : AppTokens.success,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

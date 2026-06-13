@@ -8,11 +8,12 @@ import 'package:http/http.dart' as http;
 /// Fetches config from GitHub and caches locally.
 class KillSwitchService {
   KillSwitchService._();
-  
+
   static final KillSwitchService _instance = KillSwitchService._();
   static KillSwitchService get instance => _instance;
 
-  static const String _owner = String.fromEnvironment('KILL_SWITCH_OWNER', defaultValue: '');
+  static const String _owner =
+      String.fromEnvironment('KILL_SWITCH_OWNER', defaultValue: '');
   static const String _cacheKey = 'kill_switch_cache';
   static const String _cacheTimestampKey = 'kill_switch_cache_timestamp';
   static const Duration _cacheValidity = Duration(minutes: 15);
@@ -24,7 +25,8 @@ class KillSwitchService {
   /// Returns true on success or fail-open (network error).
   Future<bool> initialize() async {
     if (_owner.isEmpty) {
-      debugPrint('[KillSwitch] KILL_SWITCH_OWNER not set - skipping kill switch check');
+      debugPrint(
+          '[KillSwitch] KILL_SWITCH_OWNER not set - skipping kill switch check');
       _config = KillSwitchConfig.fallback();
       _initialized = true;
       return true;
@@ -35,7 +37,7 @@ class KillSwitchService {
     final now = DateTime.now().millisecondsSinceEpoch;
 
     // Check cache validity
-    if (cachedTimestamp != null && 
+    if (cachedTimestamp != null &&
         (now - cachedTimestamp) < _cacheValidity.inMilliseconds) {
       final cachedJson = prefs.getString(_cacheKey);
       if (cachedJson != null) {
@@ -52,17 +54,18 @@ class KillSwitchService {
 
     // Fetch fresh config
     try {
-      final url = Uri.parse('https://raw.githubusercontent.com/$_owner/lumio-config/main/status.json');
+      final url = Uri.parse(
+          'https://raw.githubusercontent.com/$_owner/lumio-config/main/status.json');
       final response = await http.get(url).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body) as Map<String, dynamic>;
         _config = KillSwitchConfig.fromJson(json);
-        
+
         // Cache the response
         await prefs.setString(_cacheKey, response.body);
         await prefs.setInt(_cacheTimestampKey, now);
-        
+
         _initialized = true;
         debugPrint('[KillSwitch] Fetched fresh config from GitHub');
         return true;
@@ -145,8 +148,10 @@ class KillSwitchConfig {
       'levelplay_enabled': levelplayEnabled,
       'adsterra_enabled': adsterraEnabled,
       'monetag_enabled': monetagEnabled,
-      if (forceUpdateVersion != null) 'force_update_version': forceUpdateVersion,
-      if (maintenanceMessageBn != null) 'maintenance_message_bn': maintenanceMessageBn,
+      if (forceUpdateVersion != null)
+        'force_update_version': forceUpdateVersion,
+      if (maintenanceMessageBn != null)
+        'maintenance_message_bn': maintenanceMessageBn,
     };
   }
 }

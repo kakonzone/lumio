@@ -3,7 +3,8 @@ import 'package:lumio_tv/ads/utils/ad_list_injector.dart';
 import 'package:lumio_tv/config/ad_config.dart';
 
 void main() {
-  test('nativeDensityByScreen channel lists use 6-item spacing, news uses 4', () {
+  test('nativeDensityByScreen channel lists use 6-item spacing, news uses 4',
+      () {
     expect(AdConfig.nativeDensityByScreen[AdListScreen.sports], 6);
     expect(AdConfig.nativeDensityByScreen[AdListScreen.live], 6);
     expect(AdConfig.nativeDensityByScreen[AdListScreen.news], 4);
@@ -13,11 +14,13 @@ void main() {
 
   test('sports injects ad every 6 channels via channelListNativeInterval', () {
     expect(
-      AdListInjector.isAdIndex(6, screen: AdListScreen.sports, intervalOverride: 6),
+      AdListInjector.isAdIndex(6,
+          screen: AdListScreen.sports, intervalOverride: 6),
       isTrue,
     );
     expect(
-      AdListInjector.sourceIndex(7, screen: AdListScreen.sports, intervalOverride: 6),
+      AdListInjector.sourceIndex(7,
+          screen: AdListScreen.sports, intervalOverride: 6),
       6,
     );
   });

@@ -11,7 +11,7 @@ import 'package:lumio_tv/widgets/common/pressable.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Preferences screen - Screen 4 of onboarding
-/// 
+///
 /// Features:
 /// - Quick preference selection
 /// - Preferred language (chips)

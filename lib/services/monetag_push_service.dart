@@ -104,7 +104,8 @@ class MonetagPushService {
       final ok = await _requestSystemPermission();
       if (ok) {
         unawaited(_analytics.logPushPermissionGranted());
-        await _registerMonetag(zoneId: AdPolicyConfig.instance.monetagPushZoneId);
+        await _registerMonetag(
+            zoneId: AdPolicyConfig.instance.monetagPushZoneId);
       } else {
         unawaited(_analytics.logPushPermissionDenied());
       }

@@ -16,10 +16,10 @@ class DirectLinkRotator {
       ...AdConfig.adsterraDirectLinksReleaseSafe,
       if (MonetagConfig.isConfigured) MonetagConfig.directLinkUrl,
     ];
-    
+
     // Filter out empty strings
     final validPool = pool.where((url) => url.trim().isNotEmpty).toList();
-    
+
     if (validPool.isEmpty) return null;
     return validPool[_random.nextInt(validPool.length)];
   }

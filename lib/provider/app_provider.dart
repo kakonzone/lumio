@@ -38,10 +38,12 @@ class AppProvider extends ChangeNotifier {
   int get favoriteCount => userState.favoriteCount;
   bool isFavorite(String channelId) => userState.isFavorite(channelId);
   List<ChannelModel> get favoriteChannels {
-    final list = catalog.channels.where((c) => userState.isFavorite(c.id)).toList();
+    final list =
+        catalog.channels.where((c) => userState.isFavorite(c.id)).toList();
     list.sort((a, b) => a.name.compareTo(b.name));
     return list;
   }
+
   Future<void> loadFavorites() => userState.loadFavorites();
   Future<void> addFavorite(ChannelModel channel) async =>
       userState.addFavoriteId(channel.id);
@@ -52,7 +54,8 @@ class AppProvider extends ChangeNotifier {
 
   // ── UI state (delegated) ──────────────────────────────────
   String? get pendingChannelTapId => ui.pendingChannelTapId;
-  bool isPendingChannelTap(String channelKey) => ui.isPendingChannelTap(channelKey);
+  bool isPendingChannelTap(String channelKey) =>
+      ui.isPendingChannelTap(channelKey);
   bool isPendingChannelTapChannel(ChannelModel channel) =>
       ui.isPendingChannelTapChannel(channel);
   void setPendingChannelTap(String? channelId) =>
@@ -74,7 +77,8 @@ class AppProvider extends ChangeNotifier {
   String get channelCountLabel => catalog.channelCountLabel;
   List<ChannelModel> get liveTabChannels => catalog.liveTabChannels;
   List<Map<String, String>> get homeCategoryTiles => catalog.homeCategoryTiles;
-  static const specialLinkCategoryId = ChannelCatalogProvider.specialLinkCategoryId;
+  static const specialLinkCategoryId =
+      ChannelCatalogProvider.specialLinkCategoryId;
   @Deprecated('Use homeCategoryTiles')
   static const homeCategories = ChannelCatalogProvider.homeCategories;
   List<ChannelModel> get sportsBrowseChannels => catalog.sportsBrowseChannels;
@@ -219,6 +223,7 @@ class AppProvider extends ChangeNotifier {
     }
     return '';
   }
+
   bool _matchesLoading = false;
   bool _newsLoading = false;
   String? _matchesError;
@@ -238,6 +243,7 @@ class AppProvider extends ChangeNotifier {
     _scoresRequested = true;
     await loadMatches();
   }
+
   Future<void> ensureHomeContent() async {
     if (catalog.channels.isEmpty) {
       await catalog.loadChannels();
@@ -320,8 +326,7 @@ class AppProvider extends ChangeNotifier {
           ..._demoToday.where((m) => !_liveMatches.any((l) => l.id == m.id)),
         ].map(_attachStreamToMatch).toList();
 
-        _upcomingMatches =
-            _demoUpcoming.map(_attachStreamToMatch).toList();
+        _upcomingMatches = _demoUpcoming.map(_attachStreamToMatch).toList();
       }
     } catch (e) {
       _matchesError = e.toString();
@@ -334,6 +339,7 @@ class AppProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
   // ── News ──────────────────────────────────────────────────
   Future<void> loadNews() async {
     _newsLoading = true;
@@ -350,6 +356,7 @@ class AppProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
   /// Cached live events — skips network if data is fresh unless [force].
   Future<void> loadFeaturedLiveEvents({bool force = false}) async {
     if (!hasFeaturedLiveEventsData) {
@@ -378,6 +385,7 @@ class AppProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
+
   Future<void> loadLiveEvents({bool force = false}) async {
     if (catalog.channels.isEmpty) return;
 
@@ -432,6 +440,7 @@ class AppProvider extends ChangeNotifier {
       );
     }
   }
+
   List<MatchModel> get scoreCardMatches =>
       _scoreGroups.expand((g) => g.matches).toList();
 
@@ -448,6 +457,7 @@ class AppProvider extends ChangeNotifier {
       ..._liveEventCricket,
     ]);
   }
+
   static const _footballKeywords = [
     'fifa',
     'world cup',
@@ -488,6 +498,7 @@ class AppProvider extends ChangeNotifier {
       channel: ch.first.name,
     );
   }
+
   Future<void> refresh() async {
     ScoreService.clearCache();
     FootyStreamService.clearCache();

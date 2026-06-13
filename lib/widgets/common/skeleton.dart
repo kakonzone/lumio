@@ -5,9 +5,9 @@ import 'package:lumio_tv/theme/tokens/colors.dart' as tokens;
 import 'package:lumio_tv/theme/tokens/motion.dart' as tokens;
 
 /// A skeleton loading widget with shimmer effect.
-/// 
+///
 /// Replaces CircularProgressIndicator for content areas.
-/// 
+///
 /// Spec: Surface2 base, Surface3 highlight, 1200ms cycle, easeInOut curve.
 class Skeleton extends StatelessWidget {
   final double? width;
@@ -72,14 +72,16 @@ class _ShimmerEffect extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(8),
       ),
-    ).animate(
-      onPlay: (controller) => controller.repeat(),
-    ).shimmer(
-      duration: tokens.MotionTokens.shimmerCycle,
-      curve: tokens.MotionTokens.shimmerCurve,
-      color: highlightColor,
-      angle: 45,
-    );
+    )
+        .animate(
+          onPlay: (controller) => controller.repeat(),
+        )
+        .shimmer(
+          duration: tokens.MotionTokens.shimmerCycle,
+          curve: tokens.MotionTokens.shimmerCurve,
+          color: highlightColor,
+          angle: 45,
+        );
   }
 }
 

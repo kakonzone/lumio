@@ -46,7 +46,10 @@ class ChannelCatalog {
   ];
 
   static List<ChannelModel> normalizeAll(List<ChannelModel> raw) {
-    return raw.map(normalize).map(ChannelCategoryRegistry.normalizeChannel).toList();
+    return raw
+        .map(normalize)
+        .map(ChannelCategoryRegistry.normalizeChannel)
+        .toList();
   }
 
   static ChannelModel normalize(ChannelModel c) {

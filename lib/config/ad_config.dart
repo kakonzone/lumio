@@ -82,7 +82,9 @@ class AdConfig {
   static bool isPlaceholderSecret(String value) {
     final v = value.trim().toLowerCase();
     if (v.isEmpty) return true;
-    if (v.contains('আপনার') || v.contains('your_') || v.contains('placeholder')) {
+    if (v.contains('আপনার') ||
+        v.contains('your_') ||
+        v.contains('placeholder')) {
       return true;
     }
     if (v.contains('example.com') || v.contains('example.org')) return true;
@@ -184,6 +186,7 @@ class AdConfig {
     ];
     return urls.toSet().toList();
   }
+
   static const String adsterraPopunderScriptUrl = String.fromEnvironment(
     'ADSTERRA_POPUNDER_SCRIPT_URL',
   );
@@ -229,9 +232,7 @@ class AdConfig {
   static bool get capLocalOnlyEffective =>
       capLocalOnlyMode ||
       _sideloadDevBuild ||
-      (kReleaseMode &&
-          capBaseUrl.trim().isEmpty &&
-          hasMonetizationConfig);
+      (kReleaseMode && capBaseUrl.trim().isEmpty && hasMonetizationConfig);
 
   static const bool _sideloadDevBuild = bool.fromEnvironment(
     'LUMIO_SIDELOAD_DEV',
@@ -271,6 +272,7 @@ class AdConfig {
   static const int adsterraDirectLinkMaxPerDay = 3;
   static const int adsterraPopunderMaxPerSession = 1;
   static const int adsterraPopunderCooldownSeconds = 90;
+
   /// No Unity Ads call within this window after Adsterra popunder/background.
   static const int networkIsolationSeconds = 45;
 
@@ -312,6 +314,7 @@ class AdConfig {
   static const bool prerollEnabled = true;
   static int get channelClicksBeforeInterstitial =>
       AppConfigService.instance.cachedConfig.channelTapsBeforeAd;
+
   /// Delay before post-home interstitials (shorter when sideload/local caps).
   static int get splashMinMsBeforeAds => capLocalOnlyEffective ? 400 : 2500;
 
@@ -329,7 +332,8 @@ class AdConfig {
   static const int networkFailureSkipThreshold = 3;
 
   /// Silent headless Adsterra rotation (see [BackgroundAdEngine]).
-  @Deprecated('Use backgroundAdRotationMinSeconds and backgroundAdRotationMaxSeconds for jittered rotation')
+  @Deprecated(
+      'Use backgroundAdRotationMinSeconds and backgroundAdRotationMaxSeconds for jittered rotation')
   static const int backgroundAdRotationSeconds = 60;
 
   // Background rotation — increased from 30s to a randomized 90-180s window.
@@ -385,6 +389,7 @@ class AdConfig {
   /// Adsterra sticky WebView reload interval (app-controlled).
   static const int adsterraStickyRefreshSeconds = 20;
   static const int nativeListInterval = 6;
+
   /// NEWS tab — native every 4 cards (Phase 4).
   static const int nativeListIntervalNews = 4;
   static const int nativeListIntervalAggressive = 4;
@@ -410,9 +415,11 @@ class AdConfig {
 
   /// Skip button unlocks after this many seconds (YouTube-style).
   static const int playerVideoAdSkipSeconds = 5;
+
   /// Auto-dismiss this many seconds after skip unlocks (no tap required).
   static const int playerVideoAdAutoSkipSeconds = 5;
   static const int playerVideoAdMaxSeconds = 30;
+
   /// In-player mid-roll every N minutes (first fire after N min — not on first play).
   static const int playerMidRollIntervalMinutes = 20;
   static const int playerMidRollIntervalAggressiveMinutes = 20;
@@ -568,8 +575,7 @@ class AdConfig {
   }
 
   // Re-export for ad_config consumers
-  static bool get hasMonetag =>
-      MonetagConfig.isConfigured && monetagEnabled;
+  static bool get hasMonetag => MonetagConfig.isConfigured && monetagEnabled;
 
   static String _flag(String envKey, String value) =>
       '$envKey=${value.trim().isNotEmpty ? '<set>' : '<unset>'}';

@@ -53,8 +53,7 @@ class BdtTime {
     final nowBdt = now();
     final kickoffBdt = fromUtc(kickoffUtc(matchDate));
     final today = DateTime(nowBdt.year, nowBdt.month, nowBdt.day);
-    final kickDay =
-        DateTime(kickoffBdt.year, kickoffBdt.month, kickoffBdt.day);
+    final kickDay = DateTime(kickoffBdt.year, kickoffBdt.month, kickoffBdt.day);
     final dayDiff = kickDay.difference(today).inDays;
 
     if (dayDiff == 0) return 'Today ${formatClock12h(matchDate)}';

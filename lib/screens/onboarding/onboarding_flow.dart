@@ -13,7 +13,7 @@ import 'package:lumio_tv/theme/tokens/typography.dart' as tokens;
 import 'package:lumio_tv/widgets/common/pressable.dart';
 
 /// Main onboarding flow screen
-/// 
+///
 /// Features:
 /// - Swipeable page transitions with PageView
 /// - Page indicators at bottom (3 dots, accent for current)

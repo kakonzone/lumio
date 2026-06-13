@@ -31,8 +31,7 @@ class WebViewPool extends ChangeNotifier {
 
     try {
       if (!FirebaseBootstrap.isInitialized) return;
-      final value =
-          FirebaseRemoteConfig.instance.getInt(_rcKeyMaxConcurrent);
+      final value = FirebaseRemoteConfig.instance.getInt(_rcKeyMaxConcurrent);
       if (value >= 1 && value <= 8) {
         _maxConcurrent = value;
         if (kDebugMode) {
@@ -70,7 +69,8 @@ class WebViewPool extends ChangeNotifier {
     if (_active.length >= _maxConcurrent) {
       final now = DateTime.now();
       final last = _lastDeferLogAt[placement];
-      final shouldLog = last == null || now.difference(last) >= const Duration(seconds: 8);
+      final shouldLog =
+          last == null || now.difference(last) >= const Duration(seconds: 8);
       if (kDebugMode && shouldLog) {
         debugPrint('[WebViewPool] defer $placement (active=${_active.length})');
         _lastDeferLogAt[placement] = now;
@@ -107,7 +107,8 @@ class WebViewPool extends ChangeNotifier {
     if (_active.isEmpty) return;
     final toRemove = _active
         .where(
-          (p) => keepPrefixes.isEmpty ||
+          (p) =>
+              keepPrefixes.isEmpty ||
               !keepPrefixes.any((prefix) => p.startsWith(prefix)),
         )
         .toList();

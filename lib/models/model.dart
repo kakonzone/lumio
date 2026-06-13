@@ -3,7 +3,6 @@
 // alongside these inline definitions — that causes duplicate class errors.
 // Every screen/service imports only this one file.
 
-
 // ── Header Constants ──────────────────────────────────────────────────────────
 // Toffee auth: [ToffeeHeaders] + `--dart-define=TOFFEE_SUBSCRIBER_TOKEN`
 // (see lib/network/toffee_headers.dart, docs/SECRETS.md).
@@ -45,8 +44,10 @@ class ChannelModel {
   final String currentShow;
   final Map<String, String> headers;
   final List<StreamLink> alternateStreams;
+
   /// Groups sub-channels under a hub (e.g. Akash TV family).
   final String? hubGroupId;
+
   /// True for folder-style hub rows (children listed separately).
   final bool isHubParent;
 
@@ -89,9 +90,7 @@ class ChannelModel {
   /// Labels injected by app-side HTTP↔HTTPS logic — never shown in the player UI.
   static bool isInternalStreamLabel(String label) {
     final lab = label.trim().toLowerCase();
-    return lab == 'http fallback' ||
-        lab == 'https' ||
-        lab.endsWith(' backup');
+    return lab == 'http fallback' || lab == 'https' || lab.endsWith(' backup');
   }
 
   /// Primary + backup links (deduped by URL).
@@ -142,11 +141,13 @@ class ChannelModel {
         'viewers': viewers,
         'currentShow': currentShow,
         'headers': headers,
-        'alternateStreams': alternateStreams.map((e) => {
-              'url': e.url,
-              'label': e.label,
-              'headers': e.headers,
-            }).toList(),
+        'alternateStreams': alternateStreams
+            .map((e) => {
+                  'url': e.url,
+                  'label': e.label,
+                  'headers': e.headers,
+                })
+            .toList(),
         if (hubGroupId != null) 'hubGroupId': hubGroupId,
         'isHubParent': isHubParent,
       };
@@ -243,6 +244,7 @@ class MatchModel {
   final double winChanceA;
   final double winChanceB;
   final double drawChance;
+
   /// Score provider label: Cricbuzz, ESPN, etc.
   final String scoreSource;
   final String teamALogo;

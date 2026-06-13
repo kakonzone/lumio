@@ -36,7 +36,8 @@ class IabConsentBridge {
       await prefs.setBool(_prefGdprApplies, _gdprApplies!);
     }
     if (kDebugMode) {
-      debugPrint('[IabConsentBridge] TC string saved (len=${_tcString?.length ?? 0})');
+      debugPrint(
+          '[IabConsentBridge] TC string saved (len=${_tcString?.length ?? 0})');
     }
   }
 

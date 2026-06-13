@@ -115,8 +115,7 @@ class _NewsScreenState extends State<NewsScreen> {
         ? filtered.where((n) => n.id != hero.id).toList()
         : filtered;
 
-    final showScores =
-        prov.matchesLoading || premierScores.isNotEmpty;
+    final showScores = prov.matchesLoading || premierScores.isNotEmpty;
 
     return Scaffold(
       backgroundColor: context.bg,
@@ -173,7 +172,8 @@ class _NewsScreenState extends State<NewsScreen> {
                     const SliverToBoxAdapter(
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(16, 0, 16, 6),
-                        child: LazyAdsterraBanner728(placement: 'news_top_sticky'),
+                        child:
+                            LazyAdsterraBanner728(placement: 'news_top_sticky'),
                       ),
                     ),
                     const SliverToBoxAdapter(
@@ -205,9 +205,7 @@ class _NewsScreenState extends State<NewsScreen> {
                                   channel,
                                   browseCategory}) =>
                               _playScore(ctx,
-                                  url: url,
-                                  title: title,
-                                  subtitle: subtitle),
+                                  url: url, title: title, subtitle: subtitle),
                         ),
                       ),
                   ],
@@ -292,8 +290,7 @@ class _NewsScreenState extends State<NewsScreen> {
                       delegate: SliverChildListDelegate([
                         if (hero != null)
                           Padding(
-                            padding:
-                                const EdgeInsets.fromLTRB(16, 4, 16, 14),
+                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
                             child: NewsHeroCard(
                               news: hero,
                               onTap: () => _onNewsArticleTap(hero),
@@ -304,8 +301,7 @@ class _NewsScreenState extends State<NewsScreen> {
                           buildArticleAt: (i) {
                             final article = rest[i];
                             return Padding(
-                              padding:
-                                  const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
                               child: NewsArticleTile(
                                 news: article,
                                 onTap: () => _onNewsArticleTap(article),

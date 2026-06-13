@@ -19,7 +19,8 @@ class NewsArticleReaderScreen extends StatelessWidget {
       return [article.title];
     }
     final parts = raw.split(RegExp(r'\n\s*\n'));
-    if (parts.length > 1) return parts.where((p) => p.trim().isNotEmpty).toList();
+    if (parts.length > 1)
+      return parts.where((p) => p.trim().isNotEmpty).toList();
     return [raw];
   }
 

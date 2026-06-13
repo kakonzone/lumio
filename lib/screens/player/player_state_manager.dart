@@ -3,11 +3,6 @@ part of lumio_player;
 // State + lifecycle helpers
 
 extension _PlayerState on _PlayerScreenState {
-
-
-
-
-
   Future<void> _loadPreferredQuality() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -69,8 +64,7 @@ extension _PlayerState on _PlayerScreenState {
     final views = WidgetsBinding.instance.platformDispatcher.views;
     if (views.isEmpty) return (false, false);
     final view = views.first;
-    final logicalShort =
-        view.physicalSize.shortestSide / view.devicePixelRatio;
+    final logicalShort = view.physicalSize.shortestSide / view.devicePixelRatio;
     return (logicalShort >= 600, false);
   }
 
@@ -312,8 +306,7 @@ extension _PlayerState on _PlayerScreenState {
     if (!mounted || _applyingQuality) return;
     _applyingQuality = true;
     try {
-      if (_currentUrl == _masterUrl &&
-          _player.state.tracks.video.isNotEmpty) {
+      if (_currentUrl == _masterUrl && _player.state.tracks.video.isNotEmpty) {
         final tracks = _selectableVideoTracks;
         final match = _findTrackForced(variant.height, tracks);
         if (match != null) {
@@ -508,13 +501,6 @@ extension _PlayerState on _PlayerScreenState {
     });
   }
 
-
-
-
-
-
-
-
   Future<void> _recordPlayerCrashlyticsError(
     Object error,
     StackTrace stackTrace, {
@@ -553,9 +539,6 @@ extension _PlayerState on _PlayerScreenState {
     }
     if (maxH > 0) _sourceHeight = maxH;
   }
-
-
-
 
   Future<void> _configureMpvOnce() async {
     if (_mpvNativeConfigured || _player.platform is! NativePlayer) return;
@@ -603,9 +586,7 @@ extension _PlayerState on _PlayerScreenState {
       debugPrint('[prewarm] skipped — playback active');
       return;
     }
-    if (_player.platform is! NativePlayer ||
-        _vfPrewarmed ||
-        _isBuffering) {
+    if (_player.platform is! NativePlayer || _vfPrewarmed || _isBuffering) {
       return;
     }
     _suppressFailoverFor(const Duration(seconds: 12));
@@ -849,14 +830,6 @@ extension _PlayerState on _PlayerScreenState {
     );
   }
 
-
-
-
-
-
-
-
-
   List<StreamLink> _resolveStreamLinks() {
     final fromWidget =
         widget.streamLinks?.where((l) => l.url.isNotEmpty).toList() ?? [];
@@ -887,7 +860,6 @@ extension _PlayerState on _PlayerScreenState {
     }
     return null;
   }
-
 
   Future<void> _switchToLink(int index) async {
     if (index < 0 || index >= _links.length) return;
@@ -995,13 +967,6 @@ extension _PlayerState on _PlayerScreenState {
     }
   }
 
-
-
-
-
-
-
-
   Future<void> _bindBackgroundPlayback() async {
     try {
       final handler = await ensureLumioAudioService();
@@ -1036,33 +1001,4 @@ extension _PlayerState on _PlayerScreenState {
       mediaId: _currentUrl,
     );
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }

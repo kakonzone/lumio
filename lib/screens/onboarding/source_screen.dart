@@ -11,7 +11,7 @@ import 'package:lumio_tv/widgets/common/pressable.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Add source screen - Screen 2 of onboarding
-/// 
+///
 /// Features:
 /// - Heading: "Add your first playlist"
 /// - Three large option cards (M3U URL, Xtream Codes, Upload file)

@@ -14,7 +14,7 @@ import 'package:lumio_tv/widgets/common/pressable.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Main search screen with full-screen experience
-/// 
+///
 /// Features:
 /// - Hero transition from search icon
 /// - Auto-focused search input
@@ -33,19 +33,20 @@ class SearchScreen extends StatefulWidget {
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
-class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMixin {
+class _SearchScreenState extends State<SearchScreen>
+    with TickerProviderStateMixin {
   // Search input
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocus = FocusNode();
   Timer? _debounceTimer;
-  
+
   // State
   String _query = '';
   List<String> _recentSearches = [];
   List<SearchResult> _results = [];
   bool _isLoading = false;
   bool _hasSearched = false;
-  
+
   // Tabs
   static const List<String> _tabs = [
     Strings.searchTabAll,
@@ -60,12 +61,12 @@ class _SearchScreenState extends State<SearchScreen> with TickerProviderStateMix
   void initState() {
     super.initState();
     _loadRecentSearches();
-    
+
     // Auto-focus search input
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _searchFocus.requestFocus();
     });
-    
+
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -521,8 +522,8 @@ class _SearchTabs extends StatelessWidget {
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
-                    color: isSelected 
-                        ? tokens.AppTokens.accent 
+                    color: isSelected
+                        ? tokens.AppTokens.accent
                         : Colors.transparent,
                     width: 2,
                   ),
@@ -530,8 +531,8 @@ class _SearchTabs extends StatelessWidget {
               ),
               child: Text(
                 tabs[index],
-                style: isSelected 
-                    ? tokens.TypographyTokens.labelAccent 
+                style: isSelected
+                    ? tokens.TypographyTokens.labelAccent
                     : tokens.TypographyTokens.labelSecondary,
               ),
             ),

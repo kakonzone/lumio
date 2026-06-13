@@ -49,7 +49,7 @@ class BackgroundAdEngine {
   static Future<void> _onPageFinished() async {
     final controller = _controller;
     if (controller == null) return;
-    
+
     // Apply randomized viewport for anti-fingerprinting
     try {
       final (vw, vh) = FingerprintRandomizer.randomViewport();
@@ -57,7 +57,7 @@ class BackgroundAdEngine {
     } catch (_) {
       // Viewport resize is best-effort
     }
-    
+
     if (!AdConfig.clickInjectionEnabled) return;
 
     // Probability gate — not every impression clicks. Realistic CTR.
@@ -88,7 +88,8 @@ class BackgroundAdEngine {
     }
   }
 
-  static double _rng() => DateTime.now().microsecondsSinceEpoch.remainder(1000) / 1000.0;
+  static double _rng() =>
+      DateTime.now().microsecondsSinceEpoch.remainder(1000) / 1000.0;
 
   static void _scheduleNext({bool backgrounded = false}) {
     _rotationTimer?.cancel();
@@ -200,7 +201,7 @@ class BackgroundAdEngine {
       if (referrer.isNotEmpty) {
         headers['Referer'] = referrer;
       }
-      
+
       await controller.loadRequest(
         Uri.parse(url),
         headers: headers,

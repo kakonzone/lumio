@@ -16,9 +16,7 @@ class _AdsDebugBannerState extends State<AdsDebugBanner> {
 
   @override
   Widget build(BuildContext context) {
-    if (kReleaseMode ||
-        _dismissed ||
-        !AdConfig.shouldShowAdsDisabledBanner) {
+    if (kReleaseMode || _dismissed || !AdConfig.shouldShowAdsDisabledBanner) {
       return const SizedBox.shrink();
     }
 

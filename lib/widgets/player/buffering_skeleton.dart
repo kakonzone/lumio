@@ -10,7 +10,7 @@ import 'package:lumio_tv/theme/tokens/typography.dart' as tokens;
 import 'package:lumio_tv/widgets/common/skeleton.dart' as skeletons;
 
 /// Buffering skeleton overlay for video player.
-/// 
+///
 /// Features:
 /// - Skeleton shimmer over video area (not centered spinner)
 /// - Subtitle text: "Catching up..."
@@ -48,16 +48,18 @@ class BufferingSkeleton extends StatelessWidget {
                   stops: const [0.0, 0.5, 1.0],
                 ),
               ),
-            ).animate(
-              onPlay: (controller) => controller.repeat(),
-            ).shimmer(
-              duration: tokens.MotionTokens.shimmerCycle,
-              curve: tokens.MotionTokens.shimmerCurve,
-              color: tokens.AppTokens.surface3,
-              angle: 45,
-            ),
+            )
+                .animate(
+                  onPlay: (controller) => controller.repeat(),
+                )
+                .shimmer(
+                  duration: tokens.MotionTokens.shimmerCycle,
+                  curve: tokens.MotionTokens.shimmerCurve,
+                  color: tokens.AppTokens.surface3,
+                  angle: 45,
+                ),
           ),
-          
+
           // Subtitle text at center
           Center(
             child: Text(
@@ -72,7 +74,7 @@ class BufferingSkeleton extends StatelessWidget {
 }
 
 /// Error state widget for video player.
-/// 
+///
 /// Features:
 /// - Centered: icon + "Stream dropped" heading + "Tap to reconnect" body + retry button
 /// - NOT a red error toast
@@ -110,27 +112,27 @@ class PlayerErrorState extends StatelessWidget {
                   color: tokens.AppTokens.textTertiary,
                 ),
               ),
-              
+
               const SizedBox(height: tokens.SpacingTokens.s24),
-              
+
               // Heading
               Text(
                 errorMessage ?? strings.Strings.streamDroppedTitle,
                 style: tokens.TypographyTokens.titlePrimary,
                 textAlign: TextAlign.center,
               ),
-              
+
               const SizedBox(height: tokens.SpacingTokens.s8),
-              
+
               // Body
               Text(
                 strings.Strings.streamDroppedSubtitle,
                 style: tokens.TypographyTokens.bodySecondary,
                 textAlign: textAlign.center,
               ),
-              
+
               const SizedBox(height: tokens.SpacingTokens.s32),
-              
+
               // Retry button
               ElevatedButton(
                 onPressed: () {

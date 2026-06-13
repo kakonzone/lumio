@@ -36,7 +36,8 @@ class GitunPlaylistService {
       AppwriteService.instance.fetchChannels(forceRefresh: forceRefresh);
 
   /// Special Link → GITUN — GitHub playlist URLs from Appwrite, then M3U fetch.
-  Future<List<ChannelModel>> loadGitunChannels({bool forceRefresh = false}) async {
+  Future<List<ChannelModel>> loadGitunChannels(
+      {bool forceRefresh = false}) async {
     lastFetchError = null;
 
     if (!forceRefresh) {
@@ -56,8 +57,7 @@ class GitunPlaylistService {
     try {
       final sources = await _resolveSourcesFromAppwrite();
       if (sources.isEmpty) {
-        lastFetchError =
-            'Appwrite special_links has no active GitHub sources. '
+        lastFetchError = 'Appwrite special_links has no active GitHub sources. '
             'Add stream_url (GitHub M3U) rows and Guests Read permission.';
       } else {
         channels = await _fetchSources(
@@ -118,7 +118,8 @@ class GitunPlaylistService {
         final data = Map<String, dynamic>.from(doc.data);
         final sportsOnly = _sportsOnlyFromData(data);
 
-        final autoRepo = _parseAutoRepo(_str(data, const ['group_title', 'groupTitle']));
+        final autoRepo =
+            _parseAutoRepo(_str(data, const ['group_title', 'groupTitle']));
         if (autoRepo != null) {
           final discovered = await GitunRepoDiscovery.discoverPlaylistBlobUrls(
             owner: autoRepo.owner,
@@ -151,7 +152,8 @@ class GitunPlaylistService {
     }
 
     if (kDebugMode) {
-      debugPrint('[GITUN] ${out.length} GitHub playlist source(s) from Appwrite');
+      debugPrint(
+          '[GITUN] ${out.length} GitHub playlist source(s) from Appwrite');
     }
     return out;
   }
@@ -185,7 +187,8 @@ class GitunPlaylistService {
 
   static bool _isGithubPlaylistUrl(String url) {
     final u = url.trim().toLowerCase();
-    return u.contains('github.com/') || u.contains('raw.githubusercontent.com/');
+    return u.contains('github.com/') ||
+        u.contains('raw.githubusercontent.com/');
   }
 
   Future<List<ChannelModel>> _fetchSources({
@@ -205,15 +208,13 @@ class GitunPlaylistService {
       var keptCount = 0;
 
       try {
-        final res = await http
-            .get(
-              Uri.parse(rawUrl),
-              headers: const {
-                'User-Agent': 'Mozilla/5.0 (compatible; LumioTV/1.0)',
-                'Accept': '*/*',
-              },
-            )
-            .timeout(const Duration(seconds: 25));
+        final res = await http.get(
+          Uri.parse(rawUrl),
+          headers: const {
+            'User-Agent': 'Mozilla/5.0 (compatible; LumioTV/1.0)',
+            'Accept': '*/*',
+          },
+        ).timeout(const Duration(seconds: 25));
 
         if (res.statusCode != 200) {
           if (kDebugMode) {
@@ -267,8 +268,7 @@ class GitunPlaylistService {
     if (list.isNotEmpty) {
       await onCache(list);
     } else {
-      lastFetchError =
-          'GitHub M3U fetch returned no sports channels. '
+      lastFetchError = 'GitHub M3U fetch returned no sports channels. '
           'Check Appwrite special_links stream_url values.';
     }
 
@@ -446,7 +446,8 @@ class GitunPlaylistService {
     if (exclude.any(s.contains)) return true;
 
     if (s.contains('gazi') && !s.contains('sport')) return true;
-    if ((s.contains('nagorik') || s.contains('nagrik')) && !s.contains('sport')) {
+    if ((s.contains('nagorik') || s.contains('nagrik')) &&
+        !s.contains('sport')) {
       return true;
     }
     if (RegExp(r'\bbtv\b').hasMatch(s) && s.contains('news')) return true;
@@ -531,7 +532,8 @@ class GitunPlaylistService {
       return !s.contains('news') && !s.contains('music');
     }
     if (s.contains('gazi') && s.contains('sport')) return true;
-    if ((s.contains('nagorik') || s.contains('nagrik')) && s.contains('sport')) {
+    if ((s.contains('nagorik') || s.contains('nagrik')) &&
+        s.contains('sport')) {
       return true;
     }
     return false;

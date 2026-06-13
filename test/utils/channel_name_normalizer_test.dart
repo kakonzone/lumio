@@ -24,7 +24,8 @@ void main() {
   test('canonical sports names', () {
     expect(ChannelNameNormalizer.clean('tsports hd'), 'T Sports HD');
     expect(ChannelNameNormalizer.clean('star sports 1'), 'Star Sports 1 HD');
-    expect(ChannelNameNormalizer.clean('sony ten 3 hd'), 'Sony Sports Ten 3 HD');
+    expect(
+        ChannelNameNormalizer.clean('sony ten 3 hd'), 'Sony Sports Ten 3 HD');
     expect(ChannelNameNormalizer.clean('btv'), 'BTV');
   });
 }

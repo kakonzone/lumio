@@ -20,7 +20,9 @@ class ExtraChannels {
         .split(RegExp(r'[\r\n]+'))
         .map((l) => l.trim())
         .where((l) =>
-            l.startsWith('http') || l.startsWith('rtmp') || l.startsWith('rtsp'))
+            l.startsWith('http') ||
+            l.startsWith('rtmp') ||
+            l.startsWith('rtsp'))
         .toList();
     if (urls.isEmpty) {
       return ChannelModel(
@@ -31,9 +33,7 @@ class ExtraChannels {
         streamUrl: '',
       );
     }
-    final links = urls
-        .map((u) => StreamLink(url: u, label: 'Link'))
-        .toList();
+    final links = urls.map((u) => StreamLink(url: u, label: 'Link')).toList();
     return ChannelModel(
       id: id.isEmpty ? 'user_${name.hashCode}' : id,
       name: name,

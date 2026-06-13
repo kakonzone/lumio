@@ -30,7 +30,8 @@ class AppConfigService {
   Future<AppConfigModel> fetchConfig({bool forceRefresh = false}) async {
     if (!AppwriteConfig.mainProjectConfigured) {
       if (kDebugMode) {
-        debugPrint('[AppConfig] main project not configured — using cache/defaults');
+        debugPrint(
+            '[AppConfig] main project not configured — using cache/defaults');
       }
       return _loadCacheOrDefault();
     }
@@ -52,7 +53,8 @@ class AppConfigService {
       _loadedFromDisk = true;
       await _persistCache(model);
       if (kDebugMode) {
-        debugPrint('[AppConfig] fetched global_config updated_at=${model.updatedAt}');
+        debugPrint(
+            '[AppConfig] fetched global_config updated_at=${model.updatedAt}');
       }
       return model;
     } on AppwriteException catch (e) {

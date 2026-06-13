@@ -111,7 +111,8 @@ class AdAnalytics {
       _event('rewarded_complete', {
         'trigger': trigger,
         'network': 'unity',
-        if (rewardName != null && rewardName.isNotEmpty) 'reward_name': rewardName,
+        if (rewardName != null && rewardName.isNotEmpty)
+          'reward_name': rewardName,
       });
 
   Future<void> logAdInterstitialShown({

@@ -41,7 +41,8 @@ class AppwriteChannelMapper {
     }
 
     final country = _str(data, const ['country', 'region', 'language']);
-    final logo = _str(data, const ['logo', 'logoUrl', 'logo_url', 'tvgLogo', 'icon']);
+    final logo =
+        _str(data, const ['logo', 'logoUrl', 'logo_url', 'tvgLogo', 'icon']);
 
     final linkEntries = _collectLinkEntries(data);
     if (linkEntries.isEmpty) return null;
@@ -113,10 +114,10 @@ class AppwriteChannelMapper {
         links.add(
           StreamLink(
             url: link.url,
-            label: link.label.trim().isNotEmpty &&
-                    link.label.toLowerCase() != 'sd'
-                ? link.label
-                : 'Link ${links.length + 1}',
+            label:
+                link.label.trim().isNotEmpty && link.label.toLowerCase() != 'sd'
+                    ? link.label
+                    : 'Link ${links.length + 1}',
             headers: link.headers.isNotEmpty ? link.headers : ch.headers,
           ),
         );
@@ -198,10 +199,12 @@ class AppwriteChannelMapper {
       label: _str(data, const ['backupLabel', 'altLabel']),
     );
 
-    _parseLinkList(data['alternateStreams'] ??
-        data['alternate_streams'] ??
-        data['links'] ??
-        data['streams'], add);
+    _parseLinkList(
+        data['alternateStreams'] ??
+            data['alternate_streams'] ??
+            data['links'] ??
+            data['streams'],
+        add);
     _parseLinkList(data['urls'], add);
 
     final linksJson = data['linksJson'] ?? data['links_json'];

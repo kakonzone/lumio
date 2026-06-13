@@ -12,9 +12,9 @@ class PageTransitions {
     Curve curve = tokens.MotionTokens.curveDefault,
   }) {
     return child.animate().fadeIn(
-      duration: duration,
-      curve: curve,
-    );
+          duration: duration,
+          curve: curve,
+        );
   }
 
   /// Slide-in from right page transition (iOS style)
@@ -24,11 +24,11 @@ class PageTransitions {
     Curve curve = tokens.MotionTokens.curveDefault,
   }) {
     return child.animate().slideX(
-      begin: 0.1,
-      end: 0,
-      duration: duration,
-      curve: curve,
-    );
+          begin: 0.1,
+          end: 0,
+          duration: duration,
+          curve: curve,
+        );
   }
 
   /// Slide-in from bottom page transition (Android style)
@@ -38,11 +38,11 @@ class PageTransitions {
     Curve curve = tokens.MotionTokens.curveDefault,
   }) {
     return child.animate().slideY(
-      begin: 0.1,
-      end: 0,
-      duration: duration,
-      curve: curve,
-    );
+          begin: 0.1,
+          end: 0,
+          duration: duration,
+          curve: curve,
+        );
   }
 
   /// Scale-up page transition
@@ -52,11 +52,11 @@ class PageTransitions {
     Curve curve = tokens.MotionTokens.curveSpring,
   }) {
     return child.animate().scale(
-      begin: const Offset(0.95, 0.95),
-      end: const Offset(1, 1),
-      duration: duration,
-      curve: curve,
-    );
+          begin: const Offset(0.95, 0.95),
+          end: const Offset(1, 1),
+          duration: duration,
+          curve: curve,
+        );
   }
 
   /// Fade with slide-up transition (staggered list items)
@@ -68,22 +68,23 @@ class PageTransitions {
     Curve curve = tokens.MotionTokens.curveDefault,
   }) {
     final actualDelay = Duration(
-      milliseconds: (delay.inMilliseconds * index)
-          .clamp(0, 800)
-          .toInt(),
+      milliseconds: (delay.inMilliseconds * index).clamp(0, 800).toInt(),
     );
 
-    return child.animate().fadeIn(
-      duration: duration,
-      curve: curve,
-      delay: actualDelay,
-    ).slideY(
-      begin: 0.05,
-      end: 0,
-      duration: duration,
-      curve: curve,
-      delay: actualDelay,
-    );
+    return child
+        .animate()
+        .fadeIn(
+          duration: duration,
+          curve: curve,
+          delay: actualDelay,
+        )
+        .slideY(
+          begin: 0.05,
+          end: 0,
+          duration: duration,
+          curve: curve,
+          delay: actualDelay,
+        );
   }
 }
 

@@ -164,8 +164,7 @@ class _SportsScreenState extends State<SportsScreen> {
   List<ChannelModel> _filteredSportsChannels(AppProvider prov) {
     final list = _sportsPool(prov)
         .where(
-          (c) =>
-              _sel == 'All' || SportChannelIcons.matchesSportFilter(c, _sel),
+          (c) => _sel == 'All' || SportChannelIcons.matchesSportFilter(c, _sel),
         )
         .toList();
     if (_sel == 'Cricket' || _sel == 'Football' || _sel == 'All') {
@@ -377,8 +376,7 @@ class _SportsScreenState extends State<SportsScreen> {
                           style: GF.body(
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
-                            color:
-                                count == 0 ? Colors.white54 : Colors.white,
+                            color: count == 0 ? Colors.white54 : Colors.white,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -641,7 +639,6 @@ class _LiveScreenState extends State<LiveScreen> {
       ),
     );
   }
-
 }
 
 Widget _liveSectionLabel(BuildContext ctx, String label) => Padding(
@@ -673,13 +670,15 @@ Widget _liveSectionLabel(BuildContext ctx, String label) => Padding(
 enum _LiveRowKind { section, channel, ad, gap }
 
 class _LiveRow {
-  const _LiveRow._(this.kind, {this.label, this.channel, this.browseCategory, this.ad, this.gap = 14});
+  const _LiveRow._(this.kind,
+      {this.label, this.channel, this.browseCategory, this.ad, this.gap = 14});
 
   const _LiveRow.section(String label)
       : this._(_LiveRowKind.section, label: label);
 
   const _LiveRow.channel(ChannelModel channel, String browseCategory)
-      : this._(_LiveRowKind.channel, channel: channel, browseCategory: browseCategory);
+      : this._(_LiveRowKind.channel,
+            channel: channel, browseCategory: browseCategory);
 
   const _LiveRow.ad(Widget ad) : this._(_LiveRowKind.ad, ad: ad);
 
@@ -996,7 +995,8 @@ class _GenreCategoryCard extends StatelessWidget {
                             onGradient: true,
                           ),
                           const Spacer(),
-                          _GenreBadge(label: badge, isLive: isLive, onGradient: true),
+                          _GenreBadge(
+                              label: badge, isLive: isLive, onGradient: true),
                         ],
                       ),
                       const Spacer(),
@@ -1233,7 +1233,9 @@ class _GenreBadge extends StatelessWidget {
           fontWeight: FontWeight.w800,
           color: liveStyle
               ? Colors.white
-              : (isLive ? AppTokens.accent : (onGradient ? Colors.white70 : context.txt3)),
+              : (isLive
+                  ? AppTokens.accent
+                  : (onGradient ? Colors.white70 : context.txt3)),
           letterSpacing: 0.25,
         ),
         maxLines: 1,
@@ -1252,10 +1254,8 @@ class CategoriesScreen extends StatelessWidget {
     bool preferLive = false,
   }) {
     if (catName == 'Special Link') return 'GITUN';
-    final n = prov
-        .byCategory(catName)
-        .where((c) => c.streamUrl.isNotEmpty)
-        .length;
+    final n =
+        prov.byCategory(catName).where((c) => c.streamUrl.isNotEmpty).length;
     if (n == 0) return preferLive ? 'No live' : 'No ch';
     return preferLive ? '$n Live' : '$n ch';
   }
@@ -1292,165 +1292,179 @@ class CategoriesScreen extends StatelessWidget {
                   else
                     SliverToBoxAdapter(
                       child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ── All Channels banner ────────────────────────────────────
-                GestureDetector(
-                  onTap: () {
-                    final ch = prov.channels
-                        .where((c) => c.streamUrl.isNotEmpty)
-                        .toList();
-                    if (ch.isNotEmpty) {
-                      _play(
-                        context,
-                        url: ch.first.streamUrl,
-                        title: ch.first.name,
-                        subtitle: 'All Channels',
-                        category: ch.first.category,
-                        channel: ch.first,
-                      );
-                    }
-                  },
-                  child: Container(
-                    height: 84,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: context.isDark
-                            ? const [Color(0xFFFF6B1A), Color(0xFFE65100)]
-                            : const [Color(0xFFFF7A2E), Color(0xFFFF5722)],
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTokens.accent.withValues(
-                            alpha: context.isDark ? 0.25 : 0.22,
-                          ),
-                          blurRadius: 14,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 18),
-                    child: Row(children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.live_tv_rounded,
-                          color: Colors.white,
-                          size: 26,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
                         child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // ── All Channels banner ────────────────────────────────────
+                            GestureDetector(
+                              onTap: () {
+                                final ch = prov.channels
+                                    .where((c) => c.streamUrl.isNotEmpty)
+                                    .toList();
+                                if (ch.isNotEmpty) {
+                                  _play(
+                                    context,
+                                    url: ch.first.streamUrl,
+                                    title: ch.first.name,
+                                    subtitle: 'All Channels',
+                                    category: ch.first.category,
+                                    channel: ch.first,
+                                  );
+                                }
+                              },
+                              child: Container(
+                                height: 84,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: context.isDark
+                                        ? const [
+                                            Color(0xFFFF6B1A),
+                                            Color(0xFFE65100)
+                                          ]
+                                        : const [
+                                            Color(0xFFFF7A2E),
+                                            Color(0xFFFF5722)
+                                          ],
+                                    begin: Alignment.centerLeft,
+                                    end: Alignment.centerRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppTokens.accent.withValues(
+                                        alpha: context.isDark ? 0.25 : 0.22,
+                                      ),
+                                      blurRadius: 14,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 18),
+                                child: Row(children: [
+                                  Container(
+                                    width: 44,
+                                    height: 44,
+                                    decoration: BoxDecoration(
+                                      color:
+                                          Colors.white.withValues(alpha: 0.2),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Icon(
+                                      Icons.live_tv_rounded,
+                                      color: Colors.white,
+                                      size: 26,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'All Channels',
+                                          style: GF.body(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w800,
+                                            color: Colors.white,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        Text(
+                                          '${prov.channelCountLabel} channels available',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.white
+                                                .withValues(alpha: 0.85),
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      prov.channelCountLabel,
+                                      style: GF.head(
+                                        fontSize: 30,
+                                        fontWeight: FontWeight.w800,
+                                        color: Colors.white
+                                            .withValues(alpha: 0.28),
+                                      ),
+                                      maxLines: 1,
+                                    ),
+                                  ),
+                                ]),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
                             Text(
-                              'All Channels',
-                              style: GF.body(
+                              'Categories',
+                              style: GF.head(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w800,
-                                color: Colors.white,
+                                color: context.txt,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
+                            const SizedBox(height: 4),
                             Text(
-                              '${prov.channelCountLabel} channels available',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.white.withValues(alpha: 0.85),
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                              'Pick a genre — vibrant live channels inside',
+                              style:
+                                  TextStyle(fontSize: 11, color: context.txt3),
                             ),
+                            const SizedBox(height: 12),
+
+                            LayoutBuilder(
+                              builder: (ctx, constraints) {
+                                final aspect =
+                                    constraints.maxWidth < 360 ? 1.35 : 1.48;
+                                return GridView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  gridDelegate:
+                                      SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    mainAxisSpacing: 12,
+                                    crossAxisSpacing: 12,
+                                    childAspectRatio: aspect,
+                                  ),
+                                  itemCount: genreRows.length,
+                                  itemBuilder: (ctx, i) {
+                                    final c = genreRows[i];
+                                    final catName = c[1] as String;
+                                    return _GenreCategoryCard(
+                                      emoji: c[0] as String,
+                                      icon: _genreMaterialIcon(catName),
+                                      title: catName,
+                                      subtitle: c[2] as String,
+                                      badge: _categoryBadge(
+                                        prov,
+                                        catName,
+                                        preferLive: c[3] as bool,
+                                      ),
+                                      isLive: c[3] as bool,
+                                      accent: Color(c[4] as int),
+                                      onTap: () => _openCategory(
+                                        context,
+                                        prov,
+                                        catName,
+                                        icon: c[0] as String,
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 90),
                           ],
                         ),
-                      ),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          prov.channelCountLabel,
-                          style: GF.head(
-                            fontSize: 30,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white.withValues(alpha: 0.28),
-                          ),
-                          maxLines: 1,
-                        ),
-                      ),
-                    ]),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Categories',
-                  style: GF.head(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: context.txt,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Pick a genre — vibrant live channels inside',
-                  style: TextStyle(fontSize: 11, color: context.txt3),
-                ),
-                const SizedBox(height: 12),
-
-                LayoutBuilder(
-                  builder: (ctx, constraints) {
-                    final aspect =
-                        constraints.maxWidth < 360 ? 1.35 : 1.48;
-                    return GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: aspect,
-                  ),
-                  itemCount: genreRows.length,
-                  itemBuilder: (ctx, i) {
-                    final c = genreRows[i];
-                    final catName = c[1] as String;
-                    return _GenreCategoryCard(
-                      emoji: c[0] as String,
-                      icon: _genreMaterialIcon(catName),
-                      title: catName,
-                      subtitle: c[2] as String,
-                      badge: _categoryBadge(
-                        prov,
-                        catName,
-                        preferLive: c[3] as bool,
-                      ),
-                      isLive: c[3] as bool,
-                      accent: Color(c[4] as int),
-                      onTap: () => _openCategory(
-                        context,
-                        prov,
-                        catName,
-                        icon: c[0] as String,
-                      ),
-                    );
-                  },
-                );
-                  },
-                ),
-                const SizedBox(height: 90),
-              ],
-            ),
                       ),
                     ),
                 ],
@@ -1622,4 +1636,3 @@ class _ChannelCard extends StatelessWidget {
     );
   }
 }
-

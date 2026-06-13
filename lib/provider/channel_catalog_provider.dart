@@ -49,8 +49,7 @@ class ChannelCatalogProvider extends ChangeNotifier {
   bool get streamHealthLoading => _streamHealthLoading;
 
   /// LIVE badge only when central health cache says URL returned HTTP 200.
-  bool isStreamLive(ChannelModel channel) =>
-      _streamHealth[channel.id] == true;
+  bool isStreamLive(ChannelModel channel) => _streamHealth[channel.id] == true;
 
   bool isStreamHealthPending(ChannelModel channel) =>
       _pendingStreamHealthIds.contains(channel.id);
@@ -65,6 +64,7 @@ class ChannelCatalogProvider extends ChangeNotifier {
 
   bool hasStreamUrlHealthResult(String url) =>
       _streamUrlHealth.containsKey(url);
+
   /// Channels shown under the player ("more" list).
   List<ChannelModel> playerRelatedChannels({
     required String currentTitle,
@@ -81,8 +81,8 @@ class ChannelCatalogProvider extends ChangeNotifier {
       return fallback ?? const [];
     }
 
-    final current = channelForStream(currentUrl ?? '') ??
-        findChannel(name: currentTitle);
+    final current =
+        channelForStream(currentUrl ?? '') ?? findChannel(name: currentTitle);
     final hubRelated = ChannelHubProcessor.relatedForChannel(
       current,
       _channels,
@@ -241,10 +241,8 @@ class ChannelCatalogProvider extends ChangeNotifier {
       final batchIds = _streamHealthQueue.sublist(0, take);
       _streamHealthQueue.removeRange(0, take);
 
-      final batch = batchIds
-          .map(channelById)
-          .whereType<ChannelModel>()
-          .toList();
+      final batch =
+          batchIds.map(channelById).whereType<ChannelModel>().toList();
 
       if (batch.isNotEmpty) {
         final useLongTimeout = batch.any(_streamHealthPriorityIds.contains);
@@ -332,6 +330,7 @@ class ChannelCatalogProvider extends ChangeNotifier {
   String get channelCountLabel => '${_liveChannels.length}';
 
   Timer? _catalogFollowUpTimer;
+
   /// Disk cache first (instant UI), then Appwrite refresh in background.
   Future<void> bootstrapCatalog() async {
     final warm = await SpecialLinkCache.instance.readAppCatalogChannels(
@@ -373,8 +372,7 @@ class ChannelCatalogProvider extends ChangeNotifier {
   }
 
   /// Live bottom-nav: Sports + Movies m3u8 from Appwrite catalog only.
-  List<ChannelModel> get liveTabChannels =>
-      LiveTabChannels.filter(_channels);
+  List<ChannelModel> get liveTabChannels => LiveTabChannels.filter(_channels);
 
   static const specialLinkCategoryId = ChannelCategoryRegistry.specialLinkId;
 
@@ -426,12 +424,10 @@ class ChannelCatalogProvider extends ChangeNotifier {
   }
 
   void applyChannelCatalog(List<ChannelModel> raw) {
-    _channels = raw
-        .map((ch) {
-          final u = StreamUrlUpgrade.preferHttps(ch.streamUrl);
-          return u == ch.streamUrl ? ch : ch.copyWith(streamUrl: u);
-        })
-        .toList();
+    _channels = raw.map((ch) {
+      final u = StreamUrlUpgrade.preferHttps(ch.streamUrl);
+      return u == ch.streamUrl ? ch : ch.copyWith(streamUrl: u);
+    }).toList();
     _liveChannels = _channels.where((c) => c.streamUrl.isNotEmpty).toList();
     _byCategoryIndex = null;
     _sportsBrowseCache = null;
@@ -639,7 +635,9 @@ class ChannelCatalogProvider extends ChangeNotifier {
       case 'GITUN':
         return 'MORE GITUN CHANNELS';
       default:
-        return c.isEmpty ? 'RELATED CHANNELS' : 'MORE ${c.toUpperCase()} CHANNELS';
+        return c.isEmpty
+            ? 'RELATED CHANNELS'
+            : 'MORE ${c.toUpperCase()} CHANNELS';
     }
   }
 

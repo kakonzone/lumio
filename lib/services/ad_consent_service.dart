@@ -23,7 +23,8 @@ class AdConsentService {
 
   final List<VoidCallback> _revokeListeners = [];
 
-  void addRevokeListener(VoidCallback listener) => _revokeListeners.add(listener);
+  void addRevokeListener(VoidCallback listener) =>
+      _revokeListeners.add(listener);
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -103,6 +104,7 @@ class AdConsentService {
   /// Most restrictive defaults before user chooses (also used when init runs pre-prompt).
   Future<void> applyRestrictiveDefaults() async {
     // No-op: Unity Ads uses SharedPreferences for consent
-    adLog('[AdConsent] Unity Ads restrictive defaults (no LevelPlay privacy flags)');
+    adLog(
+        '[AdConsent] Unity Ads restrictive defaults (no LevelPlay privacy flags)');
   }
 }

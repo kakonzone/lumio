@@ -39,8 +39,7 @@ class AppConfig {
   /// Cloudflare Worker (or CDN) JSON channel catalog.
   static const String remoteChannelsUrl = String.fromEnvironment(
     'REMOTE_CHANNELS_URL',
-    defaultValue:
-        'https://lumio-channels.kakonzone.workers.dev/channels',
+    defaultValue: 'https://lumio-channels.kakonzone.workers.dev/channels',
   );
 
   /// Public-facing legal URLs (delegates to [LegalConfig]).
@@ -104,8 +103,8 @@ class AppConfig {
   @visibleForTesting
   static Uri credsUriForTest(String path) {
     final base = backendBaseUrl.trim();
-    final normalized = base.endsWith('/') ? base.substring(0, base.length - 1) : base;
+    final normalized =
+        base.endsWith('/') ? base.substring(0, base.length - 1) : base;
     return Uri.parse('$normalized$path');
   }
 }
-

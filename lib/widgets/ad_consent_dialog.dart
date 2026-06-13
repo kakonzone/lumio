@@ -22,41 +22,42 @@ class AdConsentDialog {
       builder: (ctx) => Semantics(
         label: 'Ads and privacy consent',
         child: AlertDialog(
-        title: const Text('Ads & privacy'),
-        content: Text.rich(
-          TextSpan(
-            style: TextStyle(fontSize: 14, height: 1.45, color: context.txt2),
-            children: [
-              const TextSpan(
-                text:
-                    'Lumio is free with ads. You can accept personalized ads '
-                    'or continue with limited, non-personalized ads only.\n\n'
-                    'See our ',
-              ),
-              _linkSpan(ctx, 'Privacy Policy', LegalConfig.privacyPolicyUrl),
-              const TextSpan(text: ' and '),
-              _linkSpan(ctx, 'Terms of Service', LegalConfig.termsOfServiceUrl),
-              const TextSpan(
-                text:
-                    '.\n\nChange your choice anytime from the menu → Ads & privacy.',
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Limited ads only'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: tokens.AppTokens.accent,
+          title: const Text('Ads & privacy'),
+          content: Text.rich(
+            TextSpan(
+              style: TextStyle(fontSize: 14, height: 1.45, color: context.txt2),
+              children: [
+                const TextSpan(
+                  text:
+                      'Lumio is free with ads. You can accept personalized ads '
+                      'or continue with limited, non-personalized ads only.\n\n'
+                      'See our ',
+                ),
+                _linkSpan(ctx, 'Privacy Policy', LegalConfig.privacyPolicyUrl),
+                const TextSpan(text: ' and '),
+                _linkSpan(
+                    ctx, 'Terms of Service', LegalConfig.termsOfServiceUrl),
+                const TextSpan(
+                  text:
+                      '.\n\nChange your choice anytime from the menu → Ads & privacy.',
+                ),
+              ],
             ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Accept'),
           ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Limited ads only'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: tokens.AppTokens.accent,
+              ),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Accept'),
+            ),
+          ],
+        ),
       ),
     );
 

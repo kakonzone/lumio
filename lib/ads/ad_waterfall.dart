@@ -62,9 +62,7 @@ class AdWaterfall {
   Future<bool> showRewarded({required String trigger}) async {
     final analytics = _analytics;
     final ua = _unityAds;
-    if (ua == null ||
-        !ua.isInitialized ||
-        _isSkipped('unity_rewarded')) {
+    if (ua == null || !ua.isInitialized || _isSkipped('unity_rewarded')) {
       unawaited(analytics?.logNoFill(placement: 'rewarded'));
       return false;
     }
@@ -240,7 +238,7 @@ class AdWaterfall {
       adLog('[AdWaterfall] Unity Ads disabled via kill switch');
       return false;
     }
-    
+
     try {
       if (!ua.isInterstitialReady) {
         await ua.loadInterstitial();
@@ -265,7 +263,7 @@ class AdWaterfall {
       adLog('[AdWaterfall] Adsterra disabled via kill switch');
       return false;
     }
-    
+
     if (!AdConfig.hasAdsterraWebViewZones &&
         !AdConfig.hasValidAdsterraDirectLink) {
       return false;

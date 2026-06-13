@@ -38,7 +38,11 @@ class FingerprintRandomizer {
   // Randomized viewport — mid-range mobile screens only.
   static (int, int) randomViewport() {
     const sizes = <(int, int)>[
-      (360, 800), (393, 851), (412, 915), (375, 812), (390, 844),
+      (360, 800),
+      (393, 851),
+      (412, 915),
+      (375, 812),
+      (390, 844),
     ];
     return sizes[_rng.nextInt(sizes.length)];
   }

@@ -14,7 +14,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 /// Settings screen with sectioned organization.
-/// 
+///
 /// Structure:
 /// SECTION 1: Playback - Quality, Audio, Subtitles, Autoplay, Reduce motion
 /// SECTION 2: Downloads - Quality, Wi-Fi only, Storage
@@ -40,7 +40,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _hideAdult = false;
   bool _personalizedRecs = true;
   bool _diagnosticData = false;
-  
+
   // Mock data
   String _appVersion = 'Loading...';
   // final bool _isUpToDate = true; // Removed as unused
@@ -266,7 +266,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       title: Strings.settingsClearWatchHistory,
                       onTap: () {
                         HapticFeedback.lightImpact();
-                        _showClearHistoryDialog(Strings.settingsClearWatchHistory);
+                        _showClearHistoryDialog(
+                            Strings.settingsClearWatchHistory);
                       },
                     ),
                     SettingsRow(
@@ -274,7 +275,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       title: Strings.settingsClearSearchHistory,
                       onTap: () {
                         HapticFeedback.lightImpact();
-                        _showClearHistoryDialog(Strings.settingsClearSearchHistory);
+                        _showClearHistoryDialog(
+                            Strings.settingsClearSearchHistory);
                       },
                     ),
                     SettingsRow.switchRow(

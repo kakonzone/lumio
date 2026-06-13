@@ -226,7 +226,8 @@ class _AnnouncementBannerState extends State<AnnouncementBanner> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Row(
           children: [
-            const Icon(Icons.campaign_outlined, color: tokens.AppTokens.accent, size: 20),
+            const Icon(Icons.campaign_outlined,
+                color: tokens.AppTokens.accent, size: 20),
             const SizedBox(width: 10),
             Expanded(
               child: Text(

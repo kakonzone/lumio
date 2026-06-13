@@ -49,7 +49,11 @@ class ChannelHubProcessor {
         'outputCount': out.length,
         'expandedHubs': expandedHubs,
         'expandedChildren': expandedChildren,
-        'hubGroups': out.where((c) => c.hubGroupId != null).map((c) => c.hubGroupId).toSet().length,
+        'hubGroups': out
+            .where((c) => c.hubGroupId != null)
+            .map((c) => c.hubGroupId)
+            .toSet()
+            .length,
       },
     );
     // #endregion
@@ -242,7 +246,8 @@ class ChannelHubProcessor {
   static String? _slugAfterPrefix(String url, String prefix) {
     if (!url.startsWith(prefix)) return null;
     final rest = url.substring(prefix.length);
-    final seg = rest.split('/').firstWhere((s) => s.isNotEmpty, orElse: () => '');
+    final seg =
+        rest.split('/').firstWhere((s) => s.isNotEmpty, orElse: () => '');
     return seg.isEmpty ? null : seg;
   }
 

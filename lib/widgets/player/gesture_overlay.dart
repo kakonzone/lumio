@@ -8,7 +8,7 @@ import 'package:lumio_tv/theme/tokens/typography.dart' as tokens;
 import 'package:lumio_tv/utils/haptic_helpers.dart' as haptics;
 
 /// Gesture overlay for video player with advanced touch controls.
-/// 
+///
 /// Features:
 /// - Left third vertical swipe → brightness control with overlay indicator
 /// - Right third vertical swipe → volume control with overlay indicator
@@ -42,7 +42,8 @@ class GestureOverlay extends StatefulWidget {
   State<GestureOverlay> createState() => _GestureOverlayState();
 }
 
-class _GestureOverlayState extends State<GestureOverlay> with SingleTickerProviderStateMixin {
+class _GestureOverlayState extends State<GestureOverlay>
+    with SingleTickerProviderStateMixin {
   double _brightness = 0.5;
   double _volume = 0.5;
   bool _showBrightnessIndicator = false;

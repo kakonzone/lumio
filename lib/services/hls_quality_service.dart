@@ -20,8 +20,7 @@ class HlsVariant {
   String get displayLabel {
     if (width > 0 && height > 0) {
       final mbps = bandwidth > 0 ? bandwidth / 1000000.0 : 0.0;
-      final bw =
-          mbps > 0 ? ', ${mbps.toStringAsFixed(2)} Mbps' : '';
+      final bw = mbps > 0 ? ', ${mbps.toStringAsFixed(2)} Mbps' : '';
       return '$width × $height$bw';
     }
     if (height > 0) return '${height}p';
@@ -198,11 +197,14 @@ class HlsQualityService {
   ) {
     if (variants.isEmpty) return null;
 
-    bool heightMatches(int h) => h > 0 && (h == targetHeight || (h - targetHeight).abs() <= 24);
+    bool heightMatches(int h) =>
+        h > 0 && (h == targetHeight || (h - targetHeight).abs() <= 24);
 
     final exact = variants.where((v) => heightMatches(v.height)).toList();
     if (exact.isNotEmpty) {
-      exact.sort((a, b) => (a.height - targetHeight).abs().compareTo((b.height - targetHeight).abs()));
+      exact.sort((a, b) => (a.height - targetHeight)
+          .abs()
+          .compareTo((b.height - targetHeight).abs()));
       return exact.first;
     }
 
@@ -218,7 +220,9 @@ class HlsQualityService {
       if (urlHints.any(lower.contains)) return v;
     }
 
-    final capped = variants.where((v) => v.height > 0 && v.height <= targetHeight).toList()
+    final capped = variants
+        .where((v) => v.height > 0 && v.height <= targetHeight)
+        .toList()
       ..sort((a, b) => b.height.compareTo(a.height));
     if (capped.isNotEmpty) return capped.first;
 
@@ -276,12 +280,10 @@ class HlsQualityService {
   }) async {
     if (!streamUrl.contains('.m3u8')) return;
     try {
-      await http
-          .head(
-            Uri.parse(streamUrl),
-            headers: {'User-Agent': _ua, ...?headers},
-          )
-          .timeout(const Duration(seconds: 4));
+      await http.head(
+        Uri.parse(streamUrl),
+        headers: {'User-Agent': _ua, ...?headers},
+      ).timeout(const Duration(seconds: 4));
     } catch (_) {}
   }
 }

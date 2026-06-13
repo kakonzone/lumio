@@ -22,8 +22,7 @@ class NotificationImageLoader {
 
       final ext = _extensionFromUri(uri, response.headers['content-type']);
       final dir = await getTemporaryDirectory();
-      final path =
-          '${dir.path}/lumio_notif_${uri.hashCode.abs()}.$ext';
+      final path = '${dir.path}/lumio_notif_${uri.hashCode.abs()}.$ext';
       final file = File(path);
       await file.writeAsBytes(response.bodyBytes, flush: true);
       return path;

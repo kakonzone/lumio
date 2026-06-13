@@ -4,7 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lumio_tv/config/ad_config.dart';
 
 void main() {
-  test('AdConfig monetization strings use fromEnvironment (no URL literals)', () {
+  test('AdConfig monetization strings use fromEnvironment (no URL literals)',
+      () {
     final source = File('lib/config/ad_config.dart').readAsStringSync();
     expect(source.contains('adsterra.com'), isFalse);
     expect(source.contains('YOUR_APP_KEY'), isFalse);
@@ -29,6 +30,7 @@ void main() {
     expect(dump, contains('[AdConfig] dump'));
     expect(dump, contains('LEVELPLAY_APP_KEY='));
     expect(dump, isNot(contains('2675bcc95')));
-    expect(dump.split('<set>').length + dump.split('<unset>').length, greaterThan(2));
+    expect(dump.split('<set>').length + dump.split('<unset>').length,
+        greaterThan(2));
   });
 }

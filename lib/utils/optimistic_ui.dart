@@ -3,12 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:lumio_tv/theme/tokens/colors.dart' as tokens;
 
 /// Optimistic UI utilities
-/// 
+///
 /// Provides patterns for instant UI feedback with background sync.
 /// When operations fail, UI reverts with user notification.
 class OptimisticUI {
   /// Favorite toggle with optimistic update
-  /// 
+  ///
   /// Updates UI instantly, syncs in background, reverts on failure.
   static Future<bool> toggleFavorite(
     BuildContext context, {
@@ -18,21 +18,21 @@ class OptimisticUI {
   }) async {
     // Optimistic update
     final newFavorite = !currentFavorite;
-    
+
     // Haptic feedback
     HapticFeedback.lightImpact();
-    
+
     try {
       // Sync in background
       final result = await syncOperation();
-      
+
       if (result != newFavorite) {
         // Server disagreed, revert
         HapticFeedback.heavyImpact();
         _showRevertToast(context, 'favorite status');
         return currentFavorite;
       }
-      
+
       return newFavorite;
     } catch (e) {
       // Failed, revert
@@ -43,14 +43,14 @@ class OptimisticUI {
   }
 
   /// Mark watched with optimistic update
-  /// 
+  ///
   /// Updates UI instantly, syncs silently in background.
   static Future<void> markWatched({
     required Future<void> Function() syncOperation,
   }) async {
     // Optimistic update (instant)
     HapticFeedback.lightImpact();
-    
+
     try {
       // Sync silently in background
       await syncOperation();
@@ -61,7 +61,7 @@ class OptimisticUI {
   }
 
   /// Add to list with undo snackbar
-  /// 
+  ///
   /// Instant update with 3-second undo timeout.
   static void addToListWithUndo(
     BuildContext context, {
@@ -71,7 +71,7 @@ class OptimisticUI {
   }) {
     // Optimistic update
     HapticFeedback.lightImpact();
-    
+
     // Show snackbar with undo
     final snackBar = SnackBar(
       content: Text('$itemName added'),
@@ -85,9 +85,9 @@ class OptimisticUI {
       ),
       backgroundColor: tokens.AppTokens.surface2,
     );
-    
+
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
-    
+
     // Sync in background
     syncOperation().catchError((e) {
       // On failure, revert automatically
@@ -98,7 +98,7 @@ class OptimisticUI {
   }
 
   /// Settings toggle with optimistic update
-  /// 
+  ///
   /// Instant update, syncs silently, reverts on failure.
   static Future<bool> toggleSetting({
     required bool currentValue,
@@ -107,17 +107,17 @@ class OptimisticUI {
     // Optimistic update
     final newValue = !currentValue;
     HapticFeedback.lightImpact();
-    
+
     try {
       // Sync silently
       final result = await syncOperation();
-      
+
       if (result != newValue) {
         // Server disagreed, revert
         HapticFeedback.heavyImpact();
         return currentValue;
       }
-      
+
       return newValue;
     } catch (e) {
       // Failed, revert
@@ -154,7 +154,8 @@ class OptimisticFavoriteButton extends StatefulWidget {
   });
 
   @override
-  State<OptimisticFavoriteButton> createState() => _OptimisticFavoriteButtonState();
+  State<OptimisticFavoriteButton> createState() =>
+      _OptimisticFavoriteButtonState();
 }
 
 class _OptimisticFavoriteButtonState extends State<OptimisticFavoriteButton> {

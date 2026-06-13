@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 
 /// List performance utilities
-/// 
+///
 /// Optimizes list rendering for smooth scrolling and memory efficiency.
 class ListPerformance {
   /// Check if list needs builder pattern
-  /// 
+  ///
   /// Returns true if item count > 20
   static bool needsBuilder(int itemCount) {
     return itemCount > 20;
   }
 
   /// Get appropriate list widget based on item count
-  /// 
+  ///
   /// Uses ListView.builder for > 20 items, ListView for fewer
   static Widget appropriateList({
     required int itemCount,
@@ -52,7 +52,7 @@ class ListPerformance {
   }
 
   /// Get recommended itemExtent for uniform lists
-  /// 
+  ///
   /// Returns item extent if heights are uniform, null otherwise
   static double? getItemExtent({
     required double? fixedHeight,
@@ -64,20 +64,18 @@ class ListPerformance {
   }
 
   /// Wrap list item in RepaintBoundary for expensive widgets
-  /// 
+  ///
   /// Use for items with complex rendering (images, animations, etc.)
   static Widget repaintBoundary(Widget child) {
     return RepaintBoundary(child: child);
   }
 }
 
-
-
 /// Mixin for preserving scroll position in tab content
-/// 
+///
 /// Usage:
 /// ```dart
-/// class _TabContentState extends State<TabContent> 
+/// class _TabContentState extends State<TabContent>
 ///     with AutomaticKeepAliveClientMixin {
 ///   @override
 ///   bool get wantKeepAlive => true;
@@ -89,7 +87,7 @@ mixin TabContentMixin<T extends StatefulWidget> on State<T> {
 }
 
 /// Performance-optimized list widget
-/// 
+///
 /// Automatically chooses between ListView.builder and ListView
 /// based on item count, with optional performance optimizations.
 class OptimizedListView extends StatelessWidget {
@@ -124,7 +122,7 @@ class OptimizedListView extends StatelessWidget {
       itemCount: itemCount,
       itemBuilder: (context, index) {
         final item = itemBuilder(context, index);
-        return useRepaintBoundary 
+        return useRepaintBoundary
             ? ListPerformance.repaintBoundary(item)
             : item;
       },
@@ -136,7 +134,7 @@ class OptimizedListView extends StatelessWidget {
       prototypeItem: prototypeItem,
     );
 
-    return shrinkWrap 
+    return shrinkWrap
         ? SingleChildScrollView(
             physics: physics,
             child: list,
@@ -144,8 +142,6 @@ class OptimizedListView extends StatelessWidget {
         : list;
   }
 }
-
-
 
 /// Horizontal scrolling list with performance optimizations
 class OptimizedHorizontalList extends StatelessWidget {
@@ -182,7 +178,7 @@ class OptimizedHorizontalList extends StatelessWidget {
       itemCount: itemCount,
       itemBuilder: (context, index) {
         final item = itemBuilder(context, index);
-        return useRepaintBoundary 
+        return useRepaintBoundary
             ? ListPerformance.repaintBoundary(item)
             : item;
       },
@@ -192,10 +188,8 @@ class OptimizedHorizontalList extends StatelessWidget {
   }
 }
 
-
-
 /// Sliver list with performance optimizations
-/// 
+///
 /// Use for mixed content types or when inside CustomScrollView.
 class OptimizedSliverList extends StatelessWidget {
   final int itemCount;
@@ -219,7 +213,7 @@ class OptimizedSliverList extends StatelessWidget {
       delegate: SliverChildBuilderDelegate(
         (context, index) {
           final item = itemBuilder(context, index);
-          return useRepaintBoundary 
+          return useRepaintBoundary
               ? ListPerformance.repaintBoundary(item)
               : item;
         },
@@ -233,8 +227,6 @@ class OptimizedSliverList extends StatelessWidget {
     );
   }
 }
-
-
 
 /// Grid list with performance optimizations
 class OptimizedGridView extends StatelessWidget {
@@ -257,7 +249,7 @@ class OptimizedGridView extends StatelessWidget {
       delegate: SliverChildBuilderDelegate(
         (context, index) {
           final item = itemBuilder(context, index);
-          return useRepaintBoundary 
+          return useRepaintBoundary
               ? ListPerformance.repaintBoundary(item)
               : item;
         },
@@ -267,5 +259,3 @@ class OptimizedGridView extends StatelessWidget {
     );
   }
 }
-
-

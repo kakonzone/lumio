@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 
 /// Accessibility utility functions and extensions
-/// 
+///
 /// This file provides helper methods to ensure the app meets
 /// WCAG AA accessibility standards.
 class AccessibilityUtils {

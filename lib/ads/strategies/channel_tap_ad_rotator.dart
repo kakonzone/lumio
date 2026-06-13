@@ -13,10 +13,13 @@ import '../../services/user_preferences.dart';
 /// First channel-tap presentation slots (Adsterra browser vs Unity Ads interstitial).
 enum ChannelTapAdNetwork {
   adsterra,
+
   /// Monetag smartlink / direct (PropellerAds-family).
   propeller,
+
   /// Unity Ads interstitial — rotation slot A.
   unityA,
+
   /// Unity Ads interstitial — rotation slot B.
   unityB,
 }
@@ -39,8 +42,7 @@ extension ChannelTapAdNetworkX on ChannelTapAdNetwork {
       };
 
   bool get usesUnityInterstitial =>
-      this == ChannelTapAdNetwork.unityA ||
-      this == ChannelTapAdNetwork.unityB;
+      this == ChannelTapAdNetwork.unityA || this == ChannelTapAdNetwork.unityB;
 }
 
 /// Session-wide rotation for per-channel first tap.
@@ -73,17 +75,18 @@ class ChannelTapAdRotator {
   /// Sequential rotation: tap 1→Monetag, tap 2→Adsterra, tap 3→Unity A, tap 4→Unity B, loop
   static Future<ChannelTapAdNetwork> next() async {
     await UserPreferences.ensureInit();
-    final i = UserPreferences.p.getInt(AppConstants.prefChannelTapAdRotation) ?? 0;
+    final i =
+        UserPreferences.p.getInt(AppConstants.prefChannelTapAdRotation) ?? 0;
     final rotationIndex = i % 4;
 
     final network = switch (rotationIndex) {
       0 => ChannelTapAdNetwork.propeller, // Monetag direct
-      1 => ChannelTapAdNetwork.adsterra,  // Adsterra direct
+      1 => ChannelTapAdNetwork.adsterra, // Adsterra direct
       2 => ChannelTapAdNetwork.unityA, // Unity A
       3 => ChannelTapAdNetwork.unityB, // Unity B
       _ => ChannelTapAdNetwork.propeller,
     };
-    
+
     await UserPreferences.p.setInt(
       AppConstants.prefChannelTapAdRotation,
       i + 1,

@@ -8,7 +8,7 @@ import 'package:lumio_tv/theme/tokens/typography.dart' as tokens;
 import 'package:lumio_tv/utils/haptic_helpers.dart';
 
 /// Category row widget for home screen with horizontal scroll.
-/// 
+///
 /// Features:
 /// - Section title with "See all" link
 /// - Horizontal scrolling content
@@ -68,7 +68,7 @@ class CategoryRow extends StatelessWidget {
             ],
           ),
         ),
-        
+
         // Horizontal scroll content
         SizedBox(
           height: tileHeight,
@@ -136,9 +136,9 @@ class _CategoryTile extends StatelessWidget {
               ),
             ),
           ),
-          
+
           const SizedBox(height: tokens.SpacingTokens.s8),
-          
+
           // Title
           Text(
             tile.title,
@@ -146,7 +146,7 @@ class _CategoryTile extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          
+
           if (tile.subtitle != null) ...[
             const SizedBox(height: tokens.SpacingTokens.s4),
             Text(
@@ -156,7 +156,7 @@ class _CategoryTile extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ],
-          
+
           // Live badge
           if (tile.isLive) ...[
             const SizedBox(height: tokens.SpacingTokens.s4),

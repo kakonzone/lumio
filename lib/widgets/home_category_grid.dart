@@ -589,7 +589,8 @@ class _LiveDot extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             boxShadow: [
               BoxShadow(
-                color: tokens.AppTokens.liveRed.withValues(alpha: 0.4 * pulse.value),
+                color: tokens.AppTokens.liveRed
+                    .withValues(alpha: 0.4 * pulse.value),
                 blurRadius: 6,
               ),
             ],

@@ -8,11 +8,15 @@ class MonetagConfig {
 
   static const String _missing = '__MISSING__';
 
-  static const String onclickZoneId = String.fromEnvironment('MONETAG_ONCLICK_ZONE');
-  static const String vignetteZoneId = String.fromEnvironment('MONETAG_VIGNETTE_ZONE');
+  static const String onclickZoneId =
+      String.fromEnvironment('MONETAG_ONCLICK_ZONE');
+  static const String vignetteZoneId =
+      String.fromEnvironment('MONETAG_VIGNETTE_ZONE');
   static const String pushZoneId = String.fromEnvironment('MONETAG_PUSH_ZONE');
-  static const String inPagePushZoneId = String.fromEnvironment('MONETAG_INPAGE_ZONE');
-  static const String directLinkZoneId = String.fromEnvironment('MONETAG_DIRECT_ZONE');
+  static const String inPagePushZoneId =
+      String.fromEnvironment('MONETAG_INPAGE_ZONE');
+  static const String directLinkZoneId =
+      String.fromEnvironment('MONETAG_DIRECT_ZONE');
 
   /// rc1 aliases (preferred in CI) with legacy fallbacks.
   static String get effectiveOnclickZoneId => MonetagZoneConfig.resolve(
@@ -36,14 +40,18 @@ class MonetagConfig {
         directLinkZoneId,
       );
 
-  static const String onclickScriptHost = String.fromEnvironment('MONETAG_ONCLICK_HOST');
-  static const String vignetteScriptHost = String.fromEnvironment('MONETAG_VIGNETTE_HOST');
-  static const String pushScriptUrl = String.fromEnvironment('MONETAG_PUSH_SCRIPT');
-  static const String inPagePushHost = String.fromEnvironment('MONETAG_INPAGE_HOST');
-  static const String directLinkUrl = String.fromEnvironment('MONETAG_DIRECT_LINK');
+  static const String onclickScriptHost =
+      String.fromEnvironment('MONETAG_ONCLICK_HOST');
+  static const String vignetteScriptHost =
+      String.fromEnvironment('MONETAG_VIGNETTE_HOST');
+  static const String pushScriptUrl =
+      String.fromEnvironment('MONETAG_PUSH_SCRIPT');
+  static const String inPagePushHost =
+      String.fromEnvironment('MONETAG_INPAGE_HOST');
+  static const String directLinkUrl =
+      String.fromEnvironment('MONETAG_DIRECT_LINK');
 
-  static bool _isSet(String v) =>
-      v.trim().isNotEmpty && v.trim() != _missing;
+  static bool _isSet(String v) => v.trim().isNotEmpty && v.trim() != _missing;
 
   static bool get isConfigured =>
       _isSet(effectiveOnclickZoneId) &&

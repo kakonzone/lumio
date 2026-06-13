@@ -3,8 +3,12 @@ import 'dart:convert';
 import 'dart:io';
 
 void main() {
-  final jsonPath = Platform.script.resolve('../assets/data/toffee_channels.json').toFilePath();
-  final outPath = Platform.script.resolve('../lib/data/toffee_channels_data.dart').toFilePath();
+  final jsonPath = Platform.script
+      .resolve('../assets/data/toffee_channels.json')
+      .toFilePath();
+  final outPath = Platform.script
+      .resolve('../lib/data/toffee_channels_data.dart')
+      .toFilePath();
   final list = jsonDecode(File(jsonPath).readAsStringSync()) as List;
   final buf = StringBuffer('''
 // GENERATED — do not edit by hand. Run: dart run tool/gen_toffee_channels.dart

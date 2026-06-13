@@ -7,7 +7,7 @@ import 'package:lumio_tv/theme/tokens/typography.dart' as tokens;
 import 'package:lumio_tv/utils/haptic_helpers.dart' as haptics;
 
 /// Continue watching section for home screen.
-/// 
+///
 /// Features:
 /// - Horizontal scroll
 /// - 16:9 thumbnails, 200px wide
@@ -61,10 +61,11 @@ class ContinueWatchingSection extends StatelessWidget {
             ],
           ),
         ),
-        
+
         // Horizontal scroll content
         SizedBox(
-          height: 150, // 16:9 aspect ratio: 200px width = 112.5px height + padding
+          height:
+              150, // 16:9 aspect ratio: 200px width = 112.5px height + padding
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(
@@ -136,7 +137,7 @@ class _ContinueWatchingTile extends StatelessWidget {
                   ),
                 ),
               ),
-              
+
               // Progress bar (2px, accent color)
               Positioned(
                 left: 0,
@@ -159,9 +160,9 @@ class _ContinueWatchingTile extends StatelessWidget {
               ),
             ],
           ),
-          
+
           const SizedBox(height: tokens.SpacingTokens.s8),
-          
+
           // Title
           Text(
             item.title,
@@ -169,9 +170,9 @@ class _ContinueWatchingTile extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          
+
           const SizedBox(height: tokens.SpacingTokens.s4),
-          
+
           // Time remaining
           Text(
             item.timeRemaining,

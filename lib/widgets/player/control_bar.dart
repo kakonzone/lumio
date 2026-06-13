@@ -10,7 +10,7 @@ import 'package:lumio_tv/theme/tokens/motion.dart' as tokens;
 import 'package:lumio_tv/utils/haptic_helpers.dart' as haptics;
 
 /// Player control bar with editorial layout.
-/// 
+///
 /// Features:
 /// - Top bar: back arrow, channel name, cast + PiP icons
 /// - Bottom: scrubber (4px, accent color), time labels, control row
@@ -64,7 +64,8 @@ class ControlBar extends StatefulWidget {
   State<ControlBar> createState() => _ControlBarState();
 }
 
-class _ControlBarState extends State<ControlBar> with SingleTickerProviderStateMixin {
+class _ControlBarState extends State<ControlBar>
+    with SingleTickerProviderStateMixin {
   double _scrubberPosition = 0.0;
 
   @override
@@ -76,7 +77,8 @@ class _ControlBarState extends State<ControlBar> with SingleTickerProviderStateM
   @override
   void didUpdateWidget(ControlBar oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.position != widget.position || oldWidget.duration != widget.duration) {
+    if (oldWidget.position != widget.position ||
+        oldWidget.duration != widget.duration) {
       _updateScrubberPosition();
     }
   }
@@ -84,7 +86,8 @@ class _ControlBarState extends State<ControlBar> with SingleTickerProviderStateM
   void _updateScrubberPosition() {
     if (widget.duration.inMilliseconds > 0) {
       setState(() {
-        _scrubberPosition = widget.position.inMilliseconds / widget.duration.inMilliseconds;
+        _scrubberPosition =
+            widget.position.inMilliseconds / widget.duration.inMilliseconds;
       });
     }
   }
@@ -93,7 +96,7 @@ class _ControlBarState extends State<ControlBar> with SingleTickerProviderStateM
     final hours = duration.inHours;
     final minutes = duration.inMinutes.remainder(hours * 60);
     final seconds = duration.inSeconds.remainder(minutes * 60);
-    
+
     if (hours > 0) {
       return '${hours}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
     }
@@ -112,9 +115,9 @@ class _ControlBarState extends State<ControlBar> with SingleTickerProviderStateM
           onCastTap: widget.onCastTap,
           onPiPTap: widget.onPiPTap,
         ),
-        
+
         const SizedBox(height: tokens.SpacingTokens.s32),
-        
+
         // Scrubber with time labels
         _Scrubber(
           position: widget.position,
@@ -122,9 +125,9 @@ class _ControlBarState extends State<ControlBar> with SingleTickerProviderStateM
           scrubberPosition: _scrubberPosition,
           onSeek: widget.onSeek,
         ),
-        
+
         const SizedBox(height: tokens.SpacingTokens.s24),
-        
+
         // Control row
         _ControlRow(
           isPlaying: widget.isPlaying,
@@ -171,9 +174,9 @@ class _TopBar extends StatelessWidget {
           color: tokens.AppTokens.textPrimary,
           iconSize: 24,
         ),
-        
+
         const SizedBox(width: tokens.SpacingTokens.s16),
-        
+
         // Channel name
         Expanded(
           child: Text(
@@ -183,7 +186,7 @@ class _TopBar extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        
+
         // Cast + PiP icons
         Row(
           children: [
@@ -250,20 +253,20 @@ class _Scrubber extends StatelessWidget {
             ),
           ),
         ),
-        
+
         const SizedBox(height: tokens.SpacingTokens.s12),
-        
+
         // Time labels
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-                _formatDuration(position),
-                style: tokens.TypographyTokens.captionSecondary,
+              _formatDuration(position),
+              style: tokens.TypographyTokens.captionSecondary,
             ),
             Text(
-                _formatDuration(duration),
-                style: tokens.TypographyTokens.captionSecondary,
+              _formatDuration(duration),
+              style: tokens.TypographyTokens.captionSecondary,
             ),
           ],
         ),
@@ -275,7 +278,7 @@ class _Scrubber extends StatelessWidget {
     final hours = duration.inHours;
     final minutes = duration.inMinutes.remainder(hours * 60);
     final seconds = duration.inSeconds.remainder(minutes * 60);
-    
+
     if (hours > 0) {
       return '${hours}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
     }
@@ -324,9 +327,9 @@ class _ControlRow extends StatelessWidget {
           color: tokens.AppTokens.textPrimary,
           iconSize: 32,
         ),
-        
+
         const SizedBox(width: tokens.SpacingTokens.s24),
-        
+
         // Play/Pause (oversized 64px)
         Container(
           width: 64,
@@ -347,9 +350,9 @@ class _ControlRow extends StatelessWidget {
             ),
           ),
         ),
-        
+
         const SizedBox(width: tokens.SpacingTokens.s24),
-        
+
         // Forward 10s
         IconButton(
           onPressed: () {
@@ -360,9 +363,9 @@ class _ControlRow extends StatelessWidget {
           color: tokens.AppTokens.textPrimary,
           iconSize: 32,
         ),
-        
+
         const Spacer(),
-        
+
         // Quality, Audio, Subtitle, Fullscreen icons
         Row(
           children: [

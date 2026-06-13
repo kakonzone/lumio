@@ -15,7 +15,7 @@ enum LoadingContext {
 }
 
 /// Contextual loading messages
-/// 
+///
 /// Replaces generic "Loading..." with personality-rich, contextual messages
 /// Messages cycle every 2 seconds during operations > 1 second
 class LoadingMessages {
@@ -89,24 +89,24 @@ class LoadingMessages {
   }
 
   /// Start cycling messages every 2 seconds
-  /// 
+  ///
   /// Call this for operations > 1 second
   /// Returns the initial message
   static String startCycling(LoadingContext context) {
     if (_isCycling) {
       stopCycling();
     }
-    
+
     _messages = getMessages(context);
     _currentIndex = 0;
     _currentMessage = _messages[_currentIndex];
     _isCycling = true;
-    
+
     _cycleTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
       _currentIndex = (_currentIndex + 1) % _messages.length;
       _currentMessage = _messages[_currentIndex];
     });
-    
+
     return _currentMessage;
   }
 

@@ -23,6 +23,7 @@ extension _PlayerOverlay on _PlayerScreenState {
       ),
     );
   }
+
   Future<void> _runPreRollThenPlay() async {
     AdManager.instance.setStreaming(true);
     final channelKey = widget.title.trim().isNotEmpty
@@ -44,6 +45,7 @@ extension _PlayerOverlay on _PlayerScreenState {
     if (!mounted) return;
     _startMidRollTimer();
   }
+
   Future<void> _presentMidRollInterstitial() async {
     if (!mounted) return;
     try {
@@ -56,6 +58,7 @@ extension _PlayerOverlay on _PlayerScreenState {
       unawaited(_player.play());
     }
   }
+
   void _dismissPlayerVideoAd() {
     if (!mounted) return;
     setState(() => _showVideoAdOverlay = false);
@@ -65,6 +68,7 @@ extension _PlayerOverlay on _PlayerScreenState {
       unawaited(_player.play());
     }
   }
+
   void _startMidRollTimer() {
     _midRollTimer?.cancel();
     if (!AdManager.instance.adsEnabled) return;
@@ -78,6 +82,7 @@ extension _PlayerOverlay on _PlayerScreenState {
       },
     );
   }
+
   Widget _buildPipOnlyUi() {
     if (_hasError || (_currentUrl?.isEmpty ?? true)) {
       return const ColoredBox(color: Colors.black, child: SizedBox.expand());
@@ -93,6 +98,7 @@ extension _PlayerOverlay on _PlayerScreenState {
       ),
     );
   }
+
   Widget _playerOverlayChip({
     required Widget child,
     Color fill = const Color(0x99000000),

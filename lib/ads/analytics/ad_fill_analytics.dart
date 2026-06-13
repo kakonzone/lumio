@@ -61,7 +61,7 @@ class AdFillAnalytics {
           'placement': placement,
         },
       );
-      
+
       // Log revenue estimate
       await _logRevenueEstimate(placement);
     } catch (_) {}
@@ -72,15 +72,16 @@ class AdFillAnalytics {
       final prefs = await SharedPreferences.getInstance();
       final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
       final key = 'revenue_estimate_${today}_$placement';
-      
+
       final ecpm = _getEcpmForGeography();
       final revenueEstimate = ecpm / 1000; // Per impression (eCPM is per 1000)
-      
+
       final currentRevenue = prefs.getDouble(key) ?? 0.0;
       await prefs.setDouble(key, currentRevenue + revenueEstimate);
-      
+
       if (kDebugMode) {
-        debugPrint('[AdFillAnalytics] Revenue estimate for $placement: $revenueEstimate (eCPM: $ecpm)');
+        debugPrint(
+            '[AdFillAnalytics] Revenue estimate for $placement: $revenueEstimate (eCPM: $ecpm)');
       }
     } catch (e) {
       debugPrint('[AdFillAnalytics] Revenue logging error: $e');

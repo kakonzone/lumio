@@ -81,20 +81,18 @@ class LiveEventsService {
     List<MatchModel> matches,
     List<ChannelModel> channels,
   ) {
-    return matches
-        .map(
-          (m) {
-            final pool = MatchChannelMatcher.channelPoolFor(channels, m);
-            return LiveEventMatch(
-              match: m,
-              relatedChannels: MatchChannelMatcher.findRelated(
-                m,
-                pool,
-                tournamentLabel: m.channel,
-              ),
-            );
-          },
-        )
-        .toList();
+    return matches.map(
+      (m) {
+        final pool = MatchChannelMatcher.channelPoolFor(channels, m);
+        return LiveEventMatch(
+          match: m,
+          relatedChannels: MatchChannelMatcher.findRelated(
+            m,
+            pool,
+            tournamentLabel: m.channel,
+          ),
+        );
+      },
+    ).toList();
   }
 }

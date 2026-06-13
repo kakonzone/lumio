@@ -61,8 +61,7 @@ class ScheduleMerge {
   }
 
   static MatchModel _mergeMatch(MatchModel primary, MatchModel other) {
-    final live =
-        primary.status == 'live' || other.status == 'live';
+    final live = primary.status == 'live' || other.status == 'live';
     final finished =
         !live && (primary.status == 'finished' || other.status == 'finished');
 
@@ -151,9 +150,7 @@ class ScheduleMerge {
   static bool _sameDay(DateTime a, DateTime b) {
     final la = a.toLocal();
     final lb = b.toLocal();
-    return la.year == lb.year &&
-        la.month == lb.month &&
-        la.day == lb.day;
+    return la.year == lb.year && la.month == lb.month && la.day == lb.day;
   }
 
   static bool _teamsOverlap(MatchModel a, MatchModel b) {

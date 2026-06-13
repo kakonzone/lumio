@@ -33,64 +33,67 @@ class SectionNavBar extends StatelessWidget {
           return Material(
             color: Colors.transparent,
             child: InkWell(
-            onTap: () {
-              HapticFeedback.selectionClick();
-              onSelected(label);
-            },
-            borderRadius: BorderRadius.circular(22),
-            splashColor: tokens.AppTokens.accent.withValues(alpha: 0.15),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOut,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                gradient: active
-                    ? LinearGradient(
-                        colors: isDark
-                            ? [tokens.AppTokens.accent, const Color(0xFFE65100)]
-                            : [const Color(0xFFFF7A2E), tokens.AppTokens.accent],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      )
-                    : null,
-                color: active
-                    ? null
-                    : (isDark ? context.bg3 : context.bg2),
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(
-                  color: active
-                      ? Colors.transparent
-                      : (isDark
-                          ? context.brd
-                          : tokens.AppTokens.border),
-                  width: 1,
-                ),
-                boxShadow: active
-                    ? [
-                        BoxShadow(
-                          color: tokens.AppTokens.accent.withValues(
-                            alpha: isDark ? 0.35 : 0.28,
+              onTap: () {
+                HapticFeedback.selectionClick();
+                onSelected(label);
+              },
+              borderRadius: BorderRadius.circular(22),
+              splashColor: tokens.AppTokens.accent.withValues(alpha: 0.15),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOut,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  gradient: active
+                      ? LinearGradient(
+                          colors: isDark
+                              ? [
+                                  tokens.AppTokens.accent,
+                                  const Color(0xFFE65100)
+                                ]
+                              : [
+                                  const Color(0xFFFF7A2E),
+                                  tokens.AppTokens.accent
+                                ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        )
+                      : null,
+                  color: active ? null : (isDark ? context.bg3 : context.bg2),
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(
+                    color: active
+                        ? Colors.transparent
+                        : (isDark ? context.brd : tokens.AppTokens.border),
+                    width: 1,
+                  ),
+                  boxShadow: active
+                      ? [
+                          BoxShadow(
+                            color: tokens.AppTokens.accent.withValues(
+                              alpha: isDark ? 0.35 : 0.28,
+                            ),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
                           ),
-                          blurRadius: 10,
-                          offset: const Offset(0, 3),
-                        ),
-                      ]
-                    : null,
-              ),
-              child: Text(
-                label,
-                style: GF.body(
-                  fontSize: 12,
-                  fontWeight: active ? FontWeight.w700 : FontWeight.w600,
-                  color: active
-                      ? Colors.white
-                      : (isDark ? context.txt2 : context.txt2),
+                        ]
+                      : null,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                child: Text(
+                  label,
+                  style: GF.body(
+                    fontSize: 12,
+                    fontWeight: active ? FontWeight.w700 : FontWeight.w600,
+                    color: active
+                        ? Colors.white
+                        : (isDark ? context.txt2 : context.txt2),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ),
-          ),
           );
         },
       ),
@@ -113,8 +116,9 @@ class ScreenStatChips extends StatelessWidget {
           alignment: WrapAlignment.center,
           spacing: 8,
           runSpacing: 8,
-          children:
-              chips.map((c) => _StatChip(icon: c.icon, label: c.label)).toList(),
+          children: chips
+              .map((c) => _StatChip(icon: c.icon, label: c.label))
+              .toList(),
         ),
       ),
     );

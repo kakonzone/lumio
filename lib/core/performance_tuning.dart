@@ -26,8 +26,7 @@ class PerformanceTuning {
   static bool get isNormalRam => !isLowRam && !isHighRam;
 
   /// In-memory decoded images (Flutter ImageCache).
-  static int get imageCacheMaxObjects =>
-      switch (_tier) {
+  static int get imageCacheMaxObjects => switch (_tier) {
         DeviceRamTier.low => 40,
         DeviceRamTier.normal => 80,
         DeviceRamTier.high => 120,
@@ -36,9 +35,10 @@ class PerformanceTuning {
   static int get imageCacheMaxBytes {
     if (kReleaseMode) {
       return switch (_tier) {
-        DeviceRamTier.low => 8 * 1024 * 1024,   // Reduced from 16MB for better performance
+        DeviceRamTier.low =>
+          8 * 1024 * 1024, // Reduced from 16MB for better performance
         DeviceRamTier.normal => 16 * 1024 * 1024, // Reduced from 28MB
-        DeviceRamTier.high => 32 * 1024 * 1024,   // Reduced from 40MB
+        DeviceRamTier.high => 32 * 1024 * 1024, // Reduced from 40MB
       };
     }
     return switch (_tier) {
@@ -65,16 +65,14 @@ class PerformanceTuning {
   }
 
   /// ListView pre-build window — lower = less RAM, slightly more scroll work.
-  static double get listCacheExtent =>
-      switch (_tier) {
-        DeviceRamTier.low => 150,   // Reduced from 200 for better performance
+  static double get listCacheExtent => switch (_tier) {
+        DeviceRamTier.low => 150, // Reduced from 200 for better performance
         DeviceRamTier.normal => 250, // Reduced from 320
-        DeviceRamTier.high => 350,   // Reduced from 420
+        DeviceRamTier.high => 350, // Reduced from 420
       };
 
   /// media_kit buffer (MB) — lower on 2GB phones reduces OOM during playback.
-  static int get playerBufferMb =>
-      switch (_tier) {
+  static int get playerBufferMb => switch (_tier) {
         DeviceRamTier.low => 2,
         DeviceRamTier.normal => 3,
         DeviceRamTier.high => 4,
@@ -121,7 +119,8 @@ class PerformanceTuning {
     if (ram == null) return;
     _isLowRam = ram < 2048;
     _isHighRam = ram >= 6144;
-    debugPrint('[Performance] RAM detection: ${ram}MB, lowRam=$_isLowRam, highRam=$_isHighRam');
+    debugPrint(
+        '[Performance] RAM detection: ${ram}MB, lowRam=$_isLowRam, highRam=$_isHighRam');
   }
 
   static Future<DeviceRamTier> _readAndroidRamTier() async {

@@ -1,14 +1,15 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import '../config/app_config.dart';
+import '../config/channel_categories.dart';
 import '../models/model.dart';
 import '../network/secure_dio.dart';
+import '../utils/m3u_merge_parser.dart';
 
-/// Fetches channel catalog from Cloudflare Worker (replaces bundled list when available).
+/// Fetches channel catalog from GitHub M3U playlist (replaces bundled list when available).
 class RemoteChannelsService {
   RemoteChannelsService._();
 
@@ -75,7 +76,7 @@ class RemoteChannelsService {
   static Future<List<ChannelModel>> _fetchOnce(Uri uri) async {
     final dio = _dio();
     final path = uri.path.isEmpty ? '/' : uri.path;
-    final headers = <String, dynamic>{'Accept': 'application/json'};
+    final headers = <String, dynamic>{'Accept': 'text/plain'};
     if (_etag != null && _etag!.isNotEmpty) {
       headers['If-None-Match'] = _etag!;
     }
@@ -108,26 +109,26 @@ class RemoteChannelsService {
       _etag = etagHeader;
     }
 
-    final decoded = response.data is String
-        ? jsonDecode(response.data as String)
-        : response.data;
-    if (decoded is! List) {
-      if (kDebugMode) debugPrint('[RemoteChannels] expected JSON array');
+    if (response.data is! String) {
+      if (kDebugMode) debugPrint('[RemoteChannels] expected M3U text');
       return const [];
     }
 
-    final channels = <ChannelModel>[];
-    for (final item in decoded) {
-      if (item is! Map) continue;
-      try {
-        channels.add(
-          ChannelModel.fromJson(Map<String, dynamic>.from(item)),
-        );
-      } catch (_) {
-        // skip malformed row
+    // Parse M3U using existing M3uMergeParser
+    final m3uContent = response.data as String;
+    try {
+      final channels = M3uMergeParser.parse(
+        m3uContent,
+        idPrefix: 'github',
+        mapCategory: ChannelCategoryRegistry.fromGroupTitle,
+      );
+      return channels;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[RemoteChannels] M3U parse error: $e');
       }
+      return const [];
     }
-    return channels;
   }
 
   static bool get _cacheFresh =>

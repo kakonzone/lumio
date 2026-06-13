@@ -36,10 +36,11 @@ class AppConfig {
     defaultValue: '__MISSING__',
   );
 
-  /// Cloudflare Worker (or CDN) JSON channel catalog.
+  /// GitHub raw M3U playlist (replaces Cloudflare Worker JSON).
+  /// Repository: https://github.com/kakon122/my-media-notes
   static const String remoteChannelsUrl = String.fromEnvironment(
     'REMOTE_CHANNELS_URL',
-    defaultValue: 'https://lumio-channels.kakonzone.workers.dev/channels',
+    defaultValue: 'https://raw.githubusercontent.com/kakon122/my-media-notes/main/channels.m3u',
   );
 
   /// Public-facing legal URLs (delegates to [LegalConfig]).

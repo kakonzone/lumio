@@ -222,16 +222,33 @@ class FeaturedLiveEventsService {
         );
       }
     }
-    if (kDebugMode) {
-      return _fallbackAfterAppwriteMiss(
-        forceRefresh: forceRefresh,
-        errorMessage: 'Appwrite not configured',
+
+    // Always try bundled asset as fallback when cache is empty (not just debug mode)
+    try {
+      final assetBody = await rootBundle.loadString(_assetPath);
+      final payload = FeaturedLiveEventsPayload.fromJson(
+        jsonDecode(assetBody) as Map<String, dynamic>,
       );
+      if (payload.events.isNotEmpty) {
+        _logLoaded(
+          source: FeaturedLiveEventsSource.bundledAsset,
+          payload: payload,
+        );
+        return FeaturedLiveEventsLoadResult(
+          payload: payload,
+          source: FeaturedLiveEventsSource.bundledAsset,
+          errorMessage: 'Appwrite not configured - using bundled asset',
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[FeaturedLiveEvents] bundled asset load error: $e');
+      }
     }
     return const FeaturedLiveEventsLoadResult(
-      payload: FeaturedLiveEventsPayload(),
+      payload: const FeaturedLiveEventsPayload(),
       source: FeaturedLiveEventsSource.empty,
-      errorMessage: 'Appwrite not configured',
+      errorMessage: 'Appwrite not configured and no valid bundled asset',
     );
   }
 

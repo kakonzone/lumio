@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../ads/ad_manager.dart';
-import '../ads/ad_waterfall.dart';
+// import '../ads/ad_waterfall.dart'; // REMOVED: Waterfall system disabled
+import '../ads/adsterra_engine.dart';
 import '../services/notification_service.dart';
 
 /// Centralized back / exit / minimize monetization stack (Week 3).
@@ -25,11 +26,11 @@ class ExitIntentHandler {
       return await _showExitDialog(context);
     }
 
-    // Step 1: interstitial via AdWaterfall (LevelPlay → Adsterra → direct).
+    // Step 1: interstitial via Adsterra direct (waterfall removed).
     // Removed popunder step (high ban risk).
-    await AdWaterfall.instance.showInterstitial(
-      context,
-      trigger: 'exit_intent_home',
+    await AdsterraEngine.instance.openDirectLink(
+      placement: 'exit_intent_home',
+      analytics: AdManager.instance.analytics,
     );
 
     // Step 2: confirmation dialog.
@@ -71,10 +72,10 @@ class ExitIntentHandler {
     // 50% probability gate
     final random = Random();
     if (random.nextDouble() < 0.5) {
-      // Full-screen interstitial via AdWaterfall.
-      await AdWaterfall.instance.showInterstitial(
-        context,
-        trigger: 'exit_intent_player_postroll',
+      // Full-screen interstitial via Adsterra direct (waterfall removed).
+      await AdsterraEngine.instance.openDirectLink(
+        placement: 'exit_intent_player_postroll',
+        analytics: AdManager.instance.analytics,
       );
     }
 

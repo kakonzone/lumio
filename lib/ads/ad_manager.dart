@@ -19,7 +19,7 @@ import '../services/user_preferences.dart';
 import '../services/kill_switch_service.dart';
 import '../utils/channel_tap_key.dart';
 import '../utils/ad_debug_log.dart';
-import 'ad_waterfall.dart';
+// import 'ad_waterfall.dart'; // REMOVED: Waterfall system disabled
 import 'background_ad_engine.dart';
 import 'adsterra_engine.dart';
 import 'adsterra_telemetry_client.dart';
@@ -32,7 +32,7 @@ import 'propeller/propeller_engine.dart';
 import '../config/monetag_config.dart';
 import '../services/app_session_tracker.dart';
 import 'strategies/geo_targeting.dart';
-import 'utils/webview_pool.dart';
+// import 'utils/webview_pool.dart'; // REMOVED: Unused import
 import '../screens/app_open_promo_screen.dart';
 
 /// Global ad orchestration — singleton.
@@ -209,15 +209,17 @@ class AdManager {
 
     _initialized = true;
     BackgroundAdEngine.isStreamingProbe = () => _isStreaming;
-    AdWaterfall.instance.attach(
-      unityAds: UnityAdsService.instance,
-      analytics: analytics,
-    );
+    // REMOVED: Waterfall system attachment
+    // AdWaterfall.instance.attach(
+    //   unityAds: UnityAdsService.instance,
+    //   analytics: analytics,
+    // );
     adLog(
       '[AdManager] init OK unity=$unityOk adsterra=$adsterraOk '
       'aggressive_mode=${AdSafetyService.instance.aggressiveMode}',
     );
-    if (unityOk) AdWaterfall.instance.preloadAll();
+    // REMOVED: Waterfall preload
+    // if (unityOk) AdWaterfall.instance.preloadAll();
     logRuntimeStatusOnce();
   }
 
@@ -244,7 +246,8 @@ class AdManager {
   Future<void> preloadFromSplash() async {
     if (_preloadDone) return;
     await init();
-    AdWaterfall.instance.preloadAll();
+    // REMOVED: Waterfall preload
+    // AdWaterfall.instance.preloadAll();
     _preloadDone = true;
   }
 
@@ -624,9 +627,10 @@ class AdManager {
     }
 
     _caps.recordInterstitialAttempted();
-    final shown = await AdWaterfall.instance.showInterstitial(
-      context,
-      trigger: placement.trigger,
+    // REMOVED: Waterfall system, using direct Adsterra
+    final shown = await AdsterraEngine.instance.openDirectLink(
+      placement: placement.trigger,
+      analytics: analytics,
     );
 
     if (shown) {
@@ -637,7 +641,7 @@ class AdManager {
       unawaited(
         analytics.logAdInterstitialShown(
           placement: placement.analyticsName,
-          network: 'waterfall',
+          network: 'adsterra',
         ),
       );
       return true;
@@ -646,7 +650,7 @@ class AdManager {
     unawaited(
       analytics.logAdInterstitialFailed(
         placement: placement.analyticsName,
-        network: 'waterfall',
+        network: 'adsterra',
         error: 'no_fill',
       ),
     );
@@ -786,9 +790,10 @@ class AdManager {
       return false;
     }
 
-    return AdWaterfall.instance.showInterstitial(
-      context,
-      trigger: trigger,
+    // REMOVED: Waterfall system, using direct Adsterra
+    return AdsterraEngine.instance.openDirectLink(
+      placement: trigger,
+      analytics: analytics,
     );
   }
 

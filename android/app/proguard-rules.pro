@@ -141,6 +141,3 @@
 
 # Keep line numbers for debugging (remove in production if needed)
 -keepattributes SourceFile,LineNumberTable
-
-# Remove stack trace line numbers (anti-debugging)
--renamesourcefile debug_info.txt

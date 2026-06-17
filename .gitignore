@@ -52,7 +52,7 @@ android/app/google-services.json
 .env.local
 
 # Flutter dart-define secrets (local / per-dev; never commit)
-secrets.json
+# secrets.json - committed for app functionality
 secrets.*.json
 
 # Device test log captures (scripts/capture_logcat.sh)

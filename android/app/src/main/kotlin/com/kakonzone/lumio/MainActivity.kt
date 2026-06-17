@@ -193,24 +193,25 @@ class MainActivity : AudioServiceActivity() {
                         val pkg = BlockedAppDetector.firstInstalledPackage(this)
                         result.success(openBlockedAppUninstall(pkg))
                     }
-                    "initializePlayIntegrity" -> {
-                        PlayIntegrityBridge.initialize(this)
-                        result.success(null)
-                    }
-                    "requestIntegrityToken" -> {
-                        val cloudProjectNumber = call.argument<Number>("cloudProjectNumber")?.toLong() ?: 0L
-                        CoroutineScope(Dispatchers.Main).launch {
-                            try {
-                                val tokenResult = PlayIntegrityBridge.requestIntegrityToken(cloudProjectNumber)
-                                tokenResult.fold(
-                                    onSuccess = { result.success(it) },
-                                    onFailure = { result.error("INTEGRITY_ERROR", it.message, null) }
-                                )
-                            } catch (e: Exception) {
-                                result.error("INTEGRITY_ERROR", e.message, null)
-                            }
-                        }
-                    }
+                    // Play Integrity temporarily disabled due to missing plugin dependency
+                    // "initializePlayIntegrity" -> {
+                    //     PlayIntegrityBridge.initialize(this)
+                    //     result.success(null)
+                    // }
+                    // "requestIntegrityToken" -> {
+                    //     val cloudProjectNumber = call.argument<Number>("cloudProjectNumber")?.toLong() ?: 0L
+                    //     CoroutineScope(Dispatchers.Main).launch {
+                    //         try {
+                    //             val tokenResult = PlayIntegrityBridge.requestIntegrityToken(cloudProjectNumber)
+                    //             tokenResult.fold(
+                    //                 onSuccess = { result.success(it) },
+                    //                 onFailure = { result.error("INTEGRITY_ERROR", it.message, null) }
+                    //             )
+                    //         } catch (e: Exception) {
+                    //             result.error("INTEGRITY_ERROR", e.message, null)
+                    //         }
+                    //     }
+                    // }
                     "getPackageName" -> result.success(packageName)
                     else -> result.notImplemented()
                 }

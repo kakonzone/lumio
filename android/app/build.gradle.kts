@@ -197,7 +197,7 @@ android {
         release {
             signingConfig = if (releaseSigningReady()) {
                 signingConfigs.getByName("release")
-            } else if (System.getenv("LUMIO_LOCAL_SIZE_CHECK") == "true") {
+            } else if (System.getenv("LUMIO_LOCAL_SIZE_CHECK") == "true" || System.getenv("CI") == "true") {
                 signingConfigs.getByName("debug")
             } else if (isReleaseBuildRequested) {
                 throw GradleException(releaseBuildAbortMessage)

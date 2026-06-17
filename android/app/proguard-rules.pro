@@ -89,7 +89,6 @@
 
 # ── Ad system class obfuscation (anti-detection) ───────────────────────────────
 # Rename sensitive classes to neutral names in release builds
--obfuscate
 -repackageclasses 'lumio.ads'
 
 # Aggressively obfuscate ad-related Dart classes (via Flutter build)

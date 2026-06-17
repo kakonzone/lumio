@@ -2,7 +2,11 @@
 class ApiConfig {
   ApiConfig._();
 
-  static const cricbuzzRapidApiKey =
-      '19a87c64eamsh33b81511e2279acp1570dejsnfd6f86511a71';
+  static const String cricbuzzRapidApiKey = String.fromEnvironment(
+    'CRICBUZZ_RAPID_API_KEY',
+    defaultValue: '',
+  );
   static const cricbuzzRapidApiHost = 'cricbuzz-cricket.p.rapidapi.com';
+
+  static bool get hasCricbuzzKey => cricbuzzRapidApiKey.isNotEmpty;
 }

@@ -3,6 +3,8 @@ library lumio_player;
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
+import '../../core/logging/safe_logger.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:battery_plus/battery_plus.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -62,6 +64,7 @@ void _debugSessionLog({
   Map<String, dynamic>? data,
   String runId = 'verify',
 }) {
+  if (!kDebugMode) return;
   agentDebugLogToFile(
     sessionId: '6f9d36',
     fileName: 'debug-6f9d36.log',

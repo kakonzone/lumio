@@ -3,9 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
+import '../core/logging/safe_logger.dart';
 import '../ads/ad_manager.dart';
 import '../provider/app_config_provider.dart';
-import '../provider/app_provider.dart';
+import '../provider/theme_provider.dart';
 import '../services/ad_consent_service.dart';
 import '../widgets/remote_config_widgets.dart';
 import '../theme/app_theme.dart';
@@ -20,7 +21,7 @@ class SplashScreen extends StatefulWidget {
   static const logoAsset = 'assets/images/lumio_sports_logo.webp';
 
   /// Minimum time splash stays on screen so branding is visible.
-  static const brandingMinMs = 900;
+  static const brandingMinMs = 1200;
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -38,15 +39,13 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _start() async {
     try {
       await _startInternal().timeout(
-        const Duration(seconds: 12),
+        const Duration(seconds: 5),
         onTimeout: () {
-          // ignore: avoid_print
-          print('[Splash] timed out — opening home');
+          SafeLogger.debug('splash', '[Splash] timed out — opening home (providers will load lazily)');
         },
       );
     } catch (e, st) {
-      // ignore: avoid_print
-      print('[Splash] error: $e\n$st');
+      SafeLogger.error('splash', '[Splash] error', e, st);
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute<void>(
@@ -63,31 +62,39 @@ class _SplashScreenState extends State<SplashScreen> {
       return;
     }
     if (!mounted) return;
-    // ignore: avoid_print
-    print('[Splash] pushReplacementNamed /home');
+    SafeLogger.debug('splash', '[Splash] pushReplacementNamed /home');
     Navigator.of(context).pushReplacementNamed('/home');
   }
 
   Future<void> _startInternal() async {
-    await context.read<AppConfigProvider>().init();
+    // Run initialization in parallel with branding delay
+    final results = await Future.wait([
+      // Initialize app config (with timeout to ensure we don't block)
+      context.read<AppConfigProvider>().init().timeout(
+        const Duration(seconds: 3),
+        onTimeout: () {
+          SafeLogger.debug('splash', '[Splash] App config init timed out - will load lazily');
+        },
+      ),
+      // Branding delay
+      Future<void>.delayed(
+        const Duration(milliseconds: SplashScreen.brandingMinMs),
+      ),
+      // Load ad consent in parallel
+      AdConsentService.instance.load(),
+    ]);
+
     if (!mounted) return;
+
+    // Apply consent and mark gate satisfied
+    unawaited(AdConsentService.instance.applyStoredConsentToSdk());
+    AdConsentService.instance.markSplashConsentGateSatisfied();
 
     final config = context.read<AppConfigProvider>().config;
 
-    if (config.killSwitch) {
-      // ignore: avoid_print
-      print('[Splash] kill_switch active — blocking app');
-      await Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(
-          builder: (_) => KillSwitchScreen(config: config),
-        ),
-      );
-      return;
-    }
-
+    // Check maintenance mode
     if (config.maintenanceMode) {
-      // ignore: avoid_print
-      print('[Splash] maintenance_mode active — blocking app');
+      SafeLogger.debug('splash', '[Splash] maintenance_mode active — blocking app');
       await Navigator.of(context).pushReplacement(
         MaterialPageRoute<void>(
           builder: (_) => MaintenanceScreen(config: config),
@@ -96,33 +103,26 @@ class _SplashScreenState extends State<SplashScreen> {
       return;
     }
 
+    // Check force update
     if (config.forceUpdate) {
       final packageInfo = await PackageInfo.fromPlatform();
       if (isAppVersionOlder(packageInfo.version, config.latestVersion)) {
         if (!mounted) return;
-        // ignore: avoid_print
-        print('[Splash] force_update required — showing dialog');
+        SafeLogger.debug('splash', '[Splash] force_update required — showing dialog');
         await ForceUpdateDialog.show(context, config);
         return;
       }
     }
 
-    await AdConsentService.instance.load();
-    unawaited(AdConsentService.instance.applyStoredConsentToSdk());
-    AdConsentService.instance.markSplashConsentGateSatisfied();
     if (!mounted) return;
 
-    await Future<void>.delayed(
-      const Duration(milliseconds: SplashScreen.brandingMinMs),
-    );
-    if (!mounted) return;
-
+    // Schedule background ad engine
     AdManager.instance.scheduleBackgroundEngineAfterSplash();
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.watch<AppProvider>().isDark;
+    final isDark = context.watch<ThemeProvider>().isDark;
     final bg = isDark ? context.bg : const Color(0xFF000000);
 
     return Scaffold(

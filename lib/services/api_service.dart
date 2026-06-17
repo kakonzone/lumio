@@ -13,8 +13,12 @@ class ApiService {
     const envHost = String.fromEnvironment('LUMIO_API_HOST', defaultValue: '');
     if (envHost.isNotEmpty) return 'http://$envHost:8080';
     if (!kIsWeb && Platform.isAndroid) return 'http://10.0.2.2:8080';
-    // localhost fallback only allowed in debug builds
-    assert(kDebugMode, 'localhost URL requires kDebugMode=true');
+    if (kReleaseMode) {
+      throw StateError(
+        'LUMIO_API_HOST must be set via --dart-define=LUMIO_API_HOST=<host> '
+        'in release builds.',
+      );
+    }
     return 'http://localhost:8080';
   }
 

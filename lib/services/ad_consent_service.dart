@@ -6,10 +6,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../config/ad_config.dart';
 import '../ads/ad_log.dart';
 import '../ads/ad_manager.dart';
-import 'ad_consent_privacy.dart';
 import 'ad_trigger_manager.dart';
 
-/// First-launch ads consent (LevelPlay privacy flags removed during deprecation).
+/// First-launch ads consent.
 class AdConsentService {
   AdConsentService._();
   static final AdConsentService instance = AdConsentService._();
@@ -62,8 +61,7 @@ class AdConsentService {
       '[AdConsent] ${_consent!} — ads eligible in '
       '${AdConfig.splashMinMsBeforeAds}ms',
     );
-    // LevelPlay privacy flags removed during deprecation
-    adLog('[AdConsent] Consent stored (LevelPlay privacy removed)');
+    adLog('[AdConsent] Consent stored');
     unawaited(AdManager.instance.retryInitAfterConsent());
   }
 
@@ -74,7 +72,6 @@ class AdConsentService {
       adLog('[AdConsent] restrictive defaults (no prior choice)');
       return;
     }
-    // LevelPlay privacy flags removed during deprecation
     debugPrint(
       '[AdConsent] stored consent ($_consent)',
     );
@@ -94,17 +91,15 @@ class AdConsentService {
     }
   }
 
-  /// LevelPlay privacy flags removed during deprecation.
   /// Unity Ads uses consent stored in SharedPreferences directly.
-  Future<void> applyToLevelPlaySdk() async {
+  Future<void> applyToUnityAdsSdk() async {
     // No-op: Unity Ads reads consent from SharedPreferences
-    adLog('[AdConsent] Unity Ads consent (no LevelPlay privacy flags)');
+    adLog('[AdConsent] Unity Ads consent applied');
   }
 
   /// Most restrictive defaults before user chooses (also used when init runs pre-prompt).
   Future<void> applyRestrictiveDefaults() async {
     // No-op: Unity Ads uses SharedPreferences for consent
-    adLog(
-        '[AdConsent] Unity Ads restrictive defaults (no LevelPlay privacy flags)');
+    adLog('[AdConsent] Unity Ads restrictive defaults');
   }
 }

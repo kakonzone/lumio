@@ -1,4 +1,4 @@
-/// Rolling fill-rate diagnostics for LevelPlay formats.
+/// Rolling fill-rate diagnostics for Unity Ads formats.
 class AdHealthMonitor {
   AdHealthMonitor._();
   static final AdHealthMonitor instance = AdHealthMonitor._();

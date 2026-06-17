@@ -6,6 +6,7 @@ import '../utils/stream_url_upgrade.dart';
 import '../utils/channel_hub_processor.dart';
 import '../utils/priority_broadcasters.dart';
 import 'appwrite_service.dart';
+import 'remote_channels_service.dart';
 import 'special_link/special_link_cache.dart';
 
 /// CPU-heavy catalog normalization — off main isolate when list is large.
@@ -31,10 +32,17 @@ class CatalogService {
     String? error;
     var fromStaleCache = false;
 
-    var channels = await AppwriteService.instance.fetchChannels(
-      forceRefresh: forceRefresh,
-    );
+    // 1. Try RemoteChannelsService (Cloudflare Worker / GitHub M3U)
+    var channels = await RemoteChannelsService.fetch(force: forceRefresh);
 
+    // 2. Fallback: NY Appwrite (if remote returns empty)
+    if (channels.isEmpty) {
+      channels = await AppwriteService.instance.fetchChannels(
+        forceRefresh: forceRefresh,
+      );
+    }
+
+    // 3. Fallback: stale disk cache
     if (channels.isEmpty) {
       final stale = await SpecialLinkCache.instance.readAppCatalogChannels(
         ignoreTtl: true,
@@ -42,12 +50,16 @@ class CatalogService {
       if (stale != null && stale.isNotEmpty) {
         channels = stale;
         fromStaleCache = true;
-        error =
-            'Using cached channel list (last saved within 24h). Pull to refresh when online.';
+        error = 'Using cached channel list. Pull to refresh when online.';
       } else {
         error = AppwriteService.instance.lastFetchError ??
-            'Could not load channels from Appwrite. Check connection, collection permissions, and pull to refresh.';
+            'Could not load channels. Check connection and pull to refresh.';
       }
+    }
+
+    // 4. Save to disk cache on success
+    if (channels.isNotEmpty && !fromStaleCache) {
+      await SpecialLinkCache.instance.writeAppCatalogChannels(channels);
     }
 
     final List<ChannelModel> normalized;

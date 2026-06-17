@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
+import '../core/logging/safe_logger.dart';
 import '../models/model.dart';
+import '../models/score_state.dart';
 import '../models/live_event_match.dart';
 import '../services/footystream_service.dart';
 import '../services/live_events_service.dart';
@@ -228,19 +231,29 @@ class AppProvider extends ChangeNotifier {
   bool _newsLoading = false;
   String? _matchesError;
   String? _newsError;
+  ScoreState _scoreState = const ScoreInitial();
+  bool _scoresRequested = false;
 
   bool get matchesLoading => _matchesLoading;
   bool get newsLoading => _newsLoading;
   String? get matchesError => _matchesError;
   String? get newsError => _newsError;
   bool get hasMatchesError => _matchesError != null;
-  bool _scoresRequested = false;
+  bool get scoresRequested => _scoresRequested;
+  ScoreState get scoreState => _scoreState;
 
   /// Lazy-load ESPN/Cricbuzz scores (News tab) — avoids blocking Home startup.
   Future<void> ensureMatchesLoaded() async {
     if (_matchesLoading) return;
-    if (_scoresRequested && _scoreGroups.isNotEmpty) return;
+    if (scoresRequested && _scoreGroups.isNotEmpty) return;
     _scoresRequested = true;
+    await loadMatches();
+  }
+
+  /// Retry loading matches after error - for user-triggered retry.
+  Future<void> retryLoadMatches() async {
+    if (_matchesLoading) return;
+    ScoreService.clearCache();
     await loadMatches();
   }
 
@@ -291,6 +304,7 @@ class AppProvider extends ChangeNotifier {
   Future<void> loadMatches() async {
     _matchesLoading = true;
     _matchesError = null;
+    _scoreState = const ScoreLoading();
     notifyListeners();
     try {
       final footyTodayFuture = FootyStreamService.fetchToday();
@@ -310,30 +324,80 @@ class AppProvider extends ChangeNotifier {
         _upcomingMatches =
             attached.where((m) => m.status == 'upcoming').toList();
         _predictions = attached.take(6).toList();
+        
+        _scoreState = ScoreLoaded(
+          liveMatches: _liveMatches,
+          todayMatches: _todayMatches,
+          upcomingMatches: _upcomingMatches,
+          predictions: _predictions,
+          loadedAt: DateTime.now(),
+        );
       } else {
         final fetched = espnToday.map(_attachStreamToMatch).toList();
 
         if (fetched.isNotEmpty) {
           _liveMatches = fetched;
           _predictions = fetched.take(6).toList();
+          _scoreState = ScoreLoaded(
+            liveMatches: _liveMatches,
+            todayMatches: _liveMatches,
+            upcomingMatches: const [],
+            predictions: _predictions,
+            loadedAt: DateTime.now(),
+          );
         } else {
-          _liveMatches = _demoLive.map(_attachStreamToMatch).toList();
-          _predictions = _liveMatches;
+          // No live matches - honest empty state
+          _liveMatches = const [];
+          _todayMatches = const [];
+          _upcomingMatches = const [];
+          _predictions = const [];
+          _scoreState = ScoreEmpty(checkedAt: DateTime.now());
         }
-
-        _todayMatches = [
-          ..._liveMatches,
-          ..._demoToday.where((m) => !_liveMatches.any((l) => l.id == m.id)),
-        ].map(_attachStreamToMatch).toList();
-
-        _upcomingMatches = _demoUpcoming.map(_attachStreamToMatch).toList();
       }
     } catch (e) {
       _matchesError = e.toString();
-      _liveMatches = _demoLive;
-      _todayMatches = _demoToday;
-      _upcomingMatches = _demoUpcoming;
-      _predictions = _demoLive;
+      
+      // Determine error type for honest error state
+      final now = DateTime.now();
+      if (e is SocketException) {
+        _scoreState = ScoreNetworkError(
+          message: 'No internet connection',
+          failedAt: now,
+        );
+      } else if (e.toString().contains('timeout') || e.toString().contains('TimeoutException')) {
+        _scoreState = ScoreTimeoutError(
+          timeout: const Duration(seconds: 8),
+          failedAt: now,
+        );
+      } else if (e.toString().contains('404') || e.toString().contains('403') || e.toString().contains('401')) {
+        _scoreState = ScoreApiError(
+          message: 'API unavailable',
+          statusCode: 404,
+          failedAt: now,
+        );
+      } else if (e.toString().contains('500') || e.toString().contains('502') || e.toString().contains('503')) {
+        _scoreState = ScoreApiError(
+          message: 'Server error',
+          statusCode: 500,
+          failedAt: now,
+        );
+      } else if (e.toString().contains('FormatException') || e.toString().contains('parse')) {
+        _scoreState = ScoreParseError(
+          message: 'Invalid response format',
+          failedAt: now,
+        );
+      } else {
+        _scoreState = ScoreUnknownError(
+          message: e.toString(),
+          failedAt: now,
+        );
+      }
+      
+      // Clear match data on error
+      _liveMatches = const [];
+      _todayMatches = const [];
+      _upcomingMatches = const [];
+      _predictions = const [];
     } finally {
       _matchesLoading = false;
       notifyListeners();
@@ -347,10 +411,10 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
     try {
       final fetched = await NewsService.fetchLatest();
-      _news = fetched.isNotEmpty ? fetched : _demoNews;
+      _news = fetched; // No demo fallback - honest empty state
     } catch (e) {
       _newsError = e.toString();
-      _news = _demoNews;
+      _news = const []; // Empty on error - no fake news
     } finally {
       _newsLoading = false;
       notifyListeners();
@@ -392,21 +456,12 @@ class AppProvider extends ChangeNotifier {
     final cacheFresh = _liveEventsLoadedAt != null &&
         DateTime.now().difference(_liveEventsLoadedAt!) < _liveEventsTtl;
     if (!force && hasLiveEventsData && cacheFresh) {
-      agentDebugLog(
-        location: 'app_provider.dart:loadLiveEvents',
-        message: 'cache hit — skip fetch',
-        hypothesisId: 'H2',
-      );
+      SafeLogger.debug('provider', 'app_provider.dart:loadLiveEvents: cache hit — skip fetch (H2)');
       return;
     }
 
     final loadStart = DateTime.now().millisecondsSinceEpoch;
-    agentDebugLog(
-      location: 'app_provider.dart:loadLiveEvents',
-      message: 'fetch start',
-      hypothesisId: 'H2',
-      data: {'force': force, 'hadCache': hasLiveEventsData},
-    );
+    SafeLogger.debug('provider', 'app_provider.dart:loadLiveEvents: fetch start (H2) force=$force hadCache=$hasLiveEventsData');
 
     if (!hasLiveEventsData) {
       _liveEventsLoading = true;
@@ -428,16 +483,7 @@ class AppProvider extends ChangeNotifier {
     } finally {
       _liveEventsLoading = false;
       notifyListeners();
-      agentDebugLog(
-        location: 'app_provider.dart:loadLiveEvents',
-        message: 'fetch done',
-        hypothesisId: 'H2',
-        data: {
-          'ms': DateTime.now().millisecondsSinceEpoch - loadStart,
-          'football': _liveEventFootball.length,
-          'cricket': _liveEventCricket.length,
-        },
-      );
+      SafeLogger.debug('provider', 'app_provider.dart:loadLiveEvents: fetch done (H2) ms=${DateTime.now().millisecondsSinceEpoch - loadStart} football=${_liveEventFootball.length} cricket=${_liveEventCricket.length}');
     }
   }
 
@@ -520,37 +566,5 @@ class AppProvider extends ChangeNotifier {
     }
   }
 
-  // ── Demo data (scores/news fallback only — no channel URLs) ──
-  static final List<MatchModel> _demoLive = [
-    MatchModel(
-      id: 'm1',
-      sport: 'Cricket',
-      teamA: 'Bangladesh',
-      teamB: 'India',
-      scoreA: '187/4',
-      scoreB: '162/8',
-      status: 'live',
-      time: '18.2 Ov',
-      channel: 'T Sports',
-      streamUrl: '',
-      matchDate: DateTime.now(),
-      winChanceA: 55,
-      winChanceB: 35,
-      drawChance: 10,
-    ),
-  ];
-
-  static final List<MatchModel> _demoToday = [..._demoLive];
-
-  static final List<MatchModel> _demoUpcoming = const [];
-
-  static final List<NewsModel> _demoNews = [
-    NewsModel(
-      id: 'n1',
-      title: 'Bangladesh stun India with record T20 chase',
-      category: 'Cricket',
-      source: 'Cricbuzz',
-      publishedAt: DateTime.now().subtract(const Duration(hours: 2)),
-    ),
-  ];
+  // ── Demo data removed — no fake scores/news in production ──
 }

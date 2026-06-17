@@ -62,7 +62,7 @@ class VpnDetectionResult {
   bool get localeMismatch => input.localeMismatch;
   bool get tzMismatch => input.tzMismatch;
 
-  /// LevelPlay-only routing: high confidence OR legacy ≥2 boolean signals.
+  /// Clean SDK routing: high confidence OR legacy ≥2 boolean signals.
   bool get preferCleanSdkRouting =>
       confidence >= VpnDetector.routingThreshold ||
       input.activeLegacySignalCount >= 2;

@@ -1,31 +1,52 @@
 import 'package:flutter/foundation.dart';
+
 import '../config/channel_categories.dart';
+import '../core/result.dart';
 import '../models/model.dart';
 import 'channel_name_normalizer.dart';
 import 'channel_playback_links.dart';
 
 /// Top-level function for use with compute() isolate - Appwrite variant.
-List<ChannelModel> parseM3uAppwriteIsolate(String content) {
-  return M3uMergeParser.parse(
-    content,
-    idPrefix: 'appwrite',
-    mapCategory: M3uMergeParser.categoryForGroup,
-  );
+/// Returns Result type for proper error handling.
+Result<List<ChannelModel>> parseM3uAppwriteIsolate(String content) {
+  try {
+    final channels = M3uMergeParser.parse(
+      content,
+      idPrefix: 'appwrite',
+      mapCategory: M3uMergeParser.categoryForGroup,
+    );
+    return Success(channels);
+  } catch (e, stack) {
+    if (kDebugMode) {
+      debugPrint('[M3uParser] Appwrite parse error: $e\n$stack');
+    }
+    return Failure(ParseError('Failed to parse M3U content', content), stack);
+  }
 }
 
 /// Top-level function for use with compute() isolate - Gitun variant.
-List<ChannelModel> parseM3uGitunIsolate(
+/// Returns Result type for proper error handling.
+Result<List<ChannelModel>> parseM3uGitunIsolate(
   (String, String, bool, String) params,
 ) {
-  final (content, idPrefix, includeAllChannels, gitunOnlyCategory) = params;
-  return M3uMergeParser.parse(
-    content,
-    idPrefix: idPrefix,
-    mapCategory: includeAllChannels
-        ? M3uMergeParser.categoryForGroup
-        : (_, __) => gitunOnlyCategory,
-    mapCountry: (_, __) => 'International',
-  );
+  try {
+    final (content, idPrefix, includeAllChannels, gitunOnlyCategory) = params;
+    final channels = M3uMergeParser.parse(
+      content,
+      idPrefix: idPrefix,
+      mapCategory: includeAllChannels
+          ? M3uMergeParser.categoryForGroup
+          : (_, __) => gitunOnlyCategory,
+      mapCountry: (_, __) => 'International',
+    );
+    return Success(channels);
+  } catch (e, stack) {
+    if (kDebugMode) {
+      debugPrint('[M3uParser] Gitun parse error: $e\n$stack');
+    }
+    final (content, _, _, _) = params;
+    return Failure(ParseError('Failed to parse Gitun M3U content', content), stack);
+  }
 }
 
 /// Parses M3U playlists and merges duplicate channel names into multi-link entries.

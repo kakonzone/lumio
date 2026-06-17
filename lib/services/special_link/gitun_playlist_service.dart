@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../../config/appwrite_config.dart';
 import '../../config/special_link_config.dart';
+import '../../core/result.dart';
 import '../../models/model.dart';
 import '../appwrite_service.dart';
 import '../../utils/m3u_merge_parser.dart' show parseM3uGitunIsolate;
@@ -223,7 +224,7 @@ class GitunPlaylistService {
           continue;
         }
 
-        final parsed = await compute(
+        final result = await compute(
           parseM3uGitunIsolate,
           (
             res.body,
@@ -232,6 +233,15 @@ class GitunPlaylistService {
             _gitunOnlyCategory,
           ),
         );
+        
+        if (result case Failure(error: final error)) {
+          if (kDebugMode) {
+            debugPrint('[$logTag] Failed to parse $rawUrl: ${error.message}');
+          }
+          continue;
+        }
+        
+        final parsed = (result as Success<List<ChannelModel>>).value;
         parsedCount = parsed.length;
 
         for (final ch in parsed) {

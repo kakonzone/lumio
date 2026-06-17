@@ -1,6 +1,7 @@
 // lib/screens/live_tv_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:lumio_tv/l10n/strings.dart';
 import 'package:lumio_tv/theme/tokens/colors.dart' as tokens;
 import 'package:lumio_tv/theme/tokens/radius.dart' as tokens;
@@ -11,6 +12,8 @@ import 'package:lumio_tv/widgets/live/channel_list.dart';
 import 'package:lumio_tv/widgets/live/epg_timeline.dart';
 import 'package:lumio_tv/widgets/common/pressable.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:lumio_tv/provider/app_provider.dart';
+import 'package:lumio_tv/models/model.dart';
 
 /// Live TV screen with 3-panel layout
 ///
@@ -34,15 +37,32 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
 
   // Mock data
   late final List<CategoryItem> _categories;
-  late final List<ChannelItem> _channels;
+  List<ChannelItem> _channels = [];
   late final List<EpgProgram> _programs;
 
   @override
   void initState() {
     super.initState();
     _categories = CategoryItem.getDefaultCategories();
-    _channels = _generateMockChannels();
     _programs = EpgProgram.generateMockPrograms();
+
+    // Load real channels from AppProvider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final provider = context.read<AppProvider>();
+      final live = provider.liveChannels;
+      setState(() {
+        _channels = live.map((ch) => ChannelItem(
+          id: ch.id,
+          name: ch.name,
+          logoUrl: ch.logoUrl.isNotEmpty ? ch.logoUrl : null,
+          currentProgram: ch.currentShow.isNotEmpty ? ch.currentShow : null,
+          programProgress: 0.0,
+          isLive: ch.isLive,
+          isFavorite: provider.isFavorite(ch.id),
+        )).toList();
+      });
+    });
   }
 
   @override
@@ -644,54 +664,5 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
     HapticFeedback.lightImpact();
   }
 
-  /// Generate mock channel data
-  List<ChannelItem> _generateMockChannels() {
-    return [
-      ChannelItem(
-        id: 'channel1',
-        name: 'BBC One',
-        logoUrl: null,
-        currentProgram: 'Morning News',
-        programProgress: 0.3,
-        isLive: true,
-        isFavorite: false,
-      ),
-      ChannelItem(
-        id: 'channel2',
-        name: 'CNN International',
-        logoUrl: null,
-        currentProgram: 'World News Today',
-        programProgress: 0.7,
-        isLive: true,
-        isFavorite: true,
-      ),
-      ChannelItem(
-        id: 'channel3',
-        name: 'ESPN',
-        logoUrl: null,
-        currentProgram: 'Sports Center',
-        programProgress: 0.1,
-        isLive: true,
-        isFavorite: false,
-      ),
-      ChannelItem(
-        id: 'channel4',
-        name: 'National Geographic',
-        logoUrl: null,
-        currentProgram: 'Wildlife Documentary',
-        programProgress: 0.0,
-        isLive: false,
-        isFavorite: true,
-      ),
-      ChannelItem(
-        id: 'channel5',
-        name: 'Discovery Channel',
-        logoUrl: null,
-        currentProgram: 'Science Show',
-        programProgress: 0.0,
-        isLive: false,
-        isFavorite: false,
-      ),
-    ];
-  }
+
 }

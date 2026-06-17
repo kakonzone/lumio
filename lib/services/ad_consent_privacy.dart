@@ -1,27 +1,28 @@
 /// Consent flag mapping for ads consent (testable, no SDK calls).
 ///
-/// Previously used for LevelPlay privacy flags.
-/// ISSUE: Update for Unity Ads consent mechanism when available.
+/// Legacy: Previously used for LevelPlay privacy flags.
+/// Unity Ads uses SharedPreferences directly via AdConsentService.
+/// ISSUE: Remove if unused after Unity Ads migration complete.
 /// See: https://github.com/your-repo/issues/XXX
 class AdConsentPrivacyMapping {
   AdConsentPrivacyMapping._();
 
   /// Maps stored consent (`granted` | `denied` | null) to consent flags.
   /// Stub for future Unity Ads consent mapping.
-  static ({bool gdprLevelPlay, bool ccpaOptOut}) forConsent(String? consent) {
+  static ({bool gdprConsent, bool ccpaOptOut}) forConsent(String? consent) {
     switch (consent) {
       case 'granted':
-        return (gdprLevelPlay: true, ccpaOptOut: false);
+        return (gdprConsent: true, ccpaOptOut: false);
       case 'denied':
-        return (gdprLevelPlay: false, ccpaOptOut: true);
+        return (gdprConsent: false, ccpaOptOut: true);
       default:
-        return (gdprLevelPlay: false, ccpaOptOut: false);
+        return (gdprConsent: false, ccpaOptOut: false);
     }
   }
 
   /// Before user chooses — restrictive defaults.
   /// Stub for future Unity Ads consent mapping.
-  static ({bool gdprLevelPlay, bool ccpaOptOut}) restrictiveDefaults() {
-    return (gdprLevelPlay: false, ccpaOptOut: false);
+  static ({bool gdprConsent, bool ccpaOptOut}) restrictiveDefaults() {
+    return (gdprConsent: false, ccpaOptOut: false);
   }
 }

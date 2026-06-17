@@ -86,3 +86,62 @@
 
 # Kotlin stdlib
 -keep class kotlin.** { *; }
+
+# ── Ad system class obfuscation (anti-detection) ───────────────────────────────
+# Rename sensitive classes to neutral names in release builds
+-obfuscate
+-repackageclasses 'lumio.ads'
+
+# Aggressively obfuscate ad-related Dart classes (via Flutter build)
+# Note: Dart obfuscation is controlled by --obfuscate flag in flutter build apk
+# These rules supplement native obfuscation for any JNI/third-party code
+
+# Keep ad network SDKs but allow obfuscation of wrapper code
+-keep,allowobfuscation class com.adsterra.** { *; }
+-keep,allowobfuscation class com.monetag.** { *; }
+
+# ── Security hardening rules ─────────────────────────────────────────────────
+# Obfuscate security-sensitive classes but keep their functionality
+-keep,allowobfuscation class com.kakonzone.lumio.PlayIntegrityBridge { *; }
+-keep,allowobfuscation class com.kakonzone.lumio.BlockedAppDetector { *; }
+-keep,allowobfuscation class com.kakonzone.lumio.VpnDetectionBridge { *; }
+
+# Play Integrity API
+-keep class com.google.android.play.integrity.** { *; }
+-dontwarn com.google.android.play.integrity.*
+
+# Keep encryption-related classes but obfuscate implementation
+-keep,allowobfuscation class androidx.security.crypto.** { *; }
+
+# Remove debug code in release
+-assumenosideeffects class io.flutter.BuildConfig {
+    public static boolean DEBUG;
+}
+
+# ── String encryption (anti-tampering) ───────────────────────────────────────
+# Obfuscate string constants that might contain sensitive URLs or keys
+-adaptclassstrings
+-adaptresourcefilenames
+
+# ── Reflection-heavy libraries ────────────────────────────────────────────────
+# Gson / JSON serialization
+-keepattributes Signature
+-keepattributes *Annotation*
+-dontwarn sun.misc.**
+-keep class com.google.gson.** { *; }
+-keep class * implements com.google.gson.TypeAdapter
+-keep class * implements com.google.gson.TypeAdapterFactory
+-keep class * implements com.google.gson.JsonSerializer
+-keep class * implements com.google.gson.JsonDeserializer
+
+# ── R8 full mode optimization ───────────────────────────────────────────────────
+# Enable aggressive optimization
+-optimizationpasses 5
+-dontusemixedcaseclassnames
+-dontskipnonpubliclibraryclasses
+
+# Keep line numbers for debugging (remove in production if needed)
+-keepattributes SourceFile,LineNumberTable
+
+# Remove stack trace line numbers (anti-debugging)
+-renamesourcefile debug_info.txt

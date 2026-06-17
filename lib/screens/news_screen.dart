@@ -5,7 +5,9 @@ import '../ads/ad_manager.dart';
 import '../ads/ad_placement_news.dart';
 import '../ads/widgets/lazy_adsterra_strip.dart';
 import '../models/model.dart';
-import '../provider/app_provider.dart';
+import '../provider/live_score_provider.dart';
+import '../provider/news_provider.dart';
+import '../provider/ui_state_provider.dart';
 import '../screens/tv_screen.dart' show ScoreCardsSection;
 import '../theme/app_theme.dart';
 import '../utils/channel_player.dart';
@@ -44,9 +46,10 @@ class _NewsScreenState extends State<NewsScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final prov = context.read<AppProvider>();
-      prov.ensureMatchesLoaded();
-      prov.loadNews();
+      final scoreProv = context.read<LiveScoreProvider>();
+      final newsProv = context.read<NewsProvider>();
+      scoreProv.loadMatches();
+      newsProv.loadNews();
     });
   }
 
@@ -72,19 +75,19 @@ class _NewsScreenState extends State<NewsScreen> {
   }
 
   Future<void> _onNewsArticleTap(NewsModel news) async {
-    final prov = context.read<AppProvider>();
-    prov.setPendingNewsArticle(news.id);
+    final uiProv = context.read<UiStateProvider>();
+    uiProv.setPendingNewsArticle(news.id);
 
     final result = await AdManager.instance.handleNewsArticleTap(article: news);
     if (!mounted) return;
 
     if (result.opened) {
-      prov.setPendingNewsArticle(null);
+      uiProv.setPendingNewsArticle(null);
       await openNewsArticle(news, context: context);
       return;
     }
     if (!result.showTapAgainHint) {
-      prov.setPendingNewsArticle(null);
+      uiProv.setPendingNewsArticle(null);
     }
   }
 
@@ -106,16 +109,17 @@ class _NewsScreenState extends State<NewsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final prov = context.watch<AppProvider>();
-    final premierScores = prov.premierLeagueScoreMatches;
-    final allNews = prov.news;
+    final scoreProv = context.watch<LiveScoreProvider>();
+    final newsProv = context.watch<NewsProvider>();
+    final premierScores = scoreProv.premierLeagueScoreMatches;
+    final allNews = newsProv.news;
     final filtered = _filtered(allNews);
     final hero = _pickHero(filtered);
     final rest = hero != null
         ? filtered.where((n) => n.id != hero.id).toList()
         : filtered;
 
-    final showScores = prov.matchesLoading || premierScores.isNotEmpty;
+    final showScores = scoreProv.matchesLoading || premierScores.isNotEmpty;
 
     return Scaffold(
       backgroundColor: context.bg,
@@ -126,8 +130,8 @@ class _NewsScreenState extends State<NewsScreen> {
             child: RefreshIndicator(
               color: AppTokens.accent,
               onRefresh: () async {
-                await prov.ensureMatchesLoaded();
-                await prov.loadNews();
+                await scoreProv.loadMatches();
+                await newsProv.loadNews();
               },
               child: CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -187,14 +191,14 @@ class _NewsScreenState extends State<NewsScreen> {
                     ),
                   ],
                   if (showScores) ...[
-                    if (prov.matchesLoading && premierScores.isEmpty)
+                    if (scoreProv.matchesLoading && premierScores.isEmpty)
                       const SliverToBoxAdapter(child: ScoreRowSkeleton())
                     else
                       SliverToBoxAdapter(
                         child: ScoreCardsSection(
                           title: '',
                           matches: premierScores,
-                          loading: prov.matchesLoading,
+                          loading: scoreProv.matchesLoading,
                           showHeader: false,
                           showEmptyMessage: false,
                           onPlay: (ctx,
@@ -218,19 +222,19 @@ class _NewsScreenState extends State<NewsScreen> {
                           spacing: 8,
                           children: [
                             if (filtered.any(NewsPriority.isWorldCup))
-                              _HighlightChip(
+                              const _HighlightChip(
                                 label: 'World Cup',
                                 icon: Icons.emoji_events_rounded,
-                                colors: const [
+                                colors: [
                                   Color(0xFF1565C0),
                                   Color(0xFF0D47A1),
                                 ],
                               ),
                             if (filtered.any(NewsPriority.isCricket))
-                              _HighlightChip(
+                              const _HighlightChip(
                                 label: 'Cricket',
                                 icon: Icons.sports_cricket_rounded,
-                                colors: const [
+                                colors: [
                                   Color(0xFF00897B),
                                   Color(0xFF004D40),
                                 ],
@@ -243,7 +247,7 @@ class _NewsScreenState extends State<NewsScreen> {
                     child: _NewsSectionHeader(
                       title: 'Headlines',
                       icon: Icons.article_outlined,
-                      trailing: prov.newsLoading
+                      trailing: newsProv.newsLoading
                           ? const SizedBox(
                               width: 18,
                               height: 18,
@@ -259,7 +263,7 @@ class _NewsScreenState extends State<NewsScreen> {
                             ),
                     ),
                   ),
-                  if (prov.newsLoading && allNews.isEmpty)
+                  if (newsProv.newsLoading && allNews.isEmpty)
                     SliverList(
                       delegate: SliverChildListDelegate(
                         List.generate(
@@ -277,7 +281,7 @@ class _NewsScreenState extends State<NewsScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 20),
                         child: Text(
-                          prov.newsError != null
+                          newsProv.newsError != null
                               ? 'Could not load news. Pull to refresh.'
                               : 'No stories in $_category. Try another category.',
                           style: TextStyle(fontSize: 13, color: context.txt3),

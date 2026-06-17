@@ -10,6 +10,22 @@ const String mozillaUA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
     'AppleWebKit/537.36 (KHTML, like Gecko) '
     'Chrome/124.0.0.0 Safari/537.36';
 
+// ─── Stream Security Enum ──────────────────────────────────────────────────────
+/// Security status for stream URLs.
+enum StreamSecurity {
+  /// Stream uses HTTPS with valid certificate
+  secure,
+
+  /// Stream is HTTP but routed through HTTPS proxy
+  proxied,
+
+  /// Stream is HTTP (cleartext) - should be avoided
+  cleartext,
+
+  /// Stream security status unknown
+  unknown,
+}
+
 // ─── Stream link (multi-source per channel) ─────────────────────────────────
 class StreamLink {
   final String url;
@@ -51,6 +67,9 @@ class ChannelModel {
   /// True for folder-style hub rows (children listed separately).
   final bool isHubParent;
 
+  /// Security status of the stream URL.
+  final StreamSecurity streamSecurity;
+
   const ChannelModel({
     required this.id,
     required this.name,
@@ -65,6 +84,7 @@ class ChannelModel {
     this.alternateStreams = const [],
     this.hubGroupId,
     this.isHubParent = false,
+    this.streamSecurity = StreamSecurity.unknown,
   });
 
   factory ChannelModel.fromJson(Map<String, dynamic> j) => ChannelModel(
@@ -85,6 +105,12 @@ class ChannelModel {
             .toList(),
         hubGroupId: j['hubGroupId'] as String?,
         isHubParent: j['isHubParent'] as bool? ?? false,
+        streamSecurity: j['streamSecurity'] != null
+            ? StreamSecurity.values.firstWhere(
+                (e) => e.name == j['streamSecurity'],
+                orElse: () => StreamSecurity.unknown,
+              )
+            : StreamSecurity.unknown,
       );
 
   /// Labels injected by app-side HTTP↔HTTPS logic — never shown in the player UI.
@@ -150,6 +176,7 @@ class ChannelModel {
             .toList(),
         if (hubGroupId != null) 'hubGroupId': hubGroupId,
         'isHubParent': isHubParent,
+        'streamSecurity': streamSecurity.name,
       };
 
   ChannelModel copyWith({
@@ -166,6 +193,7 @@ class ChannelModel {
     List<StreamLink>? alternateStreams,
     String? hubGroupId,
     bool? isHubParent,
+    StreamSecurity? streamSecurity,
   }) =>
       ChannelModel(
         id: id ?? this.id,
@@ -181,6 +209,7 @@ class ChannelModel {
         alternateStreams: alternateStreams ?? this.alternateStreams,
         hubGroupId: hubGroupId ?? this.hubGroupId,
         isHubParent: isHubParent ?? this.isHubParent,
+        streamSecurity: streamSecurity ?? this.streamSecurity,
       );
 
   @override
@@ -226,6 +255,30 @@ class ChannelModel {
         return '📡';
     }
   }
+
+  /// Automatically determines stream security based on URL scheme.
+  /// This is a simple heuristic; use [StreamSecurityProber] for accurate testing.
+  StreamSecurity get inferredStreamSecurity {
+    if (streamSecurity != StreamSecurity.unknown) {
+      return streamSecurity;
+    }
+
+    final uri = Uri.tryParse(streamUrl);
+    if (uri == null) return StreamSecurity.unknown;
+
+    if (uri.scheme == 'https') {
+      return StreamSecurity.secure;
+    } else if (uri.scheme == 'http') {
+      return StreamSecurity.cleartext;
+    }
+
+    return StreamSecurity.unknown;
+  }
+
+  /// Returns true if stream is secure (HTTPS or proxied).
+  bool get isSecureStream =>
+      inferredStreamSecurity == StreamSecurity.secure ||
+      inferredStreamSecurity == StreamSecurity.proxied;
 }
 
 // ─── Match Model ──────────────────────────────────────────────────────────────

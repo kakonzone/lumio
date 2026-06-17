@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:lumio_tv/l10n/strings.dart' as strings;
-import 'package:lumio_tv/theme/tokens/colors.dart' as tokens;
-import 'package:lumio_tv/theme/tokens/spacing.dart' as tokens;
-import 'package:lumio_tv/theme/tokens/typography.dart' as tokens;
-import 'package:lumio_tv/theme/tokens/motion.dart' as tokens;
+import 'package:lumio_tv/theme/tokens.dart' as tokens;
 import 'package:lumio_tv/utils/haptic_helpers.dart' as haptics;
 
 /// Player control bar with editorial layout.
@@ -167,10 +164,10 @@ class _TopBar extends StatelessWidget {
         // Back arrow
         IconButton(
           onPressed: () {
-            haptics.buttonPress();
+            haptics.Haptics.buttonPress();
             onBack?.call();
           },
-          icon: const Icon(PhosphorIcons.chevron_left),
+          icon: Icon(PhosphorIcons.caretLeft()),
           color: tokens.AppTokens.textPrimary,
           iconSize: 24,
         ),
@@ -192,19 +189,19 @@ class _TopBar extends StatelessWidget {
           children: [
             IconButton(
               onPressed: () {
-                haptics.buttonPress();
+                haptics.Haptics.buttonPress();
                 onCastTap?.call();
               },
-              icon: const Icon(PhosphorIcons.television_simple),
+              icon: Icon(PhosphorIcons.television()),
               color: tokens.AppTokens.textPrimary,
               iconSize: 24,
             ),
             IconButton(
               onPressed: () {
-                haptics.buttonPress();
+                haptics.Haptics.buttonPress();
                 onPiPTap?.call();
               },
-              icon: const Icon(PhosphorIcons.picture_in_picture),
+              icon: const Icon(Icons.picture_in_picture),
               color: tokens.AppTokens.textPrimary,
               iconSize: 24,
             ),
@@ -246,9 +243,7 @@ class _Scrubber extends StatelessWidget {
             child: Slider(
               value: scrubberPosition,
               onChanged: (value) {
-                onSeek?.call(Duration(
-                  milliseconds: (value * duration.inMilliseconds).round(),
-                ));
+                onSeek?.call();
               },
             ),
           ),
@@ -320,10 +315,10 @@ class _ControlRow extends StatelessWidget {
         // Rewind 10s
         IconButton(
           onPressed: () {
-            haptics.lightImpact();
+            HapticFeedback.lightImpact();
             onRewind?.call();
           },
-          icon: const Icon(PhosphorIcons.globe_hemisphere_west),
+          icon: Icon(PhosphorIcons.globe()),
           color: tokens.AppTokens.textPrimary,
           iconSize: 32,
         ),
@@ -340,11 +335,11 @@ class _ControlRow extends StatelessWidget {
           ),
           child: IconButton(
             onPressed: () {
-              haptics.mediumImpact();
+              HapticFeedback.mediumImpact();
               onPlayPause?.call();
             },
             icon: Icon(
-              isPlaying ? PhosphorIcons.pause : PhosphorIcons.play,
+              isPlaying ? PhosphorIcons.pause() : PhosphorIcons.play(),
               size: 32,
               color: tokens.AppTokens.textPrimary,
             ),
@@ -356,10 +351,10 @@ class _ControlRow extends StatelessWidget {
         // Forward 10s
         IconButton(
           onPressed: () {
-            haptics.lightImpact();
+            HapticFeedback.lightImpact();
             onForward?.call();
           },
-          icon: const Icon(PhosphorIcons.globe_hemisphere_east),
+          icon: Icon(PhosphorIcons.globe()),
           color: tokens.AppTokens.textPrimary,
           iconSize: 32,
         ),
@@ -372,39 +367,39 @@ class _ControlRow extends StatelessWidget {
             if (showQuality)
               IconButton(
                 onPressed: () {
-                  haptics.buttonPress();
+                  haptics.Haptics.buttonPress();
                   onQualityTap?.call();
                 },
-                icon: const Icon(PhosphorIcons.faders),
+                icon: Icon(PhosphorIcons.faders()),
                 color: tokens.AppTokens.textPrimary,
                 iconSize: 24,
               ),
             if (showAudio)
               IconButton(
                 onPressed: () {
-                  haptics.buttonPress();
+                  haptics.Haptics.buttonPress();
                   onAudioTap?.call();
                 },
-                icon: const Icon(PhosphorIcons.speaker_high),
+                icon: Icon(PhosphorIcons.speakerHigh()),
                 color: tokens.AppTokens.textPrimary,
                 iconSize: 24,
               ),
             if (showSubtitles)
               IconButton(
                 onPressed: () {
-                  haptics.buttonPress();
+                  haptics.Haptics.buttonPress();
                   onSubtitleTap?.call();
                 },
-                icon: const Icon(PhosphorIcons.captions),
+                icon: Icon(PhosphorIcons.closedCaptioning()),
                 color: tokens.AppTokens.textPrimary,
                 iconSize: 24,
               ),
             IconButton(
               onPressed: () {
-                haptics.buttonPress();
+                haptics.Haptics.buttonPress();
                 onFullscreenTap?.call();
               },
-              icon: const Icon(PhosphorIcons.corners_out),
+              icon: Icon(PhosphorIcons.arrowsOut()),
               color: tokens.AppTokens.textPrimary,
               iconSize: 24,
             ),

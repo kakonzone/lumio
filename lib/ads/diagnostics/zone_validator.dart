@@ -78,7 +78,7 @@ class ZoneValidator {
 
   List<_ZoneProbe> _inventory() {
     return [
-      // LevelPlay zone probes removed during deprecation
+      // Unity Ads zone validation
       // ISSUE: Add Unity Ads zone validation when available
       // See: https://github.com/your-repo/issues/XXX
       // _ZoneProbe(
@@ -127,28 +127,28 @@ class ZoneValidator {
       ),
       _ZoneProbe(
         network: 'monetag',
-        zoneId: _mask(MonetagConfig.onclickZoneId),
+        zoneId: _mask(MonetagConfig.effectiveOnclickZoneId),
         placement: 'onclick',
         format: 'onclick',
         probeUrl: MonetagConfig.onclickScriptHost,
       ),
       _ZoneProbe(
         network: 'monetag',
-        zoneId: _mask(MonetagConfig.vignetteZoneId),
+        zoneId: _mask(MonetagConfig.effectiveVignetteZoneId),
         placement: 'vignette',
         format: 'vignette',
         probeUrl: MonetagConfig.vignetteScriptHost,
       ),
       _ZoneProbe(
         network: 'monetag',
-        zoneId: _mask(MonetagConfig.inPagePushZoneId),
+        zoneId: _mask(MonetagConfig.effectiveInPagePushZoneId),
         placement: 'inpage_push',
         format: 'inpage_push',
         probeUrl: MonetagConfig.inPagePushHost,
       ),
       _ZoneProbe(
         network: 'monetag',
-        zoneId: _mask(MonetagConfig.directLinkZoneId),
+        zoneId: _mask(MonetagConfig.effectiveDirectLinkZoneId),
         placement: 'direct',
         format: 'direct',
         probeUrl: MonetagConfig.directLinkUrl,

@@ -128,7 +128,6 @@ class StreamTokenService {
 
     final body = <String, dynamic>{
       'channelId': channelId,
-      'channel_id': channelId,
       if (originalUrl != null && originalUrl.isNotEmpty)
         'source_url': originalUrl,
       'installId': installId,

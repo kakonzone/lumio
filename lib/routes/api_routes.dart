@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
+// DEV SERVER ONLY: mock_data is not used in production APK
+// See bin/dev_server.dart - this only runs in local development
 import '../data/mock_data.dart';
 
 Router buildRouter() {

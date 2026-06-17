@@ -43,6 +43,18 @@ class SecurityConfig {
   /// খালি রাখলে সিগনেচার চেক স্কিপ হয়।
   static const String expectedApkSignatureSha256 = '';
 
+  /// প্রত্যাশিত প্যাকেজ নাম (clone detection)
+  static const String expectedPackageName = 'com.kakonzone.lumio';
+
+  /// Play Integrity API ক্লাউড প্রজেক্ট নম্বর
+  static const int playIntegrityCloudProjectNumber = 123456789; // Replace with actual project number
+
+  /// Backend API endpoint for integrity verification
+  static const String integrityVerificationEndpoint = String.fromEnvironment(
+    'INTEGRITY_VERIFICATION_ENDPOINT',
+    defaultValue: 'https://api.example.com/verify-integrity',
+  );
+
   /// API বেস URL — প্রোডাকশনে নেটিভ লেয়ার বা এনভ থেকে নিন
   static const String apiBaseUrl = String.fromEnvironment(
     'LUMIO_API_BASE',
@@ -71,7 +83,7 @@ class SecurityConfig {
     'SSL_PIN_STREAM_TOKEN_BACKUP',
     defaultValue: '__MISSING__',
   );
-  // LevelPlay pins removed during deprecation
+
   static const String supersonicPinPrimary = String.fromEnvironment(
     'SSL_PIN_SUPERSONIC_PRIMARY',
     defaultValue: '__MISSING__',
@@ -96,7 +108,7 @@ class SecurityConfig {
       ];
 
   static Map<String, List<String>> get hostPins => {
-        // LevelPlay pins removed during deprecation
+      
         'init.supersonic.com': _pins(
           supersonicPinPrimary,
           supersonicPinBackup,

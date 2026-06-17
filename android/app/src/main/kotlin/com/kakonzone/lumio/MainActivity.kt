@@ -17,6 +17,9 @@ import androidx.security.crypto.MasterKey
 import com.ryanheise.audioservice.AudioServiceActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.security.MessageDigest
 
 class MainActivity : AudioServiceActivity() {
@@ -190,6 +193,25 @@ class MainActivity : AudioServiceActivity() {
                         val pkg = BlockedAppDetector.firstInstalledPackage(this)
                         result.success(openBlockedAppUninstall(pkg))
                     }
+                    "initializePlayIntegrity" -> {
+                        PlayIntegrityBridge.initialize(this)
+                        result.success(null)
+                    }
+                    "requestIntegrityToken" -> {
+                        val cloudProjectNumber = call.argument<Number>("cloudProjectNumber")?.toLong() ?: 0L
+                        CoroutineScope(Dispatchers.Main).launch {
+                            try {
+                                val tokenResult = PlayIntegrityBridge.requestIntegrityToken(cloudProjectNumber)
+                                tokenResult.fold(
+                                    onSuccess = { result.success(it) },
+                                    onFailure = { result.error("INTEGRITY_ERROR", it.message, null) }
+                                )
+                            } catch (e: Exception) {
+                                result.error("INTEGRITY_ERROR", e.message, null)
+                            }
+                        }
+                    }
+                    "getPackageName" -> result.success(packageName)
                     else -> result.notImplemented()
                 }
             }

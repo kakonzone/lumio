@@ -1,94 +1,117 @@
 import 'package:flutter/foundation.dart';
 
-import '../core/ads/monetag_config.dart';
-
 /// Monetag (PropellerAds-family) zone IDs — **CI dart-define only** (no defaults in release).
 class MonetagConfig {
   MonetagConfig._();
 
   static const String _missing = '__MISSING__';
 
-  static const String onclickZoneId =
-      String.fromEnvironment('MONETAG_ONCLICK_ZONE');
-  static const String vignetteZoneId =
-      String.fromEnvironment('MONETAG_VIGNETTE_ZONE');
-  static const String pushZoneId = String.fromEnvironment('MONETAG_PUSH_ZONE');
-  static const String inPagePushZoneId =
-      String.fromEnvironment('MONETAG_INPAGE_ZONE');
-  static const String directLinkZoneId =
-      String.fromEnvironment('MONETAG_DIRECT_ZONE');
+  // Zone IDs - no defaults, must be set via --dart-define
+  static const String zonePopunder =
+      String.fromEnvironment('MONETAG_ZONE_POPUNDER', defaultValue: '');
+  static const String zoneVignette =
+      String.fromEnvironment('MONETAG_ZONE_VIGNETTE', defaultValue: '');
+  static const String zonePush =
+      String.fromEnvironment('MONETAG_ZONE_PUSH', defaultValue: '');
+  static const String zoneInPagePush =
+      String.fromEnvironment('MONETAG_ZONE_INPAGE_PUSH', defaultValue: '');
+  static const String zoneDirectLink =
+      String.fromEnvironment('MONETAG_ZONE_DIRECT_LINK', defaultValue: '');
 
-  /// rc1 aliases (preferred in CI) with legacy fallbacks.
-  static String get effectiveOnclickZoneId => MonetagZoneConfig.resolve(
-        MonetagZoneConfig.zoneNative,
-        onclickZoneId,
-      );
-  static String get effectiveVignetteZoneId => MonetagZoneConfig.resolve(
-        MonetagZoneConfig.zoneInterstitial,
-        vignetteZoneId,
-      );
-  static String get effectivePushZoneId => MonetagZoneConfig.resolve(
-        MonetagZoneConfig.zoneBanner,
-        pushZoneId,
-      );
-  static String get effectiveInPagePushZoneId => MonetagZoneConfig.resolve(
-        MonetagZoneConfig.zoneBanner,
-        inPagePushZoneId,
-      );
-  static String get effectiveDirectLinkZoneId => MonetagZoneConfig.resolve(
-        MonetagZoneConfig.zoneRewarded,
-        directLinkZoneId,
-      );
+  // Script URLs - no defaults, must be set via --dart-define
+  static const String scriptPopunder =
+      String.fromEnvironment('MONETAG_SCRIPT_POPUNDER', defaultValue: '');
+  static const String scriptVignette =
+      String.fromEnvironment('MONETAG_SCRIPT_VIGNETTE', defaultValue: '');
+  static const String scriptPush =
+      String.fromEnvironment('MONETAG_SCRIPT_PUSH', defaultValue: '');
+  static const String scriptInPagePush =
+      String.fromEnvironment('MONETAG_SCRIPT_INPAGE_PUSH', defaultValue: '');
+  static const String urlDirectLink =
+      String.fromEnvironment('MONETAG_URL_DIRECT_LINK', defaultValue: '');
 
-  static const String onclickScriptHost =
-      String.fromEnvironment('MONETAG_ONCLICK_HOST');
-  static const String vignetteScriptHost =
-      String.fromEnvironment('MONETAG_VIGNETTE_HOST');
-  static const String pushScriptUrl =
-      String.fromEnvironment('MONETAG_PUSH_SCRIPT');
-  static const String inPagePushHost =
-      String.fromEnvironment('MONETAG_INPAGE_HOST');
-  static const String directLinkUrl =
-      String.fromEnvironment('MONETAG_DIRECT_LINK');
+  // Legacy zone IDs (for backward compatibility)
+  static const String zoneInterstitial =
+      String.fromEnvironment('MONETAG_ZONE_INTERSTITIAL', defaultValue: '');
+  static const String zoneRewarded =
+      String.fromEnvironment('MONETAG_ZONE_REWARDED', defaultValue: '');
+  static const String zoneBanner =
+      String.fromEnvironment('MONETAG_ZONE_BANNER', defaultValue: '');
+  static const String zoneNative =
+      String.fromEnvironment('MONETAG_ZONE_NATIVE', defaultValue: '');
+
+  /// Release CI override — applies to all placements when set (verify via APK strings).
+  static const String unifiedZoneId =
+      String.fromEnvironment('MONETAG_ZONE_ID', defaultValue: '');
 
   static bool _isSet(String v) => v.trim().isNotEmpty && v.trim() != _missing;
 
-  static bool get isConfigured =>
-      _isSet(effectiveOnclickZoneId) &&
-      _isSet(effectiveVignetteZoneId) &&
-      _isSet(effectivePushZoneId) &&
-      _isSet(effectiveInPagePushZoneId) &&
-      _isSet(effectiveDirectLinkZoneId) &&
-      _isSet(directLinkUrl);
+  static String resolve(String rc1Zone, String legacyZone) {
+    if (_isSet(unifiedZoneId)) return unifiedZoneId.trim();
+    if (_isSet(rc1Zone)) return rc1Zone.trim();
+    if (_isSet(legacyZone)) return legacyZone.trim();
+    return '';
+  }
+
+  // Effective zone IDs (rc1 aliases with legacy fallbacks)
+  static String get effectiveOnclickZoneId =>
+      resolve(zoneNative, String.fromEnvironment('MONETAG_ONCLICK_ZONE'));
+  static String get effectiveVignetteZoneId =>
+      resolve(zoneVignette, String.fromEnvironment('MONETAG_VIGNETTE_ZONE'));
+  static String get effectivePushZoneId =>
+      resolve(zonePush, String.fromEnvironment('MONETAG_PUSH_ZONE'));
+  static String get effectiveInPagePushZoneId =>
+      resolve(zoneInPagePush, String.fromEnvironment('MONETAG_INPAGE_ZONE'));
+  static String get effectiveDirectLinkZoneId =>
+      resolve(zoneDirectLink, String.fromEnvironment('MONETAG_DIRECT_ZONE'));
+
+  // Legacy script hosts/URLs
+  static const String onclickScriptHost =
+      String.fromEnvironment('MONETAG_ONCLICK_HOST', defaultValue: '');
+  static const String vignetteScriptHost =
+      String.fromEnvironment('MONETAG_VIGNETTE_HOST', defaultValue: '');
+  static const String pushScriptUrl =
+      String.fromEnvironment('MONETAG_PUSH_SCRIPT', defaultValue: '');
+  static const String inPagePushHost =
+      String.fromEnvironment('MONETAG_INPAGE_HOST', defaultValue: '');
+  static const String directLinkUrl =
+      String.fromEnvironment('MONETAG_DIRECT_LINK', defaultValue: '');
+
+  static bool get isConfigured => false; // Monetag disabled — using Adsterra direct links
 
   /// True when any Monetag define was provided (partial CI must not ship).
   static bool get anyDefineProvided => [
-        onclickZoneId,
-        vignetteZoneId,
-        pushZoneId,
-        inPagePushZoneId,
-        directLinkZoneId,
-        directLinkUrl,
+        zonePopunder,
+        zoneVignette,
+        zonePush,
+        zoneInPagePush,
+        zoneDirectLink,
+        urlDirectLink,
+        scriptPopunder,
+        scriptVignette,
+        scriptPush,
+        scriptInPagePush,
         onclickScriptHost,
         vignetteScriptHost,
         pushScriptUrl,
         inPagePushHost,
+        directLinkUrl,
       ].any(_isSet);
 
   /// Release: if any Monetag key is set, all must be set (no hardcoded fallbacks).
   static void assertReleaseConfiguration() {
     if (!kReleaseMode || !anyDefineProvided) return;
     final required = <String, String>{
-      'MONETAG_ONCLICK_ZONE': onclickZoneId,
-      'MONETAG_VIGNETTE_ZONE': vignetteZoneId,
-      'MONETAG_PUSH_ZONE': pushZoneId,
-      'MONETAG_INPAGE_ZONE': inPagePushZoneId,
-      'MONETAG_DIRECT_ZONE': directLinkZoneId,
-      'MONETAG_DIRECT_LINK': directLinkUrl,
-      'MONETAG_ONCLICK_HOST': onclickScriptHost,
-      'MONETAG_VIGNETTE_HOST': vignetteScriptHost,
-      'MONETAG_PUSH_SCRIPT': pushScriptUrl,
-      'MONETAG_INPAGE_HOST': inPagePushHost,
+      'MONETAG_ZONE_POPUNDER': zonePopunder,
+      'MONETAG_ZONE_VIGNETTE': zoneVignette,
+      'MONETAG_ZONE_PUSH': zonePush,
+      'MONETAG_ZONE_INPAGE_PUSH': zoneInPagePush,
+      'MONETAG_ZONE_DIRECT_LINK': zoneDirectLink,
+      'MONETAG_SCRIPT_POPUNDER': scriptPopunder,
+      'MONETAG_SCRIPT_VIGNETTE': scriptVignette,
+      'MONETAG_SCRIPT_PUSH': scriptPush,
+      'MONETAG_SCRIPT_INPAGE_PUSH': scriptInPagePush,
+      'MONETAG_URL_DIRECT_LINK': urlDirectLink,
     };
     final missing = required.entries
         .where((e) => !_isSet(e.value))
@@ -97,7 +120,7 @@ class MonetagConfig {
     if (missing.isNotEmpty) {
       throw StateError(
         'Release requires Monetag dart-defines: ${missing.join(', ')}. '
-        'See NEW_DART_DEFINES.env',
+        'See secrets.json.template',
       );
     }
   }

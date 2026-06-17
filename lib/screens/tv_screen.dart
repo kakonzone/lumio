@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lumio_tv/models/model.dart';
 import 'package:lumio_tv/provider/app_config_provider.dart';
-import 'package:lumio_tv/provider/app_provider.dart';
+import 'package:lumio_tv/provider/channel_catalog_provider.dart';
+import 'package:lumio_tv/provider/live_events_provider.dart';
+import 'package:lumio_tv/provider/live_score_provider.dart';
 import 'package:lumio_tv/theme/app_theme.dart';
 import 'package:lumio_tv/widgets/remote_config_widgets.dart';
 import 'package:lumio_tv/models/live_event_match.dart';
@@ -18,9 +20,11 @@ import 'package:lumio_tv/ads/adsterra/adsterra_banner.dart';
 import 'package:lumio_tv/ads/adsterra/adsterra_native.dart';
 import 'package:lumio_tv/ads/utils/lazy_ad_viewport.dart';
 import 'package:lumio_tv/ads/widgets/floating_native_card.dart';
+import 'package:lumio_tv/ads/widgets/collapsible_ad_slot.dart';
 import 'package:lumio_tv/widgets/list_skeletons.dart';
 import 'package:lumio_tv/widgets/home_promo_carousel.dart';
 import 'package:lumio_tv/widgets/home_category_grid.dart';
+import 'package:lumio_tv/widgets/score_state_widget.dart';
 import 'package:lumio_tv/core/performance_tuning.dart';
 import 'package:lumio_tv/theme/tokens/colors.dart';
 
@@ -42,7 +46,14 @@ class TvScreenState extends State<TvScreen>
     super.initState();
     _tabs = TabController(length: 4, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AppProvider>().ensureHomeContent();
+      final catalog = context.read<ChannelCatalogProvider>();
+      final events = context.read<LiveEventsProvider>();
+      if (catalog.channels.isEmpty) {
+        catalog.loadChannels();
+      }
+      if (!events.hasFeaturedLiveEventsData) {
+        events.loadFeaturedLiveEvents();
+      }
     });
   }
 
@@ -281,9 +292,9 @@ class _TvSearchSectionState extends State<_TvSearchSection> {
   @override
   Widget build(BuildContext context) {
     final query = _ctrl.text.trim();
-    final prov = context.watch<AppProvider>();
+    final catalog = context.watch<ChannelCatalogProvider>();
     final results =
-        query.isEmpty ? <ChannelModel>[] : prov.search(query).take(8).toList();
+        query.isEmpty ? <ChannelModel>[] : catalog.search(query).take(8).toList();
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -358,7 +369,7 @@ class _TvSearchSectionState extends State<_TvSearchSection> {
                     subtitle: ch.category,
                     category: ch.category,
                     channel: ch,
-                    browseCategory: prov.categoryForRelated(ch),
+                    browseCategory: catalog.categoryForRelated(ch),
                   ),
                   child: Container(
                     padding:
@@ -424,23 +435,27 @@ class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final prov = context.watch<AppProvider>();
-    final liveEvents = prov.sortedLiveEvents;
-    final featuredEvents = prov.featuredLiveEvents;
+    final events = context.watch<LiveEventsProvider>();
+    final catalog = context.watch<ChannelCatalogProvider>();
+    final liveEvents = events.sortedLiveEvents;
+    final featuredEvents = events.featuredLiveEvents;
     final showFeaturedSection =
-        prov.featuredLiveEventsLoading || featuredEvents.isNotEmpty;
+        events.featuredLiveEventsLoading || featuredEvents.isNotEmpty;
     final showLiveEventsSection =
-        prov.liveEventsLoading || liveEvents.isNotEmpty;
-    final cats = prov.homeCategoryTiles.isNotEmpty
-        ? prov.homeCategoryTiles
-        : AppProvider.homeCategories;
+        events.liveEventsLoading || liveEvents.isNotEmpty;
+    final cats = catalog.homeCategoryTiles.isNotEmpty
+        ? catalog.homeCategoryTiles
+        : ChannelCatalogProvider.homeCategories;
 
     return ValueListenableBuilder<String?>(
       valueListenable: widget.highlightCategory,
       builder: (context, highlightCategory, _) {
         return RefreshIndicator(
           color: AppTokens.accent,
-          onRefresh: prov.refresh,
+          onRefresh: () async {
+            await catalog.loadChannels(forceRefresh: true);
+            await events.loadFeaturedLiveEvents(force: true);
+          },
           child: Builder(
             builder: (scrollContext) => CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(
@@ -454,7 +469,7 @@ class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
                     onLiveTabTap: widget.onLiveTabTap,
                   ),
                 ),
-                if (prov.catalogFromStaleCache)
+                if (catalog.catalogFromStaleCache)
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
@@ -476,7 +491,7 @@ class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  prov.channelsError ??
+                                  catalog.channelsError ??
                                       'Using cached channels. Pull to refresh.',
                                   style: TextStyle(
                                     fontSize: 11,
@@ -492,7 +507,7 @@ class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
                       ),
                     ),
                   ),
-                if (prov.channelsLoading && prov.channels.isEmpty)
+                if (catalog.channelsLoading && catalog.channels.isEmpty)
                   const SliverToBoxAdapter(
                       child: ChannelListSkeleton(count: 5)),
                 if (AdManager.instance.adsEnabled)
@@ -521,7 +536,7 @@ class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                   sliver: SliverToBoxAdapter(
                     child: HomeCategoryGrid(
-                      prov: prov,
+                      prov: catalog,
                       categories: cats,
                       highlightCategory: highlightCategory,
                       onCategoryTap: widget.onCategoryTap,
@@ -532,8 +547,8 @@ class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
                   const SliverToBoxAdapter(child: SizedBox(height: 16)),
                   SliverToBoxAdapter(
                     child: _SectionHeader(
-                      title: prov.featuredLiveEventsSectionTitle,
-                      trailing: prov.featuredLiveEventsLoading
+                      title: events.featuredLiveEventsSectionTitle,
+                      trailing: events.featuredLiveEventsLoading
                           ? const SizedBox(
                               width: 16,
                               height: 16,
@@ -553,21 +568,21 @@ class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (prov.featuredLiveEventsSectionSubtitle.isNotEmpty)
+                          if (events.featuredLiveEventsSectionSubtitle.isNotEmpty)
                             Text(
-                              prov.featuredLiveEventsSectionSubtitle,
+                              events.featuredLiveEventsSectionSubtitle,
                               style:
                                   TextStyle(fontSize: 11, color: context.txt3),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
                           Text(
-                            prov.featuredLiveEventsStatusLine,
+                            events.featuredLiveEventsStatusLine,
                             style: TextStyle(
                               fontSize: 10,
-                              color: prov.featuredLiveEventsFromAppwrite
+                              color: events.featuredLiveEventsFromAppwrite
                                   ? AppTokens.accent.withValues(alpha: 0.9)
-                                  : (prov.featuredLiveEventsError != null
+                                  : (events.featuredLiveEventsError != null
                                       ? Colors.orange.shade300
                                       : context.txt3),
                             ),
@@ -578,8 +593,8 @@ class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
                       ),
                     ),
                   ),
-                  if (prov.featuredLiveEventsLoading &&
-                      !prov.hasFeaturedLiveEventsData &&
+                  if (events.featuredLiveEventsLoading &&
+                      !events.hasFeaturedLiveEventsData &&
                       featuredEvents.isEmpty)
                     SliverToBoxAdapter(
                       child: Padding(
@@ -611,7 +626,7 @@ class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
                   SliverToBoxAdapter(
                     child: _SectionHeader(
                       title: 'All Live Events',
-                      trailing: prov.liveEventsLoading
+                      trailing: events.liveEventsLoading
                           ? const SizedBox(
                               width: 16,
                               height: 16,
@@ -634,8 +649,8 @@ class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
                       ),
                     ),
                   ),
-                  if (prov.liveEventsLoading &&
-                      !prov.hasLiveEventsData &&
+                  if (events.liveEventsLoading &&
+                      !events.hasLiveEventsData &&
                       liveEvents.isEmpty)
                     SliverToBoxAdapter(
                       child: Padding(
@@ -664,14 +679,8 @@ class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
                 ],
                 if (AdManager.instance.adsEnabled)
                   SliverToBoxAdapter(
-                    child: LazyAdViewport(
-                      placeholderHeight: 98,
-                      builder: () => const Padding(
-                        padding: EdgeInsets.fromLTRB(16, 8, 16, 10),
-                        child: AdsterraBanner728(
-                          placement: 'home_bottom_banner',
-                        ),
-                      ),
+                    child: CollapsibleAdSlot(
+                      placement: 'home_bottom_banner',
                     ),
                   ),
                 const SliverToBoxAdapter(child: SizedBox(height: 72)),
@@ -701,9 +710,9 @@ class _LiveNowTabState extends State<_LiveNowTab>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final prov = context.watch<AppProvider>();
-    final events = prov.sortedLiveEvents;
-    final empty = events.isEmpty;
+    final events = context.watch<LiveEventsProvider>();
+    final liveEvents = events.sortedLiveEvents;
+    final empty = liveEvents.isEmpty;
 
     return Builder(
       builder: (context) => CustomScrollView(
@@ -717,7 +726,7 @@ class _LiveNowTabState extends State<_LiveNowTab>
               padding: const EdgeInsets.only(top: 14),
               child: _SectionHeader(
                 title: 'All Live Events',
-                trailing: prov.liveEventsLoading
+                trailing: events.liveEventsLoading
                     ? const SizedBox(
                         width: 16,
                         height: 16,
@@ -726,11 +735,11 @@ class _LiveNowTabState extends State<_LiveNowTab>
                           color: AppTokens.accent,
                         ),
                       )
-                    : _LiveBadge(label: '${events.length} events'),
+                    : _LiveBadge(label: '${liveEvents.length} events'),
               ),
             ),
           ),
-          if (prov.liveEventsLoading && !prov.hasLiveEventsData && empty)
+          if (events.liveEventsLoading && !events.hasLiveEventsData && empty)
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
@@ -756,9 +765,9 @@ class _LiveNowTabState extends State<_LiveNowTab>
                 (context, index) => Padding(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: _LiveEventCard(event: events[index]),
+                  child: _LiveEventCard(event: liveEvents[index]),
                 ),
-                childCount: events.length,
+                childCount: liveEvents.length,
               ),
             ),
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
@@ -785,8 +794,8 @@ class _TodayTabState extends State<_TodayTab>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final prov = context.watch<AppProvider>();
-    final matches = prov.todayMatches;
+    final scores = context.watch<LiveScoreProvider>();
+    final matches = scores.todayMatches;
 
     return Builder(
       builder: (context) => CustomScrollView(
@@ -830,6 +839,13 @@ class _TodayTabState extends State<_TodayTab>
               ),
             ),
           ),
+          if (matches.isEmpty && !scores.matchesLoading)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: const ScoreStateWidget(),
+              ),
+            ),
           SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, index) {
@@ -877,8 +893,8 @@ class _UpcomingTabState extends State<_UpcomingTab>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final prov = context.watch<AppProvider>();
-    final matches = prov.upcomingMatches;
+    final scores = context.watch<LiveScoreProvider>();
+    final matches = scores.upcomingMatches;
 
     return Builder(
       builder: (context) => CustomScrollView(
@@ -1759,11 +1775,11 @@ class _LiveEventChannelsDialogState extends State<_LiveEventChannelsDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final prov = context.watch<AppProvider>();
+    final catalog = context.watch<ChannelCatalogProvider>();
     final m = widget.event.match;
     final channels = widget.event.relatedChannels;
     final browseCat = _browseCategoryForMatch(m);
-    final recommended = prov
+    final recommended = catalog
         .recommendedChannels(category: browseCat)
         .where((c) => !channels.any((x) => x.id == c.id))
         .take(8)
@@ -1873,7 +1889,7 @@ class _LiveEventChannelsDialogState extends State<_LiveEventChannelsDialog> {
                     ...linkRows.map((row) {
                       final ch = row.ch;
                       final link = row.link;
-                      final urlLive = prov.isStreamUrlLive(link.url);
+                      final urlLive = catalog.isStreamUrlLive(link.url);
                       final multi = ch.hasMultipleUserStreams;
 
                       return Material(
@@ -1953,7 +1969,7 @@ class _LiveEventChannelsDialogState extends State<_LiveEventChannelsDialog> {
                       ),
                       ...recommended.expand((ch) {
                         return ch.userStreamLinks.map((link) {
-                          final urlLive = prov.isStreamUrlLive(link.url);
+                          final urlLive = catalog.isStreamUrlLive(link.url);
                           return ListTile(
                             dense: true,
                             contentPadding:

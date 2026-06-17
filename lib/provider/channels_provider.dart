@@ -1,9 +1,10 @@
 import 'package:flutter/foundation.dart';
 
 import '../models/model.dart';
-import '../services/appwrite_service.dart';
+import '../services/catalog_service.dart';
 
-/// Appwrite catalog channels (same source as home / sports / live).
+/// Channel catalog (same source as home / sports / live via CatalogService).
+/// Routes through CatalogService which uses RemoteChannelsService as primary source.
 class ChannelsProvider extends ChangeNotifier {
   List<ChannelModel> _remote = const [];
   bool _loading = false;
@@ -15,9 +16,8 @@ class ChannelsProvider extends ChangeNotifier {
     _loading = true;
     notifyListeners();
     try {
-      _remote = await AppwriteService.instance.fetchChannels(
-        forceRefresh: force,
-      );
+      final result = await CatalogService.instance.loadCatalog(forceRefresh: force);
+      _remote = result.channels;
     } finally {
       _loading = false;
       notifyListeners();

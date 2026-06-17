@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import '../core/logging/safe_logger.dart';
 
 /// Controls banner ad refresh intervals with default value (Remote Config can be added later).
 class BannerRefreshController {
@@ -18,10 +19,7 @@ class BannerRefreshController {
   Future<void> initialize() async {
     // Future: Read from Firebase Remote Config key 'banner_refresh_interval_seconds'
     // For now, use default 60 seconds
-    if (kDebugMode) {
-      print(
-          '[BannerRefresh] interval=$_defaultRefreshSeconds seconds (default)');
-    }
+    SafeLogger.debug('ads', '[BannerRefresh] interval=$_defaultRefreshSeconds seconds (default)');
   }
 
   /// Start periodic refresh.
@@ -48,17 +46,13 @@ class BannerRefreshController {
   /// Pause refresh when app is in background.
   void pause() {
     _isPaused = true;
-    if (kDebugMode) {
-      print('[BannerRefresh] paused');
-    }
+    SafeLogger.debug('ads', '[BannerRefresh] paused');
   }
 
   /// Resume refresh when app returns to foreground.
   void resume(void Function() onRefresh) {
     _isPaused = false;
     start(onRefresh);
-    if (kDebugMode) {
-      print('[BannerRefresh] resumed');
-    }
+    SafeLogger.debug('ads', '[BannerRefresh] resumed');
   }
 }

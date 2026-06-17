@@ -31,16 +31,16 @@ extension _PlayerOverlay on _PlayerScreenState {
         : (_currentUrl ?? 'player');
     AdTriggerManager.instance.onPlayerChannelStarted(channelKey);
     if (!mounted) return;
-    if (_currentUrl != null && _currentUrl!.isNotEmpty) {
-      await _prepareLinksAndPlay();
-    }
-    if (!mounted) return;
     if (AdManager.instance.adsEnabled) {
       await AdManager.instance.showPlacementInterstitial(
         context: context,
         placement: InterstitialPlacement.preroll,
         channelKey: channelKey,
       );
+    }
+    if (!mounted) return;
+    if (_currentUrl != null && _currentUrl!.isNotEmpty) {
+      await _prepareLinksAndPlay();
     }
     if (!mounted) return;
     _startMidRollTimer();
@@ -55,17 +55,25 @@ extension _PlayerOverlay on _PlayerScreenState {
     await AdManager.instance.showMidRollInterstitial(context: context);
     if (!mounted) return;
     if (_initialized && !_hasError) {
-      unawaited(_player.play());
+      try {
+        await _player.play();
+      } catch (e) {
+        debugPrint('[MidRoll] resume play failed: $e');
+      }
     }
   }
 
-  void _dismissPlayerVideoAd() {
+  Future<void> _dismissPlayerVideoAd() async {
     if (!mounted) return;
     setState(() => _showVideoAdOverlay = false);
     _videoAdCompleter?.complete();
     _videoAdCompleter = null;
     if (_initialized && !_hasError) {
-      unawaited(_player.play());
+      try {
+        await _player.play();
+      } catch (e) {
+        debugPrint('[VideoAdDismiss] resume play failed: $e');
+      }
     }
   }
 

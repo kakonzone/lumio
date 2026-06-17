@@ -6,70 +6,7 @@ import '../models/app_config_model.dart';
 import '../screens/splash_screen.dart';
 import '../theme/app_theme.dart';
 import '../theme/tokens/colors.dart' as tokens;
-
-/// Full-screen block when [AppConfigModel.killSwitch] is active.
-class KillSwitchScreen extends StatelessWidget {
-  const KillSwitchScreen({
-    super.key,
-    required this.config,
-  });
-
-  final AppConfigModel config;
-
-  @override
-  Widget build(BuildContext context) {
-    final message = (config.killMessage?.trim().isNotEmpty ?? false)
-        ? config.killMessage!.trim()
-        : 'This application has been disabled by the administrator.';
-
-    return PopScope(
-      canPop: false,
-      child: Scaffold(
-        backgroundColor: const Color(0xFF0C0C0E),
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset(
-                  SplashScreen.logoAsset,
-                  width: 160,
-                  fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => const Icon(
-                    Icons.block,
-                    size: 72,
-                    color: tokens.AppTokens.accent,
-                  ),
-                ),
-                const SizedBox(height: 32),
-                Text(
-                  message,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'This app is currently unavailable.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.6),
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
+import '../l10n/app_localizations.dart';
 
 /// Full-screen maintenance block.
 class MaintenanceScreen extends StatelessWidget {
@@ -80,11 +17,41 @@ class MaintenanceScreen extends StatelessWidget {
 
   final AppConfigModel config;
 
+  String _getLocalizedMaintenanceMessage(BuildContext context) {
+    final locale = Localizations.localeOf(context).languageCode;
+    
+    // Try to get localized message from the maintenance map
+    if (config.maintenanceMessages != null && config.maintenanceMessages!.isNotEmpty) {
+      final localizedMessage = config.maintenanceMessages![locale];
+      if (localizedMessage.trim().isNotEmpty) {
+        return localizedMessage.trim();
+      }
+      // Fallback to English if locale not found
+      final englishMessage = config.maintenanceMessages!['en'];
+      if (englishMessage.trim().isNotEmpty) {
+        return englishMessage.trim();
+      }
+    }
+    
+    // Fallback to single maintenance message field
+    if (config.maintenanceMessage?.trim().isNotEmpty ?? false) {
+      return config.maintenanceMessage!.trim();
+    }
+    
+    // Fallback to localized default message
+    final l10n = AppLocalizations.of(context);
+    if (l10n != null) {
+      return l10n.maintenanceDefault;
+    }
+    
+    // Final fallback
+    return 'We are performing scheduled maintenance.';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final message = (config.maintenanceMessage?.trim().isNotEmpty ?? false)
-        ? config.maintenanceMessage!.trim()
-        : 'We are performing scheduled maintenance.';
+    final message = _getLocalizedMaintenanceMessage(context);
+    final l10n = AppLocalizations.of(context);
 
     return PopScope(
       canPop: false,
@@ -114,7 +81,7 @@ class MaintenanceScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  "Please wait, we'll be back soon.",
+                  l10n?.maintenanceBackSoon ?? "Please wait, we'll be back soon.",
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.6),
@@ -296,19 +263,21 @@ class _TickerWidgetState extends State<TickerWidget>
           color: tokens.AppTokens.accent.withValues(alpha: 0.12),
         ),
         child: ClipRect(
-          child: AnimatedBuilder(
-            animation: _controller,
-            builder: (context, child) {
-              return FractionalTranslation(
-                translation: Offset(-_controller.value * 1.0, 0),
-                child: child,
-              );
-            },
-            child: Row(
-              children: [
-                _tickerLabel(widget.text.trim()),
-                _tickerLabel(widget.text.trim()),
-              ],
+          child: RepaintBoundary(
+            child: AnimatedBuilder(
+              animation: _controller,
+              builder: (context, child) {
+                return FractionalTranslation(
+                  translation: Offset(-_controller.value * 1.0, 0),
+                  child: child,
+                );
+              },
+              child: Row(
+                children: [
+                  _tickerLabel(widget.text.trim()),
+                  _tickerLabel(widget.text.trim()),
+                ],
+              ),
             ),
           ),
         ),

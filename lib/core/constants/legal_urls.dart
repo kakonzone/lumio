@@ -2,23 +2,10 @@
 class LegalUrls {
   LegalUrls._();
 
-  static const String kPrivacyPolicyUrl = String.fromEnvironment(
-    'PRIVACY_POLICY_URL',
-    defaultValue: 'https://kakonzone.github.io/lumio/privacy.html',
-  );
-
-  static const String kTermsOfServiceUrl = String.fromEnvironment(
-    'TERMS_OF_SERVICE_URL',
-    defaultValue: 'https://kakonzone.github.io/lumio/terms.html',
-  );
-
-  static const String kContactEmail = String.fromEnvironment(
-    'CONTACT_EMAIL',
-    defaultValue: 'legal@lumio.app',
-  );
-
-  static const String kDataDeletionUrl = String.fromEnvironment(
-    'DATA_DELETION_URL',
-    defaultValue: 'https://kakonzone.github.io/lumio/data-deletion.html',
-  );
+  static const String baseUrl = 'https://lumio.github.io';
+  static const String privacyPolicy = 'https://lumio.github.io/privacy-policy';
+  static const String dataDeleteRequest = 'https://lumio.github.io/data-deletion';
+  static const String supportEmail = 'lumioofficial@gmail.com';
+  static const String supportEmailUri = 'mailto:lumioofficial@gmail.com';
+  static const String termsOfService = 'https://lumio.github.io/terms';
 }

@@ -1,8 +1,10 @@
 // lib/services/cache_service.dart
 
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/model.dart';
+import '../core/logging/safe_logger.dart';
 
 class CacheService {
   CacheService._();
@@ -205,9 +207,7 @@ class CacheService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final allKeys = prefs.getKeys().where((k) => k.startsWith(_pfx)).toList();
-      for (final k in allKeys) {
-        await prefs.remove(k);
-      }
+      await Future.wait(allKeys.map((k) => prefs.remove(k)));
       _log('All cache cleared (${allKeys.length} keys removed)');
     } catch (e) {
       _log('clearAll failed: $e');
@@ -263,11 +263,7 @@ class CacheService {
   }
 
   static void _log(String message) {
-    assert(() {
-      // ignore: avoid_print
-      print('[CacheService] $message');
-      return true;
-    }());
+    SafeLogger.debug('cache', '[CacheService] $message');
   }
 }
 

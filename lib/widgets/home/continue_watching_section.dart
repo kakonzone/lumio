@@ -1,9 +1,7 @@
 // lib/widgets/home/continue_watching_section.dart
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:lumio_tv/theme/tokens/colors.dart' as tokens;
-import 'package:lumio_tv/theme/tokens/spacing.dart' as tokens;
-import 'package:lumio_tv/theme/tokens/typography.dart' as tokens;
+import 'package:lumio_tv/theme/tokens.dart' as tokens;
 import 'package:lumio_tv/utils/haptic_helpers.dart' as haptics;
 
 /// Continue watching section for home screen.
@@ -50,7 +48,7 @@ class ContinueWatchingSection extends StatelessWidget {
               if (onSeeAll != null)
                 GestureDetector(
                   onTap: () {
-                    haptics.buttonPress();
+                    haptics.Haptics.buttonPress();
                     onSeeAll!();
                   },
                   child: Text(
@@ -83,7 +81,7 @@ class ContinueWatchingSection extends StatelessWidget {
                   item: item,
                   onTap: () {
                     if (onItemTap != null) {
-                      haptics.buttonPress();
+                      haptics.Haptics.buttonPress();
                       onItemTap!(item);
                     }
                   },

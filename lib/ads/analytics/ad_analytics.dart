@@ -1,4 +1,5 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../config/ad_config.dart';
@@ -412,10 +413,12 @@ class AdAnalytics {
       _event(name, params);
 
   Future<void> _event(String name, [Map<String, Object>? params]) async {
-    assert(
-      !isReservedEventName(name),
-      'Firebase reserved event name: $name',
-    );
+    if (kDebugMode) {
+      assert(
+        !isReservedEventName(name),
+        'Firebase reserved event name: $name',
+      );
+    }
     if (!_ready || _analytics == null) {
       adLog('[AdAnalytics] $name $params');
       return;

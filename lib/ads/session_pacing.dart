@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../core/logging/safe_logger.dart';
 
 /// Session pacing controls — prevents ad overload in first minute.
 class SessionPacing {
@@ -10,9 +11,7 @@ class SessionPacing {
   /// Call this when app launches (e.g., in main() before runApp).
   void initialize() {
     _sessionStartTime = DateTime.now();
-    if (kDebugMode) {
-      print('[SessionPacing] initialized');
-    }
+    SafeLogger.debug('ads', '[SessionPacing] initialized');
   }
 
   /// Returns true during first 60 seconds after app open.

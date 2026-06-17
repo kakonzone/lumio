@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../provider/app_provider.dart';
+import '../provider/favorites_provider.dart';
+import '../provider/channel_catalog_provider.dart';
 import '../utils/channel_player.dart';
 import '../ads/ad_manager.dart';
 import '../ads/adsterra/adsterra_banner.dart';
@@ -19,8 +20,9 @@ class FavoritesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final prov = context.watch<AppProvider>();
-    final favorites = prov.favoriteChannels;
+    final favProv = context.watch<FavoritesProvider>();
+    final catalogProv = context.watch<ChannelCatalogProvider>();
+    final favorites = favProv.getFavoriteChannels(catalogProv.channels);
 
     if (favorites.isEmpty) {
       return ShellPageScaffold(
@@ -86,7 +88,7 @@ class FavoritesScreen extends StatelessWidget {
                 channel: ch,
               ),
               onLongPress: () async {
-                await prov.removeFavorite(ch.id);
+                await favProv.removeFavorite(ch.id);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -102,7 +104,7 @@ class FavoritesScreen extends StatelessWidget {
                   color: AppTokens.accent,
                   size: 20,
                 ),
-                onPressed: () => prov.removeFavorite(ch.id),
+                onPressed: () => favProv.removeFavorite(ch.id),
               ),
             );
           },

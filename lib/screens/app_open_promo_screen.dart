@@ -231,7 +231,7 @@ class _HousePromo extends StatelessWidget {
         ),
       ),
       child: Text(
-        'Configure ADSTERRA_* or LEVELPLAY keys in secrets.json',
+        'Configure ADSTERRA_* or UNITY_* keys in secrets.json',
         textAlign: TextAlign.center,
         style: GF.body(fontSize: 13, color: Colors.white70),
       ),

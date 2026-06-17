@@ -2,9 +2,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:lumio_tv/theme/tokens/colors.dart' as tokens;
-import 'package:lumio_tv/theme/tokens/spacing.dart' as tokens;
-import 'package:lumio_tv/theme/tokens/typography.dart' as tokens;
+import 'package:lumio_tv/theme/tokens.dart' as tokens;
 import 'package:lumio_tv/utils/haptic_helpers.dart' as haptics;
 
 /// Gesture overlay for video player with advanced touch controls.
@@ -46,8 +44,8 @@ class _GestureOverlayState extends State<GestureOverlay>
     with SingleTickerProviderStateMixin {
   double _brightness = 0.5;
   double _volume = 0.5;
-  bool _showBrightnessIndicator = false;
-  bool _showVolumeIndicator = false;
+  bool _brightnessIndicatorVisible = false;
+  bool _volumeIndicatorVisible = false;
   Timer? _indicatorTimer;
   DateTime? _lastDoubleTapTime;
   int _doubleTapCount = 0;
@@ -60,13 +58,13 @@ class _GestureOverlayState extends State<GestureOverlay>
 
   void _showBrightnessIndicator() {
     setState(() {
-      _showBrightnessIndicator = true;
+      _brightnessIndicatorVisible = true;
     });
     _indicatorTimer?.cancel();
     _indicatorTimer = Timer(const Duration(milliseconds: 1500), () {
       if (mounted) {
         setState(() {
-          _showBrightnessIndicator = false;
+          _brightnessIndicatorVisible = false;
         });
       }
     });
@@ -74,13 +72,13 @@ class _GestureOverlayState extends State<GestureOverlay>
 
   void _showVolumeIndicator() {
     setState(() {
-      _showVolumeIndicator = true;
+      _volumeIndicatorVisible = true;
     });
     _indicatorTimer?.cancel();
     _indicatorTimer = Timer(const Duration(milliseconds: 1500), () {
       if (mounted) {
         setState(() {
-          _showVolumeIndicator = false;
+          _volumeIndicatorVisible = false;
         });
       }
     });
@@ -120,17 +118,17 @@ class _GestureOverlayState extends State<GestureOverlay>
       // Double tap detected
       if (xPosNormalized < 0.33) {
         // Left third - rewind
-        haptics.lightImpact();
+        HapticFeedback.lightImpact();
         widget.onRewind?.call();
         _showRippleAnimation(details.globalPosition, Colors.blue);
       } else if (xPosNormalized > 0.66) {
         // Right third - forward
-        haptics.lightImpact();
+        HapticFeedback.lightImpact();
         widget.onForward?.call();
         _showRippleAnimation(details.globalPosition, Colors.green);
       } else {
         // Center - play/pause
-        haptics.mediumImpact();
+        HapticFeedback.mediumImpact();
         widget.onPlayPause?.call();
         _showRippleAnimation(details.globalPosition, tokens.AppTokens.accent);
       }
@@ -153,8 +151,8 @@ class _GestureOverlayState extends State<GestureOverlay>
           _GestureIndicators(
             brightness: _brightness,
             volume: _volume,
-            showBrightness: _showBrightnessIndicator,
-            showVolume: _showVolumeIndicator,
+            showBrightness: _brightnessIndicatorVisible,
+            showVolume: _volumeIndicatorVisible,
           ),
         GestureDetector(
           onVerticalDragStart: (details) {
@@ -182,10 +180,8 @@ class _GestureOverlayState extends State<GestureOverlay>
             }
           },
           onHorizontalDragStart: (details) {
-            // Horizontal drag for scrubbing
-            widget.onSeek?.call(Duration(
-              milliseconds: (details.delta.dx * 10).round(),
-            ));
+            // Horizontal drag for scrubbing - start position
+            // No delta available on DragStartDetails
           },
           onHorizontalDragUpdate: (details) {
             // Continue scrubbing

@@ -11,6 +11,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android") version "2.1.0"
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.android.play.integrity") version "1.1.0"
 }
 
 if (file("google-services.json").exists()) {
@@ -175,7 +176,13 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = if (releaseSigningReady()) {
+                signingConfigs.getByName("release")
+            } else if (System.getenv("LUMIO_LOCAL_SIZE_CHECK") == "true") {
+                signingConfigs.getByName("debug")
+            } else {
+                throw GradleException(releaseBuildAbortMessage)
+            }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -208,6 +215,32 @@ android {
     // Enable R8 full mode for better optimization
     buildFeatures {
         buildConfig = true
+    }
+
+    // R8 full mode configuration
+    buildTypes {
+        release {
+            signingConfig = if (releaseSigningReady()) {
+                signingConfigs.getByName("release")
+            } else if (System.getenv("LUMIO_LOCAL_SIZE_CHECK") == "true") {
+                signingConfigs.getByName("debug")
+            } else {
+                throw GradleException(releaseBuildAbortMessage)
+            }
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+            ndk {
+                debugSymbolLevel = "NONE"
+            }
+        }
+        debug {
+            isMinifyEnabled = false
+            isShrinkResources = false
+        }
     }
 
     // Further optimization: compress native libraries and remove unused

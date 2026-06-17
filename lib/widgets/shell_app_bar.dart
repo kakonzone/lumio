@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/shell_scope.dart';
-import '../provider/app_provider.dart';
+import '../provider/favorites_provider.dart';
+import '../provider/theme_provider.dart';
 import '../screens/favorites_screen.dart';
 import '../theme/app_theme.dart';
 import '../theme/tokens/colors.dart' as tokens;
@@ -43,8 +44,8 @@ class ShellAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final prov = context.watch<AppProvider>();
-    final favCount = prov.favoriteCount;
+    final favProv = context.watch<FavoritesProvider>();
+    final favCount = favProv.favoriteCount;
 
     final showSubtitleBelow =
         subtitle != null && showBack && !hideSubtitleInBar;
@@ -69,7 +70,7 @@ class ShellAppBar extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildTopRow(context, prov, favCount),
+              _buildTopRow(context, favCount),
               if (showSubtitleBelow) ...[
                 const SizedBox(height: 6),
                 OverflowSafeText(
@@ -105,7 +106,7 @@ class ShellAppBar extends StatelessWidget {
     );
   }
 
-  Widget _buildTopRow(BuildContext context, AppProvider prov, int favCount) {
+  Widget _buildTopRow(BuildContext context, int favCount) {
     final narrow = MediaQuery.sizeOf(context).width < 400;
     final sideSlot = Responsive.shellSideSlot(context);
     final left = showBack
@@ -124,7 +125,7 @@ class ShellAppBar extends StatelessWidget {
             ),
           );
 
-    final right = _buildRightActions(context, prov, favCount, compact: narrow);
+    final right = _buildRightActions(context, favCount, compact: narrow);
 
     final Widget centerBrand;
     if (showBack && title != null && !centerLumioTvBrand) {
@@ -222,10 +223,12 @@ class ShellAppBar extends StatelessWidget {
 
   Widget _buildRightActions(
     BuildContext context,
-    AppProvider prov,
     int favCount, {
     bool compact = false,
   }) {
+    final themeProv = context.read<ThemeProvider>();
+    final isDark = themeProv.isDark;
+    final toggleTheme = themeProv.toggleTheme;
     final gap = compact ? 4.0 : 8.0;
     final toggleW = compact ? 44.0 : 52.0;
     final iconBox = compact ? 28.0 : 32.0;
@@ -234,7 +237,7 @@ class ShellAppBar extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         GestureDetector(
-          onTap: prov.toggleTheme,
+          onTap: toggleTheme,
           child: Container(
             width: toggleW,
             height: 26,
@@ -247,7 +250,7 @@ class ShellAppBar extends StatelessWidget {
               children: [
                 AnimatedPositioned(
                   duration: const Duration(milliseconds: 250),
-                  left: prov.isDark ? 2 : (toggleW - knob - 2),
+                  left: isDark ? 2 : (toggleW - knob - 2),
                   top: 2,
                   child: Container(
                     width: knob,
@@ -258,7 +261,7 @@ class ShellAppBar extends StatelessWidget {
                     ),
                     child: Center(
                       child: Text(
-                        prov.isDark ? '🌙' : '☀️',
+                        isDark ? '🌙' : '☀️',
                         style: const TextStyle(fontSize: 11),
                       ),
                     ),

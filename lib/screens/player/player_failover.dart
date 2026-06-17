@@ -36,27 +36,14 @@ extension _PlayerFailover on _PlayerScreenState {
         return;
       }
       _failoverAttempts++;
-      agentDebugLog(
-        location: 'player_screen.dart:_scheduleFailoverCheck',
-        message: 'buffering watchdog fired',
-        hypothesisId: 'H-failover',
-        data: {
-          'attempt': _failoverAttempts,
-          'linkIndex': _activeLinkIndex,
-        },
-      );
+      SafeLogger.debug('player', 'player_screen.dart:_scheduleFailoverCheck: buffering watchdog fired (H-failover) attempt=$_failoverAttempts linkIndex=$_activeLinkIndex');
       await _attemptFailover();
     });
   }
 
   void _showFailoverExhaustedUi() {
     if (!mounted) return;
-    agentDebugLog(
-      location: 'player_screen.dart:_showFailoverExhaustedUi',
-      message: 'all failover links exhausted',
-      hypothesisId: 'H-failover',
-      data: {'failedLinks': _failedLinks.toList()},
-    );
+    SafeLogger.debug('player', 'player_screen.dart:_showFailoverExhaustedUi: all failover links exhausted (H-failover) failedLinks=${_failedLinks.toList()}');
     setState(() {
       _hasError = true;
       _isBuffering = false;
@@ -127,12 +114,7 @@ extension _PlayerFailover on _PlayerScreenState {
         StackTrace.current,
         reason: 'failover_from_${_activeLinkIndex}_to_$next',
       );
-      agentDebugLog(
-        location: 'player_screen.dart:_attemptFailover',
-        message: 'failover switch',
-        hypothesisId: 'H-failover',
-        data: {'from': _activeLinkIndex, 'to': next},
-      );
+      SafeLogger.debug('player', 'player_screen.dart:_attemptFailover: failover switch (H-failover) from=$_activeLinkIndex to=$next');
       await _switchToLink(next);
       return;
     }

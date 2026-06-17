@@ -130,18 +130,19 @@ class _FadeSlideUpTransition extends StatelessWidget {
   }
 }
 
-/// Extension to easily use custom transitions with Navigator
-extension CustomNavigatorExtension on Navigator {
-  /// Push with fade + slide up transition
-  Future<T?> pushFadeSlideUp<T>(Route<T> route) {
-    return push(route);
-  }
-
-  /// Push with fade-only transition
-  Future<T?> pushFade<T>(Route<T> route) {
-    return push(route);
-  }
-}
+// Extension to easily use custom transitions with Navigator
+// COMMENTED OUT: Invalid extension syntax - cannot override static Navigator.push/pop
+// extension CustomNavigatorExtension on Navigator {
+//   /// Push with fade + slide up transition
+//   Future<T?> pushFadeSlideUp<T>(Route<T> route) {
+//     return push(route);
+//   }
+//
+//   /// Push with fade-only transition
+//   Future<T?> pushFade<T>(Route<T> route) {
+//     return push(route);
+//   }
+// }
 
 /// Shared hero tag generator for consistent hero animations
 class HeroTags {

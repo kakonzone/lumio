@@ -3,6 +3,7 @@ import 'package:dart_appwrite/models.dart' as aw_models;
 import 'package:flutter/foundation.dart';
 
 import '../config/appwrite_config.dart';
+import '../core/result.dart';
 import '../models/model.dart';
 import '../utils/m3u_merge_parser.dart';
 import '../utils/retry.dart';
@@ -57,9 +58,9 @@ class AppwriteService {
         },
         maxAttempts: 3,
         initialDelayMs: 1000,
-        onRetry: (attempt, delay) {
+        onRetry: (attempt, delay, error) {
           if (kDebugMode) {
-            debugPrint('[Appwrite] Retry attempt $attempt after ${delay}ms');
+            debugPrint('[Appwrite] Retry attempt $attempt after ${delay}ms: $error');
           }
         },
       );
@@ -172,7 +173,17 @@ class AppwriteService {
       final body = AppwriteChannelMapper.playlistBody(doc.data);
       if (body == null || body.trim().isEmpty) return const [];
 
-      return compute(parseM3uAppwriteIsolate, body);
+      final result = await compute(parseM3uAppwriteIsolate, body);
+      if (result case Success(value: final channels)) {
+        return channels;
+      } else if (result case Failure(error: final error)) {
+        lastFetchError ??= 'Failed to parse playlist: ${error.message}';
+        if (kDebugMode) {
+          debugPrint('[Appwrite] Playlist parse error: ${error.message}');
+        }
+        return const [];
+      }
+      return const [];
     } on AppwriteException catch (e) {
       lastFetchError ??= _friendlyAppwriteError(e);
       if (kDebugMode) {

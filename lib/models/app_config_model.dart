@@ -5,7 +5,6 @@ class AppConfigModel {
     this.jsonPayload,
     this.updatedAt,
     this.adsEnabled = true,
-    this.levelplayEnabled = true,
     this.adsterraEnabled = true,
     this.monetagEnabled = true,
     this.aggressiveMode = false,
@@ -29,17 +28,15 @@ class AppConfigModel {
     this.forceUpdate = false,
     this.updateUrl,
     this.updateMessage,
-    this.killSwitch = false,
-    this.killMessage,
     this.maintenanceMode = false,
     this.maintenanceMessage,
+    this.maintenanceMessages, // Localized maintenance messages
   });
 
   final String key;
   final String? jsonPayload;
   final String? updatedAt;
   final bool adsEnabled;
-  final bool levelplayEnabled;
   final bool adsterraEnabled;
   final bool monetagEnabled;
   final bool aggressiveMode;
@@ -63,10 +60,9 @@ class AppConfigModel {
   final bool forceUpdate;
   final String? updateUrl;
   final String? updateMessage;
-  final bool killSwitch;
-  final String? killMessage;
   final bool maintenanceMode;
   final String? maintenanceMessage;
+  final Map<String, String>? maintenanceMessages;
 
   factory AppConfigModel.fromMap(Map<String, dynamic> map) {
     return AppConfigModel(
@@ -74,8 +70,6 @@ class AppConfigModel {
       jsonPayload: _nullableStr(map, 'json_payload', 'jsonPayload'),
       updatedAt: _nullableStr(map, 'updated_at', 'updatedAt'),
       adsEnabled: _bool(map, 'ads_enabled', 'adsEnabled', defaultValue: true),
-      levelplayEnabled: _bool(map, 'levelplay_enabled', 'levelplayEnabled',
-          defaultValue: true),
       adsterraEnabled:
           _bool(map, 'adsterra_enabled', 'adsterraEnabled', defaultValue: true),
       monetagEnabled:
@@ -134,13 +128,22 @@ class AppConfigModel {
           _bool(map, 'force_update', 'forceUpdate', defaultValue: false),
       updateUrl: _nullableStr(map, 'update_url', 'updateUrl'),
       updateMessage: _nullableStr(map, 'update_message', 'updateMessage'),
-      killSwitch: _bool(map, 'kill_switch', 'killSwitch', defaultValue: false),
-      killMessage: _nullableStr(map, 'kill_message', 'killMessage'),
       maintenanceMode: _bool(map, 'maintenance_mode', 'maintenanceMode',
           defaultValue: false),
       maintenanceMessage:
           _nullableStr(map, 'maintenance_message', 'maintenanceMessage'),
+      maintenanceMessages: _parseMaintenanceMessages(map),
     );
+  }
+
+  static Map<String, String>? _parseMaintenanceMessages(Map<String, dynamic> map) {
+    final maintenance = map['maintenance'];
+    if (maintenance is Map<String, dynamic>) {
+      return Map<String, String>.from(
+        maintenance.map((key, value) => MapEntry(key, value.toString())),
+      );
+    }
+    return null;
   }
 
   factory AppConfigModel.defaultConfig() =>
@@ -151,7 +154,6 @@ class AppConfigModel {
     String? jsonPayload,
     String? updatedAt,
     bool? adsEnabled,
-    bool? levelplayEnabled,
     bool? adsterraEnabled,
     bool? monetagEnabled,
     bool? aggressiveMode,
@@ -175,17 +177,15 @@ class AppConfigModel {
     bool? forceUpdate,
     String? updateUrl,
     String? updateMessage,
-    bool? killSwitch,
-    String? killMessage,
     bool? maintenanceMode,
     String? maintenanceMessage,
+    Map<String, String>? maintenanceMessages,
   }) {
     return AppConfigModel(
       key: key ?? this.key,
       jsonPayload: jsonPayload ?? this.jsonPayload,
       updatedAt: updatedAt ?? this.updatedAt,
       adsEnabled: adsEnabled ?? this.adsEnabled,
-      levelplayEnabled: levelplayEnabled ?? this.levelplayEnabled,
       adsterraEnabled: adsterraEnabled ?? this.adsterraEnabled,
       monetagEnabled: monetagEnabled ?? this.monetagEnabled,
       aggressiveMode: aggressiveMode ?? this.aggressiveMode,
@@ -209,10 +209,9 @@ class AppConfigModel {
       forceUpdate: forceUpdate ?? this.forceUpdate,
       updateUrl: updateUrl ?? this.updateUrl,
       updateMessage: updateMessage ?? this.updateMessage,
-      killSwitch: killSwitch ?? this.killSwitch,
-      killMessage: killMessage ?? this.killMessage,
       maintenanceMode: maintenanceMode ?? this.maintenanceMode,
       maintenanceMessage: maintenanceMessage ?? this.maintenanceMessage,
+      maintenanceMessages: maintenanceMessages ?? this.maintenanceMessages,
     );
   }
 
@@ -221,7 +220,6 @@ class AppConfigModel {
         'json_payload': jsonPayload,
         'updated_at': updatedAt,
         'ads_enabled': adsEnabled,
-        'levelplay_enabled': levelplayEnabled,
         'adsterra_enabled': adsterraEnabled,
         'monetag_enabled': monetagEnabled,
         'aggressive_mode': aggressiveMode,
@@ -245,10 +243,9 @@ class AppConfigModel {
         'force_update': forceUpdate,
         'update_url': updateUrl,
         'update_message': updateMessage,
-        'kill_switch': killSwitch,
-        'kill_message': killMessage,
         'maintenance_mode': maintenanceMode,
         'maintenance_message': maintenanceMessage,
+        if (maintenanceMessages != null) 'maintenance': maintenanceMessages,
       };
 
   static String _str(

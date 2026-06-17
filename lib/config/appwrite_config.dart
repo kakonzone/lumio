@@ -64,17 +64,17 @@ class AppwriteConfig {
   // ── SGP Lumio (global_config, special_links) — GitHub Actions deploy ─────
   static const mainProjectId = String.fromEnvironment(
     'APPWRITE_MAIN_PROJECT_ID',
-    defaultValue: '6a22869200230b1a8bf0',
+    defaultValue: '',
   );
 
   static const mainEndpoint = String.fromEnvironment(
     'APPWRITE_MAIN_ENDPOINT',
-    defaultValue: 'https://sgp.cloud.appwrite.io/v1',
+    defaultValue: '',
   );
 
   static const mainDatabaseId = String.fromEnvironment(
     'APPWRITE_MAIN_DATABASE_ID',
-    defaultValue: 'iptv_main',
+    defaultValue: '',
   );
 
   /// Remote control document in `app_config` (ads, kill switch, updates).

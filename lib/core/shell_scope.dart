@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// Exposes the root [MainShell] scaffold actions to nested screens (e.g. TV home).
@@ -16,7 +17,9 @@ class ShellScope extends InheritedWidget {
 
   static ShellScope of(BuildContext context) {
     final scope = maybeOf(context);
-    assert(scope != null, 'ShellScope not found above $context');
+    if (kDebugMode) {
+      assert(scope != null, 'ShellScope not found above $context');
+    }
     return scope!;
   }
 

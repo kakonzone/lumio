@@ -79,6 +79,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
 
     // Simulate API call
     await Future.delayed(const Duration(seconds: 2));
+    if (!mounted) return;
 
     // Simulate success (in real app, validate the source)
     setState(() {

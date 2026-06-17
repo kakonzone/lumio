@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:lumio_tv/provider/app_provider.dart';
+import 'package:lumio_tv/provider/channel_catalog_provider.dart';
 import 'package:lumio_tv/screens/category_channels_screen.dart';
 import 'package:lumio_tv/screens/special_link/special_link_hub_screen.dart';
 import 'package:lumio_tv/theme/app_theme.dart';
@@ -10,7 +10,7 @@ import 'package:lumio_tv/theme/tokens/colors.dart' as tokens;
 
 /// Home tab category grid — gradient tiles, counts, staggered entrance.
 class HomeCategoryGrid extends StatefulWidget {
-  final AppProvider prov;
+  final ChannelCatalogProvider prov;
   final List<Map<String, String>> categories;
   final String? highlightCategory;
   final ValueChanged<String>? onCategoryTap;
@@ -69,7 +69,7 @@ class _HomeCategoryGridState extends State<HomeCategoryGrid>
     HapticFeedback.lightImpact();
     widget.onCategoryTap?.call(internal);
 
-    if (internal == AppProvider.specialLinkCategoryId) {
+    if (internal == ChannelCatalogProvider.specialLinkCategoryId) {
       Navigator.push(
         context,
         MaterialPageRoute<void>(
@@ -138,7 +138,7 @@ class _HomeCategoryGridState extends State<HomeCategoryGrid>
           final internal = cat['cat']!;
           final selected = widget.highlightCategory == internal ||
               widget.highlightCategory == label;
-          final isSpecial = internal == AppProvider.specialLinkCategoryId;
+          final isSpecial = internal == ChannelCatalogProvider.specialLinkCategoryId;
           final count = isSpecial ? 0 : _channelCount(internal);
           final tile = _CategoryTile(
             label: label,

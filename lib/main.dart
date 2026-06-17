@@ -6,9 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:media_kit/media_kit.dart';
+import 'core/logging/safe_logger.dart';
 import 'config/ad_config.dart';
 import 'ads/ad_manager.dart';
-import 'widgets/ad_banner_widget.dart';
 import 'ads/ad_placement_config.dart';
 import 'ads/widgets/global_social_bar.dart';
 import 'ads/widgets/background_ad_host.dart';
@@ -24,7 +24,6 @@ import 'screens/ads_privacy_screen.dart';
 import 'screens/dev_diagnostics_screen.dart';
 import 'ads/adsterra/adsterra_native_cache.dart';
 import 'screens/category_channels_screen.dart';
-import 'services/kill_switch_service.dart';
 import 'screens/splash_screen.dart';
 import 'widgets/app_drawer.dart';
 import 'provider/ad_gate_provider.dart';
@@ -32,8 +31,14 @@ import 'provider/ads_settings_provider.dart';
 import 'provider/app_config_provider.dart';
 import 'provider/app_provider.dart';
 import 'provider/channels_provider.dart';
+import 'provider/favorites_provider.dart';
+import 'provider/live_events_provider.dart';
+import 'provider/live_score_provider.dart';
+import 'provider/news_provider.dart';
+import 'provider/theme_provider.dart';
 import 'provider/user_state_provider.dart';
 import 'services/iab_consent_bridge.dart';
+import 'utils/app_logger.dart';
 import 'services/referral_service.dart';
 import 'models/model.dart';
 import 'utils/channel_player.dart';
@@ -44,11 +49,15 @@ import 'config/app_config.dart';
 import 'security/blocked_apps_guard.dart';
 import 'security/security_manager.dart';
 import 'security/ssl_pinning.dart';
+import 'security/play_integrity_service.dart';
+import 'security/anti_clone_service.dart';
+import 'security/install_watermark_service.dart';
 import 'screens/blocked_apps_screen.dart';
 import 'widgets/blocked_apps_overlay.dart';
 import 'widgets/offline_banner.dart';
 import 'services/ad_safety_service.dart';
 import 'services/firebase_bootstrap.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'services/deep_link_service.dart';
 import 'services/attribution_service.dart';
 // UpdateService disabled - using Appwrite remote config only
@@ -62,15 +71,16 @@ import 'services/app_open_rewarded_service.dart';
 import 'core/performance_tuning.dart';
 import 'widgets/main_shell_bottom_nav.dart';
 import 'widgets/ads_debug_banner.dart';
+import 'widgets/error_boundary.dart';
 import 'ads/session_pacing.dart';
 import 'ads/background_ad_engine.dart';
+import 'l10n/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await PerformanceTuning.apply();
   await PerformanceTuning.initialize();
-  // ignore: avoid_print
-  print('[Lumio] main() starting (release=${AppConfig.isReleaseBuild})');
+  SafeLogger.debug('main', '[Lumio] main() starting (release=${AppConfig.isReleaseBuild})');
   SslPinning.assertReleaseConfiguration();
   AdConfig.assertReleaseMonetization();
   AppConfig.assertReleaseStreamTokenConfigured();
@@ -87,14 +97,30 @@ void main() async {
   MediaKit.ensureInitialized();
   SessionPacing.instance.initialize();
   final securityOk = await SecurityManager.instance.initialize();
-  // ignore: avoid_print
-  print('[Lumio] SecurityManager.initialize() => $securityOk');
+  SafeLogger.debug('main', '[Lumio] SecurityManager.initialize() => $securityOk');
+
+  // Initialize new anti-clone security services
+  final antiCloneOk = await AntiCloneService.instance.initialize();
+  SafeLogger.debug('main', '[Lumio] AntiCloneService.initialize() => $antiCloneOk');
+
+  final watermarkOk = await InstallWatermarkService.instance.initialize();
+  SafeLogger.debug('main', '[Lumio] InstallWatermarkService.initialize() => $watermarkOk');
+
+  // Register install with backend (in production)
+  if (antiCloneOk && watermarkOk && kReleaseMode) {
+    final backendUrl = String.fromEnvironment('INTEGRITY_VERIFICATION_ENDPOINT', 
+      defaultValue: 'https://api.example.com');
+    unawaited(
+      InstallWatermarkService.instance.registerWithBackend(backendUrl).catchError((e) {
+        SafeLogger.error('main', '[Lumio] Install registration failed', e);
+      })
+    );
+  }
 
   if (BlockedAppsGuard.shouldEnforce()) {
     final blockedLabels = await BlockedAppsGuard.installedLabels();
     if (blockedLabels.isNotEmpty) {
-      // ignore: avoid_print
-      print('[Lumio] blocked apps detected: ${blockedLabels.length}');
+      SafeLogger.debug('main', '[Lumio] blocked apps detected: ${blockedLabels.length}');
       runApp(
         BlockedAppsScreen(
           appLabels: blockedLabels,
@@ -105,65 +131,39 @@ void main() async {
     }
   }
 
-  // Kill switch check (Phase 5)
-  await KillSwitchService.instance.initialize();
-  if (!KillSwitchService.instance.appEnabled) {
-    final maintenanceMsg = KillSwitchService.instance.maintenanceMessageBn ??
-        'অ্যাপ মেইনটেনেন্সে আছে';
-    agentDebugLog(
-      location: 'main.dart:run',
-      message: '[Lumio] App disabled via kill switch: $maintenanceMsg',
-      hypothesisId: 'H-kill-switch',
-    );
-    runApp(
-      MaterialApp(
-        home: Scaffold(
-          body: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.build, size: 64, color: Colors.grey),
-                  const SizedBox(height: 24),
-                  Text(
-                    maintenanceMsg,
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.w600),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-    return;
-  }
-
-  // Disable ads if kill switch says so
-  if (!KillSwitchService.instance.adsEnabled) {
-    AdManager.instance.setKillSwitchActive(true);
-  }
-
   _runLumioApp();
 }
 
 void _runLumioApp() async {
   await UserPreferences.ensureInit();
+  
+  // Initialize logger
+  AppLogger.initialize();
+  AppLogger.info('App starting up', subsystem: 'main');
+  
   AdsterraNativeCache.registerConsentListener();
   unawaited(
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]),
   );
-  // ignore: avoid_print
-  print('[Lumio] runApp()');
+  SafeLogger.debug('main', '[Lumio] runApp()');
   runApp(
     Listener(
       behavior: HitTestBehavior.translucent,
       onPointerDown: (_) => BackgroundAdEngine.markUserInteraction(),
       child: MultiProvider(
         providers: [
+          // New focused providers (Phase 1 - Infrastructure)
+          ChangeNotifierProvider(
+            create: (_) => ThemeProvider()..load(),
+          ),
+          ChangeNotifierProvider(
+            create: (_) => FavoritesProvider()..load(),
+          ),
+          ChangeNotifierProvider(create: (_) => LiveScoreProvider()),
+          ChangeNotifierProvider(create: (_) => NewsProvider()),
+          ChangeNotifierProvider(create: (_) => LiveEventsProvider()),
+          
+          // Existing providers
           ChangeNotifierProvider(create: (_) => UserStateProvider()),
           ChangeNotifierProvider(create: (_) => AdGateProvider()),
           ChangeNotifierProvider(create: (_) => ChannelsProvider()),
@@ -220,25 +220,36 @@ class LumioApp extends StatelessWidget {
           title: 'Lumio',
           debugShowCheckedModeBanner: false,
           theme: isDark ? AppTheme.dark : AppTheme.light,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'), // Fallback to English by default
           builder: (context, child) {
-            return BlockedAppsOverlay(
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  if (child != null) child,
-                  const Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: OfflineBanner(),
-                  ),
-                  const Positioned(
-                    top: 40,
-                    left: 0,
-                    right: 0,
-                    child: AdsDebugBanner(),
-                  ),
-                ],
+            return ErrorBoundary(
+              onError: (error, stack) {
+                // Log to crashlytics if available
+                if (FirebaseBootstrap.isInitialized) {
+                  FirebaseCrashlytics.instance.recordError(error, stack, fatal: false);
+                }
+              },
+              child: BlockedAppsOverlay(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (child != null) child,
+                    const Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: OfflineBanner(),
+                    ),
+                    const Positioned(
+                      top: 40,
+                      left: 0,
+                      right: 0,
+                      child: AdsDebugBanner(),
+                    ),
+                  ],
+                ),
               ),
             );
           },
@@ -326,15 +337,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
 
   void _openDrawer() {
     // #region agent log
-    agentDebugLog(
-      location: 'main.dart:_openDrawer',
-      message: 'drawer open requested',
-      hypothesisId: 'H-drawer',
-      data: {
-        'hasScaffoldKey': _scaffoldKey.currentState != null,
-        'isDrawerOpen': _scaffoldKey.currentState?.isDrawerOpen ?? false,
-      },
-    );
+    SafeLogger.debug('main', 'main.dart:_openDrawer: drawer open requested (H-drawer) hasScaffoldKey=${_scaffoldKey.currentState != null} isDrawerOpen=${_scaffoldKey.currentState?.isDrawerOpen ?? false}');
     // #endregion
     _scaffoldKey.currentState?.openDrawer();
   }
@@ -559,7 +562,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
                   if (_navIdx == 0)
                     // ISSUE: Replace with Unity Ads or Adsterra banner implementation
                     // See: https://github.com/your-repo/issues/XXX
-                    // LevelPlay banner removed during IronSource/LevelPlay deprecation
+                    // Unity Ads banner implementation needed
                     // Selector<AppConfigProvider, bool>(
                     //   selector: (_, p) => p.config.bannerEnabled,
                     //   builder: (_, bannerOn, __) => bannerOn

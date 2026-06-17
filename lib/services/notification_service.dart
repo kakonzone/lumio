@@ -10,6 +10,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../core/logging/safe_logger.dart';
 import '../models/model.dart';
 import 'firebase_bootstrap.dart';
 import 'notification_image_loader.dart';
@@ -647,9 +648,7 @@ class NotificationService {
         ),
       );
     } catch (e) {
-      if (kDebugMode) {
-        print('[NotificationService] _showFromRemoteMessage failed: $e');
-      }
+      SafeLogger.error('notification', '[NotificationService] _showFromRemoteMessage failed', e);
     }
   }
 
@@ -771,9 +770,7 @@ class NotificationService {
 
   @pragma('vm:entry-point')
   static void _onLocalBackgroundTap(NotificationResponse response) {
-    if (kDebugMode) {
-      print('[NotificationService] Background tap: ${response.payload}');
-    }
+    SafeLogger.debug('notification', '[NotificationService] Background tap: ${response.payload}');
   }
 
   // ===========================================================================
@@ -897,11 +894,7 @@ class NotificationService {
   }
 
   static void _log(String message) {
-    assert(() {
-      // ignore: avoid_print
-      print('[NotificationService] $message');
-      return true;
-    }());
+    SafeLogger.debug('notification', '[NotificationService] $message');
   }
 }
 

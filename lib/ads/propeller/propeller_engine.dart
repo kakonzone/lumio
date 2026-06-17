@@ -48,7 +48,7 @@ class PropellerEngine {
     }
   }
 
-  /// Fullscreen vignette interstitial (tab switch / first-tap LevelPlay slot).
+  /// Fullscreen vignette interstitial (tab switch / first-tap Unity Ads slot).
   Future<bool> showVignetteDialog(
     BuildContext context, {
     required String placement,

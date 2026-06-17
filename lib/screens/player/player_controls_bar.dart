@@ -6,30 +6,35 @@ extension _PlayerControls on _PlayerScreenState {
   Future<void> _loadFitMode() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final mode = parsePlayerFitMode(prefs.getString(_PlayerScreenState._fitPrefKey));
+      final mode =
+          parsePlayerFitMode(prefs.getString(_PlayerScreenState._fitPrefKey));
       if (mode != null && mounted) {
         setState(() => _fitMode = normalizePlayerFitModeForTap(mode));
       }
     } catch (_) {}
   }
+
   Future<void> _persistFitMode(PlayerFitMode mode) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_PlayerScreenState._fitPrefKey, mode.name);
     } catch (_) {}
   }
+
   void _setFitMode(PlayerFitMode mode) {
     if (!mounted) return;
     setState(() => _fitMode = mode);
     unawaited(_persistFitMode(mode));
     _revealControls();
   }
+
   void _cycleFitMode() {
     final next = nextPlayerFitModeInTapCycle(
       normalizePlayerFitModeForTap(_fitMode),
     );
     _setFitMode(next);
   }
+
   Widget _buildVideoSurface() {
     final fit = boxFitFor(_fitMode);
     final ratio = aspectRatioFor(_fitMode);
@@ -38,12 +43,14 @@ extension _PlayerControls on _PlayerScreenState {
     final frameW = (w != null && w > 0) ? w : 1920.0;
     final frameH = (h != null && h > 0) ? h : 1080.0;
 
-    Widget video = Video(
-      key: const ValueKey('lumio-player-video'),
-      controller: _videoCtrl,
-      controls: NoVideoControls,
-      fit: fit,
-      fill: Colors.black,
+    Widget video = RepaintBoundary(
+      child: Video(
+        key: const ValueKey('lumio-player-video'),
+        controller: _videoCtrl,
+        controls: NoVideoControls,
+        fit: fit,
+        fill: Colors.black,
+      ),
     );
     if (ratio != null) {
       video = AspectRatio(aspectRatio: ratio, child: video);
@@ -61,6 +68,7 @@ extension _PlayerControls on _PlayerScreenState {
       ),
     );
   }
+
   void _updateQualityBadge() {
     if (!mounted) return;
     final w = _player.state.width ?? 0;
@@ -75,14 +83,10 @@ extension _PlayerControls on _PlayerScreenState {
     if (badge != _qualityBadge) {
       if (!mounted) return;
       setState(() => _qualityBadge = badge);
-      agentDebugLog(
-        location: 'player_screen.dart:_updateQualityBadge',
-        message: 'quality badge updated',
-        hypothesisId: 'H-quality-badge',
-        data: {'badge': badge, 'w': w, 'h': h},
-      );
+      SafeLogger.debug('player', 'player_screen.dart:_updateQualityBadge: quality badge updated (H-quality-badge) badge=$badge w=$w h=$h');
     }
   }
+
   String _formatHeightLabel(int h) {
     if (h >= 1080) return '1080p';
     if (h >= 720) return '720p';
@@ -93,19 +97,16 @@ extension _PlayerControls on _PlayerScreenState {
     if (h >= 180) return '180p';
     return '${h}p';
   }
+
   double _safeUnitProgress(double value) {
     try {
       return value.clamp(0.0, 1.0);
     } catch (e, st) {
-      agentDebugLog(
-        location: 'player_screen.dart:_safeUnitProgress',
-        message: 'Slider/Progress error: $e',
-        hypothesisId: 'H-slider',
-        data: {'st': st.toString()},
-      );
+      SafeLogger.error('player', 'player_screen.dart:_safeUnitProgress: Slider/Progress error', e, st);
       return 0.0;
     }
   }
+
   void _toggleControls() {
     if (!mounted) return;
     setState(() => _showControls = !_showControls);
@@ -115,17 +116,20 @@ extension _PlayerControls on _PlayerScreenState {
       _hideTimer?.cancel();
     }
   }
+
   void _revealControls({bool restartTimer = true}) {
     if (!mounted) return;
     if (!_showControls) setState(() => _showControls = true);
     if (restartTimer) _startHideTimer();
   }
+
   void _startHideTimer() {
     _hideTimer?.cancel();
     _hideTimer = Timer(const Duration(seconds: 4), () {
       if (mounted) setState(() => _showControls = false);
     });
   }
+
   void _togglePlay() {
     final wasPlaying = _player.state.playing;
     _player.playOrPause();
@@ -135,6 +139,7 @@ extension _PlayerControls on _PlayerScreenState {
       _startHideTimer();
     }
   }
+
   IconData _fitModeIcon() {
     switch (_fitMode) {
       case PlayerFitMode.fit:
@@ -150,11 +155,13 @@ extension _PlayerControls on _PlayerScreenState {
         return Icons.aspect_ratio_rounded;
     }
   }
+
   void _seek(int seconds) {
     final pos = _player.state.position + Duration(seconds: seconds);
     _player.seek(pos);
     _startHideTimer();
   }
+
   void _toggleFullscreen() {
     if (!mounted) return;
     setState(() => _isFullscreen = !_isFullscreen);
@@ -168,18 +175,21 @@ extension _PlayerControls on _PlayerScreenState {
       _exitFullscreen();
     }
   }
+
   void _exitFullscreen() {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
     if (mounted) setState(() => _isFullscreen = false);
   }
+
   void _onDoubleTapDown(TapDownDetails d) {
     final w = MediaQuery.of(context).size.width;
     final rewind = d.localPosition.dx < w / 2;
     _seek(rewind ? -10 : 10);
     _showSeekOverlay(rewind ? '⏪ 10s' : '10s ⏩', rewind);
   }
+
   void _showSeekOverlay(String label, bool leftSide) {
     if (!mounted) return;
     setState(() {
@@ -198,6 +208,7 @@ extension _PlayerControls on _PlayerScreenState {
       if (mounted) setState(() => _seekOverlayLabel = null);
     });
   }
+
   void _onHorizontalDragEnd(DragEndDetails d) {
     final vx = d.velocity.pixelsPerSecond.dx;
     if (vx.abs() <= 800) return;
@@ -219,17 +230,7 @@ extension _PlayerControls on _PlayerScreenState {
         ? (idx - 1 + channels.length) % channels.length
         : (idx + 1) % channels.length;
     final next = channels[nextIdx];
-    agentDebugLog(
-      location: 'player_screen.dart:_onHorizontalDragEnd',
-      message: 'swipe channel change',
-      hypothesisId: 'H-swipe',
-      data: {
-        'vx': vx,
-        'fromIdx': idx,
-        'toIdx': nextIdx,
-        'channel': next.name,
-      },
-    );
+    SafeLogger.debug('player', 'player_screen.dart:_onHorizontalDragEnd: swipe channel change (H-swipe) vx=$vx fromIdx=$idx toIdx=$nextIdx channel=${next.name}');
     if (!mounted) return;
     setState(() => _channelSwipeOverlay = next.name);
     Timer(const Duration(milliseconds: 800), () {
@@ -237,6 +238,7 @@ extension _PlayerControls on _PlayerScreenState {
     });
     _scheduleChannelSwitch(next);
   }
+
   void _onRetryPressed() {
     final now = DateTime.now();
     if (_lastRetryAt != null &&
@@ -254,6 +256,7 @@ extension _PlayerControls on _PlayerScreenState {
     _failoverAttempts = 0;
     unawaited(_prepareLinksAndPlay());
   }
+
   void _onDragStart(DragStartDetails d) {
     final w = MediaQuery.of(context).size.width;
     _isDragging = true;
@@ -261,6 +264,7 @@ extension _PlayerControls on _PlayerScreenState {
     _draggingVolume = d.localPosition.dx > w / 2;
     _dragStartVal = _draggingVolume ? _volume : _brightness;
   }
+
   void _onDragUpdate(DragUpdateDetails d) {
     if (!_isDragging) return;
     final playerH = MediaQuery.of(context).size.width * 9 / 16;
@@ -284,6 +288,7 @@ extension _PlayerControls on _PlayerScreenState {
       if (mounted) setState(() => _indicatorOpacity = 0.0);
     });
   }
+
   void _onDragEnd(DragEndDetails _) => _isDragging = false;
   Widget _buildFullPlayerUi(BuildContext context) {
     return PopScope(
@@ -295,12 +300,14 @@ extension _PlayerControls on _PlayerScreenState {
         backgroundColor: const Color(0xFF0A0A0C),
         body: Column(children: [
           _buildPlayer(context),
-          if (_links.length > 1 && !_isFullscreen) _buildStreamLinkStrip(context),
+          if (_links.length > 1 && !_isFullscreen)
+            _buildStreamLinkStrip(context),
           if (!_isFullscreen) Expanded(child: _buildInfo(context)),
         ]),
       ),
     );
   }
+
   Widget _buildPlayer(BuildContext context) {
     final size = MediaQuery.of(context).size;
 
@@ -426,6 +433,7 @@ extension _PlayerControls on _PlayerScreenState {
       ),
     );
   }
+
   Widget _buildTopBar(BuildContext context) {
     return Positioned(
       top: 0,
@@ -538,6 +546,7 @@ extension _PlayerControls on _PlayerScreenState {
       ),
     );
   }
+
   Widget _buildLoadingSkeleton() {
     final prov = context.read<AppProvider>();
     final ch = prov.channelForStream(_currentUrl ?? '') ??
@@ -580,6 +589,7 @@ extension _PlayerControls on _PlayerScreenState {
       ),
     );
   }
+
   Widget _buildSeekOverlay() {
     final isRewind = _seekOverlayLabel?.startsWith('⏪') ?? false;
     return Positioned(
@@ -610,6 +620,7 @@ extension _PlayerControls on _PlayerScreenState {
       ),
     );
   }
+
   Widget _buildChannelSwipeOverlay() {
     return Center(
       child: Container(
@@ -629,6 +640,7 @@ extension _PlayerControls on _PlayerScreenState {
       ),
     );
   }
+
   Widget _buildStreamLinkStrip(BuildContext context) {
     return Container(
       color: const Color(0xFF0A0A0C),
@@ -649,8 +661,10 @@ extension _PlayerControls on _PlayerScreenState {
                 onTap: () => _switchToLink(i),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  constraints: const BoxConstraints(minWidth: 88, maxWidth: 140),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  constraints:
+                      const BoxConstraints(minWidth: 88, maxWidth: 140),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
                     color: active
                         ? tokens.AppTokens.accent
@@ -684,6 +698,7 @@ extension _PlayerControls on _PlayerScreenState {
       ),
     );
   }
+
   Widget _buildControls(BuildContext context) {
     final isPlaying = _player.state.playing;
     final bottomPad = MediaQuery.of(context).padding.bottom;
@@ -728,18 +743,22 @@ extension _PlayerControls on _PlayerScreenState {
                         width: 58,
                         height: 58,
                         decoration: BoxDecoration(
-                          color: tokens.AppTokens.accent.withValues(alpha: 0.95),
+                          color:
+                              tokens.AppTokens.accent.withValues(alpha: 0.95),
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: tokens.AppTokens.accent.withValues(alpha: 0.45),
+                              color: tokens.AppTokens.accent
+                                  .withValues(alpha: 0.45),
                               blurRadius: 16,
                               offset: const Offset(0, 4),
                             ),
                           ],
                         ),
                         child: Icon(
-                          isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                          isPlaying
+                              ? Icons.pause_rounded
+                              : Icons.play_arrow_rounded,
                           color: Colors.white,
                           size: 32,
                         ),
@@ -767,6 +786,7 @@ extension _PlayerControls on _PlayerScreenState {
       ),
     );
   }
+
   Widget _buildProgressTimeRow() {
     return StreamBuilder<Duration>(
       stream: _player.stream.position,
@@ -806,9 +826,11 @@ extension _PlayerControls on _PlayerScreenState {
                   },
                   onChangeEnd: (v) {
                     final safe = _safeUnitProgress(v);
-                    final maxMs =
-                        dur.inMilliseconds.toDouble().clamp(1.0, double.infinity);
-                    final targetMs = (safe * maxMs).round().clamp(0, dur.inMilliseconds);
+                    final maxMs = dur.inMilliseconds
+                        .toDouble()
+                        .clamp(1.0, double.infinity);
+                    final targetMs =
+                        (safe * maxMs).round().clamp(0, dur.inMilliseconds);
                     _player.seek(Duration(milliseconds: targetMs));
                     if (!mounted) return;
                     setState(() => _scrubValue = null);
@@ -821,7 +843,8 @@ extension _PlayerControls on _PlayerScreenState {
                 child: LinearProgressIndicator(
                   value: progress != null ? _safeUnitProgress(progress) : null,
                   backgroundColor: Colors.white.withValues(alpha: 0.22),
-                  valueColor: const AlwaysStoppedAnimation(tokens.AppTokens.accent),
+                  valueColor:
+                      const AlwaysStoppedAnimation(tokens.AppTokens.accent),
                   minHeight: 3,
                 ),
               ),
@@ -855,6 +878,7 @@ extension _PlayerControls on _PlayerScreenState {
       },
     );
   }
+
   String _formatDuration(Duration d) {
     final h = d.inHours;
     final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
@@ -862,6 +886,7 @@ extension _PlayerControls on _PlayerScreenState {
     if (h > 0) return '$h:$m:$s';
     return '$m:$s';
   }
+
   Widget _buildDragIndicator() {
     final val = _draggingVolume ? _volume : _brightness;
     final icon = _draggingVolume
@@ -928,6 +953,7 @@ extension _PlayerControls on _PlayerScreenState {
       ),
     );
   }
+
   Widget _buildInfo(BuildContext context) {
     final prov = context.read<AppProvider>();
     final displayChannels = _relatedDisplay.isNotEmpty
@@ -945,153 +971,156 @@ extension _PlayerControls on _PlayerScreenState {
           return false;
         },
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(14, 12, 14, 20),
-          children: [
-        // ── Now playing card ──
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF16161E), Color(0xFF101014)],
-            ),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFF2A2A36)),
-          ),
-          child: Row(children: [
-            Builder(
-              builder: (ctx) {
-                final ch = prov.channelForStream(_currentUrl ?? '') ??
-                    prov.findChannel(name: _currentTitle);
-                if (ch != null) {
-                  return ChannelAvatar(channel: ch, size: 52);
-                }
-                return Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1A1A22),
-                    borderRadius: BorderRadius.circular(10),
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 20),
+            children: [
+              // ── Now playing card ──
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF16161E), Color(0xFF101014)],
                   ),
-                  child: Center(
-                    child: Text(
-                      categoryEmoji(widget.category),
-                      style: const TextStyle(fontSize: 22),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFF2A2A36)),
+                ),
+                child: Row(children: [
+                  Builder(
+                    builder: (ctx) {
+                      final ch = prov.channelForStream(_currentUrl ?? '') ??
+                          prov.findChannel(name: _currentTitle);
+                      if (ch != null) {
+                        return ChannelAvatar(channel: ch, size: 52);
+                      }
+                      return Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1A1A22),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Center(
+                          child: Text(
+                            categoryEmoji(widget.category),
+                            style: const TextStyle(fontSize: 22),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _currentTitle,
+                          style: GF.head(
+                            color: Colors.white,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (widget.subtitle.isNotEmpty)
+                          Text(
+                            widget.subtitle,
+                            style: GF.body(
+                              color: tokens.AppTokens.textSecondary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                      ],
                     ),
                   ),
-                );
-              },
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _currentTitle,
-                    style: GF.head(
-                      color: Colors.white,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (widget.subtitle.isNotEmpty)
-                    Text(
-                      widget.subtitle,
-                      style: GF.body(
-                        color: tokens.AppTokens.textSecondary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                ],
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: tokens.AppTokens.accentMuted,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: tokens.AppTokens.accent.withValues(alpha: 0.35),
-                    ),
-                  ),
-                  child: Row(
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const PlayerLiveDot(),
-                      const SizedBox(width: 5),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: tokens.AppTokens.accentMuted,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color:
+                                tokens.AppTokens.accent.withValues(alpha: 0.35),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const PlayerLiveDot(),
+                            const SizedBox(width: 5),
+                            Text(
+                              'LIVE',
+                              style: GF.head(
+                                color: tokens.AppTokens.accent,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.6,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
                       Text(
-                        'LIVE',
-                        style: GF.head(
-                          color: tokens.AppTokens.accent,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.6,
+                        _initialized
+                            ? 'Now playing'
+                            : _hasError
+                                ? 'Unavailable'
+                                : 'Connecting…',
+                        style: GF.body(
+                          color: _initialized
+                              ? tokens.AppTokens.success
+                              : _hasError
+                                  ? tokens.AppTokens.danger
+                                  : tokens.AppTokens.textTertiary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
                   ),
+                ]),
+              ),
+              const SizedBox(height: 12),
+              const PlayerAdSlot(),
+
+              // ── Related channels header ──
+              Text(
+                relatedTitle,
+                style: GF.head(
+                  color: tokens.AppTokens.textTertiary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.8,
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  _initialized
-                      ? 'Now playing'
-                      : _hasError
-                          ? 'Unavailable'
-                          : 'Connecting…',
-                  style: GF.body(
-                    color: _initialized
-                        ? tokens.AppTokens.success
-                        : _hasError
-                            ? tokens.AppTokens.danger
-                            : tokens.AppTokens.textTertiary,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ]),
-        ),
-        const SizedBox(height: 12),
-        const PlayerAdSlot(),
+              ),
+              const SizedBox(height: 12),
 
-        // ── Related channels header ──
-        Text(
-          relatedTitle,
-          style: GF.head(
-            color: tokens.AppTokens.textTertiary,
-            fontSize: 12,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 1.8,
-          ),
-        ),
-        const SizedBox(height: 12),
+              // ── Related channel cards ──
+              ...displayChannels.map((ch) => PlayerRelatedCard(
+                    channel: ch,
+                    isPlaying: _currentUrl == ch.streamUrl,
+                    onTap: () => _scheduleChannelSwitch(ch),
+                  )),
 
-        // ── Related channel cards ──
-        ...displayChannels.map((ch) => PlayerRelatedCard(
-              channel: ch,
-              isPlaying: _currentUrl == ch.streamUrl,
-              onTap: () => _scheduleChannelSwitch(ch),
-            )),
-
-        const SizedBox(height: 20),
-      ]),
+              const SizedBox(height: 20),
+            ]),
       ),
     );
   }
-  List<({String label, int targetHeight, String? hint})> _parsedQualityChoices() {
+
+  List<({String label, int targetHeight, String? hint})>
+      _parsedQualityChoices() {
     return const [
       (label: 'Auto', targetHeight: 0, hint: 'Adaptive'),
       (label: '180p', targetHeight: 180, hint: null),
@@ -1103,6 +1132,7 @@ extension _PlayerControls on _PlayerScreenState {
       (label: '1080p', targetHeight: 1080, hint: '1920×1080 · ~8.20 Mbps'),
     ];
   }
+
   IconData _qualityIconFor(String label) {
     if (label == 'Auto') return Icons.auto_awesome_rounded;
     final h = int.tryParse(label.replaceAll('p', '')) ?? 0;
@@ -1110,6 +1140,7 @@ extension _PlayerControls on _PlayerScreenState {
     if (h >= 720) return Icons.high_quality_rounded;
     return Icons.sd_rounded;
   }
+
   Widget _qualityOptionTile({
     required BuildContext ctx,
     required String label,
@@ -1187,9 +1218,7 @@ extension _PlayerControls on _PlayerScreenState {
                 ),
               ),
               Icon(
-                selected
-                    ? Icons.check_circle_rounded
-                    : Icons.circle_outlined,
+                selected ? Icons.check_circle_rounded : Icons.circle_outlined,
                 color: selected ? tokens.AppTokens.accent : Colors.white24,
                 size: 22,
               ),
@@ -1199,6 +1228,7 @@ extension _PlayerControls on _PlayerScreenState {
       ),
     );
   }
+
   void _showQualityDialog(BuildContext context) {
     _revealControls(restartTimer: false);
     if (_hlsVariants.isEmpty) {
@@ -1262,7 +1292,8 @@ extension _PlayerControls on _PlayerScreenState {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: tokens.AppTokens.accent.withValues(alpha: 0.18),
+                            color:
+                                tokens.AppTokens.accent.withValues(alpha: 0.18),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Icon(
@@ -1302,7 +1333,8 @@ extension _PlayerControls on _PlayerScreenState {
                       ],
                     ),
                   ),
-                  Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+                  Divider(
+                      height: 1, color: Colors.white.withValues(alpha: 0.08)),
                   Expanded(
                     child: ListView.separated(
                       padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
@@ -1358,7 +1390,8 @@ extension _PlayerControls on _PlayerScreenState {
                       },
                     ),
                   ),
-                  Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+                  Divider(
+                      height: 1, color: Colors.white.withValues(alpha: 0.08)),
                   Padding(
                     padding: EdgeInsets.fromLTRB(
                       14,
@@ -1428,9 +1461,11 @@ extension _PlayerControls on _PlayerScreenState {
       ),
     );
   }
+
   List<VideoTrack> get _selectableVideoTracks {
     return _player.state.tracks.video.where((t) => (t.h ?? 0) > 0).toList();
   }
+
   int _trackHeight(VideoTrack t) => t.h ?? 0;
 
   bool _heightMatchesTarget(int h, int targetH) =>
@@ -1465,6 +1500,7 @@ extension _PlayerControls on _PlayerScreenState {
     }
     return lowest;
   }
+
   Future<void> _applyQuality(String label, int targetH) async {
     if (!mounted || _applyingQuality) return;
     _applyingQuality = true;
@@ -1480,20 +1516,7 @@ extension _PlayerControls on _PlayerScreenState {
       unawaited(_persistQualityPref(targetH));
 
       // #region agent log
-      agentDebugLog(
-        location: 'player_screen.dart:_applyQuality',
-        message: 'quality apply start',
-        hypothesisId: 'H-quality',
-        data: {
-          'label': label,
-          'targetH': targetH,
-          'hlsVariantCount': _hlsVariants.length,
-          'videoTrackCount': _player.state.tracks.video.length,
-          'selectableTrackCount': _selectableVideoTracks.length,
-          'currentUrlTail': _currentUrl?.split('/').last ?? '',
-          'masterUrlTail': _masterUrl.split('/').last,
-        },
-      );
+      SafeLogger.debug('player', 'player_screen.dart:_applyQuality: quality apply start (H-quality) label=$label targetH=$targetH hlsVariantCount=${_hlsVariants.length} videoTrackCount=${_player.state.tracks.video.length} selectableTrackCount=${_selectableVideoTracks.length} currentUrlTail=${_currentUrl?.split('/').last ?? ''} masterUrlTail=${_masterUrl.split('/').last}');
       // #endregion
 
       if (label == 'Auto') {
@@ -1557,12 +1580,7 @@ extension _PlayerControls on _PlayerScreenState {
         if (_lastMpvCapHeight != null) {
           await _applyMpvHeightCap(null);
         }
-        agentDebugLog(
-          location: 'player_screen.dart:_applyQuality',
-          message: 'tier2 media_kit track',
-          hypothesisId: 'H-tier2',
-          data: {'trackH': forcedTrack.h, 'trackW': forcedTrack.w},
-        );
+        SafeLogger.debug('player', 'player_screen.dart:_applyQuality: tier2 media_kit track (H-tier2) trackH=${forcedTrack.h} trackW=${forcedTrack.w}');
       } else if (forcedVariant != null && forcedVariant.url != _currentUrl) {
         applyPath = 'url_reopen';
         await _openStreamUrl(forcedVariant.url, _activeHeaders);
@@ -1570,15 +1588,7 @@ extension _PlayerControls on _PlayerScreenState {
           setState(() => _currentUrl = forcedVariant.url);
           tier1Ok = true;
         }
-        agentDebugLog(
-          location: 'player_screen.dart:_applyQuality',
-          message: 'tier1 HLS rendition',
-          hypothesisId: 'H-tier1',
-          data: {
-            'urlTail': forcedVariant.url.split('/').last,
-            'height': forcedVariant.height,
-          },
-        );
+        SafeLogger.debug('player', 'player_screen.dart:_applyQuality: tier1 HLS rendition (H-tier1) urlTail=${forcedVariant.url.split('/').last} height=${forcedVariant.height}');
       }
 
       if (!tier2Ok) {
@@ -1589,18 +1599,7 @@ extension _PlayerControls on _PlayerScreenState {
           applyPath = 'vf_debounced';
           _scheduleMpvHeightCap(targetH);
         }
-        agentDebugLog(
-          location: 'player_screen.dart:_applyQuality',
-          message: 'tier3 MPV vf scheduled/applied',
-          hypothesisId: 'H-tier3',
-          data: {
-            'targetH': targetH,
-            'tier1': tier1Ok,
-            'tier2': tier2Ok,
-            'debounced': !tier1Ok,
-            'sourceHeight': _sourceHeight,
-          },
-        );
+        SafeLogger.debug('player', 'player_screen.dart:_applyQuality: tier3 MPV vf scheduled/applied (H-tier3) targetH=$targetH tier1=$tier1Ok tier2=$tier2Ok debounced=${!tier1Ok} sourceHeight=$_sourceHeight');
       }
 
       _pendingTargetHeight = null;
@@ -1627,8 +1626,6 @@ extension _PlayerControls on _PlayerScreenState {
       }
     }
   }
-
-
 
   List<ChannelModel> _defaultChannelsForCategory() {
     if (_relatedCategory == 'Sports') {

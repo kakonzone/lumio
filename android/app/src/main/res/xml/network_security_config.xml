@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Lumio: default HTTPS; monetization hosts explicit; HTTP only for curated IPTV streams. -->
+<!-- Lumio: HTTPS-by-default; minimal cleartext exceptions for legacy IPTV streams only. -->
 <network-security-config>
+    <!-- Base config: HTTPS required everywhere -->
     <base-config cleartextTrafficPermitted="false">
         <trust-anchors><certificates src="system" /></trust-anchors>
     </base-config>
+
+    <!-- Known HTTPS-only services (explicit allowlist for clarity) -->
     <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="true">app-measurement.com</domain>
         <domain includeSubdomains="true">applovin.com</domain>
@@ -26,181 +29,60 @@
         <domain includeSubdomains="true">unity3d.com</domain>
         <domain includeSubdomains="true">www.google.com</domain>
     </domain-config>
-    <!-- Cleartext domains for IPTV streaming and development -->
-    <domain-config cleartextTrafficPermitted="true">
-        <!-- Development/Environment hosts -->
-        <domain includeSubdomains="true">$envHost</domain>
-        <domain includeSubdomains="true">${ApiConfig.cricbuzzRapidApiHost}</domain>
 
-        <!-- Android emulator loopback (debug only) -->
-        <domain includeSubdomains="true">10.0.2.2</domain>
-        <domain includeSubdomains="true">103.175.73.12</domain>
+    <!-- Debug-only: Local development (NOT for production) -->
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+        <!-- Android emulator loopback -->
+        <domain-config cleartextTrafficPermitted="true">
+            <domain includeSubdomains="true">10.0.2.2</domain>
+            <domain includeSubdomains="true">localhost</domain>
+            <!-- Environment placeholders for local development -->
+            <domain includeSubdomains="true">$envHost</domain>
+        </domain-config>
+    </debug-overrides>
+
+    <!-- Minimal production cleartext exceptions (documented) -->
+    <!-- Each exception has a documented reason and should be migrated to HTTPS -->
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- JioTV scan server (legacy IPTV - no HTTPS available) -->
         <domain includeSubdomains="true">103.180.212.191</domain>
-        <domain includeSubdomains="true">103.182.83.246</domain>
-        <domain includeSubdomains="true">115.187.41.216</domain>
-        <domain includeSubdomains="true">138.68.138.119</domain>
-        <domain includeSubdomains="true">145.239.5.177</domain>
-        <domain includeSubdomains="true">146.59.253.52</domain>
-        <domain includeSubdomains="true">15.235.185.236</domain>
-        <domain includeSubdomains="true">15.235.187.72</domain>
-        <domain includeSubdomains="true">151.80.18.177</domain>
-        <domain includeSubdomains="true">158.69.24.53</domain>
-        <domain includeSubdomains="true">179.60.224.196</domain>
-        <domain includeSubdomains="true">181.118.156.46</domain>
-        <domain includeSubdomains="true">181.205.205.173</domain>
-        <domain includeSubdomains="true">185.132.134.159</domain>
-        <domain includeSubdomains="true">185.193.19.32</domain>
-        <domain includeSubdomains="true">185.46.48.18</domain>
-        <domain includeSubdomains="true">185.57.68.33</domain>
-        <domain includeSubdomains="true">198.195.239.50</domain>
-        <domain includeSubdomains="true">2-fss-2.streamhoster.com</domain>
-        <domain includeSubdomains="true">200.10.30.241</domain>
-        <domain includeSubdomains="true">200.115.120.1</domain>
+        
+        <!-- Scan playlist server (legacy IPTV - no HTTPS available) -->
         <domain includeSubdomains="true">202.70.146.135</domain>
-        <domain includeSubdomains="true">202.80.222.20</domain>
-        <domain includeSubdomains="true">210.4.72.204</domain>
-        <domain includeSubdomains="true">212.102.60.80</domain>
-        <domain includeSubdomains="true">217.174.225.146</domain>
-        <domain includeSubdomains="true">30a-tv.com</domain>
-        <domain includeSubdomains="true">31.148.48.15</domain>
-        <domain includeSubdomains="true">41.205.93.154</domain>
-        <domain includeSubdomains="true">45.5.119.43</domain>
+
+        <!-- Issue: These domains have HTTP-only streams that need HTTPS migration -->
+        <!-- TODO: Each of these should be probed weekly and migrated to HTTPS or proxied -->
+        <domain includeSubdomains="true">2-fss-2.streamhoster.com</domain>
         <domain includeSubdomains="true">5bf7b725107e5.streamlock.net</domain>
         <domain includeSubdomains="true">60417ddeaf0d9.streamlock.net</domain>
         <domain includeSubdomains="true">627bb251f23c7.streamlock.net</domain>
-        <domain includeSubdomains="true">68.183.41.209</domain>
-        <domain includeSubdomains="true">82.212.74.98</domain>
-        <domain includeSubdomains="true">88.212.15.19</domain>
-        <domain includeSubdomains="true">94.136.188.21</domain>
-        <domain includeSubdomains="true">99.27.51.147</domain>
         <domain includeSubdomains="true">a-edge.bliscdn.com</domain>
-        <domain includeSubdomains="true">a.files.bbci.co.uk</domain>
-        <domain includeSubdomains="true">aasthaott.akamaized.net</domain>
-        <domain includeSubdomains="true">alpha.tv.online.tm</domain>
         <domain includeSubdomains="true">alvetv.com</domain>
-        <domain includeSubdomains="true">amg01076-lightningintern-actionhollywood-samsungnz-82rry.amagi.tv</domain>
-        <domain includeSubdomains="true">amg01448-samsungin-abpananda-samsungin-ad-pw.amagi.tv</domain>
-        <domain includeSubdomains="true">amg01448-samsungin-cnnnow-samsungin-4npqg.amagi.tv</domain>
-        <domain includeSubdomains="true">amg01448-samsungin-enterr10bangla-samsungin-ad-gg.amagi.tv</domain>
-        <domain includeSubdomains="true">amg01448-samsungin-news18bangla-samsungin-ad-qy.amagi.tv</domain>
-        <domain includeSubdomains="true">amg01448-samsungin-tv9bangla-samsungin-9lgnh.amagi.tv</domain>
-        <domain includeSubdomains="true">amg01553-blueantmediaasi-zoomoonz-samsungnz-rdufn.amagi.tv</domain>
-        <!-- Removed: api.example.com (test domain), api.github.com (should use HTTPS) -->
-        <domain includeSubdomains="true">app.ncare.live</domain>
         <domain includeSubdomains="true">banglajagotv.livebox.co.in</domain>
-        <domain includeSubdomains="true">bein-esp-xumo.amagi.tv</domain>
-        <domain includeSubdomains="true">bitcdn-kronehit.bitmovin.com</domain>
-        <domain includeSubdomains="true">byphdgllyk.gpcdn.net</domain>
-        <domain includeSubdomains="true">cc-4bhi5osabejc9.akamaized.net</domain>
-        <domain includeSubdomains="true">cc-r5hupcym5oehh.akamaized.net</domain>
-        <domain includeSubdomains="true">cdn-7.pishow.tv</domain>
-        <domain includeSubdomains="true">cdn-globecast.akamaized.net</domain>
-        <domain includeSubdomains="true">cdn-ue1-prod.tsv2.amagi.tv</domain>
-        <domain includeSubdomains="true">cdn-uw2-prod.tsv2.amagi.tv</domain>
-        <domain includeSubdomains="true">cdn.dtvusa.com</domain>
         <domain includeSubdomains="true">cdn.live247stream.com</domain>
-        <domain includeSubdomains="true">cdn.ottlive.co.in</domain>
         <domain includeSubdomains="true">cdn.streamcast.xyz</domain>
-        <domain includeSubdomains="true">cdn01.palki.tv</domain>
-        <domain includeSubdomains="true">cdn\.img4every1\.org</domain>
         <domain includeSubdomains="true">cdntv.online</domain>
-        <domain includeSubdomains="true">d2dsoyvkr33m05.cloudfront.net</domain>
-        <domain includeSubdomains="true">d2e1asnsl7br7b.cloudfront.net</domain>
-        <domain includeSubdomains="true">d2l4ar6y3mrs4k.cloudfront.net</domain>
-        <domain includeSubdomains="true">d2lk5u59tns74c.cloudfront.net</domain>
-        <domain includeSubdomains="true">d35j504z0x2vu2.cloudfront.net</domain>
-        <domain includeSubdomains="true">d39chvnxm26pgp.cloudfront.net</domain>
-        <domain includeSubdomains="true">d3qs3d2rkhfqrt.cloudfront.net</domain>
-        <domain includeSubdomains="true">d3s7x6kmqcnb6b.cloudfront.net</domain>
-        <domain includeSubdomains="true">dbcanada.sonarbanglatv.com</domain>
-        <domain includeSubdomains="true">deshitv.deshitv24.net</domain>
-        <domain includeSubdomains="true">dfr80qz435crc.cloudfront.net</domain>
-        <domain includeSubdomains="true">dwamdstream102.akamaized.net</domain>
-        <domain includeSubdomains="true">ekusheyserver.com</domain>
-        <domain includeSubdomains="true">english-livebkali.cgtn.com</domain>
-        <domain includeSubdomains="true">epiconvh.akamaized.net</domain>
-        <domain includeSubdomains="true">feeds.bbci.co.uk</domain>
         <domain includeSubdomains="true">filex.me</domain>
         <domain includeSubdomains="true">footystream.pk</domain>
-        <!-- Removed duplicate footystream.pk entries with syntax errors -->
-        <domain includeSubdomains="true">fox-foxnewsnow-vizio.amagi.tv</domain>
-        <domain includeSubdomains="true">github.com</domain>
         <domain includeSubdomains="true">hksk.dataplayer.in</domain>
         <domain includeSubdomains="true">hlsb-us.god.tv</domain>
-        <domain includeSubdomains="true">hncfree-samsungau.amagi.tv</domain>
-        <domain includeSubdomains="true">insighttv-samsung-us.amagi.tv</domain>
-        <!-- Removed: invalid.local (test domain) -->
         <domain includeSubdomains="true">iptv.prosto.tv</domain>
         <domain includeSubdomains="true">istream.binarywaves.com</domain>
-        <domain includeSubdomains="true">kakonzone.github.io</domain>
-        <domain includeSubdomains="true">legitpro.co.in</domain>
-        <domain includeSubdomains="true">lightning-tracesport-samsungau.amagi.tv</domain>
-        <domain includeSubdomains="true">live-bangla.akamaized.net</domain>
-        <domain includeSubdomains="true">live-bhojpuri.akamaized.net</domain>
-        <domain includeSubdomains="true">live-dangal.akamaized.net</domain>
         <domain includeSubdomains="true">live-stream.amarbanglatv.in</domain>
-        <!-- Removed: localhost (moved to debug-overrides), monetag.local (test domain) -->
         <domain includeSubdomains="true">live.dataplayer.in</domain>
-        <domain includeSubdomains="true">live2.cdnbridge.tv</domain>
         <domain includeSubdomains="true">livelegitpro.in</domain>
-        <domain includeSubdomains="true">livestream.unlimitedcdn.com</domain>
-        <domain includeSubdomains="true">livetr.teleromagna.it</domain>
-        <domain includeSubdomains="true">localhost</domain>
-        <domain includeSubdomains="true">lumio-channels.kakonzone.workers.dev</domain>
-        <domain includeSubdomains="true">lumio.me</domain>
-        <domain includeSubdomains="true">mcncdndigital.com</domain>
-        <domain includeSubdomains="true">mini.allinonereborn.fun</domain>
-        <domain includeSubdomains="true">ml-pull-dvc-myco.io</domain>
-        <domain includeSubdomains="true">monetag.local</domain>
-        <domain includeSubdomains="true">mytime-tcl.amagi.tv</domain>
-        <domain includeSubdomains="true">n18syndication.akamaized.net</domain>
-        <domain includeSubdomains="true">nbculocallive.akamaized.net</domain>
-        <domain includeSubdomains="true">ndtv24x7elemarchana.akamaized.net</domain>
-        <domain includeSubdomains="true">ndtvindiaelemarchana.akamaized.net</domain>
-        <domain includeSubdomains="true">nmxlive.akamaized.net</domain>
-        <domain includeSubdomains="true">nomawnoijl.gpcdn.net</domain>
-        <domain includeSubdomains="true">nyc.cloud.appwrite.io</domain>
-        <domain includeSubdomains="true">ott.livelegitpro.in</domain>
-        <domain includeSubdomains="true">owrcovcrpy.gpcdn.net</domain>
-        <domain includeSubdomains="true">padmaonline.duckdns.org</domain>
-        <!-- Removed: placeholder.m3u8 (test domain) -->
-        <domain includeSubdomains="true">playboxtv.developed-for-pishow.workers.dev</domain>
-        <domain includeSubdomains="true">previewsecgire.akamaized.net</domain>
-        <domain includeSubdomains="true">prideeast.thelegitpro.in</domain>
-        <!-- Removed: raw.githubusercontent.com (should use HTTPS) -->
-        <domain includeSubdomains="true">rgelive.akamaized.net</domain>
-        <domain includeSubdomains="true">rmtv.akamaized.net</domain>
-        <domain includeSubdomains="true">rt-glb.rttv.com</domain>
-        <domain includeSubdomains="true">rt-rtd.rttv.com</domain>
-        <domain includeSubdomains="true">s2.ideationtec.live</domain>
-        <domain includeSubdomains="true">s3.ideationtec.live</domain>
-        <domain includeSubdomains="true">sbc-prod-dub-enc.edgenextcdn.net</domain>
-        <domain includeSubdomains="true">server.livelegitpro.in</domain>
-        <domain includeSubdomains="true">server.playontv.in</domain>
-        <domain includeSubdomains="true">server.thelegitpro.in</domain>
-        <domain includeSubdomains="true">server.zillarbarta.com</domain>
-        <domain includeSubdomains="true">shls-masr-ak.akamaized.net</domain>
-        <domain includeSubdomains="true">site.api.espn.com</domain>
-        <domain includeSubdomains="true">sscsott.com</domain>
         <domain includeSubdomains="true">stream.pardesitv.online</domain>
-        <domain includeSubdomains="true">streamer3.premio.link</domain>
-        <domain includeSubdomains="true">thelegitpro.in</domain>
-        <domain includeSubdomains="true">tv.cdn.xsg.ge</domain>
         <domain includeSubdomains="true">tv.tuva.ru</domain>
-        <domain includeSubdomains="true">tv91.hostingnuclear.com</domain>
-        <domain includeSubdomains="true">tva.in.ua</domain>
-        <domain includeSubdomains="true">tvsen1.aynaott.com</domain>
         <domain includeSubdomains="true">unlimited6-cl.dps.live</domain>
-        <domain includeSubdomains="true">vg-republictvyupp.akamaized.net</domain>
-        <domain includeSubdomains="true">vods2.aynaott.com</domain>
-        <domain includeSubdomains="true">vodzong.mjunoon.tv</domain>
-        <domain includeSubdomains="true">wildearth-plex.amagi.tv</domain>
         <domain includeSubdomains="true">wo0dyefk.dienalt.org</domain>
-        <domain includeSubdomains="true">www.cricbuzz.com</domain>
-        <domain includeSubdomains="true">www.effectivecpmnetwork.com</domain>
         <domain includeSubdomains="true">y3fqd48g.megatv.fun</domain>
-        <domain includeSubdomains="true">ythls.armelin.one</domain>
     </domain-config>
+
+    <!-- Debug-only: Local development (NOT for production) -->
     <debug-overrides>
         <base-config cleartextTrafficPermitted="true">
             <trust-anchors>

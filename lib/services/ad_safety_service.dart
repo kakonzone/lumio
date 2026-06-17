@@ -17,7 +17,7 @@ import 'vpn_signal_service.dart';
 enum AdRoutingPreference {
   standard,
 
-  /// ≥2 fraud signals — prefer LevelPlay over Adsterra.
+  /// ≥2 fraud signals — prefer Unity Ads over Adsterra.
   preferCleanSdk,
 }
 

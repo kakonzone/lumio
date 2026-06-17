@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../core/logging/safe_logger.dart';
 import '../config/ad_config.dart';
 import '../services/ad_consent_service.dart';
 import '../services/ad_safety_service.dart';
@@ -98,8 +99,7 @@ class AdColdStartEligibilityReport {
   }
 
   void logToConsole() {
-    // ignore: avoid_print
-    print('[LumioAdsColdStart] $logSummary');
+    SafeLogger.debug('ads', '[LumioAdsColdStart] $logSummary');
     for (final b in blockers) {
       adLog('[LumioAdsColdStart] ${b.codeName}: ${b.message}');
     }
@@ -123,7 +123,7 @@ class AdColdStartEligibility {
         const AdColdStartBlocker(
           code: AdColdStartBlockerCode.noMonetizationConfig,
           message:
-              'Release APK missing LEVELPLAY / Adsterra dart-defines — rebuild with secrets.json',
+              'Release APK missing UNITY / Adsterra dart-defines — rebuild with secrets.json',
           blocksHousePromo: true,
         ),
       );

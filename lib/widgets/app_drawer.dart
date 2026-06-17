@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../config/ad_config.dart';
-import '../provider/app_provider.dart';
+import '../core/constants/legal_urls.dart';
+import '../provider/theme_provider.dart';
+import '../provider/channel_catalog_provider.dart';
 import '../theme/app_theme.dart';
 import '../theme/tokens/colors.dart';
 
@@ -81,16 +84,17 @@ class LumioAppDrawer extends StatelessWidget {
     this.onDiagnosticsTap,
   });
 
-  static int liveCount(AppProvider prov, AppDrawerDestination dest) {
+  static int liveCount(ChannelCatalogProvider catalogProv, AppDrawerDestination dest) {
     final cat = dest.categoryName;
-    final list = cat == null ? prov.channels : prov.byCategory(cat);
+    final list = cat == null ? catalogProv.channels : catalogProv.byCategory(cat);
     return list.where((c) => c.streamUrl.isNotEmpty).length;
   }
 
   @override
   Widget build(BuildContext context) {
-    final prov = context.watch<AppProvider>();
-    final isDark = prov.isDark;
+    final themeProv = context.watch<ThemeProvider>();
+    final catalogProv = context.watch<ChannelCatalogProvider>();
+    final isDark = themeProv.isDark;
 
     return Drawer(
       backgroundColor: context.bg,
@@ -121,7 +125,7 @@ class LumioAppDrawer extends StatelessWidget {
                   for (final dest in AppDrawerDestination.values)
                     _DrawerNavTile(
                       destination: dest,
-                      count: liveCount(prov, dest),
+                      count: liveCount(catalogProv, dest),
                       selected: selected == dest,
                       onTap: () => onDestinationSelected(dest),
                     ),
@@ -365,6 +369,13 @@ class _DrawerFooterState extends State<_DrawerFooter> {
     }
   }
 
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -405,6 +416,100 @@ class _DrawerFooterState extends State<_DrawerFooter> {
               label: 'Share app',
               onTap: widget.onShareTap!,
             ),
+          Divider(
+            height: 1,
+            indent: 16,
+            endIndent: 16,
+            color: context.brd,
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+            child: Text(
+              'LEGAL',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: context.txt3,
+                letterSpacing: 1.5,
+              ),
+            ),
+          ),
+          _FooterAction(
+            icon: Icons.privacy_tip_outlined,
+            label: 'Privacy Policy',
+            onTap: () async {
+              Navigator.pop(context);
+              await _launchUrl(LegalUrls.privacyPolicy);
+            },
+          ),
+          _FooterAction(
+            icon: Icons.delete_outline_rounded,
+            label: 'Data Deletion Request',
+            onTap: () async {
+              Navigator.pop(context);
+              await _launchUrl(LegalUrls.dataDeleteRequest);
+            },
+          ),
+          _FooterAction(
+            icon: Icons.mail_outline_rounded,
+            label: 'lumioofficial@gmail.com',
+            onTap: () async {
+              Navigator.pop(context);
+              await _launchUrl(LegalUrls.supportEmailUri);
+            },
+          ),
+          Divider(
+            height: 1,
+            indent: 16,
+            endIndent: 16,
+            color: context.brd,
+          ),
+          const SizedBox(height: 8),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: context.bg2,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: context.brd),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline_rounded,
+                      size: 14,
+                      color: AppTokens.accent,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'CONTENT DISCLAIMER',
+                      style: TextStyle(
+                        color: AppTokens.accent,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Lumio does not stream any of the channels in this app. '
+                  'All streaming links are from third-party websites freely '
+                  'available on the internet. All content is the copyright '
+                  'of their respective owners.',
+                  style: TextStyle(
+                    color: context.txt3,
+                    fontSize: 11,
+                    height: 1.55,
+                  ),
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 12),
           Divider(height: 1, color: context.brd),
           const SizedBox(height: 10),

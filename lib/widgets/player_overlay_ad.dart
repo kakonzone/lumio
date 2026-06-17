@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../core/logging/safe_logger.dart';
 import '../ads/ad_manager.dart';
 import '../ads/adsterra/adsterra_native.dart';
 import '../ads/propeller/propeller_webview.dart';
@@ -93,7 +94,7 @@ class _PlayerOverlayAdState extends State<PlayerOverlayAd> {
       });
 
       // Log that we showed the ad
-      print('[PlayerOverlayAd] shown at ${DateTime.now().toIso8601String()}');
+      SafeLogger.debug('ads', '[PlayerOverlayAd] shown at ${DateTime.now().toIso8601String()}');
 
       // Update last shown timestamp
       await prefs.setInt(_lastShownKey, DateTime.now().millisecondsSinceEpoch);
@@ -113,7 +114,7 @@ class _PlayerOverlayAdState extends State<PlayerOverlayAd> {
   void _dismiss() {
     if (!_canDismiss) return;
 
-    print('[PlayerOverlayAd] dismissed');
+    SafeLogger.debug('ads', '[PlayerOverlayAd] dismissed');
     setState(() {
       _visible = false;
     });

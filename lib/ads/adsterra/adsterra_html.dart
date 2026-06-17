@@ -90,6 +90,18 @@ class AdsterraHtml {
         fullViewport: true,
       );
 
+  /// Channel-change interstitial (in-app, dismissible).
+  static String interstitial() => _wrap(
+        baseUrl: AdConfig.adsterraNativeBaseUrl,
+        body: '''
+<script async="async" data-cfasync="false"
+  src="${AdConfig.adsterraNativeInvokeUrl}"></script>
+<div id="${AdConfig.adsterraNativeContainerId}"></div>
+''',
+        minHeight: 400,
+        fullViewport: true,
+      );
+
   /// Full-bleed in-player video/native creative (player overlay).
   static String playerInStream() => _wrap(
         baseUrl: AdConfig.adsterraNativeBaseUrl,
@@ -149,6 +161,7 @@ class AdsterraHtml {
       case 'app_open':
         return baseUrlForAppOpen();
       case 'channel_tap':
+      case 'channel_change_interstitial':
         return AdConfig.adsterraNativeBaseUrl;
       default:
         return AdConfig.adsterraNativeBaseUrl;

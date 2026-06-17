@@ -4,10 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:lumio_tv/l10n/strings.dart' as strings;
-import 'package:lumio_tv/theme/tokens/colors.dart' as tokens;
-import 'package:lumio_tv/theme/tokens/spacing.dart' as tokens;
-import 'package:lumio_tv/theme/tokens/typography.dart' as tokens;
-import 'package:lumio_tv/theme/tokens/motion.dart' as tokens;
+import 'package:lumio_tv/theme/tokens.dart' as tokens;
 import 'package:lumio_tv/utils/haptic_helpers.dart' as haptics;
 
 /// Hero carousel widget with editorial layout for home screen.
@@ -109,11 +106,11 @@ class _HeroCarouselState extends State<HeroCarousel>
           return _HeroSlide(
             item: widget.items[index],
             onWatchNow: () {
-              Haptics.buttonPress();
+              haptics.Haptics.buttonPress();
               widget.onWatchNow(widget.items[index]);
             },
             onMoreInfo: () {
-              Haptics.buttonPress();
+              haptics.Haptics.buttonPress();
               widget.onMoreInfo(widget.items[index]);
             },
           );

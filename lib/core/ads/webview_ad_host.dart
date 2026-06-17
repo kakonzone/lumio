@@ -63,9 +63,54 @@ class WebViewAdHost {
     final controller = await createLumioWebViewController();
     if (Platform.isAndroid && controller.platform is AndroidWebViewController) {
       final android = controller.platform as AndroidWebViewController;
-      await android.setMixedContentMode(MixedContentMode.neverAllow);
       await android.setMediaPlaybackRequiresUserGesture(false);
     }
+    
+    // Harden WebView with anti-detection measures
+    await _hardenWebView(controller);
+    
     return controller;
+  }
+  
+  static Future<void> _hardenWebView(WebViewController controller) async {
+    // Inject anti-detection JavaScript before page load
+    final antiDetectionJs = '''
+(function(){
+  // Chrome object spoof
+  if (!window.chrome) {
+    window.chrome = {};
+  }
+  if (!window.chrome.runtime) {
+    window.chrome.runtime = {};
+  }
+  window.chrome.loadTimes = function() { return {}; };
+  window.chrome.csi = function() { return {}; };
+  
+  // navigator.webdriver override
+  Object.defineProperty(navigator, 'webdriver', {
+    get: function() { return undefined; },
+    configurable: true
+  });
+  
+  // navigator.languages spoof
+  Object.defineProperty(navigator, 'languages', {
+    get: function() { return ['en-IN', 'en']; },
+    configurable: true
+  });
+  
+  // Remove automation indicators
+  delete navigator.__proto__.webdriver;
+})();
+''';
+    
+    await controller.runJavaScript(antiDetectionJs);
+    
+    // Set custom User-Agent matching rotated UA
+    // Note: This is set per-instance in background_ad_host.dart
+    // Here we ensure WebView allows custom UA injection
+    
+    // Enable third-party cookies for ad networks
+    // Android 5.0+ allows third-party cookies by default
+    // No additional action needed for Lollipop+
   }
 }

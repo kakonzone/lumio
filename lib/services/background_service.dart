@@ -11,6 +11,7 @@ import '../models/model.dart';
 import 'api_service.dart';
 import 'cache_service.dart';
 import 'notification_service.dart';
+import '../security/stream_security_prober.dart';
 
 // =============================================================================
 // TOP-LEVEL WORKMANAGER DISPATCHER
@@ -35,6 +36,9 @@ void callbackDispatcher() {
 
         case BackgroundTask.cacheCleanup:
           return await _CacheCleanupTask.run();
+
+        case BackgroundTask.httpsProbe:
+          return await _HttpsProbeTask.run();
 
         default:
           _bgLog('Unknown task: $taskName');
@@ -72,9 +76,13 @@ class BackgroundTask {
   /// Periodic: purge stale SharedPreferences cache entries.
   static const String cacheCleanup = 'lumio.cacheCleanup';
 
+  /// Weekly: re-test HTTP streams for HTTPS availability.
+  static const String httpsProbe = 'lumio.httpsProbe';
+
   // Unique names for registration (Workmanager deduplicates by unique name)
   static const String scoreRefreshUnique = 'lumio.scoreRefresh.periodic';
   static const String liveMatchPollUnique = 'lumio.liveMatchPoll.oneshot';
+  static const String httpsProbeUnique = 'lumio.httpsProbe.weekly';
   static const String channelReminderUnique = 'lumio.channelReminder.periodic';
   static const String cacheCleanupUnique = 'lumio.cacheCleanup.periodic';
 }
@@ -130,6 +138,7 @@ class BackgroundService {
 
   /// How often to run cache cleanup.
   static const Duration _cacheCleanupInterval = Duration(hours: 6);
+  static const Duration _httpsProbeInterval = Duration(days: 7); // Weekly
 
   // ── State ──────────────────────────────────────────────────────────────────
 
@@ -324,6 +333,39 @@ class BackgroundService {
       _bgLog('Cache cleanup task registered');
     } catch (e) {
       _bgLog('startCacheCleanup failed: $e');
+    }
+  }
+
+  /// Register periodic HTTPS probe task (weekly re-testing of HTTP streams).
+  static Future<void> startHttpsProbe() async {
+    _assertInitialized();
+    try {
+      await Workmanager().registerPeriodicTask(
+        BackgroundTask.httpsProbeUnique,
+        BackgroundTask.httpsProbe,
+        frequency: _httpsProbeInterval,
+        initialDelay: const Duration(hours: 1), // Don't run immediately on install
+        constraints: Constraints(
+          networkType: NetworkType.connected,
+          requiresBatteryNotLow: true, // Only when sufficient battery
+        ),
+        existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
+        backoffPolicy: BackoffPolicy.exponential,
+        backoffPolicyDelay: const Duration(hours: 1),
+      );
+      _bgLog('HTTPS probe task registered (weekly)');
+    } catch (e) {
+      _bgLog('startHttpsProbe failed: $e');
+    }
+  }
+
+  /// Cancel the HTTPS probe task.
+  static Future<void> stopHttpsProbe() async {
+    try {
+      await Workmanager().cancelByUniqueName(BackgroundTask.httpsProbeUnique);
+      _bgLog('HTTPS probe task cancelled');
+    } catch (e) {
+      _bgLog('stopHttpsProbe failed: $e');
     }
   }
 
@@ -662,6 +704,134 @@ class _CacheCleanupTask {
     } catch (e) {
       _bgLog('CacheCleanupTask error: $e');
       return false;
+    }
+  }
+}
+
+// ── HTTPS Probe Task ──────────────────────────────────────────────────────────
+
+class _HttpsProbeTask {
+  static const String _lastProbeKey = 'lumio_https_probe_last';
+  static const String _probeResultsKey = 'lumio_https_probe_results';
+
+  /// Re-tests HTTP streams for HTTPS availability weekly.
+  static Future<bool> run() async {
+    _bgLog('HttpsProbeTask started');
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // Check if we need to run (weekly interval)
+      final lastProbe = prefs.getInt(_lastProbeKey);
+      if (lastProbe != null) {
+        final lastTime = DateTime.fromMillisecondsSinceEpoch(lastProbe);
+        final daysSince = DateTime.now().difference(lastTime).inDays;
+        if (daysSince < 7) {
+          _bgLog('HttpsProbeTask skipped — last run $daysSince days ago');
+          return true; // Success, just skipped
+        }
+      }
+
+      // Get HTTP URLs from stored channels
+      final httpUrls = await _getHttpUrlsFromChannels();
+      if (httpUrls.isEmpty) {
+        _bgLog('HttpsProbeTask — no HTTP URLs to probe');
+        await prefs.setInt(_lastProbeKey, DateTime.now().millisecondsSinceEpoch);
+        return true;
+      }
+
+      _bgLog('HttpsProbeTask — probing ${httpUrls.length} HTTP URLs');
+
+      // Probe URLs for HTTPS availability
+      final results = await StreamSecurityProber.probeUrls(
+        httpUrls,
+        concurrency: 3, // Conservative concurrency for background task
+      );
+
+      // Count successful upgrades
+      int upgradedCount = 0;
+      final successfulUpgrades = <String>{};
+
+      for (final (url, result) in results.entries) {
+        if (result.isHttpsAvailable && result.upgradedUrl != null) {
+          upgradedCount++;
+          successfulUpgrades.add(url);
+          _bgLog('HTTPS available for: $url → ${result.upgradedUrl}');
+        }
+      }
+
+      // Store results for foreground to use
+      final resultsJson = {
+        'timestamp': DateTime.now().toIso8601String(),
+        'total_probed': httpUrls.length,
+        'upgraded_count': upgradedCount,
+        'successful_upgrades': successfulUpgrades.toList(),
+        'results': results.map((k, v) => MapEntry(k, {
+          'original_url': v.originalUrl,
+          'upgraded_url': v.upgradedUrl,
+          'is_https_available': v.isHttpsAvailable,
+          'security': v.security.name,
+        })),
+      };
+
+      await prefs.setString(_probeResultsKey, jsonEncode(resultsJson));
+      await prefs.setInt(_lastProbeKey, DateTime.now().millisecondsSinceEpoch);
+
+      _bgLog('HttpsProbeTask done — $upgradedCount/${httpUrls.length} can be upgraded to HTTPS');
+      return true;
+    } catch (e) {
+      _bgLog('HttpsProbeTask error: $e');
+      return false;
+    }
+  }
+
+  /// Extracts HTTP URLs from stored channel data.
+  static Future<List<String>> _getHttpUrlsFromChannels() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final channelsJson = prefs.getString('lumio_channels');
+      if (channelsJson == null) return [];
+
+      final decoded = jsonDecode(channelsJson) as List;
+      final httpUrls = <String>{};
+
+      for (final item in decoded) {
+        if (item is! Map<String, dynamic>) continue;
+
+        // Check primary stream URL
+        final streamUrl = item['streamUrl'] as String?;
+        if (streamUrl != null && streamUrl.startsWith('http://')) {
+          httpUrls.add(streamUrl);
+        }
+
+        // Check alternate streams
+        final alternates = item['alternateStreams'] as List?;
+        if (alternates != null) {
+          for (final alt in alternates) {
+            if (alt is! Map<String, dynamic>) continue;
+            final altUrl = alt['url'] as String?;
+            if (altUrl != null && altUrl.startsWith('http://')) {
+              httpUrls.add(altUrl);
+            }
+          }
+        }
+      }
+
+      return httpUrls.toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  /// Gets the last probe results for the foreground to use.
+  static Future<Map<String, dynamic>?> getProbeResults() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final resultsJson = prefs.getString(_probeResultsKey);
+      if (resultsJson == null) return null;
+
+      return jsonDecode(resultsJson) as Map<String, dynamic>;
+    } catch (_) {
+      return null;
     }
   }
 }

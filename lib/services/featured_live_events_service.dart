@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 
 import '../config/appwrite_config.dart';
 import '../models/live_event_match.dart';
@@ -45,6 +46,8 @@ class FeaturedLiveEventsService {
   static final FeaturedLiveEventsService instance =
       FeaturedLiveEventsService._();
 
+  static const _githubEventsUrl =
+      'https://raw.githubusercontent.com/kakonzone/lumio-config/main/featured_live_events.json';
   static const _assetPath = 'assets/data/featured_live_events.json';
 
   /// True when Appwrite row changed or cache missing / [forceRefresh].
@@ -63,7 +66,68 @@ class FeaturedLiveEventsService {
     return remote != cached;
   }
 
+  Future<FeaturedLiveEventsPayload?> _fetchFromGitHub() async {
+    try {
+      final uri = Uri.parse(_githubEventsUrl);
+      final response = await http.get(uri).timeout(
+        const Duration(seconds: 5),
+      );
+      if (response.statusCode != 200) return null;
+      final map = jsonDecode(response.body) as Map<String, dynamic>;
+      final payload = FeaturedLiveEventsPayload.fromJson(map);
+      if (payload.events.isEmpty) return null;
+      if (kDebugMode) {
+        debugPrint('[FeaturedLiveEvents] GitHub fetch ok '
+            'events=${payload.events.length}');
+      }
+      return payload;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[FeaturedLiveEvents] GitHub fetch failed: $e');
+      }
+      return null;
+    }
+  }
+
   Future<FeaturedLiveEventsLoadResult> load({bool forceRefresh = false}) async {
+    // 1. Try GitHub raw JSON first (fast, no auth needed)
+    if (forceRefresh || true) {
+      final githubPayload = await _fetchFromGitHub();
+      if (githubPayload != null) {
+        await FeaturedLiveEventsCache.instance.write(
+          githubPayload,
+          remoteUpdatedAt: DateTime.now().toIso8601String(),
+        );
+        return FeaturedLiveEventsLoadResult(
+          payload: githubPayload,
+          source: FeaturedLiveEventsSource.appwrite, // reuse enum value
+          remoteUpdatedAt: DateTime.now().toIso8601String(),
+        );
+      }
+    }
+
+    // 2. Check disk cache
+    if (!forceRefresh) {
+      final cached = await FeaturedLiveEventsCache.instance.read();
+      if (cached != null && cached.events.isNotEmpty) {
+        return FeaturedLiveEventsLoadResult(
+          payload: cached,
+          source: FeaturedLiveEventsSource.cache,
+        );
+      }
+    }
+
+    // 3. Fallback: Appwrite (if configured)
+    if (AppwriteConfig.isConfigured) {
+      return load_appwrite(forceRefresh: forceRefresh);
+    }
+
+    // 4. Final fallback: bundled asset
+    return _loadWithoutAppwrite(forceRefresh: forceRefresh);
+  }
+
+  Future<FeaturedLiveEventsLoadResult> load_appwrite(
+      {bool forceRefresh = false}) async {
     if (!AppwriteConfig.isConfigured) {
       return _loadWithoutAppwrite(forceRefresh: forceRefresh);
     }

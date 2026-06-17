@@ -1,7 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../core/api_config.dart';
 import '../models/model.dart';
+import '../utils/app_logger.dart';
 
 /// Tournament-grouped scoreboards (ESPN soccer + Cricbuzz live).
 class ScoreTournamentGroup {
@@ -21,10 +24,46 @@ class ScoreService {
   static List<ScoreTournamentGroup>? _boardsCache;
   static DateTime? _boardsCacheAt;
   static const _cacheTtl = Duration(minutes: 3);
+  static const _requestTimeout = Duration(seconds: 8);
+  static const _maxRetries = 3;
 
   static void clearCache() {
     _boardsCache = null;
     _boardsCacheAt = null;
+  }
+
+  /// HTTP request with retry and timeout
+  static Future<http.Response> _fetchWithRetry(
+    String url, {
+    Map<String, String>? headers,
+    int retries = _maxRetries,
+  }) async {
+    int attempt = 0;
+    Duration delay = const Duration(seconds: 1);
+
+    while (attempt < retries) {
+      try {
+        return await http
+            .get(Uri.parse(url), headers: headers)
+            .timeout(_requestTimeout);
+      } on SocketException catch (e) {
+        attempt++;
+        if (attempt >= retries) rethrow;
+        AppLogger.warning('Network error, retry $attempt/$retries: $e', subsystem: 'ScoreService');
+        await Future.delayed(delay);
+        delay *= 2; // Exponential backoff
+      } on HttpException catch (e) {
+        attempt++;
+        if (attempt >= retries) rethrow;
+        AppLogger.warning('HTTP error, retry $attempt/$retries: $e', subsystem: 'ScoreService');
+        await Future.delayed(delay);
+        delay *= 2;
+      } catch (e) {
+        rethrow;
+      }
+    }
+
+    throw Exception('Max retries exceeded');
   }
 
   static const _espnSoccerBoards = <String, String>{
@@ -172,15 +211,35 @@ class ScoreService {
     String url,
   ) async {
     try {
-      final res = await http.get(Uri.parse(url),
-          headers: {'User-Agent': _ua}).timeout(const Duration(seconds: 10));
+      final res = await _fetchWithRetry(url, headers: {'User-Agent': _ua});
       if (res.statusCode != 200) {
+        if (kDebugMode) {
+          AppLogger.warning('ESPN returned status ${res.statusCode}', subsystem: 'ScoreService');
+        }
         return ScoreTournamentGroup(tournament: name, matches: const []);
       }
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       final matches = _parseEspnSoccerToday(data, name);
       return ScoreTournamentGroup(tournament: name, matches: matches);
-    } catch (_) {
+    } on SocketException catch (e) {
+      if (kDebugMode) {
+        AppLogger.warning('ESPN network error: $e', subsystem: 'ScoreService');
+      }
+      return ScoreTournamentGroup(tournament: name, matches: const []);
+    } on HttpException catch (e) {
+      if (kDebugMode) {
+        AppLogger.warning('ESPN HTTP error: $e', subsystem: 'ScoreService');
+      }
+      return ScoreTournamentGroup(tournament: name, matches: const []);
+    } on FormatException catch (e) {
+      if (kDebugMode) {
+        AppLogger.warning('ESPN parse error: $e', subsystem: 'ScoreService');
+      }
+      return ScoreTournamentGroup(tournament: name, matches: const []);
+    } catch (e) {
+      if (kDebugMode) {
+        AppLogger.warning('ESPN unknown error: $e', subsystem: 'ScoreService');
+      }
       return ScoreTournamentGroup(tournament: name, matches: const []);
     }
   }
@@ -272,18 +331,24 @@ class ScoreService {
   }
 
   static Future<List<ScoreTournamentGroup>> _fetchCricbuzzRapidLive() async {
+    if (kReleaseMode && !ApiConfig.hasCricbuzzKey) {
+      throw StateError('CRICBUZZ_RAPID_API_KEY missing in release build');
+    }
     try {
-      final res = await http.get(
-        Uri.parse(
-          'https://${ApiConfig.cricbuzzRapidApiHost}/matches/v1/live',
-        ),
+      final res = await _fetchWithRetry(
+        'https://${ApiConfig.cricbuzzRapidApiHost}/matches/v1/live',
         headers: {
           'User-Agent': _ua,
           'x-rapidapi-host': ApiConfig.cricbuzzRapidApiHost,
           'x-rapidapi-key': ApiConfig.cricbuzzRapidApiKey,
         },
-      ).timeout(const Duration(seconds: 12));
-      if (res.statusCode != 200) return [];
+      );
+      if (res.statusCode != 200) {
+        if (kDebugMode) {
+          AppLogger.warning('Cricbuzz returned status ${res.statusCode}', subsystem: 'ScoreService');
+        }
+        return [];
+      }
       final data = jsonDecode(res.body);
       final matches = _parseCricbuzzRapid(data);
       if (matches.isEmpty) return [];
@@ -293,7 +358,25 @@ class ScoreService {
           matches: matches,
         ),
       ];
-    } catch (_) {
+    } on SocketException catch (e) {
+      if (kDebugMode) {
+        AppLogger.warning('Cricbuzz network error: $e', subsystem: 'ScoreService');
+      }
+      return [];
+    } on HttpException catch (e) {
+      if (kDebugMode) {
+        AppLogger.warning('Cricbuzz HTTP error: $e', subsystem: 'ScoreService');
+      }
+      return [];
+    } on FormatException catch (e) {
+      if (kDebugMode) {
+        AppLogger.warning('Cricbuzz parse error: $e', subsystem: 'ScoreService');
+      }
+      return [];
+    } catch (e) {
+      if (kDebugMode) {
+        AppLogger.warning('Cricbuzz unknown error: $e', subsystem: 'ScoreService');
+      }
       return [];
     }
   }

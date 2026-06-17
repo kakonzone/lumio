@@ -2,7 +2,7 @@
 // Requirements before implementation:
 // - Vendor selection for UK/US/EEA traffic
 // - Wire TC string into IabConsentBridge.saveTcString()
-// - Call LevelPlay privacy flags after CMP updates
+// - Call Unity Ads consent after CMP updates
 // - Do NOT load ad WebViews until consent resolved
 // See: https://github.com/your-repo/issues/XXX
 

@@ -1,0 +1,126 @@
+name: Dev APK (internal testing)
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: dev-apk-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-dev-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.6'
+          channel: stable
+          cache: true
+
+      - name: Decode keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
+
+      - name: Write key.properties
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          cat > android/key.properties <<EOF
+          storePassword=${KEYSTORE_PASSWORD}
+          keyPassword=${KEY_PASSWORD}
+          keyAlias=${KEY_ALIAS}
+          storeFile=app/release.keystore
+          EOF
+
+      - name: Write google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            echo "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+          fi
+
+      - name: Build secrets.json (ci_defines + CI secrets)
+        env:
+          CRICBUZZ_RAPID_API_KEY: ${{ secrets.CRICBUZZ_RAPID_API_KEY }}
+          LEVELPLAY_APP_KEY: ${{ secrets.LEVELPLAY_APP_KEY }}
+          LEVELPLAY_INTERSTITIAL_AD_UNIT: ${{ secrets.LEVELPLAY_INTERSTITIAL_AD_UNIT }}
+          LEVELPLAY_REWARDED_AD_UNIT: ${{ secrets.LEVELPLAY_REWARDED_AD_UNIT }}
+          LEVELPLAY_BANNER_AD_UNIT: ${{ secrets.LEVELPLAY_BANNER_AD_UNIT }}
+          ADSTERRA_DL_1: ${{ secrets.ADSTERRA_DL_1 }}
+          ADSTERRA_DL_2: ${{ secrets.ADSTERRA_DL_2 }}
+          ADSTERRA_DL_3: ${{ secrets.ADSTERRA_DL_3 }}
+          ADSTERRA_DL_4: ${{ secrets.ADSTERRA_DL_4 }}
+          ADSTERRA_DIRECT_LINK: ${{ secrets.ADSTERRA_DIRECT_LINK }}
+          ADSTERRA_NATIVE_INVOKE_URL: ${{ secrets.ADSTERRA_NATIVE_INVOKE_URL }}
+          ADSTERRA_NATIVE_BASE_URL: ${{ secrets.ADSTERRA_NATIVE_BASE_URL }}
+          ADSTERRA_POPUNDER_SCRIPT_URL: ${{ secrets.ADSTERRA_POPUNDER_SCRIPT_URL }}
+          ADSTERRA_POPUNDER_BASE_URL: ${{ secrets.ADSTERRA_POPUNDER_BASE_URL }}
+          CAP_BASE_URL: ${{ secrets.CAP_BASE_URL }}
+          CAP_HMAC_KEY: ${{ secrets.CAP_HMAC_KEY }}
+          TOFFEE_SUBSCRIBER_TOKEN: ${{ secrets.TOFFEE_SUBSCRIBER_TOKEN }}
+          STREAM_TOKEN_BASE_URL: ${{ secrets.STREAM_TOKEN_BASE_URL }}
+          SSL_PIN_PRIMARY: ${{ secrets.SSL_PIN_PRIMARY }}
+          SSL_PIN_BACKUP: ${{ secrets.SSL_PIN_BACKUP }}
+        run: python3 scripts/merge_release_defines.py
+
+      - run: flutter pub get
+
+      - name: Patch Flutter plugin Kotlin versions
+        run: bash scripts/patch_plugin_kotlin.sh
+
+      - name: Sync Android network security config
+        run: python3 tool/gen_network_security_config.py
+
+      - name: Build dev APK with sideload bypasses
+        timeout-minutes: 75
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.caching=true -Dorg.gradle.configureondemand=true"
+        run: |
+          mkdir -p build/debug-info
+          flutter build apk \
+            --release \
+            --split-per-abi \
+            --target-platform=android-arm64 \
+            --obfuscate \
+            --split-debug-info=build/debug-info \
+            --tree-shake-icons \
+            --dart-define-from-file=secrets.json \
+            --dart-define=LUMIO_SIDELOAD_DEV=true \
+            --dart-define=CAP_LOCAL_ONLY_MODE=true
+
+      - name: Report APK size
+        run: |
+          APK=build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          ls -lh "$APK"
+          du -m "$APK" | awk '{print "APK size: " $1 " MB (target 20-35 MB arm64)"}'
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Upload dev APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumio-dev-arm64-${{ steps.version.outputs.version }}
+          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          retention-days: 7

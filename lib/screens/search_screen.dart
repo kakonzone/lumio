@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:lumio_tv/l10n/strings.dart';
 import 'package:lumio_tv/theme/tokens/colors.dart' as tokens;
 import 'package:lumio_tv/theme/tokens/radius.dart' as tokens;
@@ -11,6 +12,8 @@ import 'package:lumio_tv/services/search_history.dart';
 import 'package:lumio_tv/widgets/search/search_chips.dart';
 import 'package:lumio_tv/widgets/search/result_tile.dart';
 import 'package:lumio_tv/widgets/common/pressable.dart';
+import 'package:lumio_tv/provider/channel_catalog_provider.dart';
+import 'package:lumio_tv/models/model.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Main search screen with full-screen experience
@@ -24,8 +27,10 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 /// - Tabbed results (All | Channels | Movies | Series | EPG)
 /// - Query highlighting in results
 /// - Voice search integration
-/// - 300ms debounce
+/// - 250ms debounce
 /// - Keyboard dismisses on scroll
+/// - Real search over unified channel repository
+/// - Case-insensitive, diacritic-insensitive matching
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
 
@@ -80,6 +85,7 @@ class _SearchScreenState extends State<SearchScreen>
 
   void _loadRecentSearches() async {
     final searches = await SearchHistory.getRecent();
+    if (!mounted) return;
     setState(() {
       _recentSearches = searches;
     });
@@ -90,7 +96,7 @@ class _SearchScreenState extends State<SearchScreen>
       _debounceTimer!.cancel();
     }
 
-    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+    _debounceTimer = Timer(const Duration(milliseconds: 250), () {
       final query = _searchController.text.trim();
       setState(() {
         _query = query;
@@ -105,54 +111,66 @@ class _SearchScreenState extends State<SearchScreen>
     });
   }
 
+  /// Normalizes text for case-insensitive, diacritic-insensitive comparison
+  String _normalizeText(String text) {
+    // Remove diacritics by decomposing characters and removing marks
+    final normalized = text.toLowerCase().replaceAll(RegExp(r'[^\p{L}\p{N}\s]', unicode: true), '');
+    return normalized;
+  }
+
+  /// Performs real search over the unified channel repository
   void _performSearch(String query) async {
     setState(() {
       _isLoading = true;
       _results = [];
     });
 
-    // Simulate search delay (replace with actual search logic)
-    await Future.delayed(const Duration(milliseconds: 500));
+    final catalog = context.read<ChannelCatalogProvider>();
+    final channels = catalog.channels;
+    final gitunChannels = catalog.gitunChannels;
 
-    // Mock search results (replace with actual data fetching)
-    final mockResults = _generateMockResults(query);
+    // Combine all channels for unified search
+    final allChannels = [...channels, ...gitunChannels];
+
+    // Normalize the query once
+    final normalizedQuery = _normalizeText(query);
+
+    // Search across name, category, and country (language)
+    final matchedChannels = allChannels.where((channel) {
+      final normalizedName = _normalizeText(channel.name);
+      final normalizedCategory = _normalizeText(channel.category);
+      final normalizedCountry = _normalizeText(channel.country);
+
+      return normalizedName.contains(normalizedQuery) ||
+             normalizedCategory.contains(normalizedQuery) ||
+             normalizedCountry.contains(normalizedQuery);
+    }).toList();
+
+    // Convert ChannelModel to SearchResult
+    final searchResults = matchedChannels.map((channel) {
+      return SearchResult(
+        id: channel.id,
+        title: channel.name,
+        subtitle: channel.category.isNotEmpty ? channel.category : 'Live Channel',
+        thumbnail: channel.logoUrl.isNotEmpty ? channel.logoUrl : null,
+        type: SearchResultType.channel,
+        isLive: channel.isLive,
+        metadata: channel.country.isNotEmpty ? channel.country : 'Live',
+        matchedQuery: query,
+      );
+    }).toList();
 
     setState(() {
       _isLoading = false;
-      _results = mockResults;
+      _results = searchResults;
     });
 
-    // Add to recent searches if not empty
-    if (query.isNotEmpty && mockResults.isNotEmpty) {
+    // Add to recent searches if results found
+    if (query.isNotEmpty && searchResults.isNotEmpty) {
       await SearchHistory.add(query);
+      if (!mounted) return;
       _loadRecentSearches();
     }
-  }
-
-  List<SearchResult> _generateMockResults(String query) {
-    // Mock data for demonstration
-    return [
-      SearchResult(
-        id: '1',
-        title: 'BBC One',
-        subtitle: 'Currently: News at Ten',
-        thumbnail: null,
-        type: SearchResultType.channel,
-        isLive: true,
-        metadata: 'Live UK',
-        matchedQuery: query,
-      ),
-      SearchResult(
-        id: '2',
-        title: 'Movie: The Dark Knight',
-        subtitle: 'Action • 2008',
-        thumbnail: null,
-        type: SearchResultType.movie,
-        isLive: false,
-        metadata: '2h 32m • PG-13',
-        matchedQuery: query,
-      ),
-    ];
   }
 
   void _onRecentSearchTap(String query) {
@@ -163,6 +181,7 @@ class _SearchScreenState extends State<SearchScreen>
 
   void _onRecentSearchRemove(String query) async {
     await SearchHistory.remove(query);
+    if (!mounted) return;
     _loadRecentSearches();
   }
 

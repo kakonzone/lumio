@@ -1,12 +1,11 @@
 // lib/widgets/player/buffering_skeleton.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:lumio_tv/l10n/strings.dart' as strings;
-import 'package:lumio_tv/theme/tokens/colors.dart' as tokens;
-import 'package:lumio_tv/theme/tokens/spacing.dart' as tokens;
-import 'package:lumio_tv/theme/tokens/motion.dart' as tokens;
-import 'package:lumio_tv/theme/tokens/typography.dart' as tokens;
+import 'package:lumio_tv/theme/tokens.dart' as tokens;
+import 'package:lumio_tv/utils/haptic_helpers.dart' as haptics;
 import 'package:lumio_tv/widgets/common/skeleton.dart' as skeletons;
 
 /// Buffering skeleton overlay for video player.
@@ -106,8 +105,8 @@ class PlayerErrorState extends StatelessWidget {
                   color: tokens.AppTokens.surface2,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  PhosphorIcons.warning_octagon,
+                child: Icon(
+                  PhosphorIcons.warning(),
                   size: 48,
                   color: tokens.AppTokens.textTertiary,
                 ),
@@ -128,7 +127,7 @@ class PlayerErrorState extends StatelessWidget {
               Text(
                 strings.Strings.streamDroppedSubtitle,
                 style: tokens.TypographyTokens.bodySecondary,
-                textAlign: textAlign.center,
+                textAlign: TextAlign.center,
               ),
 
               const SizedBox(height: tokens.SpacingTokens.s32),
@@ -136,7 +135,7 @@ class PlayerErrorState extends StatelessWidget {
               // Retry button
               ElevatedButton(
                 onPressed: () {
-                  haptics.mediumImpact();
+                  HapticFeedback.mediumImpact();
                   onRetry();
                 },
                 style: ElevatedButton.styleFrom(

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
+import '../core/logging/safe_logger.dart';
 import '../config/ad_config.dart';
 import 'rewarded_features.dart';
 import 'session_pacing.dart';
@@ -16,11 +17,11 @@ import 'ad_cold_start_eligibility.dart';
 import 'cmp_tier1_gate.dart';
 import 'interstitial_placement.dart';
 import '../services/user_preferences.dart';
-import '../services/kill_switch_service.dart';
 import '../utils/channel_tap_key.dart';
 import '../utils/ad_debug_log.dart';
 // import 'ad_waterfall.dart'; // REMOVED: Waterfall system disabled
 import 'background_ad_engine.dart';
+import 'channel_change_interstitial_controller.dart';
 import 'adsterra_engine.dart';
 import 'adsterra_telemetry_client.dart';
 import 'analytics/ad_analytics.dart';
@@ -28,8 +29,6 @@ import '../services/unity_ads_service.dart';
 import '../services/server_cap.dart';
 import 'server_cap_client.dart';
 import 'ad_placement_config.dart';
-import 'propeller/propeller_engine.dart';
-import '../config/monetag_config.dart';
 import '../services/app_session_tracker.dart';
 import 'strategies/geo_targeting.dart';
 // import 'utils/webview_pool.dart'; // REMOVED: Unused import
@@ -87,19 +86,7 @@ class AdManager {
           AdSafetyService.instance.adsEnabledRemote &&
           !ServerCap.instance.blocksAdsInRelease &&
           !UserPreferences.removeAdsPurchased &&
-          !_caps.isAdFree) &&
-      !_killSwitchActive;
-
-  bool _killSwitchActive = false;
-  bool get killSwitchActive => _killSwitchActive;
-
-  /// Disable all ad surfaces via kill switch (emergency control).
-  void setKillSwitchActive(bool active) {
-    _killSwitchActive = active;
-    adLog(active
-        ? '[KillSwitch] ADS DISABLED via kill switch'
-        : '[KillSwitch] ADS ENABLED');
-  }
+          !_caps.isAdFree);
 
   bool get unityAdsEnabled => adsEnabled;
 
@@ -512,45 +499,37 @@ class AdManager {
     }
   }
 
-  /// Adsterra direct link → Monetag smartlink → optional in-app interstitial.
+  /// In-app interstitial for channel-change (replaces external browser).
   Future<bool> _openChannelTapBrowserFirst({
     required String placement,
     required String channelKey,
     BuildContext? context,
   }) async {
-    if (AdConfig.hasValidAdsterraDirectLink &&
-        AdSafetyService.instance.adsEnabledRemote &&
-        await AdTriggerManager.instance.canShowChannelTapBrowser()) {
-      final ok = await AdsterraEngine.instance.openChannelTapBrowser(
+    if (context == null || !context.mounted) return false;
+    
+    if (!AdSafetyService.instance.adsEnabledRemote) {
+      adLog('[ChannelTapInterstitial] Blocked - ads_enabled remote config off');
+      return false;
+    }
+    
+    // Show in-app interstitial instead of external browser
+    final controller = ChannelChangeInterstitialController.instance;
+    final shown = await controller.showIf(context);
+    
+    if (shown) {
+      logAdsterraTelemetry(
         placement: placement,
-        analytics: analytics,
-        channelIdForFirstClick: channelKey,
+        format: 'interstitial_in_app',
       );
-      if (ok) {
-        logAdsterraTelemetry(
-          placement: placement,
-          format: 'direct_link_browser',
-        );
-        return true;
-      }
+      analytics?.logFill(
+        network: 'adsterra',
+        placement: 'channel_change_interstitial',
+      );
+      return true;
     }
 
-    if (MonetagConfig.isConfigured &&
-        KillSwitchService.instance.monetagEnabled) {
-      final ok = await PropellerEngine.instance.openSmartlink(
-        placement: placement,
-        analytics: analytics,
-      );
-      if (ok) {
-        AdTriggerManager.instance.recordAdsterraSurfaceEvent();
-        return true;
-      }
-    }
-
-    if (context != null &&
-        context.mounted &&
-        unityAdsEnabled &&
-        !AdSafetyService.instance.preferCleanSdkRouting) {
+    // Unity Ads fallback (keep exactly as-is)
+    if (unityAdsEnabled && !AdSafetyService.instance.preferCleanSdkRouting) {
       return showInterstitial(context: context, trigger: 'channel_tap_first');
     }
     return false;
@@ -715,29 +694,15 @@ class AdManager {
       return false;
     }
 
-    if (context != null &&
-        context.mounted &&
-        AdSafetyService.instance.adsterraEnabled &&
-        KillSwitchService.instance.monetagEnabled) {
-      final monetag = await PropellerEngine.instance.showVignetteDialog(
-        context,
-        placement: 'tab_switch_monetag',
-        minSeconds: 5,
-      );
-      if (monetag) return true;
-    }
+    // Monetag vignette removed
 
     return showInterstitial(context: context, trigger: 'tab_switch');
   }
 
   /// Optional Monetag smartlink before opening external news URL (2nd tap).
   Future<void> maybeMonetizeNewsReadMore() async {
-    if (!adsEnabled) return;
-    if (!KillSwitchService.instance.monetagEnabled) return;
-    await PropellerEngine.instance.openSmartlink(
-      placement: 'news_read_more',
-      analytics: analytics,
-    );
+    // Monetag removed
+    return;
   }
 
   /// Exit stack: Unity Ads interstitial first, then Adsterra direct link fallback.
@@ -784,9 +749,7 @@ class AdManager {
 
     // Session pacing: no full-screen ads in first 60 seconds
     if (!SessionPacing.instance.canShowFullScreenAd()) {
-      if (kDebugMode) {
-        print('[SessionPacing] first minute, skipping full-screen ad');
-      }
+      SafeLogger.debug('ads', '[SessionPacing] first minute, skipping full-screen ad');
       return false;
     }
 

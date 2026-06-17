@@ -277,6 +277,42 @@ flutter build apk \
   "$@"
 
 OUT_DIR="$ROOT/build/app/outputs/flutter-apk"
+
+# Verify APK signature (fail if debug-signed in production)
+echo "==> Verifying APK signature..."
+PRIMARY_APK=""
+case "$BUILD_APK_MODE" in
+  fat|universal|arm64)
+    PRIMARY_APK="$OUT_DIR/app-release.apk"
+    ;;
+  split)
+    PRIMARY_APK="$OUT_DIR/app-arm64-v8a-release.apk"
+    ;;
+esac
+
+if [[ -f "$PRIMARY_APK" ]]; then
+  CERT_INFO=$(apksigner verify --print-certs "$PRIMARY_APK" 2>&1 || true)
+
+  # Check if certificate issuer indicates Android Debug
+  if echo "$CERT_INFO" | grep -qi "android debug"; then
+    echo "ERROR: APK is debug-signed! This is a security vulnerability." >&2
+    echo "The APK must be release-signed for production builds." >&2
+    echo "Run with LUMIO_LOCAL_SIZE_CHECK=true only for local size audits." >&2
+    exit 1
+  fi
+
+  # Additional check: issuer CN=Android Debug
+  if echo "$CERT_INFO" | grep -qi "CN=Android Debug"; then
+    echo "ERROR: APK is debug-signed! This is a security vulnerability." >&2
+    echo "The APK must be release-signed for production builds." >&2
+    echo "Run with LUMIO_LOCAL_SIZE_CHECK=true only for local size audits." >&2
+    exit 1
+  fi
+
+  echo "OK: APK is properly signed (not Android Debug)"
+else
+  echo "WARNING: Could not verify signature - APK not found at $PRIMARY_APK" >&2
+fi
 PRIMARY_APK=""
 
 case "$BUILD_APK_MODE" in

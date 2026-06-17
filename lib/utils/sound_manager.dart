@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:audioplayers/audioplayers.dart';
+import '../core/logging/safe_logger.dart';
 
 /// Sound types for UI feedback
 enum SoundType {
@@ -35,7 +36,7 @@ class SoundManager {
       _isInitialized = true;
     } catch (e) {
       // Silently fail - sound is optional
-      print('SoundManager initialization failed: $e');
+      SafeLogger.error('audio', 'SoundManager initialization failed', e);
     }
   }
 

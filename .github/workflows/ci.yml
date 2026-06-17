@@ -21,11 +21,29 @@ jobs:
       - name: flutter pub get
         run: flutter pub get
 
-      - name: flutter analyze (non-blocking)
-        run: flutter analyze --no-fatal-warnings --no-fatal-infos || echo "Flutter analyze had errors but continuing..."
+      - name: Block raw print/agentDebugLog in lib/
+        run: |
+          if grep -rnE "(^|[^A-Za-z])print\(|agentDebugLog\(" lib/ \
+             --include="*.dart" \
+             | grep -v "safe_logger.dart" \
+             | grep -v "debug_log.dart" \
+             | grep -v "ad_log.dart" \
+             | grep -v "ad_manager.dart" \
+             | grep -v "ad_debug_log.dart" \
+             | grep -v "background_service.dart" \
+             | grep -v "server_cap.dart" \
+             | grep -v "security_manager.dart" \
+             | grep -v "firebase_bootstrap.dart" \
+             | grep -v "ad_safety_service.dart"; then
+            echo "❌ Raw print/agentDebugLog found. Use SafeLogger."
+            exit 1
+          fi
 
-      - name: flutter test (non-blocking)
-        run: flutter test --reporter expanded || echo "Flutter test had failures but continuing..."
+      - name: flutter analyze
+        run: flutter analyze --fatal-infos --fatal-warnings
+
+      - name: flutter test
+        run: flutter test --coverage --reporter expanded
 
       - name: Upload test log
         if: always()

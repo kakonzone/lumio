@@ -10,6 +10,7 @@ import '../utils/lumio_webview_config.dart';
 import '../../utils/ad_debug_log.dart';
 import 'adsterra_html.dart';
 import 'adsterra_native_cache.dart';
+import '../widgets/collapsible_ad_slot.dart';
 
 /// Shared Adsterra WebView host with placement cache + lifecycle-safe impressions.
 class AdsterraWebView extends StatefulWidget {
@@ -112,6 +113,10 @@ class _AdsterraWebViewState extends State<AdsterraWebView> {
               _lastError = null;
             });
             _logAdsterraLoadedOnce();
+            AdLoadNotification(
+              placement: widget.placement,
+              success: true,
+            ).dispatch(context);
           },
           onWebResourceError: (err) {
             if (!mounted || _disposed) return;
@@ -128,6 +133,10 @@ class _AdsterraWebViewState extends State<AdsterraWebView> {
               _loading = false;
               _pageLoaded = false;
             });
+            AdLoadNotification(
+              placement: widget.placement,
+              success: false,
+            ).dispatch(context);
           },
         ),
       );

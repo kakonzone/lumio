@@ -1,8 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
+import '../core/result.dart';
 import '../security/security_config.dart';
 import '../security/security_manager.dart';
+import '../utils/retry.dart';
 import 'secure_dio.dart';
 
 /// স্বাক্ষরিত, স্বল্পমেয়াদি স্ট্রিম URL রিজলভার।
@@ -25,16 +27,21 @@ class StreamResolver {
     await SecurityManager.instance.assertSecureOrThrow();
 
     try {
-      final res = await _dio.post<Map<String, dynamic>>(
-        SecurityConfig.streamTokenPath,
-        data: {
-          'channelId': channelId,
-          if (deviceId != null) 'deviceId': deviceId,
-          if (extra != null) 'meta': extra,
+      final result = await RetryHelper.retry(
+        fn: () => _fetchStreamToken(channelId, deviceId, extra),
+        maxAttempts: 3,
+        initialDelayMs: 1000,
+        maxDelayMs: 10000,
+        jitterFactor: 0.2,
+        onRetry: (attempt, delay, error) {
+          if (kDebugMode) {
+            debugPrint('[StreamResolver] Retry attempt $attempt in ${delay}ms: $error');
+          }
         },
+        retryIf: RetryHelper.defaultRetryPredicate,
       );
 
-      final data = res.data;
+      final data = result.data;
       if (data == null) throw const StreamResolverException('Network Error');
 
       final url = data['url'] as String?;
@@ -58,8 +65,35 @@ class StreamResolver {
       if (kDebugMode) {
         debugPrint('[StreamResolver] $e\n$stack');
       }
+      
+      // Convert to appropriate error type
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        throw TimeoutError('Stream token request timed out');
+      }
+      
+      if (e.type == DioExceptionType.connectionError) {
+        throw HttpError('Network connection failed');
+      }
+      
       throw const StreamResolverException('Network Error');
     }
+  }
+
+  Future<Response<Map<String, dynamic>>> _fetchStreamToken(
+    String channelId,
+    String? deviceId,
+    Map<String, String>? extra,
+  ) async {
+    return await _dio.post<Map<String, dynamic>>(
+      SecurityConfig.streamTokenPath,
+      data: {
+        'channelId': channelId,
+        if (deviceId != null) 'deviceId': deviceId,
+        if (extra != null) 'meta': extra,
+      },
+    );
   }
 
   /// লোকাল/এমবেডেড চ্যানেল — টোকেন API না থাকলে ফলব্যাক (মাইগ্রেশন পর্যন্ত)

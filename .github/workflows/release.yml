@@ -102,7 +102,7 @@ jobs:
 
       - name: Guard against dev defines
         run: |
-          if grep -E "LUMIO_SIDELOAD_DEV|CAP_LOCAL_ONLY_MODE" .github/workflows/release.yml; then
+          if grep -E "LUMIO_SIDELOAD_DEV|CAP_LOCAL_ONLY_MODE" .github/workflows/release.yml | grep -v "Guard against dev defines"; then
             echo "::error::Dev defines found in release workflow"
             exit 1
           fi

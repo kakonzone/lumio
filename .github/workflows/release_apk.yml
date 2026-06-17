@@ -67,7 +67,7 @@ jobs:
 
       - name: Guard against dev defines
         run: |
-          if grep -E "\-\-dart-define=(LUMIO_SIDELOAD_DEV|CAP_LOCAL_ONLY_MODE)" .github/workflows/release_apk.yml; then
+          if grep -E "\-\-dart-define=(LUMIO_SIDELOAD_DEV|CAP_LOCAL_ONLY_MODE)" .github/workflows/release_apk.yml | grep -v "Guard against dev defines"; then
             echo "::error::Dev defines found in release workflow"
             exit 1
           fi

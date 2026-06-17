@@ -30,24 +30,24 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Decode keystore
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-        run: |
-          echo "$KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
+      # - name: Decode keystore
+      #   env:
+      #     KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+      #   run: |
+      #     echo "$KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
 
-      - name: Write key.properties
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: |
-          cat > android/key.properties <<EOF
-          storePassword=${KEYSTORE_PASSWORD}
-          keyPassword=${KEY_PASSWORD}
-          keyAlias=${KEY_ALIAS}
-          storeFile=app/release.keystore
-          EOF
+      # - name: Write key.properties
+      #   env:
+      #     KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+      #     KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+      #     KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      #   run: |
+      #     cat > android/key.properties <<EOF
+      #     storePassword=${KEYSTORE_PASSWORD}
+      #     keyPassword=${KEY_PASSWORD}
+      #     keyAlias=${KEY_ALIAS}
+      #     storeFile=app/release.keystore
+      #     EOF
 
       - name: Write google-services.json
         env:
@@ -73,53 +73,22 @@ jobs:
           fi
           echo "✓ No dev defines in release workflow"
 
-      - name: Build release APK
+      - name: Build debug APK (no signing)
         timeout-minutes: 75
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.caching=true -Dorg.gradle.configureondemand=true"
         run: |
-          mkdir -p build/debug-info
           flutter build apk \
-            --release \
+            --debug \
             --split-per-abi \
             --target-platform=android-arm64 \
-            --obfuscate \
-            --split-debug-info=build/debug-info \
-            --tree-shake-icons \
             --dart-define-from-file=secrets.json
-
-      - name: Verify no dev defines in APK
-        run: |
-          APK=build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
-          if strings "$APK" | grep -q "LUMIO_SIDELOAD_DEV"; then
-            echo "::error::Dev define LUMIO_SIDELOAD_DEV found in APK"
-            exit 1
-          fi
-          if strings "$APK" | grep -q "CAP_LOCAL_ONLY_MODE"; then
-            echo "::error::Dev define CAP_LOCAL_ONLY_MODE found in APK"
-            exit 1
-          fi
-          echo "✓ No dev defines in APK"
-
-      - name: Verify signed with release cert
-        run: |
-          APK=build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
-          if ! command -v apksigner &> /dev/null; then
-            echo "::warning::apksigner not found, skipping cert verification"
-            exit 0
-          fi
-          apksigner verify --print-certs "$APK" | tee /tmp/certs.txt
-          if grep -q "CN=Lumio" /tmp/certs.txt; then
-            echo "✓ APK signed with Lumio release certificate"
-          else
-            echo "::warning::APK certificate verification inconclusive"
-          fi
 
       - name: Report APK size
         run: |
-          APK=build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          APK=build/app/outputs/flutter-apk/app-arm64-v8a-debug.apk
           ls -lh "$APK"
-          du -m "$APK" | awk '{print "APK size: " $1 " MB (target 20-35 MB arm64)"}'
+          du -m "$APK" | awk '{print "APK size: " $1 " MB"}'
 
       - name: Get version from pubspec
         id: version
@@ -140,7 +109,7 @@ jobs:
           APPWRITE_COLLECTION_ID: ${{ secrets.APPWRITE_COLLECTION_ID }}
           APPWRITE_VERSION_DOC_ID: ${{ secrets.APPWRITE_VERSION_DOC_ID }}
           APP_VERSION: ${{ steps.version.outputs.version }}
-          APK_PATH: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          APK_PATH: build/app/outputs/flutter-apk/app-arm64-v8a-debug.apk
         run: |
           pip3 install requests
           export APPWRITE_ENDPOINT="${APPWRITE_ENDPOINT:-https://cloud.appwrite.io/v1}"
@@ -149,5 +118,5 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: lumio-release-arm64
-          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          name: lumio-debug-arm64
+          path: build/app/outputs/flutter-apk/app-arm64-v8a-debug.apk

@@ -28,12 +28,7 @@ extension _PlayerState on _PlayerScreenState {
         });
       }
     } catch (e) {
-      agentDebugLog(
-        location: 'player_screen.dart:_loadPreferredQuality',
-        message: 'prefs read failed',
-        hypothesisId: 'H-prefs',
-        data: {'err': e.toString()},
-      );
+      SafeLogger.error('player', 'player_screen.dart:_loadPreferredQuality: prefs read failed', e);
     }
   }
 
@@ -45,6 +40,14 @@ extension _PlayerState on _PlayerScreenState {
     _refreshRelatedDisplay();
   }
 
+  bool _relatedListEqual(List<ChannelModel> a, List<ChannelModel> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i].id != b[i].id) return false;
+    }
+    return true;
+  }
+
   void _refreshRelatedDisplay() {
     if (!mounted) return;
     final list = context.read<AppProvider>().playerRelatedChannels(
@@ -53,10 +56,7 @@ extension _PlayerState on _PlayerScreenState {
           relatedCategory: _relatedCategory,
           fallback: widget.relatedChannels,
         );
-    if (list.length == _relatedDisplay.length &&
-        list.every((c) => _relatedDisplay.any((d) => d.id == c.id))) {
-      return;
-    }
+    if (_relatedListEqual(list, _relatedDisplay)) return;
     setState(() => _relatedDisplay = list);
   }
 
@@ -128,21 +128,12 @@ extension _PlayerState on _PlayerScreenState {
       );
       _pipAvailable = true;
       _pipConfigured = true;
-      agentDebugLog(
-        location: 'player_screen.dart:_enableLeavePiP',
-        message: 'PiP on-leave enabled',
-        hypothesisId: 'H-pip',
-      );
+      SafeLogger.debug('player', 'player_screen.dart:_enableLeavePiP: PiP on-leave enabled (H-pip)');
     } catch (e) {
       _pipAvailable = false;
       _pipConfigured = false;
       _pipBlocked = true;
-      agentDebugLog(
-        location: 'player_screen.dart:_enableLeavePiP',
-        message: 'PiP enable failed',
-        hypothesisId: 'H-pip',
-        data: {'err': e.toString()},
-      );
+      SafeLogger.error('player', 'player_screen.dart:_enableLeavePiP: PiP enable failed', e);
     }
     if (mounted) setState(() {});
   }
@@ -192,6 +183,32 @@ extension _PlayerState on _PlayerScreenState {
     _bufferingStartedAt = null;
     _probeInFlight = false;
     _switchGeneration++;
+    
+    // Cancel all stream subscriptions
+    _bufferingSub?.cancel();
+    _bufferingSub = null;
+    _errorSub?.cancel();
+    _errorSub = null;
+    _playingSub?.cancel();
+    _playingSub = null;
+    _positionSub?.cancel();
+    _positionSub = null;
+    _widthSub?.cancel();
+    _widthSub = null;
+    _heightSub?.cancel();
+    _heightSub = null;
+    _tracksSub?.cancel();
+    _tracksSub = null;
+    _idleProbeSub?.cancel();
+    _idleProbeSub = null;
+    
+    // Cancel all timers (excluding those managed by dispose)
+    _qualityDebounce?.cancel();
+    _qualityDebounce = null;
+    _autoQualityTimer?.cancel();
+    _autoQualityTimer = null;
+    _channelSwitchDebounce?.cancel();
+    _channelSwitchDebounce = null;
   }
 
   void _startAutoQualityTimer() {
@@ -225,21 +242,24 @@ extension _PlayerState on _PlayerScreenState {
         _batteryPercent = await _PlayerScreenState._qualityBattery.batteryLevel;
       } catch (_) {}
     } catch (e) {
-      agentDebugLog(
-        location: 'player_screen.dart:_refreshConnectivityHint',
-        message: 'connectivity check failed',
-        hypothesisId: 'H-auto-quality',
-        data: {'err': e.toString()},
-      );
+      SafeLogger.error('player', 'player_screen.dart:_refreshConnectivityHint: connectivity check failed', e);
     }
   }
 
   Future<void> _runInitialBandwidthSample() async {
     await _refreshConnectivityHint();
     var bufferingMs = 0;
+    DateTime? bufferStartTime;
     late final StreamSubscription<bool> bufSub;
     bufSub = _player.stream.buffering.listen((b) {
-      if (b) bufferingMs += 200;
+      if (b) {
+        bufferStartTime = DateTime.now();
+      } else if (bufferStartTime != null) {
+        bufferingMs += DateTime.now()
+            .difference(bufferStartTime!)
+            .inMilliseconds;
+        bufferStartTime = null;
+      }
     });
     await Future.delayed(const Duration(seconds: 5));
     await bufSub.cancel();
@@ -249,12 +269,7 @@ extension _PlayerState on _PlayerScreenState {
     } else if (bufferingMs < 400) {
       _estimatedMbps = (_estimatedMbps * 1.25).clamp(0.2, 20.0);
     }
-    agentDebugLog(
-      location: 'player_screen.dart:_runInitialBandwidthSample',
-      message: 'bandwidth sample done',
-      hypothesisId: 'H-auto-quality',
-      data: {'mbps': _estimatedMbps, 'bufferingMs': bufferingMs},
-    );
+    SafeLogger.debug('player', 'player_screen.dart:_runInitialBandwidthSample: bandwidth sample done (H-auto-quality) mbps=$_estimatedMbps bufferingMs=$bufferingMs');
     await _evaluateAutoQuality();
   }
 
@@ -288,17 +303,7 @@ extension _PlayerState on _PlayerScreenState {
       variant = HlsQualityService.pickVariantForced(_hlsVariants, clampedH) ??
           variant;
     }
-    agentDebugLog(
-      location: 'player_screen.dart:_evaluateAutoQuality',
-      message: 'auto tier selected',
-      hypothesisId: 'H-auto-quality',
-      data: {
-        'mbps': _estimatedMbps,
-        'height': variant.height,
-        'downgrade': downgrade,
-        'stepUp': stepUp,
-      },
-    );
+    SafeLogger.debug('player', 'player_screen.dart:_evaluateAutoQuality: auto tier selected (H-auto-quality) mbps=$_estimatedMbps height=${variant.height} downgrade=$downgrade stepUp=$stepUp');
     await _applyAutoVariant(variant);
   }
 
@@ -327,15 +332,8 @@ extension _PlayerState on _PlayerScreenState {
 
   Future<void> _prepareLinksAndPlay() async {
     // #region agent log
-    agentDebugLog(
-      location: 'player_screen.dart:_prepareLinksAndPlay',
-      message: 'prepare start',
-      hypothesisId: 'H-prepare',
-      data: {
-        'linkCount': _links.length,
-        'labels': _links.map((l) => l.label).toList()
-      },
-    );
+    if (kDebugMode)
+      SafeLogger.debug('player', 'player_screen.dart:_prepareLinksAndPlay: prepare start (H-prepare) linkCount=${_links.length} labels=${_links.map((l) => l.label).toList()}');
     // #endregion
 
     if (!mounted) return;
@@ -355,7 +353,10 @@ extension _PlayerState on _PlayerScreenState {
       if (uri == null || !uri.hasScheme) continue;
       unawaited(
         http
-            .head(uri, headers: link.headers)
+            .head(uri, headers: {
+              'User-Agent': link.headers?['User-Agent'] ??
+                  'Mozilla/5.0 LumioTV/1.0',
+            })
             .timeout(const Duration(seconds: 3))
             .catchError((_) => http.Response('', 599)),
       );
@@ -369,12 +370,7 @@ extension _PlayerState on _PlayerScreenState {
     final ranked = await StreamLinkRankerService.rankBySpeed(_links);
     if (!mounted || gen != _switchGeneration) return;
     if (ranked.first.url == _masterUrl) return;
-    agentDebugLog(
-      location: 'player_screen.dart:_rankLinksInBackground',
-      message: 'switching to faster link',
-      hypothesisId: 'H-auto-select',
-      data: {'label': ranked.first.label},
-    );
+    SafeLogger.debug('player', 'player_screen.dart:_rankLinksInBackground: switching to faster link (H-auto-select) label=${ranked.first.label}');
     setState(() {
       _links = ranked;
       _activeLinkIndex = 0;
@@ -382,7 +378,7 @@ extension _PlayerState on _PlayerScreenState {
       _currentUrl = ranked.first.url;
       _activeHeaders = ranked.first.headers;
     });
-    await _bootstrapPlayback(skipOpen: false);
+    await _bootstrapPlayback(skipOpen: true);
   }
 
   Future<void> _bootstrapPlayback({bool skipOpen = false}) async {
@@ -392,9 +388,15 @@ extension _PlayerState on _PlayerScreenState {
       headers: _activeHeaders,
     );
     var openUrl = _masterUrl;
-    final low = HlsQualityService.lowestVariant(variants);
-    if (low != null && low.url.isNotEmpty) {
-      openUrl = low.url;
+    if (_pendingTargetHeight != null &&
+        _pendingTargetHeight! > 0 &&
+        variants.isNotEmpty) {
+      final preferred = HlsQualityService.pickVariantForced(
+          variants, _pendingTargetHeight!);
+      openUrl = preferred?.url ?? _masterUrl;
+    } else {
+      final low = HlsQualityService.lowestVariant(variants);
+      if (low != null && low.url.isNotEmpty) openUrl = low.url;
     }
     _currentUrl = openUrl;
     if (!mounted) return;
@@ -424,6 +426,15 @@ extension _PlayerState on _PlayerScreenState {
   }
 
   void _attachListeners() {
+    // Cancel existing subscriptions before creating new ones (defensive)
+    _bufferingSub?.cancel();
+    _errorSub?.cancel();
+    _playingSub?.cancel();
+    _positionSub?.cancel();
+    _widthSub?.cancel();
+    _heightSub?.cancel();
+    _tracksSub?.cancel();
+    
     _bufferingSub = _player.stream.buffering.listen((isBuffering) {
       if (!mounted) return;
       _isBuffering = isBuffering;
@@ -446,12 +457,7 @@ extension _PlayerState on _PlayerScreenState {
     });
     _errorSub = _player.stream.error.listen((e) {
       if (!mounted || e.isEmpty) return;
-      agentDebugLog(
-        location: 'player_screen.dart:_errorSub',
-        message: 'player error',
-        hypothesisId: 'H-failover',
-        data: {'err': e, 'linkIndex': _activeLinkIndex},
-      );
+      SafeLogger.error('player', 'player_screen.dart:_errorSub: player error', e);
       if (!_canRunFailover) return;
       if (_failoverAttempts < _PlayerScreenState._maxFailoverAttempts) {
         unawaited(_attemptFailover());
@@ -467,6 +473,7 @@ extension _PlayerState on _PlayerScreenState {
       if (playing) {
         _isPlaying = true;
         _playbackStartedAt ??= DateTime.now();
+        StreamingState.instance.setStreaming(true);
         if (_pauseAdVisible) {
           setState(() => _pauseAdVisible = false);
         }
@@ -477,6 +484,7 @@ extension _PlayerState on _PlayerScreenState {
         }
       } else {
         _isPlaying = false;
+        StreamingState.instance.setStreaming(false);
         _stablePlaybackTicks = 0;
         _onPlayerPaused();
       }
@@ -654,10 +662,10 @@ extension _PlayerState on _PlayerScreenState {
         'User-Agent': 'Mozilla/5.0 LumioTV/1.0',
         ...?headers,
       };
+      await _player.setVolume(_volume * 100);
       await _player
           .open(Media(url, httpHeaders: httpHeaders), play: true)
           .timeout(_PlayerScreenState._connectTimeout);
-      await _player.setVolume(_volume * 100);
       if (mounted) {
         setState(() {
           _initialized = true;
@@ -678,12 +686,7 @@ extension _PlayerState on _PlayerScreenState {
           _isBuffering = false;
         });
       }
-      agentDebugLog(
-        location: 'player_screen.dart:_openStreamUrl',
-        message: 'open failed',
-        hypothesisId: 'H-quality-speed',
-        data: {'err': e.toString()},
-      );
+      SafeLogger.error('player', 'player_screen.dart:_openStreamUrl: open failed', e);
     }
   }
 
@@ -692,12 +695,8 @@ extension _PlayerState on _PlayerScreenState {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt('preferred_quality_height', targetH);
     } catch (e) {
-      agentDebugLog(
-        location: 'player_screen.dart:_persistQualityPref',
-        message: 'prefs write failed',
-        hypothesisId: 'H-prefs',
-        data: {'err': e.toString()},
-      );
+      if (kDebugMode)
+        SafeLogger.error('player', 'player_screen.dart:_persistQualityPref: prefs write failed', e);
     }
   }
 
@@ -705,11 +704,7 @@ extension _PlayerState on _PlayerScreenState {
     _suppressFailoverFor(const Duration(seconds: 10));
     final player = _player;
     if (player.platform is! NativePlayer) {
-      agentDebugLog(
-        location: 'player_screen.dart:_applyMpvHeightCap',
-        message: 'non-native platform, skip',
-        hypothesisId: 'H-tier3',
-      );
+      SafeLogger.debug('player', 'player_screen.dart:_applyMpvHeightCap: non-native platform, skip (H-tier3)');
       return;
     }
     final cap = (height == null || height <= 0) ? null : height;
@@ -720,11 +715,8 @@ extension _PlayerState on _PlayerScreenState {
       if (cap == null) {
         await native.setProperty('vf', '');
         _lastMpvCapHeight = null;
-        agentDebugLog(
-          location: 'player_screen.dart:_applyMpvHeightCap',
-          message: 'vf cleared (Auto)',
-          hypothesisId: 'H-tier3',
-        );
+        if (kDebugMode)
+          SafeLogger.debug('player', 'player_screen.dart:_applyMpvHeightCap: vf cleared (Auto) (H-tier3)');
         return;
       }
       _refreshSourceHeight();
@@ -771,19 +763,9 @@ extension _PlayerState on _PlayerScreenState {
         },
       );
       // #endregion
-      agentDebugLog(
-        location: 'player_screen.dart:_applyMpvHeightCap',
-        message: 'vf scale applied',
-        hypothesisId: 'H-tier3',
-        data: {'height': cap, 'filter': filter},
-      );
+      SafeLogger.debug('player', 'player_screen.dart:_applyMpvHeightCap: vf scale applied (H-tier3) height=$cap filter=$filter');
     } catch (e, st) {
-      agentDebugLog(
-        location: 'player_screen.dart:_applyMpvHeightCap',
-        message: 'failed',
-        hypothesisId: 'H-tier3',
-        data: {'err': e.toString(), 'st': st.toString()},
-      );
+      SafeLogger.error('player', 'player_screen.dart:_applyMpvHeightCap: failed', e, st);
     }
   }
 
@@ -812,22 +794,12 @@ extension _PlayerState on _PlayerScreenState {
       rethrow;
     }
     if (mounted && _initialized) {
-      agentDebugLog(
-        location: 'player_screen.dart:_initPlayer',
-        message: 'Player ready',
-        hypothesisId: 'H-player-ready',
-        data: {'urlTail': url.split('/').last},
-      );
+      SafeLogger.debug('player', 'player_screen.dart:_initPlayer: Player ready (H-player-ready) urlTail=${url.split('/').last}');
     }
   }
 
   void _initBufferingWatchdog() {
-    agentDebugLog(
-      location: 'player_screen.dart:_initBufferingWatchdog',
-      message: 'watchdog armed',
-      hypothesisId: 'H-failover',
-      data: {'linkIndex': _activeLinkIndex},
-    );
+    SafeLogger.debug('player', 'player_screen.dart:_initBufferingWatchdog: watchdog armed (H-failover) linkIndex=$_activeLinkIndex');
   }
 
   List<StreamLink> _resolveStreamLinks() {
@@ -903,6 +875,9 @@ extension _PlayerState on _PlayerScreenState {
   }
 
   Future<void> _switchChannel(ChannelModel ch) async {
+    final currentToken = ++_switchToken;
+    SafeLogger.debug('player', 'player_screen.dart:_switchChannel: switch-start token=$currentToken channel=${ch.name}');
+    
     _cancelPendingOps();
     try {
       await _player.stop();
@@ -914,6 +889,13 @@ extension _PlayerState on _PlayerScreenState {
       );
       // #endregion
     } catch (_) {}
+    
+    // Guard against re-entrancy: if token changed, this switch is stale
+    if (currentToken != _switchToken) {
+      SafeLogger.debug('player', 'player_screen.dart:_switchChannel: switch-cancelled-stale token=$currentToken currentToken=$_switchToken');
+      return;
+    }
+    
     final links = context.read<AppProvider>().playbackLinksFor(ch);
     if (links.isEmpty) return;
     final first = links.first;
@@ -949,10 +931,24 @@ extension _PlayerState on _PlayerScreenState {
     _failedLinks.clear();
     _failoverAttempts = 0;
     _stablePlaybackTicks = 0;
+    
+    // Re-attach listeners with fresh subscriptions
+    _attachListeners();
+    
     await _bootstrapPlayback();
+    
+    // Guard against re-entrancy: check token again after async operations
+    if (currentToken != _switchToken) {
+      SafeLogger.debug('player', 'player_screen.dart:_switchChannel: switch-cancelled-stale-after-bootstrap token=$currentToken currentToken=$_switchToken');
+      return;
+    }
+    
+    unawaited(_ensureRelatedChannelsReady());
     if (links.length > 1) {
       unawaited(_rankLinksInBackground());
     }
+    
+    SafeLogger.debug('player', 'player_screen.dart:_switchChannel: switch-complete token=$currentToken channel=${ch.name}');
   }
 
   void _prefetchVisibleChannelPlaylists(List<ChannelModel> channels) {

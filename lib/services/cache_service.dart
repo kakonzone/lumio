@@ -1,7 +1,6 @@
 // lib/services/cache_service.dart
 
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/model.dart';
 import '../core/logging/safe_logger.dart';

@@ -3,8 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/app_config_model.dart';
-import '../screens/splash_screen.dart';
-import '../theme/app_theme.dart';
 import '../theme/tokens/colors.dart' as tokens;
 import '../l10n/app_localizations.dart';
 

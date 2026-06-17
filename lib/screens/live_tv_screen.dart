@@ -13,7 +13,6 @@ import 'package:lumio_tv/widgets/live/epg_timeline.dart';
 import 'package:lumio_tv/widgets/common/pressable.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:lumio_tv/provider/app_provider.dart';
-import 'package:lumio_tv/models/model.dart';
 
 /// Live TV screen with 3-panel layout
 ///

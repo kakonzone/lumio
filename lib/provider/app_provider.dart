@@ -12,7 +12,6 @@ import '../services/score_service.dart';
 import '../utils/live_event_sort.dart';
 import '../utils/schedule_merge.dart';
 import '../utils/match_grouping.dart';
-import '../utils/debug_log.dart';
 import '../services/featured_live_events_service.dart';
 import '../services/featured_live_events_cache.dart';
 import 'user_state_provider.dart';

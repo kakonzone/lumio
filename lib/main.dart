@@ -42,14 +42,12 @@ import 'utils/app_logger.dart';
 import 'services/referral_service.dart';
 import 'models/model.dart';
 import 'utils/channel_player.dart';
-import 'utils/debug_log.dart';
 import 'services/lumio_audio_service.dart';
 import 'services/user_preferences.dart';
 import 'config/app_config.dart';
 import 'security/blocked_apps_guard.dart';
 import 'security/security_manager.dart';
 import 'security/ssl_pinning.dart';
-import 'security/play_integrity_service.dart';
 import 'security/anti_clone_service.dart';
 import 'security/install_watermark_service.dart';
 import 'screens/blocked_apps_screen.dart';
@@ -113,6 +111,7 @@ void main() async {
     unawaited(
       InstallWatermarkService.instance.registerWithBackend(backendUrl).catchError((e) {
         SafeLogger.error('main', '[Lumio] Install registration failed', e);
+        return false;
       })
     );
   }

@@ -1,11 +1,8 @@
 // lib/theme/app_theme.dart
 import 'package:flutter/material.dart';
 import 'tokens/colors.dart' as tokens;
-import 'tokens/typography.dart' as tokens;
-import 'tokens/spacing.dart' as tokens;
 import 'tokens/radius.dart' as tokens;
 import 'tokens/elevation.dart' as tokens;
-import 'tokens/motion.dart' as tokens;
 
 class AppTheme {
   static ThemeData get dark {

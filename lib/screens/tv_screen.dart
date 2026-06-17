@@ -16,7 +16,6 @@ import 'package:lumio_tv/widgets/shell_app_bar.dart';
 import 'package:lumio_tv/utils/bdt_time.dart';
 import 'package:lumio_tv/widgets/team_avatar.dart';
 import 'package:lumio_tv/ads/ad_manager.dart';
-import 'package:lumio_tv/ads/adsterra/adsterra_banner.dart';
 import 'package:lumio_tv/ads/adsterra/adsterra_native.dart';
 import 'package:lumio_tv/ads/utils/lazy_ad_viewport.dart';
 import 'package:lumio_tv/ads/widgets/floating_native_card.dart';

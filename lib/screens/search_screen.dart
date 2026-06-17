@@ -13,7 +13,6 @@ import 'package:lumio_tv/widgets/search/search_chips.dart';
 import 'package:lumio_tv/widgets/search/result_tile.dart';
 import 'package:lumio_tv/widgets/common/pressable.dart';
 import 'package:lumio_tv/provider/channel_catalog_provider.dart';
-import 'package:lumio_tv/models/model.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 /// Main search screen with full-screen experience

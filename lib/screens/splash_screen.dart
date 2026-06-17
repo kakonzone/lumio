@@ -68,7 +68,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _startInternal() async {
     // Run initialization in parallel with branding delay
-    final results = await Future.wait([
+    await Future.wait<void>([
       // Initialize app config (with timeout to ensure we don't block)
       context.read<AppConfigProvider>().init().timeout(
         const Duration(seconds: 3),

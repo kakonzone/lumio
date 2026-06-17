@@ -6,7 +6,6 @@ import '../../provider/app_provider.dart';
 import '../../services/special_link/gitun_playlist_service.dart';
 import '../../utils/priority_broadcasters.dart';
 import '../../services/special_link/special_link_cache.dart';
-import '../../theme/app_theme.dart';
 import '../../utils/channel_player.dart';
 import '../../ads/ad_manager.dart';
 import '../../ads/widgets/lazy_adsterra_strip.dart';

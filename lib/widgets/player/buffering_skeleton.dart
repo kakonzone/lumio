@@ -5,8 +5,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:lumio_tv/l10n/strings.dart' as strings;
 import 'package:lumio_tv/theme/tokens.dart' as tokens;
-import 'package:lumio_tv/utils/haptic_helpers.dart' as haptics;
-import 'package:lumio_tv/widgets/common/skeleton.dart' as skeletons;
 
 /// Buffering skeleton overlay for video player.
 ///

@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:lumio_tv/l10n/strings.dart' as strings;
 import 'package:lumio_tv/theme/tokens.dart' as tokens;
 import 'package:lumio_tv/utils/haptic_helpers.dart' as haptics;
 

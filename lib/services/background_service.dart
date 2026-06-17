@@ -2,7 +2,6 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:http/http.dart' as http;
@@ -751,7 +750,7 @@ class _HttpsProbeTask {
       int upgradedCount = 0;
       final successfulUpgrades = <String>{};
 
-      for (final entry in results.entries) {
+      for (final MapEntry<String, StreamProbeResult> entry in results.entries) {
         final url = entry.key;
         final result = entry.value;
         if (result.isHttpsAvailable && result.upgradedUrl != null) {

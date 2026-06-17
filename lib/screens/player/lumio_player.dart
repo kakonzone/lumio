@@ -1,7 +1,6 @@
 library lumio_player;
 
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import '../../core/logging/safe_logger.dart';
@@ -26,7 +25,6 @@ import '../../services/hls_quality_service.dart';
 import '../../services/stream_link_ranker_service.dart';
 import '../../widgets/channel_avatar.dart';
 import '../../utils/ad_debug_log.dart';
-import '../../utils/debug_log.dart';
 import '../../core/performance_tuning.dart';
 import '../../core/player/idle_playback_gate.dart';
 import '../../core/player/player_fit_mode.dart';
@@ -39,13 +37,10 @@ import '../../ads/interstitial_placement.dart';
 import '../../services/ad_trigger_manager.dart';
 import '../../ads/ad_placement_config.dart';
 import '../../ads/adsterra/adsterra_native.dart';
-import '../../ads/propeller/propeller_webview.dart';
 import '../../config/monetag_config.dart';
-import '../../services/user_preferences.dart';
 import '../../widgets/player_ad_slot.dart'
     show PlayerAdSlot, PlayerStickyAdStrip;
 import '../../widgets/player_overlay_ad.dart' show PlayerOverlayAd;
-import '../../ads/rewarded_features.dart';
 import '../../config/ad_config.dart';
 import '../../widgets/player_video_ad_overlay.dart';
 import '../player_screen_widgets.dart';

@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lumio_tv/theme/tokens.dart' as tokens;
-import 'package:lumio_tv/utils/haptic_helpers.dart' as haptics;
 
 /// Gesture overlay for video player with advanced touch controls.
 ///

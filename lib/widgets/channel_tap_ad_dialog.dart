@@ -6,7 +6,6 @@ import '../ads/ad_manager.dart';
 import '../ads/adsterra/adsterra_html.dart';
 import '../ads/adsterra/adsterra_webview.dart';
 import '../config/ad_config.dart';
-import '../theme/app_theme.dart';
 import '../theme/tokens/colors.dart' as tokens;
 
 /// Fullscreen in-app Adsterra ad for first channel tap (no external browser).

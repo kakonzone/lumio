@@ -751,7 +751,9 @@ class _HttpsProbeTask {
       int upgradedCount = 0;
       final successfulUpgrades = <String>{};
 
-      for (final (url, result) in results.entries) {
+      for (final entry in results.entries) {
+        final url = entry.key;
+        final result = entry.value;
         if (result.isHttpsAvailable && result.upgradedUrl != null) {
           upgradedCount++;
           successfulUpgrades.add(url);

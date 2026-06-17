@@ -9,19 +9,20 @@ class AppwriteConfig {
   static const catalogCacheTtl = Duration(hours: 24);
 
   // ── NYC catalog (channels, featured_live_events) ─────────────────────────
+  // DISABLED - User removed NYC Appwrite, using GitHub M3U instead
   static const projectId = String.fromEnvironment(
     'APPWRITE_PROJECT_ID',
-    defaultValue: '191876000995145',
+    defaultValue: '',
   );
 
   static const endpoint = String.fromEnvironment(
     'APPWRITE_ENDPOINT',
-    defaultValue: 'https://nyc.cloud.appwrite.io/v1',
+    defaultValue: '',
   );
 
   static const databaseId = String.fromEnvironment(
     'APPWRITE_DATABASE_ID',
-    defaultValue: 'iptv_main',
+    defaultValue: '',
   );
 
   /// One document per channel (preferred for 4k+ rows).

@@ -101,9 +101,9 @@ class AppwriteService {
     var firstPageDocCount = 0;
     const parallelPages = 3;
 
-    Future<aw_models.DocumentList> pageAt(int off) => _databases.TablesDB.listRows(
+    Future<aw_models.DocumentList> pageAt(int off) => _databases.listDocuments(
           databaseId: AppwriteConfig.databaseId,
-          tableId: AppwriteConfig.channelsCollectionId,
+          collectionId: AppwriteConfig.channelsCollectionId,
           queries: [
             Query.limit(AppwriteConfig.pageSize),
             Query.offset(off),
@@ -165,10 +165,10 @@ class AppwriteService {
 
   Future<List<ChannelModel>> _fetchPlaylistM3u() async {
     try {
-      final doc = await _databases.TablesDB.getRow(
+      final doc = await _databases.getDocument(
         databaseId: AppwriteConfig.databaseId,
-        tableId: AppwriteConfig.playlistCollectionId,
-        rowId: AppwriteConfig.mainPlaylistDocumentId,
+        collectionId: AppwriteConfig.playlistCollectionId,
+        documentId: AppwriteConfig.mainPlaylistDocumentId,
       );
       final body = AppwriteChannelMapper.playlistBody(doc.data);
       if (body == null || body.trim().isEmpty) return const [];

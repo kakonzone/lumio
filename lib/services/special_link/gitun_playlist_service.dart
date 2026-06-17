@@ -104,9 +104,9 @@ class GitunPlaylistService {
     }
 
     while (true) {
-      final page = await _databases.TablesDB.listRows(
+      final page = await _databases.listDocuments(
         databaseId: AppwriteConfig.mainDatabaseId,
-        tableId: AppwriteConfig.specialLinksCollectionId,
+        collectionId: AppwriteConfig.specialLinksCollectionId,
         queries: [
           Query.equal('is_active', true),
           Query.orderAsc('sort_order'),

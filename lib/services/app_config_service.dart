@@ -41,10 +41,10 @@ class AppConfigService {
     }
 
     try {
-      final doc = await _databases.TablesDB.getRow(
+      final doc = await _databases.getDocument(
         databaseId: AppwriteConfig.mainDatabaseId,
-        tableId: AppwriteConfig.appConfigCollectionId,
-        rowId: AppwriteConfig.globalConfigDocumentId,
+        collectionId: AppwriteConfig.appConfigCollectionId,
+        documentId: AppwriteConfig.globalConfigDocumentId,
       );
       final model = AppConfigModel.fromMap(
         Map<String, dynamic>.from(doc.data),

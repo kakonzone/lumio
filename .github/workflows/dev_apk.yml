@@ -110,7 +110,7 @@ jobs:
         run: |
           APK=build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
           ls -lh "$APK"
-          du -m "$APK" | awk '{print "APK size: " $1 " MB (target 20-35 MB arm64)"}'
+          du -m "$APK" | awk '{print "APK size: " $1 " MB (target 25-38 MB arm64)"}'
 
       - name: Get version from pubspec
         id: version

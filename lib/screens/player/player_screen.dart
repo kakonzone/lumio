@@ -283,6 +283,7 @@ class _PlayerScreenState extends State<PlayerScreen>
 
   @override
   void dispose() {
+    SafeLogger.debug('player', 'player_screen.dart:dispose: player screen disposing');
     AdTriggerManager.instance.onPlayerChannelStopped();
     AdManager.instance.setStreaming(false);
     _midRollTimer?.cancel();
@@ -295,7 +296,6 @@ class _PlayerScreenState extends State<PlayerScreen>
       } catch (_) {}
       _pipConfigured = false;
     }
-    unawaited(LumioWindowSecure.setSecure(true));
     _hideTimer?.cancel();
     _indicatorTimer?.cancel();
     _autoQualityTimer?.cancel();
@@ -311,7 +311,6 @@ class _PlayerScreenState extends State<PlayerScreen>
     _tracksSub?.cancel();
     _pipStatusSub?.cancel();
     _idleProbeSub?.cancel();
-    _bufferingVisible.dispose();
     _player.dispose();
     try {
       ScreenBrightness().resetScreenBrightness();
@@ -321,6 +320,8 @@ class _PlayerScreenState extends State<PlayerScreen>
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     super.dispose();
+    _bufferingVisible.dispose();
+    unawaited(LumioWindowSecure.setSecure(true));
   }
 
   // ── Build ──────────────────────────────────────────────

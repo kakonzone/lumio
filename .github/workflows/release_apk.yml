@@ -99,7 +99,7 @@ jobs:
 
       - name: Validate release secrets present
         run: |
-          for s in RELEASE_KEYSTORE_B64 RELEASE_KEY_PASSWORD CRICBUZZ_RAPID_API_KEY ADSTERRA_DL_1; do
+          for s in KEYSTORE_BASE64 KEYSTORE_PASSWORD CRICBUZZ_RAPID_API_KEY ADSTERRA_DL_1; do
             if [ -z "${!s}" ]; then
               echo "::error::Secret $s is missing"
               exit 1

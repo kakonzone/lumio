@@ -174,31 +174,6 @@ android {
         }
     }
 
-    buildTypes {
-        release {
-            signingConfig = if (releaseSigningReady()) {
-                signingConfigs.getByName("release")
-            } else if (System.getenv("LUMIO_LOCAL_SIZE_CHECK") == "true") {
-                signingConfigs.getByName("debug")
-            } else {
-                throw GradleException(releaseBuildAbortMessage)
-            }
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro",
-            )
-            ndk {
-                debugSymbolLevel = "NONE"
-            }
-        }
-        debug {
-            isMinifyEnabled = false
-            isShrinkResources = false
-        }
-    }
-
     // Enable app bundle for Play Store (smaller download size)
     bundle {
         language {
@@ -217,15 +192,17 @@ android {
         buildConfig = true
     }
 
-    // R8 full mode configuration
+    // Build configuration
     buildTypes {
         release {
             signingConfig = if (releaseSigningReady()) {
                 signingConfigs.getByName("release")
             } else if (System.getenv("LUMIO_LOCAL_SIZE_CHECK") == "true") {
                 signingConfigs.getByName("debug")
-            } else {
+            } else if (isReleaseBuildRequested) {
                 throw GradleException(releaseBuildAbortMessage)
+            } else {
+                null
             }
             isMinifyEnabled = true
             isShrinkResources = true

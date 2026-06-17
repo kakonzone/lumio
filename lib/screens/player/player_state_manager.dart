@@ -469,7 +469,7 @@ extension _PlayerState on _PlayerScreenState {
       if (playing) {
         _isPlaying = true;
         _playbackStartedAt ??= DateTime.now();
-        StreamingState.instance.setStreaming(true);
+        StreamingState.setStreaming(true);
         if (_pauseAdVisible) {
           setState(() => _pauseAdVisible = false);
         }
@@ -480,7 +480,7 @@ extension _PlayerState on _PlayerScreenState {
         }
       } else {
         _isPlaying = false;
-        StreamingState.instance.setStreaming(false);
+        StreamingState.setStreaming(false);
         _stablePlaybackTicks = 0;
         _onPlayerPaused();
       }

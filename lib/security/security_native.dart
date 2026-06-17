@@ -83,6 +83,36 @@ class SecurityNative {
     }
   }
 
+  /// Device is rooted
+  static Future<bool> isRooted() async {
+    try {
+      final v = await _channel.invokeMethod<bool>('isRooted');
+      return v ?? false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
+  /// Device is emulator
+  static Future<bool> isEmulator() async {
+    try {
+      final v = await _channel.invokeMethod<bool>('isEmulator');
+      return v ?? false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
+  /// App is debuggable
+  static Future<bool> isDebuggable() async {
+    try {
+      final v = await _channel.invokeMethod<bool>('isDebuggable');
+      return v ?? false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
   /// Installed conflicting app labels (MITM / RE tools). Empty when none.
   static Future<List<String>?> findBlockedAppLabels() async {
     try {

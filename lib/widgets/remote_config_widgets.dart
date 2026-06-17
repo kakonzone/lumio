@@ -23,13 +23,13 @@ class MaintenanceScreen extends StatelessWidget {
     // Try to get localized message from the maintenance map
     if (config.maintenanceMessages != null && config.maintenanceMessages!.isNotEmpty) {
       final localizedMessage = config.maintenanceMessages![locale];
-      if (localizedMessage.trim().isNotEmpty) {
-        return localizedMessage.trim();
+      if (localizedMessage?.trim().isNotEmpty ?? false) {
+        return localizedMessage!.trim();
       }
       // Fallback to English if locale not found
       final englishMessage = config.maintenanceMessages!['en'];
-      if (englishMessage.trim().isNotEmpty) {
-        return englishMessage.trim();
+      if (englishMessage?.trim().isNotEmpty ?? false) {
+        return englishMessage!.trim();
       }
     }
     

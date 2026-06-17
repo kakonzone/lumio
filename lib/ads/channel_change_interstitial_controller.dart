@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../ad_log.dart';
+import '../../core/logging/safe_logger.dart';
 import 'adsterra/adsterra_html.dart';
 import 'adsterra/adsterra_webview.dart';
 
@@ -30,7 +30,7 @@ class ChannelChangeInterstitialController {
   /// Check if interstitial can be shown (respects 5-minute cooldown)
   Future<bool> canShow() async {
     if (_isShowing) {
-      adLog('[ChannelChangeInterstitial] Already showing, skipping');
+      SafeLogger.debug('ad', '[ChannelChangeInterstitial] Already showing, skipping');
       return false;
     }
 
@@ -48,7 +48,7 @@ class ChannelChangeInterstitialController {
       return true;
     }
 
-    adLog('[ChannelChangeInterstitial] Cooldown active, skipping');
+    SafeLogger.debug('ad', '[ChannelChangeInterstitial] Cooldown active, skipping');
     return false;
   }
 
@@ -95,10 +95,10 @@ class ChannelChangeInterstitialController {
         DateTime.now().millisecondsSinceEpoch,
       );
 
-      adLog('[ChannelChangeInterstitial] Shown successfully');
+      SafeLogger.debug('ad', '[ChannelChangeInterstitial] Shown successfully');
       return result ?? false;
     } catch (e) {
-      adLog('[ChannelChangeInterstitial] Error showing: $e');
+      SafeLogger.debug('ad', '[ChannelChangeInterstitial] Error showing: $e');
       return false;
     } finally {
       _isShowing = false;

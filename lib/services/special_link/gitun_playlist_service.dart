@@ -236,7 +236,7 @@ class GitunPlaylistService {
         
         if (result case Failure(error: final error)) {
           if (kDebugMode) {
-            debugPrint('[$logTag] Failed to parse $rawUrl: ${error.message}');
+            debugPrint('[$logTag] Failed to parse $rawUrl: ${error.toString()}');
           }
           continue;
         }

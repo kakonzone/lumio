@@ -316,15 +316,7 @@ class _PlayerScreenState extends State<PlayerScreen>
     try {
       ScreenBrightness().resetScreenBrightness();
     } catch (e, st) {
-      agentDebugLog(
-        location: 'player_screen.dart:dispose',
-        message: 'resetScreenBrightness failed',
-        hypothesisId: 'H-brightness',
-        data: {'err': e.toString(), 'st': st.toString()},
-      );
-    }
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+      SafeLogger.error('player', 'player_screen.dart:dispose: resetScreenBrightness failed', e, st);
     super.dispose();
   }
 

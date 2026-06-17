@@ -177,9 +177,9 @@ class AppwriteService {
       if (result case Success(value: final channels)) {
         return channels;
       } else if (result case Failure(error: final error)) {
-        lastFetchError ??= 'Failed to parse playlist: ${error.message}';
+        lastFetchError ??= 'Failed to parse playlist: ${error.toString()}';
         if (kDebugMode) {
-          debugPrint('[Appwrite] Playlist parse error: ${error.message}');
+          debugPrint('[Appwrite] Playlist parse error: ${error.toString()}');
         }
         return const [];
       }

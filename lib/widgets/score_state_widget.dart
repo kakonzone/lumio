@@ -151,7 +151,7 @@ class _NetworkErrorState extends StatelessWidget {
         ElevatedButton.icon(
           onPressed: () => context.read<LiveScoreProvider>().retryLoadMatches(),
           icon: const Icon(Icons.refresh),
-          label: 'Retry',
+          label: const Text('Retry'),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.blue.shade600,
             foregroundColor: Colors.white,
@@ -180,7 +180,7 @@ class _ApiErrorState extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 8),
-        const Text(
+        Text(
           'Score service is temporarily unavailable',
           style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
           textAlign: TextAlign.center,
@@ -189,7 +189,7 @@ class _ApiErrorState extends StatelessWidget {
         ElevatedButton.icon(
           onPressed: () => context.read<LiveScoreProvider>().retryLoadMatches(),
           icon: const Icon(Icons.refresh),
-          label: 'Retry',
+          label: const Text('Retry'),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.blue.shade600,
             foregroundColor: Colors.white,
@@ -208,7 +208,7 @@ class _ParseErrorState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const Icon(Icons.error_outline, color: Colors.orange.shade500, size: 48),
+        Icon(Icons.error_outline, color: Colors.orange.shade500, size: 48),
         const SizedBox(height: 16),
         const Text(
           'Invalid response format',
@@ -216,7 +216,7 @@ class _ParseErrorState extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 8),
-        const Text(
+        Text(
           'Score service returned unexpected data',
           style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
           textAlign: TextAlign.center,
@@ -225,7 +225,7 @@ class _ParseErrorState extends StatelessWidget {
         ElevatedButton.icon(
           onPressed: () => context.read<LiveScoreProvider>().retryLoadMatches(),
           icon: const Icon(Icons.refresh),
-          label: 'Retry',
+          label: const Text('Retry'),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.orange.shade600,
             foregroundColor: Colors.white,
@@ -261,7 +261,7 @@ class _TimeoutErrorState extends StatelessWidget {
         ElevatedButton.icon(
           onPressed: () => context.read<LiveScoreProvider>().retryLoadMatches(),
           icon: const Icon(Icons.refresh),
-          label: 'Retry',
+          label: const Text('Retry'),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.orange.shade600,
             foregroundColor: Colors.white,
@@ -280,7 +280,7 @@ class _UnknownErrorState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const Icon(Icons.error, color: Colors.red.shade500, size: 48),
+        Icon(Icons.error, color: Colors.red.shade500, size: 48),
         const SizedBox(height: 16),
         const Text(
           'Something went wrong',
@@ -297,7 +297,7 @@ class _UnknownErrorState extends StatelessWidget {
         ElevatedButton.icon(
           onPressed: () => context.read<LiveScoreProvider>().retryLoadMatches(),
           icon: const Icon(Icons.refresh),
-          label: 'Retry',
+          label: const Text('Retry'),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.blue.shade600,
             foregroundColor: Colors.white,

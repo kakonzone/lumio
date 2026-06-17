@@ -83,7 +83,7 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
       );
     }
 
-    return child;
+    return widget.child;
   }
 }
 
@@ -139,6 +139,6 @@ class _NetworkErrorBoundaryState extends State<NetworkErrorBoundary> {
       );
     }
 
-    return child;
+    return widget.child;
   }
 }

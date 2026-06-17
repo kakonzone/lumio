@@ -4,10 +4,10 @@ import '../core/constants/legal_urls.dart';
 class LegalConfig {
   LegalConfig._();
 
-  static const String privacyPolicyUrl = LegalUrls.kPrivacyPolicyUrl;
-  static const String termsOfServiceUrl = LegalUrls.kTermsOfServiceUrl;
-  static const String contactEmail = LegalUrls.kContactEmail;
-  static const String dataDeletionUrl = LegalUrls.kDataDeletionUrl;
+  static const String privacyPolicyUrl = LegalUrls.privacyPolicy;
+  static const String termsOfServiceUrl = LegalUrls.termsOfService;
+  static const String contactEmail = LegalUrls.supportEmail;
+  static const String dataDeletionUrl = LegalUrls.dataDeleteRequest;
 
   static bool get hasPrivacyPolicy => privacyPolicyUrl.trim().isNotEmpty;
   static bool get hasTerms => termsOfServiceUrl.trim().isNotEmpty;

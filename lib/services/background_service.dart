@@ -755,7 +755,7 @@ class _HttpsProbeTask {
         if (result.isHttpsAvailable && result.upgradedUrl != null) {
           upgradedCount++;
           successfulUpgrades.add(url);
-          _bgLog('HTTPS available for: $url → ${result.upgradedUrl}');
+          _bgLog('HTTPS available for: $url → ${result.upgradedUrl!}');
         }
       }
 

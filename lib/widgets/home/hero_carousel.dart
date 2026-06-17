@@ -1,7 +1,6 @@
 // lib/widgets/home/hero_carousel.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:lumio_tv/l10n/strings.dart' as strings;
 import 'package:lumio_tv/theme/tokens.dart' as tokens;

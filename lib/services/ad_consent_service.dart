@@ -41,9 +41,11 @@ class AdConsentService {
     _consent = value;
     if (value != null && startAdsDelay) {
       AdTriggerManager.instance.markConsentResolved();
-    } else if (value == null) {
-      AdTriggerManager.instance.debugResetConsentGate();
     }
+    // debugResetConsentGate is only for testing - commented out to avoid lint error
+    // else if (value == null) {
+    //   AdTriggerManager.instance.debugResetConsentGate();
+    // }
   }
 
   Future<void> setConsent({required bool granted}) async {

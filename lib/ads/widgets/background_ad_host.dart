@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
-import '../../core/logging/safe_logger.dart';
 import '../background_ad_engine.dart';
 import '../fake_session_store.dart';
 import '../utils/lumio_webview_config.dart';

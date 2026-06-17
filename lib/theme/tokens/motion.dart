@@ -1,5 +1,4 @@
 // lib/theme/tokens/motion.dart
-import 'package:flutter/animation.dart';
 import 'package:flutter/widgets.dart';
 
 class MotionTokens {

@@ -72,6 +72,11 @@ dependencies:
   device_info_plus: 13.1.0
   package_info_plus: 10.1.0
   dart_appwrite: ^25.0.0
+  
+  # Dev server dependencies (also used in production for API routes)
+  shelf: 1.4.2
+  shelf_router: 1.1.4
+  shelf_cors_headers: 0.1.5
 
 dev_dependencies:
   flutter_test:
@@ -81,10 +86,6 @@ dev_dependencies:
   flutter_lints: 6.0.0
   flutter_launcher_icons: 0.14.4
   flutter_native_splash: 2.4.1
-  # Local dev server only (bin/dev_server.dart)
-  shelf: 1.4.2
-  shelf_router: 1.1.4
-  shelf_cors_headers: 0.1.5
 
 flutter_launcher_icons:
   android: true

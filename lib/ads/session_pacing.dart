@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import '../core/logging/safe_logger.dart';
 
 /// Session pacing controls — prevents ad overload in first minute.

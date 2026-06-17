@@ -95,8 +95,8 @@ class _VideoPlayerAdOverlayState extends State<VideoPlayerAdOverlay>
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async => false, // Block back button during ad
+    return PopScope(
+      canPop: false, // Block back button during ad
       child: FadeTransition(
         opacity: _fadeAnimation,
         child: Container(

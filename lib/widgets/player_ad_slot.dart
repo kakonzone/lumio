@@ -12,7 +12,6 @@ class PlayerAdSlot extends StatelessWidget {
   const PlayerAdSlot({super.key});
 
   static const double _bannerHeight = 90;
-  static const double _stickyHeight = 50;
 
   @override
   Widget build(BuildContext context) {

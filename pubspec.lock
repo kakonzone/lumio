@@ -1165,7 +1165,7 @@ packages:
     source: hosted
     version: "2.4.1"
   shelf:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: shelf
       sha256: e7dd780a7ffb623c57850b33f43309312fc863fb6aa3d276a754bb299839ef12
@@ -1173,7 +1173,7 @@ packages:
     source: hosted
     version: "1.4.2"
   shelf_cors_headers:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: shelf_cors_headers
       sha256: a127c80f99bbef3474293db67a7608e3a0f1f0fcdb171dad77fa9bd2cd123ae4
@@ -1181,7 +1181,7 @@ packages:
     source: hosted
     version: "0.1.5"
   shelf_router:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: shelf_router
       sha256: f5e5d492440a7fb165fe1e2e1a623f31f734d3370900070b2b1e0d0428d59864

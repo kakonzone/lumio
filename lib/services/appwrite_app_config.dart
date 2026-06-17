@@ -65,9 +65,9 @@ class AppwriteAppConfig {
     }
 
     try {
-      final page = await _databases.listDocuments(
+      final page = await _databases.TablesDB.listRows(
         databaseId: AppwriteConfig.databaseId,
-        collectionId: AppwriteConfig.appConfigCollectionId,
+        tableId: AppwriteConfig.appConfigCollectionId,
         queries: [
           Query.equal('key', trimmed),
           Query.limit(1),
@@ -81,10 +81,10 @@ class AppwriteAppConfig {
 
       // Fallback: document ID may match `key` (e.g. $id = featured_live_events).
       try {
-        final doc = await _databases.getDocument(
+        final doc = await _databases.TablesDB.getRow(
           databaseId: AppwriteConfig.databaseId,
-          collectionId: AppwriteConfig.appConfigCollectionId,
-          documentId: trimmed,
+          tableId: AppwriteConfig.appConfigCollectionId,
+          rowId: trimmed,
         );
         return _AppConfigRowResult(
           row: Map<String, dynamic>.from(doc.data),

@@ -313,7 +313,7 @@ class _PlayerScreenState extends State<PlayerScreen>
     _idleProbeSub?.cancel();
     _player.dispose();
     try {
-      ScreenBrightness().resetScreenBrightness();
+      ScreenBrightness().resetApplicationScreenBrightness();
     } catch (e, st) {
       SafeLogger.error('player', 'player_screen.dart:dispose: resetScreenBrightness failed', e, st);
     }

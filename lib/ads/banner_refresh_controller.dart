@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import '../core/logging/safe_logger.dart';
 
 /// Controls banner ad refresh intervals with default value (Remote Config can be added later).

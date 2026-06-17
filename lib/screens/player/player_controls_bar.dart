@@ -278,7 +278,7 @@ extension _PlayerControls on _PlayerScreenState {
       } else {
         _brightness = newVal;
         try {
-          ScreenBrightness().setScreenBrightness(_brightness);
+          ScreenBrightness().setApplicationScreenBrightness(_brightness);
         } catch (_) {}
       }
       _indicatorOpacity = 1.0;

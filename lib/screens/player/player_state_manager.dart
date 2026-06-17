@@ -28,12 +28,7 @@ extension _PlayerState on _PlayerScreenState {
         });
       }
     } catch (e) {
-      agentDebugLog(
-        location: 'player_screen.dart:_loadPreferredQuality',
-        message: 'prefs read failed',
-        hypothesisId: 'H-prefs',
-        data: {'err': e.toString()},
-      );
+      SafeLogger.debug('player', 'player_screen.dart:_loadPreferredQuality: prefs read failed: ${e.toString()}');
     }
   }
 
@@ -133,21 +128,12 @@ extension _PlayerState on _PlayerScreenState {
       );
       _pipAvailable = true;
       _pipConfigured = true;
-      agentDebugLog(
-        location: 'player_screen.dart:_enableLeavePiP',
-        message: 'PiP on-leave enabled',
-        hypothesisId: 'H-pip',
-      );
+      SafeLogger.debug('player', 'player_screen.dart:_enableLeavePiP: PiP on-leave enabled');
     } catch (e) {
       _pipAvailable = false;
       _pipConfigured = false;
       _pipBlocked = true;
-      agentDebugLog(
-        location: 'player_screen.dart:_enableLeavePiP',
-        message: 'PiP enable failed',
-        hypothesisId: 'H-pip',
-        data: {'err': e.toString()},
-      );
+      SafeLogger.debug('player', 'player_screen.dart:_enableLeavePiP: PiP enable failed: ${e.toString()}');
     }
     if (mounted) setState(() {});
   }
@@ -256,12 +242,7 @@ extension _PlayerState on _PlayerScreenState {
         _batteryPercent = await _PlayerScreenState._qualityBattery.batteryLevel;
       } catch (_) {}
     } catch (e) {
-      agentDebugLog(
-        location: 'player_screen.dart:_refreshConnectivityHint',
-        message: 'connectivity check failed',
-        hypothesisId: 'H-auto-quality',
-        data: {'err': e.toString()},
-      );
+      SafeLogger.debug('player', 'player_screen.dart:_refreshConnectivityHint: connectivity check failed: ${e.toString()}');
     }
   }
 
@@ -288,12 +269,7 @@ extension _PlayerState on _PlayerScreenState {
     } else if (bufferingMs < 400) {
       _estimatedMbps = (_estimatedMbps * 1.25).clamp(0.2, 20.0);
     }
-    agentDebugLog(
-      location: 'player_screen.dart:_runInitialBandwidthSample',
-      message: 'bandwidth sample done',
-      hypothesisId: 'H-auto-quality',
-      data: {'mbps': _estimatedMbps, 'bufferingMs': bufferingMs},
-    );
+    SafeLogger.debug('player', 'player_screen.dart:_runInitialBandwidthSample: bandwidth sample done, mbps: $_estimatedMbps, bufferingMs: $bufferingMs');
     await _evaluateAutoQuality();
   }
 
@@ -327,17 +303,7 @@ extension _PlayerState on _PlayerScreenState {
       variant = HlsQualityService.pickVariantForced(_hlsVariants, clampedH) ??
           variant;
     }
-    agentDebugLog(
-      location: 'player_screen.dart:_evaluateAutoQuality',
-      message: 'auto tier selected',
-      hypothesisId: 'H-auto-quality',
-      data: {
-        'mbps': _estimatedMbps,
-        'height': variant.height,
-        'downgrade': downgrade,
-        'stepUp': stepUp,
-      },
-    );
+    SafeLogger.debug('player', 'player_screen.dart:_evaluateAutoQuality: auto tier selected, mbps: $_estimatedMbps, height: ${variant.height}, downgrade: $downgrade, stepUp: $stepUp');
     await _applyAutoVariant(variant);
   }
 
@@ -365,18 +331,7 @@ extension _PlayerState on _PlayerScreenState {
   }
 
   Future<void> _prepareLinksAndPlay() async {
-    // #region agent log
-    agentDebugLog(
-      location: 'player_screen.dart:_prepareLinksAndPlay',
-      message: 'prepare start',
-      hypothesisId: 'H-prepare',
-      data: {
-        'linkCount': _links.length,
-        'labels': _links.map((l) => l.label).toList()
-      },
-    );
-    // #endregion
-
+    SafeLogger.debug('player', 'player_screen.dart:_prepareLinksAndPlay: prepare start, linkCount: ${_links.length}, labels: ${_links.map((l) => l.label).toList()}');
     if (!mounted) return;
     _warmAlternateLinks();
     await _bootstrapPlayback();
@@ -411,12 +366,7 @@ extension _PlayerState on _PlayerScreenState {
     final ranked = await StreamLinkRankerService.rankBySpeed(_links);
     if (!mounted || gen != _switchGeneration) return;
     if (ranked.first.url == _masterUrl) return;
-    agentDebugLog(
-      location: 'player_screen.dart:_rankLinksInBackground',
-      message: 'switching to faster link',
-      hypothesisId: 'H-auto-select',
-      data: {'label': ranked.first.label},
-    );
+    SafeLogger.debug('player', 'player_screen.dart:_rankLinksInBackground: switching to faster link, label: ${ranked.first.label}');
     setState(() {
       _links = ranked;
       _activeLinkIndex = 0;

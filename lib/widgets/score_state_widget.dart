@@ -323,7 +323,7 @@ class _EmptyState extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 8),
-        const Text(
+        Text(
           'Check back later for live cricket and football scores',
           style: TextStyle(fontSize: 12, color: Colors.grey.shade400),
           textAlign: TextAlign.center,

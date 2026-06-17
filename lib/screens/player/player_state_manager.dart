@@ -28,7 +28,12 @@ extension _PlayerState on _PlayerScreenState {
         });
       }
     } catch (e) {
-      SafeLogger.error('player', 'player_screen.dart:_loadPreferredQuality: prefs read failed', e);
+      agentDebugLog(
+        location: 'player_screen.dart:_loadPreferredQuality',
+        message: 'prefs read failed',
+        hypothesisId: 'H-prefs',
+        data: {'err': e.toString()},
+      );
     }
   }
 
@@ -128,12 +133,21 @@ extension _PlayerState on _PlayerScreenState {
       );
       _pipAvailable = true;
       _pipConfigured = true;
-      SafeLogger.debug('player', 'player_screen.dart:_enableLeavePiP: PiP on-leave enabled (H-pip)');
+      agentDebugLog(
+        location: 'player_screen.dart:_enableLeavePiP',
+        message: 'PiP on-leave enabled',
+        hypothesisId: 'H-pip',
+      );
     } catch (e) {
       _pipAvailable = false;
       _pipConfigured = false;
       _pipBlocked = true;
-      SafeLogger.error('player', 'player_screen.dart:_enableLeavePiP: PiP enable failed', e);
+      agentDebugLog(
+        location: 'player_screen.dart:_enableLeavePiP',
+        message: 'PiP enable failed',
+        hypothesisId: 'H-pip',
+        data: {'err': e.toString()},
+      );
     }
     if (mounted) setState(() {});
   }
@@ -242,7 +256,12 @@ extension _PlayerState on _PlayerScreenState {
         _batteryPercent = await _PlayerScreenState._qualityBattery.batteryLevel;
       } catch (_) {}
     } catch (e) {
-      SafeLogger.error('player', 'player_screen.dart:_refreshConnectivityHint: connectivity check failed', e);
+      agentDebugLog(
+        location: 'player_screen.dart:_refreshConnectivityHint',
+        message: 'connectivity check failed',
+        hypothesisId: 'H-auto-quality',
+        data: {'err': e.toString()},
+      );
     }
   }
 
@@ -269,7 +288,12 @@ extension _PlayerState on _PlayerScreenState {
     } else if (bufferingMs < 400) {
       _estimatedMbps = (_estimatedMbps * 1.25).clamp(0.2, 20.0);
     }
-    SafeLogger.debug('player', 'player_screen.dart:_runInitialBandwidthSample: bandwidth sample done (H-auto-quality) mbps=$_estimatedMbps bufferingMs=$bufferingMs');
+    agentDebugLog(
+      location: 'player_screen.dart:_runInitialBandwidthSample',
+      message: 'bandwidth sample done',
+      hypothesisId: 'H-auto-quality',
+      data: {'mbps': _estimatedMbps, 'bufferingMs': bufferingMs},
+    );
     await _evaluateAutoQuality();
   }
 
@@ -303,7 +327,17 @@ extension _PlayerState on _PlayerScreenState {
       variant = HlsQualityService.pickVariantForced(_hlsVariants, clampedH) ??
           variant;
     }
-    SafeLogger.debug('player', 'player_screen.dart:_evaluateAutoQuality: auto tier selected (H-auto-quality) mbps=$_estimatedMbps height=${variant.height} downgrade=$downgrade stepUp=$stepUp');
+    agentDebugLog(
+      location: 'player_screen.dart:_evaluateAutoQuality',
+      message: 'auto tier selected',
+      hypothesisId: 'H-auto-quality',
+      data: {
+        'mbps': _estimatedMbps,
+        'height': variant.height,
+        'downgrade': downgrade,
+        'stepUp': stepUp,
+      },
+    );
     await _applyAutoVariant(variant);
   }
 
@@ -332,8 +366,15 @@ extension _PlayerState on _PlayerScreenState {
 
   Future<void> _prepareLinksAndPlay() async {
     // #region agent log
-    if (kDebugMode)
-      SafeLogger.debug('player', 'player_screen.dart:_prepareLinksAndPlay: prepare start (H-prepare) linkCount=${_links.length} labels=${_links.map((l) => l.label).toList()}');
+    agentDebugLog(
+      location: 'player_screen.dart:_prepareLinksAndPlay',
+      message: 'prepare start',
+      hypothesisId: 'H-prepare',
+      data: {
+        'linkCount': _links.length,
+        'labels': _links.map((l) => l.label).toList()
+      },
+    );
     // #endregion
 
     if (!mounted) return;
@@ -370,7 +411,12 @@ extension _PlayerState on _PlayerScreenState {
     final ranked = await StreamLinkRankerService.rankBySpeed(_links);
     if (!mounted || gen != _switchGeneration) return;
     if (ranked.first.url == _masterUrl) return;
-    SafeLogger.debug('player', 'player_screen.dart:_rankLinksInBackground: switching to faster link (H-auto-select) label=${ranked.first.label}');
+    agentDebugLog(
+      location: 'player_screen.dart:_rankLinksInBackground',
+      message: 'switching to faster link',
+      hypothesisId: 'H-auto-select',
+      data: {'label': ranked.first.label},
+    );
     setState(() {
       _links = ranked;
       _activeLinkIndex = 0;
@@ -457,7 +503,7 @@ extension _PlayerState on _PlayerScreenState {
     });
     _errorSub = _player.stream.error.listen((e) {
       if (!mounted || e.isEmpty) return;
-      SafeLogger.error('player', 'player_screen.dart:_errorSub: player error', e);
+      debugPrint('[player error] $e');
       if (!_canRunFailover) return;
       if (_failoverAttempts < _PlayerScreenState._maxFailoverAttempts) {
         unawaited(_attemptFailover());
@@ -876,7 +922,14 @@ extension _PlayerState on _PlayerScreenState {
 
   Future<void> _switchChannel(ChannelModel ch) async {
     final currentToken = ++_switchToken;
-    SafeLogger.debug('player', 'player_screen.dart:_switchChannel: switch-start token=$currentToken channel=${ch.name}');
+    // #region agent log
+    _debugSessionLog(
+      location: 'player_screen.dart:_switchChannel',
+      message: 'channel switch started',
+      hypothesisId: 'H6-switch',
+      data: {'token': currentToken, 'channel': ch.name},
+    );
+    // #endregion
     
     _cancelPendingOps();
     try {
@@ -892,7 +945,14 @@ extension _PlayerState on _PlayerScreenState {
     
     // Guard against re-entrancy: if token changed, this switch is stale
     if (currentToken != _switchToken) {
-      SafeLogger.debug('player', 'player_screen.dart:_switchChannel: switch-cancelled-stale token=$currentToken currentToken=$_switchToken');
+      // #region agent log
+      _debugSessionLog(
+        location: 'player_screen.dart:_switchChannel',
+        message: 'switch cancelled (stale)',
+        hypothesisId: 'H6-switch',
+        data: {'token': currentToken, 'currentToken': _switchToken},
+      );
+      // #endregion
       return;
     }
     
@@ -939,7 +999,14 @@ extension _PlayerState on _PlayerScreenState {
     
     // Guard against re-entrancy: check token again after async operations
     if (currentToken != _switchToken) {
-      SafeLogger.debug('player', 'player_screen.dart:_switchChannel: switch-cancelled-stale-after-bootstrap token=$currentToken currentToken=$_switchToken');
+      // #region agent log
+      _debugSessionLog(
+        location: 'player_screen.dart:_switchChannel',
+        message: 'switch cancelled after bootstrap (stale)',
+        hypothesisId: 'H6-switch',
+        data: {'token': currentToken, 'currentToken': _switchToken},
+      );
+      // #endregion
       return;
     }
     
@@ -948,7 +1015,14 @@ extension _PlayerState on _PlayerScreenState {
       unawaited(_rankLinksInBackground());
     }
     
-    SafeLogger.debug('player', 'player_screen.dart:_switchChannel: switch-complete token=$currentToken channel=${ch.name}');
+    // #region agent log
+    _debugSessionLog(
+      location: 'player_screen.dart:_switchChannel',
+      message: 'channel switch complete',
+      hypothesisId: 'H6-switch',
+      data: {'token': currentToken, 'channel': ch.name},
+    );
+    // #endregion
   }
 
   void _prefetchVisibleChannelPlaylists(List<ChannelModel> channels) {

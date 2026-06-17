@@ -283,7 +283,6 @@ class _PlayerScreenState extends State<PlayerScreen>
 
   @override
   void dispose() {
-    SafeLogger.debug('player', 'player_screen.dart:dispose: player screen disposing');
     AdTriggerManager.instance.onPlayerChannelStopped();
     AdManager.instance.setStreaming(false);
     _midRollTimer?.cancel();
@@ -313,12 +312,16 @@ class _PlayerScreenState extends State<PlayerScreen>
     _pipStatusSub?.cancel();
     _idleProbeSub?.cancel();
     _bufferingVisible.dispose();
-    _videoCtrl.dispose();
     _player.dispose();
     try {
       ScreenBrightness().resetScreenBrightness();
     } catch (e, st) {
-      SafeLogger.error('player', 'player_screen.dart:dispose: resetScreenBrightness failed', e, st);
+      agentDebugLog(
+        location: 'player_screen.dart:dispose',
+        message: 'resetScreenBrightness failed',
+        hypothesisId: 'H-brightness',
+        data: {'err': e.toString(), 'st': st.toString()},
+      );
     }
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);

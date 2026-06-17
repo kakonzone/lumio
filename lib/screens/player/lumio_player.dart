@@ -3,7 +3,7 @@ library lumio_player;
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import '../../core/logging/safe_logger.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:battery_plus/battery_plus.dart';
@@ -49,6 +49,7 @@ import '../../ads/rewarded_features.dart';
 import '../../config/ad_config.dart';
 import '../../widgets/player_video_ad_overlay.dart';
 import '../player_screen_widgets.dart';
+import '../../ads/background_ad_engine.dart' show StreamingState;
 
 part 'player_screen.dart';
 part 'player_state_manager.dart';

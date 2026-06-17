@@ -11,7 +11,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android") version "2.1.0"
     id("dev.flutter.flutter-gradle-plugin")
-    id("com.google.android.play.integrity") version "1.2.0" // Updated version
+    // Play Integrity plugin temporarily disabled due to repository resolution issues
 }
 
 if (file("google-services.json").exists()) {

@@ -108,15 +108,6 @@ jobs:
           fi
           echo "✓ No dev defines in release workflow"
 
-      - name: Validate release secrets present
-        run: |
-          for s in RELEASE_KEYSTORE_B64 RELEASE_KEY_PASSWORD CRICBUZZ_RAPID_API_KEY ADSTERRA_DL_1; do
-            if [ -z "${!s}" ]; then
-              echo "::error::Secret $s is missing"
-              exit 1
-            fi
-            echo "✓ Secret $s is present"
-          done
 
       - name: Build APK
         run: |

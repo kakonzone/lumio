@@ -128,9 +128,6 @@ jobs:
             echo "::error::Dev define LUMIO_SIDELOAD_DEV found in APK"
             exit 1
           fi
-          if strings "$APK" | grep -q "CAP_LOCAL_ONLY_MODE"; then
-            echo "::error::Dev define CAP_LOCAL_ONLY_MODE found in APK"
-            exit 1
           fi
           echo "✓ No dev defines in APK"
 

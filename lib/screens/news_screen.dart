@@ -109,8 +109,8 @@ class _NewsScreenState extends State<NewsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scoreProv = context.watch<LiveScoreProvider>();
-    final newsProv = context.watch<NewsProvider>();
+    final scoreProv = context.read<LiveScoreProvider>();
+    final newsProv = context.read<NewsProvider>();
     final premierScores = scoreProv.premierLeagueScoreMatches;
     final allNews = newsProv.news;
     final filtered = _filtered(allNews);

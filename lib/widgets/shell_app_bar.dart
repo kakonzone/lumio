@@ -44,8 +44,7 @@ class ShellAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final favProv = context.watch<FavoritesProvider>();
-    final favCount = favProv.favoriteCount;
+    final favCount = context.read<FavoritesProvider>().favoriteCount;
 
     final showSubtitleBelow =
         subtitle != null && showBack && !hideSubtitleInBar;

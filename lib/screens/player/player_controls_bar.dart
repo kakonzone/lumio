@@ -83,7 +83,8 @@ extension _PlayerControls on _PlayerScreenState {
     if (badge != _qualityBadge) {
       if (!mounted) return;
       setState(() => _qualityBadge = badge);
-      SafeLogger.debug('player', 'player_screen.dart:_updateQualityBadge: quality badge updated (H-quality-badge) badge=$badge w=$w h=$h');
+      SafeLogger.debug('player',
+          'player_screen.dart:_updateQualityBadge: quality badge updated (H-quality-badge) badge=$badge w=$w h=$h');
     }
   }
 
@@ -102,7 +103,8 @@ extension _PlayerControls on _PlayerScreenState {
     try {
       return value.clamp(0.0, 1.0);
     } catch (e, st) {
-      SafeLogger.error('player', 'player_screen.dart:_safeUnitProgress: Slider/Progress error', e, st);
+      SafeLogger.error('player',
+          'player_screen.dart:_safeUnitProgress: Slider/Progress error', e, st);
       return 0.0;
     }
   }
@@ -230,7 +232,8 @@ extension _PlayerControls on _PlayerScreenState {
         ? (idx - 1 + channels.length) % channels.length
         : (idx + 1) % channels.length;
     final next = channels[nextIdx];
-    SafeLogger.debug('player', 'player_screen.dart:_onHorizontalDragEnd: swipe channel change (H-swipe) vx=$vx fromIdx=$idx toIdx=$nextIdx channel=${next.name}');
+    SafeLogger.debug('player',
+        'player_screen.dart:_onHorizontalDragEnd: swipe channel change (H-swipe) vx=$vx fromIdx=$idx toIdx=$nextIdx channel=${next.name}');
     if (!mounted) return;
     setState(() => _channelSwipeOverlay = next.name);
     Timer(const Duration(milliseconds: 800), () {
@@ -377,6 +380,8 @@ extension _PlayerControls on _PlayerScreenState {
             Positioned.fill(
               child: PlayerVideoAdOverlay(
                 onDismiss: _dismissPlayerVideoAd,
+                skipAfterSeconds: 15,
+                maxDurationSeconds: 15,
               ),
             ),
 
@@ -394,7 +399,7 @@ extension _PlayerControls on _PlayerScreenState {
                   color: Colors.black.withValues(
                     alpha: AdConfig.playerAdsUserVisible ? 0.72 : 0,
                   ),
-                  child: Center(
+                  child: const Center(
                     child: AdsterraNativeBanner(
                       placement: 'pause_overlay',
                       height: 200,
@@ -1516,7 +1521,8 @@ extension _PlayerControls on _PlayerScreenState {
       unawaited(_persistQualityPref(targetH));
 
       // #region agent log
-      SafeLogger.debug('player', 'player_screen.dart:_applyQuality: quality apply start (H-quality) label=$label targetH=$targetH hlsVariantCount=${_hlsVariants.length} videoTrackCount=${_player.state.tracks.video.length} selectableTrackCount=${_selectableVideoTracks.length} currentUrlTail=${_currentUrl?.split('/').last ?? ''} masterUrlTail=${_masterUrl.split('/').last}');
+      SafeLogger.debug('player',
+          'player_screen.dart:_applyQuality: quality apply start (H-quality) label=$label targetH=$targetH hlsVariantCount=${_hlsVariants.length} videoTrackCount=${_player.state.tracks.video.length} selectableTrackCount=${_selectableVideoTracks.length} currentUrlTail=${_currentUrl?.split('/').last ?? ''} masterUrlTail=${_masterUrl.split('/').last}');
       // #endregion
 
       if (label == 'Auto') {
@@ -1580,7 +1586,8 @@ extension _PlayerControls on _PlayerScreenState {
         if (_lastMpvCapHeight != null) {
           await _applyMpvHeightCap(null);
         }
-        SafeLogger.debug('player', 'player_screen.dart:_applyQuality: tier2 media_kit track (H-tier2) trackH=${forcedTrack.h} trackW=${forcedTrack.w}');
+        SafeLogger.debug('player',
+            'player_screen.dart:_applyQuality: tier2 media_kit track (H-tier2) trackH=${forcedTrack.h} trackW=${forcedTrack.w}');
       } else if (forcedVariant != null && forcedVariant.url != _currentUrl) {
         applyPath = 'url_reopen';
         await _openStreamUrl(forcedVariant.url, _activeHeaders);
@@ -1588,7 +1595,8 @@ extension _PlayerControls on _PlayerScreenState {
           setState(() => _currentUrl = forcedVariant.url);
           tier1Ok = true;
         }
-        SafeLogger.debug('player', 'player_screen.dart:_applyQuality: tier1 HLS rendition (H-tier1) urlTail=${forcedVariant.url.split('/').last} height=${forcedVariant.height}');
+        SafeLogger.debug('player',
+            'player_screen.dart:_applyQuality: tier1 HLS rendition (H-tier1) urlTail=${forcedVariant.url.split('/').last} height=${forcedVariant.height}');
       }
 
       if (!tier2Ok) {
@@ -1599,7 +1607,8 @@ extension _PlayerControls on _PlayerScreenState {
           applyPath = 'vf_debounced';
           _scheduleMpvHeightCap(targetH);
         }
-        SafeLogger.debug('player', 'player_screen.dart:_applyQuality: tier3 MPV vf scheduled/applied (H-tier3) targetH=$targetH tier1=$tier1Ok tier2=$tier2Ok debounced=${!tier1Ok} sourceHeight=$_sourceHeight');
+        SafeLogger.debug('player',
+            'player_screen.dart:_applyQuality: tier3 MPV vf scheduled/applied (H-tier3) targetH=$targetH tier1=$tier1Ok tier2=$tier2Ok debounced=${!tier1Ok} sourceHeight=$_sourceHeight');
       }
 
       _pendingTargetHeight = null;

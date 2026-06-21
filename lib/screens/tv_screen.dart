@@ -107,7 +107,7 @@ class TvScreenState extends State<TvScreen>
 
   @override
   Widget build(BuildContext context) {
-    final appConfig = context.watch<AppConfigProvider>().config;
+    final appConfig = context.read<AppConfigProvider>().config;
 
     return TabAdOverlay(
       showFloatingCard: true,
@@ -291,7 +291,7 @@ class _TvSearchSectionState extends State<_TvSearchSection> {
   @override
   Widget build(BuildContext context) {
     final query = _ctrl.text.trim();
-    final catalog = context.watch<ChannelCatalogProvider>();
+    final catalog = context.read<ChannelCatalogProvider>();
     final results =
         query.isEmpty ? <ChannelModel>[] : catalog.search(query).take(8).toList();
 
@@ -434,8 +434,8 @@ class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final events = context.watch<LiveEventsProvider>();
-    final catalog = context.watch<ChannelCatalogProvider>();
+    final events = context.read<LiveEventsProvider>();
+    final catalog = context.read<ChannelCatalogProvider>();
     final liveEvents = events.sortedLiveEvents;
     final featuredEvents = events.featuredLiveEvents;
     final showFeaturedSection =
@@ -709,7 +709,7 @@ class _LiveNowTabState extends State<_LiveNowTab>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final events = context.watch<LiveEventsProvider>();
+    final events = context.read<LiveEventsProvider>();
     final liveEvents = events.sortedLiveEvents;
     final empty = liveEvents.isEmpty;
 
@@ -793,7 +793,7 @@ class _TodayTabState extends State<_TodayTab>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final scores = context.watch<LiveScoreProvider>();
+    final scores = context.read<LiveScoreProvider>();
     final matches = scores.todayMatches;
 
     return Builder(
@@ -892,7 +892,7 @@ class _UpcomingTabState extends State<_UpcomingTab>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final scores = context.watch<LiveScoreProvider>();
+    final scores = context.read<LiveScoreProvider>();
     final matches = scores.upcomingMatches;
 
     return Builder(
@@ -1774,7 +1774,7 @@ class _LiveEventChannelsDialogState extends State<_LiveEventChannelsDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final catalog = context.watch<ChannelCatalogProvider>();
+    final catalog = context.read<ChannelCatalogProvider>();
     final m = widget.event.match;
     final channels = widget.event.relatedChannels;
     final browseCat = _browseCategoryForMatch(m);

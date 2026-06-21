@@ -28,6 +28,10 @@ class AdConsentService {
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
     _consent = prefs.getString(_prefConsent);
+
+    if (_consent == null) {
+      await setConsent(granted: true);
+    }
   }
 
   bool get needsConsentPrompt => _consent == null;

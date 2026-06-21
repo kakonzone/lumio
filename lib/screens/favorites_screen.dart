@@ -20,8 +20,8 @@ class FavoritesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final favProv = context.watch<FavoritesProvider>();
-    final catalogProv = context.watch<ChannelCatalogProvider>();
+    final favProv = context.read<FavoritesProvider>();
+    final catalogProv = context.read<ChannelCatalogProvider>();
     final favorites = favProv.getFavoriteChannels(catalogProv.channels);
 
     if (favorites.isEmpty) {

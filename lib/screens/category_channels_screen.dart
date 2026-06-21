@@ -83,7 +83,7 @@ class _CategoryChannelsScreenState extends State<CategoryChannelsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final prov = context.watch<AppProvider>();
+    final prov = context.read<AppProvider>();
     final channels = _channelsFor(prov);
     final title = ChannelCategoryRegistry.defFor(widget.categoryName)?.label ??
         widget.categoryName;

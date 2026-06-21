@@ -52,7 +52,18 @@ extension _PlayerOverlay on _PlayerScreenState {
       await _player.pause();
     } catch (_) {}
     if (!mounted) return;
-    await AdManager.instance.showMidRollInterstitial(context: context);
+
+    setState(() => _showVideoAdOverlay = true);
+    _videoAdCompleter = Completer<void>();
+
+    Future.delayed(const Duration(seconds: 15), () {
+      if (mounted && _showVideoAdOverlay) {
+        _dismissPlayerVideoAd();
+      }
+    });
+
+    await _videoAdCompleter!.future;
+
     if (!mounted) return;
     if (_initialized && !_hasError) {
       try {

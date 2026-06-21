@@ -5,9 +5,9 @@ import '../core/result.dart';
 import '../screens/generic_error_screen.dart';
 
 /// Error boundary widget that catches Flutter errors and displays a user-friendly error UI.
-/// 
+///
 /// Wrap your entire app or specific sections with this widget to handle errors gracefully.
-/// 
+///
 /// ```dart
 /// ErrorBoundary(
 ///   child: MyWidget(),
@@ -35,29 +35,41 @@ class ErrorBoundary extends StatefulWidget {
 class _ErrorBoundaryState extends State<ErrorBoundary> {
   Object? _error;
   StackTrace? _stack;
+  FlutterExceptionHandler? _previousErrorHandler;
 
   @override
   void initState() {
     super.initState();
-    // Override global error handler
+    _previousErrorHandler = FlutterError.onError;
     FlutterError.onError = _handleFlutterError;
   }
 
   void _handleFlutterError(FlutterErrorDetails details) {
-    if (mounted) {
+    _previousErrorHandler?.call(details);
+
+    widget.onError?.call(
+      details.exception,
+      details.stack ?? StackTrace.empty,
+    );
+
+    if (!mounted) return;
+
+    // Never setState synchronously inside FlutterError.onError — that corrupts
+    // the element tree and triggers _OverlayEntryWidget / _dependents failures.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       setState(() {
         _error = details.exception;
         _stack = details.stack;
       });
-    }
-    
-    // Call custom error handler
-    widget.onError?.call(details.exception, details.stack ?? StackTrace.empty);
+    });
   }
 
   @override
   void dispose() {
-    // Don't restore the original error handler to avoid affecting other error boundaries
+    if (FlutterError.onError == _handleFlutterError) {
+      FlutterError.onError = _previousErrorHandler;
+    }
     super.dispose();
   }
 
@@ -74,7 +86,7 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
       if (widget.errorBuilder != null) {
         return widget.errorBuilder!(_error!, _stack!);
       }
-      
+
       return GenericErrorScreen(
         title: 'Something went wrong',
         message: 'An unexpected error occurred. Please try again.',
@@ -88,7 +100,7 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
 }
 
 /// Network error boundary specifically for network operations.
-/// 
+///
 /// Provides retry functionality for network errors.
 class NetworkErrorBoundary extends StatefulWidget {
   final Widget child;
@@ -121,7 +133,7 @@ class _NetworkErrorBoundaryState extends State<NetworkErrorBoundary> {
     setState(() {
       _error = null;
     });
-    
+
     if (widget.onRetry != null) {
       await widget.onRetry!();
     }
@@ -132,7 +144,7 @@ class _NetworkErrorBoundaryState extends State<NetworkErrorBoundary> {
     if (_error != null) {
       return GenericErrorScreen(
         title: 'Network Error',
-        message: widget.customErrorMessage ?? 
+        message: widget.customErrorMessage ??
             'Unable to connect to the server. Please check your internet connection.',
         details: kDebugMode ? _error.toString() : null,
         onRetry: widget.onRetry != null ? _retry : null,

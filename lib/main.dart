@@ -30,7 +30,9 @@ import 'provider/ad_gate_provider.dart';
 import 'provider/ads_settings_provider.dart';
 import 'provider/app_config_provider.dart';
 import 'provider/app_provider.dart';
+import 'provider/channel_catalog_provider.dart';
 import 'provider/channels_provider.dart';
+import 'provider/ui_state_provider.dart';
 import 'provider/favorites_provider.dart';
 import 'provider/live_events_provider.dart';
 import 'provider/live_score_provider.dart';
@@ -169,9 +171,14 @@ void _runLumioApp() async {
           ChangeNotifierProvider(
             create: (_) => AdsSettingsProvider()..load(),
           ),
+          ChangeNotifierProvider(create: (_) => ChannelCatalogProvider()),
+          ChangeNotifierProvider(create: (_) => UiStateProvider()),
           ChangeNotifierProvider(
-            create: (context) =>
-                AppProvider(context.read<UserStateProvider>())..init(),
+            create: (context) => AppProvider(
+              context.read<UserStateProvider>(),
+              catalogIn: context.read<ChannelCatalogProvider>(),
+              uiIn: context.read<UiStateProvider>(),
+            )..init(),
           ),
           ChangeNotifierProvider(create: (_) => AppConfigProvider()),
         ],
@@ -203,76 +210,101 @@ Future<void> _deferredBootstrap() async {
   }
 }
 
-class LumioApp extends StatelessWidget {
+class LumioApp extends StatefulWidget {
   const LumioApp({super.key});
+  @override
+  State<LumioApp> createState() => _LumioAppState();
+}
+
+class _LumioAppState extends State<LumioApp> {
+  bool _isDark = false;
+  AppProvider? _appProvider;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _appProvider?.removeListener(_onThemeChanged);
+    _appProvider = context.read<AppProvider>();
+    _isDark = _appProvider!.isDark;
+    _appProvider!.addListener(_onThemeChanged);
+  }
+
+  void _onThemeChanged() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _appProvider!.isDark != _isDark) {
+        setState(() => _isDark = _appProvider!.isDark);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _appProvider?.removeListener(_onThemeChanged);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Selector<AppProvider, bool>(
-      selector: (_, p) => p.isDark,
-      builder: (context, isDark, _) {
-        SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
-        ));
-        return MaterialApp(
-          title: 'Lumio',
-          debugShowCheckedModeBanner: false,
-          theme: isDark ? AppTheme.dark : AppTheme.light,
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          locale: const Locale('en'), // Fallback to English by default
-          builder: (context, child) {
-            return ErrorBoundary(
-              onError: (error, stack) {
-                // Log to crashlytics if available
-                if (FirebaseBootstrap.isInitialized) {
-                  FirebaseCrashlytics.instance.recordError(error, stack, fatal: false);
-                }
-              },
-              child: BlockedAppsOverlay(
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    if (child != null) child,
-                    const Positioned(
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      child: OfflineBanner(),
-                    ),
-                    const Positioned(
-                      top: 40,
-                      left: 0,
-                      right: 0,
-                      child: AdsDebugBanner(),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-          initialRoute: '/',
-          onGenerateRoute: (settings) {
-            switch (settings.name) {
-              case '/':
-                return PageRouteBuilder(
-                  settings: settings,
-                  pageBuilder: (_, __, ___) => const SplashScreen(),
-                );
-              case '/home':
-                return PageRouteBuilder(
-                  settings: settings,
-                  pageBuilder: (_, __, ___) => const MainShell(),
-                  transitionsBuilder: (_, animation, __, child) =>
-                      FadeTransition(opacity: animation, child: child),
-                  transitionDuration: const Duration(milliseconds: 200),
-                );
-              default:
-                return _onGenerateRoute(settings);
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: _isDark ? Brightness.light : Brightness.dark,
+    ));
+    return MaterialApp(
+      title: 'Lumio',
+      debugShowCheckedModeBanner: false,
+      theme: _isDark ? AppTheme.dark : AppTheme.light,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      locale: const Locale('en'), // Fallback to English by default
+      builder: (context, child) {
+        return ErrorBoundary(
+          onError: (error, stack) {
+            // Log to crashlytics if available
+            if (FirebaseBootstrap.isInitialized) {
+              FirebaseCrashlytics.instance.recordError(error, stack, fatal: false);
             }
           },
+          child: BlockedAppsOverlay(
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (child != null) child,
+                const Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: OfflineBanner(),
+                ),
+                const Positioned(
+                  top: 40,
+                  left: 0,
+                  right: 0,
+                  child: AdsDebugBanner(),
+                ),
+              ],
+            ),
+          ),
         );
+      },
+      initialRoute: '/',
+      onGenerateRoute: (settings) {
+        switch (settings.name) {
+          case '/':
+            return PageRouteBuilder(
+              settings: settings,
+              pageBuilder: (_, __, ___) => const SplashScreen(),
+            );
+          case '/home':
+            return PageRouteBuilder(
+              settings: settings,
+              pageBuilder: (_, __, ___) => const MainShell(),
+              transitionsBuilder: (_, animation, __, child) =>
+                  FadeTransition(opacity: animation, child: child),
+              transitionDuration: const Duration(milliseconds: 200),
+            );
+          default:
+            return _onGenerateRoute(settings);
+        }
       },
     );
   }

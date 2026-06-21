@@ -92,9 +92,8 @@ class LumioAppDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeProv = context.watch<ThemeProvider>();
-    final catalogProv = context.watch<ChannelCatalogProvider>();
-    final isDark = themeProv.isDark;
+    final isDark = context.read<ThemeProvider>().isDark;
+    final catalogProv = context.read<ChannelCatalogProvider>();
 
     return Drawer(
       backgroundColor: context.bg,

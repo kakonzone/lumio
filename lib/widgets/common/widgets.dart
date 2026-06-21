@@ -195,7 +195,7 @@ class ChannelCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final showLive = context.watch<AppProvider>().isStreamLive(channel);
+    final showLive = context.read<AppProvider>().isStreamLive(channel);
     return GestureDetector(
       onTap: onPlay,
       child: Container(

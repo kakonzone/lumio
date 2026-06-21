@@ -213,7 +213,7 @@ class _SportsScreenState extends State<SportsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final prov = context.watch<AppProvider>();
+    final prov = context.read<AppProvider>();
 
     return TabAdOverlay(
       showFloatingCard: true,
@@ -529,7 +529,7 @@ class _LiveScreenState extends State<LiveScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final prov = context.watch<AppProvider>();
+    final prov = context.read<AppProvider>();
     final pool = prov.liveTabChannels;
     final topSports = prov
         .liveNavTopSportsChannels()
@@ -1262,7 +1262,7 @@ class CategoriesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final prov = context.watch<AppProvider>();
+    final prov = context.read<AppProvider>();
     final genreRows = prov.categoriesGenreRows.isNotEmpty
         ? prov.categoriesGenreRows
         : const [
@@ -1533,7 +1533,7 @@ class _ChannelCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final prov = context.watch<AppProvider>();
+    final prov = context.read<AppProvider>();
     final showLive = prov.isStreamLive(channel);
     final checking = prov.isStreamHealthPending(channel);
     return GestureDetector(

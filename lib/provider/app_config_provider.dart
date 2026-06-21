@@ -21,11 +21,13 @@ class AppConfigProvider extends ChangeNotifier {
   Future<void> refresh() async {
     if (_isLoading) return;
     _isLoading = true;
-    notifyListeners();
     try {
       _config = await AppConfigService.instance.fetchConfig(
         forceRefresh: true,
       );
+    } catch (e) {
+      debugPrint('[AppConfig] fetch failed (using defaults): $e');
+      // Keep default config — do not rethrow
     } finally {
       _isLoading = false;
       notifyListeners();

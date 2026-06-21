@@ -11,7 +11,7 @@ class ScoreStateWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scoreState = context.watch<LiveScoreProvider>().scoreState;
+    final scoreState = context.read<LiveScoreProvider>().scoreState;
 
     return switch (scoreState) {
       ScoreInitial() => const _InitialState(),

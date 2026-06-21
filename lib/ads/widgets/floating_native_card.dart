@@ -32,6 +32,7 @@ class _FloatingNativeCardState extends State<FloatingNativeCard>
     with SingleTickerProviderStateMixin {
   static const _prefsDismissedUntil = 'lumio_floating_native_dismissed_until';
 
+  ScrollIdleNotifier? _idleNotifier;
   late final AnimationController _slideCtrl;
   late final Animation<Offset> _slideAnim;
   bool _visible = false;
@@ -57,6 +58,28 @@ class _FloatingNativeCardState extends State<FloatingNativeCard>
     final ms = prefs.getInt(_prefsDismissedUntil);
     if (ms != null) {
       _dismissedUntil = DateTime.fromMillisecondsSinceEpoch(ms);
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _idleNotifier?.removeListener(_onIdleChanged);
+    _idleNotifier = context.read<ScrollIdleNotifier>();
+    _idleNotifier!.addListener(_onIdleChanged);
+  }
+
+  void _onIdleChanged() {
+    if (!mounted) return;
+    final idle = _idleNotifier!;
+    if (idle.idleReached && !_visible && !_dismissedActive) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _show());
+    }
+    if (!idle.idleReached && _visible) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await _slideCtrl.reverse();
+        if (mounted) setState(() => _visible = false);
+      });
     }
   }
 
@@ -90,6 +113,7 @@ class _FloatingNativeCardState extends State<FloatingNativeCard>
 
   @override
   void dispose() {
+    _idleNotifier?.removeListener(_onIdleChanged);
     if (_webViewMounted) {
       WebViewPool.instance.release('floating_${widget.placement}');
     }
@@ -111,63 +135,49 @@ class _FloatingNativeCardState extends State<FloatingNativeCard>
   }
 
   Widget _buildIdleCard(BuildContext context) {
-    return Consumer<ScrollIdleNotifier>(
-      builder: (context, idle, _) {
-        if (idle.idleReached && !_visible && !_dismissedActive) {
-          WidgetsBinding.instance.addPostFrameCallback((_) => _show());
-        }
-        if (!idle.idleReached && _visible) {
-          WidgetsBinding.instance.addPostFrameCallback((_) async {
-            await _slideCtrl.reverse();
-            if (mounted) setState(() => _visible = false);
-          });
-        }
+    if (!_visible) return const SizedBox.shrink();
 
-        if (!_visible) return const SizedBox.shrink();
-
-        return Positioned(
-          right: widget.rightMargin,
-          bottom: widget.bottomMargin,
-          width: 300,
-          child: SlideTransition(
-            position: _slideAnim,
-            child: RepaintBoundary(
-              child: Material(
-                elevation: 8,
-                borderRadius: BorderRadius.circular(12),
-                clipBehavior: Clip.antiAlias,
-                child: Stack(
-                  children: [
-                    AdsterraNativeBanner(
-                      placement: widget.placement,
-                      height: widget.height,
-                    ),
-                    Positioned(
-                      top: 4,
-                      right: 4,
-                      child: Material(
-                        color: Colors.black54,
-                        shape: const CircleBorder(),
-                        child: InkWell(
-                          onTap: _dismiss,
-                          child: const Padding(
-                            padding: EdgeInsets.all(4),
-                            child: Icon(
-                              Icons.close,
-                              size: 18,
-                              color: Colors.white,
-                            ),
-                          ),
+    return Positioned(
+      right: widget.rightMargin,
+      bottom: widget.bottomMargin,
+      width: 300,
+      child: SlideTransition(
+        position: _slideAnim,
+        child: RepaintBoundary(
+          child: Material(
+            elevation: 8,
+            borderRadius: BorderRadius.circular(12),
+            clipBehavior: Clip.antiAlias,
+            child: Stack(
+              children: [
+                AdsterraNativeBanner(
+                  placement: widget.placement,
+                  height: widget.height,
+                ),
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: Material(
+                    color: Colors.black54,
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      onTap: _dismiss,
+                      child: const Padding(
+                        padding: EdgeInsets.all(4),
+                        child: Icon(
+                          Icons.close,
+                          size: 18,
+                          color: Colors.white,
                         ),
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

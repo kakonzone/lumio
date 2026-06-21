@@ -565,5 +565,13 @@ class AppProvider extends ChangeNotifier {
     }
   }
 
+  @override
+  void dispose() {
+    userState.removeListener(notifyListeners);
+    catalog.removeListener(notifyListeners);
+    ui.removeListener(notifyListeners);
+    super.dispose();
+  }
+
   // ── Demo data removed — no fake scores/news in production ──
 }

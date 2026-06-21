@@ -47,7 +47,7 @@ class NewsHeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isPending =
-        context.watch<AppProvider>().isPendingNewsArticle(news.id);
+        context.read<AppProvider>().isPendingNewsArticle(news.id);
     final priority = NewsPriority.priorityLabel(news);
 
     return Material(
@@ -230,7 +230,7 @@ class NewsArticleTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isPending =
-        context.watch<AppProvider>().isPendingNewsArticle(news.id);
+        context.read<AppProvider>().isPendingNewsArticle(news.id);
     final priority = NewsPriority.priorityLabel(news);
 
     return Material(

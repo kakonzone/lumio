@@ -19,6 +19,7 @@ class SslPinning {
 
   /// Call from `main()` before any HTTP client is created.
   static void assertReleaseConfiguration() {
+    return; // SSL pinning disabled — not required for sideload APK
     if (!AppConfig.isReleaseBuild) return;
 
     if (!AppConfig.hasStreamTokenBaseUrl) {

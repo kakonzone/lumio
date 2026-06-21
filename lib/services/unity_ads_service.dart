@@ -27,6 +27,7 @@ class UnityAdsService {
   String? _lastLoadError;
   bool _adPodInProgress = false;
   int _currentAdIndex = 0;
+  static bool _loggedNetworkErrorOnce = false;
 
   @visibleForTesting
   static int debugInterstitialLoadCallCount = 0;
@@ -111,17 +112,35 @@ class UnityAdsService {
         onComplete: (id) {
           _interstitialReady = true;
           debugInterstitialLoadCallCount++;
+          _loggedNetworkErrorOnce = false; // Reset on success
           adLog('[Unity] interstitial ready: $id');
         },
         onFailed: (id, error, message) {
           _interstitialReady = false;
           _lastLoadError = '$error: $message';
-          adLog('[Unity] interstitial load failed: $id $error $message');
+          // Reduce log spam for network errors in debug mode
+          if (kDebugMode && 
+              (error.toString().contains('Network error') || 
+               message.toString().contains('Network error'))) {
+            if (!_loggedNetworkErrorOnce) {
+              _loggedNetworkErrorOnce = true;
+              adLog('[Unity] interstitial load failed: $id $error $message (network error - will not retry in debug)');
+            }
+          } else {
+            adLog('[Unity] interstitial load failed: $id $error $message');
+          }
         },
       );
     } catch (e, st) {
       _lastLoadError = e.toString();
-      adLog('[Unity] interstitial load error: $e\n$st');
+      if (kDebugMode && e.toString().contains('Network error')) {
+        if (!_loggedNetworkErrorOnce) {
+          _loggedNetworkErrorOnce = true;
+          adLog('[Unity] interstitial load error: $e (network error - will not retry in debug)');
+        }
+      } else {
+        adLog('[Unity] interstitial load error: $e\n$st');
+      }
     }
   }
 
@@ -185,17 +204,35 @@ class UnityAdsService {
         placementId: _rewardedId,
         onComplete: (id) {
           _rewardedReady = true;
+          _loggedNetworkErrorOnce = false; // Reset on success
           adLog('[Unity] rewarded ready: $id');
         },
         onFailed: (id, error, message) {
           _rewardedReady = false;
           _lastLoadError = '$error: $message';
-          adLog('[Unity] rewarded load failed: $id $error $message');
+          // Reduce log spam for network errors in debug mode
+          if (kDebugMode && 
+              (error.toString().contains('Network error') || 
+               message.toString().contains('Network error'))) {
+            if (!_loggedNetworkErrorOnce) {
+              _loggedNetworkErrorOnce = true;
+              adLog('[Unity] rewarded load failed: $id $error $message (network error - will not retry in debug)');
+            }
+          } else {
+            adLog('[Unity] rewarded load failed: $id $error $message');
+          }
         },
       );
     } catch (e, st) {
       _lastLoadError = e.toString();
-      adLog('[Unity] rewarded load error: $e\n$st');
+      if (kDebugMode && e.toString().contains('Network error')) {
+        if (!_loggedNetworkErrorOnce) {
+          _loggedNetworkErrorOnce = true;
+          adLog('[Unity] rewarded load error: $e (network error - will not retry in debug)');
+        }
+      } else {
+        adLog('[Unity] rewarded load error: $e\n$st');
+      }
     }
   }
 

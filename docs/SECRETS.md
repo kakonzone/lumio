@@ -27,9 +27,13 @@ The mobile app uses **anonymous / Guests Read** only. Do **not** put an Appwrite
 
 | Key | Example |
 |-----|---------|
-| `APPWRITE_PROJECT_ID` | `191876000995145` |
-| `APPWRITE_ENDPOINT` | `https://nyc.cloud.appwrite.io/v1` |
-| `APPWRITE_DATABASE_ID` | `iptv_main` |
+| `APPWRITE_MAIN_PROJECT_ID` | `6a22869200230b1a8bf0` |
+| `APPWRITE_MAIN_ENDPOINT` | `https://sgp.cloud.appwrite.io/v1` |
+| `APPWRITE_MAIN_DATABASE_ID` | `iptv_main` |
+| `APPWRITE_MAIN_CHANNELS_COLLECTION_ID` | `channels` |
+| `APPWRITE_MAIN_APP_CONFIG_COLLECTION_ID` | `app_config` |
+| `APPWRITE_MAIN_FEATURED_LIVE_EVENTS_KEY` | `featured_live_events` |
+| `APPWRITE_MAIN_SPECIAL_LINKS_COLLECTION_ID` | `special_links` |
 | `APPWRITE_CHANNELS_COLLECTION_ID` | `channels` |
 | `APPWRITE_APP_CONFIG_COLLECTION_ID` | `app_config` |
 | `APPWRITE_MAIN_PROJECT_ID` | `6a22869200230b1a8bf0` |

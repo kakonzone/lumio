@@ -67,6 +67,7 @@ class AdManager {
 
   /// Prevents duplicate first-tap browser launches while async work runs.
   final Set<String> _channelTapFirstTapInFlight = {};
+  static bool _loggedNoAdStackWarning = false;
 
   /// True when ad orchestration finished init (Unity Ads and/or Adsterra config).
   bool get isReady => _initialized && AdConfig.hasMonetizationConfig;
@@ -109,22 +110,36 @@ class AdManager {
     await UserPreferences.ensureInit();
     await AdSafetyService.instance.ensureReady();
 
+    // In debug mode, if ads are not configured, skip init entirely
+    if (kDebugMode && !AdConfig.hasMonetizationConfig) {
+      if (!_loggedNoAdStackWarning) {
+        _loggedNoAdStackWarning = true;
+        adLog('[AdManager] Ads disabled or config missing in debug; skipping init');
+      }
+      _initialized = false;
+      logRuntimeStatusOnce();
+      return;
+    }
+
     if (CmpTier1Gate.blocksAdSdkInitFor(
       localeCountry: CmpTier1Gate.deviceCountryCode(),
       simCountry: AdSafetyService.instance.simCountry,
       networkCountry: AdSafetyService.instance.networkCountry,
     )) {
       _initialized = false;
-      AdDebugLog.error(
-        'AdManager.init',
-        'tier-1 market without licensed CMP — ad SDK init blocked',
-        data: {
-          'locale': CmpTier1Gate.deviceCountryCode(),
-          'sim': AdSafetyService.instance.simCountry,
-          'network': AdSafetyService.instance.networkCountry,
-          'cmpLicensed': CmpTier1Gate.cmpLicensedEnabled,
-        },
-      );
+      if (!_loggedNoAdStackWarning) {
+        _loggedNoAdStackWarning = true;
+        AdDebugLog.error(
+          'AdManager.init',
+          'tier-1 market without licensed CMP — ad SDK init blocked',
+          data: {
+            'locale': CmpTier1Gate.deviceCountryCode(),
+            'sim': AdSafetyService.instance.simCountry,
+            'network': AdSafetyService.instance.networkCountry,
+            'cmpLicensed': CmpTier1Gate.cmpLicensedEnabled,
+          },
+        );
+      }
       logRuntimeStatusOnce();
       return;
     }
@@ -143,28 +158,34 @@ class AdManager {
 
     if (!AdSafetyService.instance.adsEnabledRemote) {
       _initialized = false;
-      AdDebugLog.error(
-        'AdManager.init',
-        'ads disabled via Remote Config',
-        data: {'ads_enabled': false},
-      );
+      if (!_loggedNoAdStackWarning) {
+        _loggedNoAdStackWarning = true;
+        AdDebugLog.error(
+          'AdManager.init',
+          'ads disabled via Remote Config',
+          data: {'ads_enabled': false},
+        );
+      }
       logRuntimeStatusOnce();
       return;
     }
 
     if (!AdConfig.hasMonetizationConfig) {
       _initialized = false;
-      AdDebugLog.error(
-        'AdManager.init',
-        'monetization config incomplete',
-        data: {
-          'unityAds': AdConfig.hasUnityConfig,
-          'adsterraDirect': AdConfig.hasValidAdsterraDirectLink,
-          'adsterraSmartlink': AdConfig.hasValidAdsterraSmartlink,
-          'adsterraWebView': AdConfig.hasAdsterraWebViewZones,
-          'placeholderAdUrls': AdConfig.usesPlaceholderAdUrls,
-        },
-      );
+      if (!_loggedNoAdStackWarning) {
+        _loggedNoAdStackWarning = true;
+        AdDebugLog.error(
+          'AdManager.init',
+          'monetization config incomplete',
+          data: {
+            'unityAds': AdConfig.hasUnityConfig,
+            'adsterraDirect': AdConfig.hasValidAdsterraDirectLink,
+            'adsterraSmartlink': AdConfig.hasValidAdsterraSmartlink,
+            'adsterraWebView': AdConfig.hasAdsterraWebViewZones,
+            'placeholderAdUrls': AdConfig.usesPlaceholderAdUrls,
+          },
+        );
+      }
       logRuntimeStatusOnce();
       return;
     }
@@ -181,15 +202,18 @@ class AdManager {
 
     if (!unityOk && !adsterraOk) {
       _initialized = false;
-      AdDebugLog.error(
-        'AdManager.init',
-        'no ad stack available',
-        data: {
-          'unityAds': unityOk,
-          'adsterra': adsterraOk,
-          'blockedInDebug': AdSafetyService.instance.adsBlockedInDebug,
-        },
-      );
+      if (!_loggedNoAdStackWarning) {
+        _loggedNoAdStackWarning = true;
+        AdDebugLog.error(
+          'AdManager.init',
+          'no ad stack available',
+          data: {
+            'unityAds': unityOk,
+            'adsterra': adsterraOk,
+            'blockedInDebug': AdSafetyService.instance.adsBlockedInDebug,
+          },
+        );
+      }
       logRuntimeStatusOnce();
       return;
     }

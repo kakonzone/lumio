@@ -134,6 +134,20 @@ class RetryHelper {
 
   /// Default retry predicate that retries on common transient errors.
   static bool defaultRetryPredicate(Object error) {
+    // Do NOT retry on Appwrite rate limit errors (402)
+    final errorStr = error.toString();
+    if (errorStr.contains('402') || 
+        errorStr.contains('limit_databases_reads_exceeded') ||
+        errorStr.contains('limit exceeded')) {
+      return false;
+    }
+    
+    // Do NOT retry on DNS failures (permanent network issues)
+    if (errorStr.contains('failed host lookup') ||
+        errorStr.contains('no address associated with hostname')) {
+      return false;
+    }
+    
     // Retry on network errors
     if (error is HttpError) {
       return error.isServerError || error.isTimeout || error.isNetworkError;
@@ -145,10 +159,9 @@ class RetryHelper {
     }
     
     // Retry on socket exceptions
-    final errorStr = error.toString().toLowerCase();
-    return errorStr.contains('socket') ||
-           errorStr.contains('connection') ||
-           errorStr.contains('network') ||
-           errorStr.contains('timeout');
+    return errorStr.toLowerCase().contains('socket') ||
+           errorStr.toLowerCase().contains('connection') ||
+           errorStr.toLowerCase().contains('network') ||
+           errorStr.toLowerCase().contains('timeout');
   }
 }

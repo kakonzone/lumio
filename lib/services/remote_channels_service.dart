@@ -8,6 +8,7 @@ import '../config/channel_categories.dart';
 import '../models/model.dart';
 import '../network/secure_dio.dart';
 import '../utils/m3u_merge_parser.dart';
+import '../utils/retry.dart';
 
 /// Fetches channel catalog from GitHub M3U playlist (replaces bundled list when available).
 class RemoteChannelsService {
@@ -53,24 +54,48 @@ class RemoteChannelsService {
       return const [];
     }
 
-    for (var attempt = 0; attempt < _maxAttempts; attempt++) {
-      try {
-        final channels = await _fetchOnce(uri);
-        if (channels.isNotEmpty) {
-          _cached = channels;
-          _cachedAt = DateTime.now();
-          return List<ChannelModel>.from(channels);
+    // Check for placeholder/example domains and fail fast
+    final host = uri.host.toLowerCase();
+    if (host.contains('example') || host.contains('invalid') || host.contains('test')) {
+      if (kDebugMode) {
+        debugPrint('[RemoteChannels] placeholder domain detected: $host - using bundled channels');
+      }
+      return const [];
+    }
+
+    try {
+      final channels = await RetryHelper.retry(
+        fn: () => _fetchOnce(uri),
+        maxAttempts: _maxAttempts,
+        initialDelayMs: 500,
+        retryIf: RetryHelper.defaultRetryPredicate,
+        onRetry: (attempt, delay, error) {
+          if (kDebugMode) {
+            debugPrint('[RemoteChannels] retry attempt $attempt/$_maxAttempts after ${delay}ms');
+          }
+        },
+      );
+      
+      if (channels.isNotEmpty) {
+        _cached = channels;
+        _cachedAt = DateTime.now();
+        return List<ChannelModel>.from(channels);
+      }
+      return const [];
+    } catch (e) {
+      final errorStr = e.toString().toLowerCase();
+      if (errorStr.contains('failed host lookup') || 
+          errorStr.contains('no address associated')) {
+        if (kDebugMode) {
+          debugPrint('[RemoteChannels] DNS failure for $host - using bundled channels');
         }
         return const [];
-      } catch (e) {
-        if (attempt == _maxAttempts - 1) {
-          if (kDebugMode) debugPrint('[RemoteChannels] fetch exception: $e');
-          return const [];
-        }
-        await Future<void>.delayed(Duration(milliseconds: 250 * (attempt + 1)));
       }
+      if (kDebugMode) {
+        debugPrint('[RemoteChannels] fetch exception: $e');
+      }
+      return const [];
     }
-    return const [];
   }
 
   static Future<List<ChannelModel>> _fetchOnce(Uri uri) async {

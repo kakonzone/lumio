@@ -58,6 +58,7 @@ class AppwriteService {
         },
         maxAttempts: 3,
         initialDelayMs: 1000,
+        retryIf: RetryHelper.defaultRetryPredicate,
         onRetry: (attempt, delay, error) {
           if (kDebugMode) {
             debugPrint('[Appwrite] Retry attempt $attempt after ${delay}ms: $error');
@@ -68,6 +69,16 @@ class AppwriteService {
       lastFetchError = _friendlyAppwriteError(e);
       if (kDebugMode) {
         debugPrint('[Appwrite] ${e.message} (code=${e.code})');
+      }
+      // On 402 rate limit, fall back to cached data or empty list
+      if (e.code == 402) {
+        if (kDebugMode) {
+          debugPrint('[Appwrite] Rate limit exceeded, using cached data or bundled fallback');
+        }
+        final cached = await SpecialLinkCache.instance.readAppCatalogChannels();
+        if (cached != null && cached.isNotEmpty) {
+          return cached;
+        }
       }
     } catch (e) {
       lastFetchError = e.toString();
@@ -91,6 +102,9 @@ class AppwriteService {
       return 'Appwrite channels: permission denied (401). '
           'Console → iptv_main → channels → Settings → Permissions → '
           'Read for Guests (no API key in the app).';
+    }
+    if (e.code == 402 || e.type == 'limit_databases_reads_exceeded') {
+      return 'Appwrite rate limit exceeded. Using cached data or bundled channels.';
     }
     return e.message ?? 'Appwrite error (code=${e.code})';
   }

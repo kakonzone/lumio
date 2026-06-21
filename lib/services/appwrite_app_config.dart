@@ -117,6 +117,9 @@ class AppwriteAppConfig {
           'Console → iptv_main → app_config → Permissions → Read for Guests. '
           'Row key or document id: $key';
     }
+    if (e.code == 402 || e.type == 'limit_databases_reads_exceeded') {
+      return 'Appwrite rate limit exceeded. Using cached data or bundled fallback.';
+    }
     return e.message ?? 'Appwrite app_config error (code=${e.code})';
   }
 

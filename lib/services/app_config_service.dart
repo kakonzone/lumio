@@ -17,8 +17,8 @@ class AppConfigService {
   static const _prefCachedAtKey = 'lumio_global_app_config_cached_at_v1';
 
   late final Client _client = Client()
-      .setEndpoint(AppwriteConfig.mainEndpoint)
-      .setProject(AppwriteConfig.mainProjectId);
+      .setEndpoint(AppwriteConfig.endpoint)
+      .setProject(AppwriteConfig.projectId);
 
   late final Databases _databases = Databases(_client);
 
@@ -28,10 +28,10 @@ class AppConfigService {
   AppConfigModel get cachedConfig => _cached;
 
   Future<AppConfigModel> fetchConfig({bool forceRefresh = false}) async {
-    if (!AppwriteConfig.mainProjectConfigured) {
+    if (!AppwriteConfig.isConfigured) {
       if (kDebugMode) {
         debugPrint(
-            '[AppConfig] main project not configured — using cache/defaults');
+            '[AppConfig] Appwrite project not configured — using cache/defaults');
       }
       return _loadCacheOrDefault();
     }
@@ -42,7 +42,7 @@ class AppConfigService {
 
     try {
       final doc = await _databases.getDocument(
-        databaseId: AppwriteConfig.mainDatabaseId,
+        databaseId: AppwriteConfig.databaseId,
         collectionId: AppwriteConfig.appConfigCollectionId,
         documentId: AppwriteConfig.globalConfigDocumentId,
       );

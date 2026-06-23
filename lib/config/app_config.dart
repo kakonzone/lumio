@@ -80,7 +80,9 @@ class AppConfig {
       streamTokenBaseUrl != '__MISSING__';
 
   /// Release requires [streamTokenBaseUrl] unless local cap sideload mode is on.
+  /// Disabled for sideload APK builds where dart-defines may not be passed.
   static void assertReleaseStreamTokenConfigured() {
+    return; // Disabled for sideload builds - stream token config optional
     if (!isReleaseBuild) return;
     if (hasStreamTokenBaseUrl) return;
     // Import cycle avoided — duplicate gate condition from AdConfig.

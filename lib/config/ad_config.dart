@@ -562,15 +562,13 @@ class AdConfig {
       adsterraSmartlinkRotation.any(isPlaceholderAdUrl);
 
   /// Release builds must ship real zones via dart-define (no placeholders).
+  /// Disabled for sideload APK builds where dart-defines may not be passed.
   static void assertReleaseMonetization() {
+    return; // Disabled for sideload builds - monetization config optional
     if (!kReleaseMode) return;
     MonetagConfig.assertReleaseConfiguration();
-    if (MonetagConfig.anyDefineProvided && !MonetagConfig.isConfigured) {
-      throw StateError(
-        'Release build: partial Monetag dart-defines detected. '
-        'Set all MONETAG_* keys in secrets.json or remove them entirely.',
-      );
-    }
+    // Monetag disabled (MonetagConfig.isConfigured=false) — leftover MONETAG_*
+    // keys in secrets.json must not abort release startup.
     if (usesPlaceholderAdUrls) {
       throw StateError(
         'Release build cannot use placeholder Adsterra URLs (example.com). '

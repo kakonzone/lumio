@@ -41,6 +41,30 @@ class _AdsPrivacyScreenState extends State<AdsPrivacyScreen> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
+          const SizedBox(height: 16),
+          Text(
+            'Ad preferences',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: context.txt,
+            ),
+          ),
+          const SizedBox(height: 12),
+          RadioListTile<bool>(
+            title: const Text('Personalized ads'),
+            subtitle: const Text('See ads based on your interests'),
+            value: true,
+            groupValue: true,
+            onChanged: (value) {},
+          ),
+          RadioListTile<bool>(
+            title: const Text('Limited ads only'),
+            subtitle: const Text('Fewer ads, less relevant'),
+            value: false,
+            groupValue: true,
+            onChanged: (value) {},
+          ),
           if (AdConfig.hasUnityConfig && AdManager.instance.adsEnabled) ...[
             const SizedBox(height: 28),
             Text(

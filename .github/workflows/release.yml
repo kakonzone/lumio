@@ -128,7 +128,6 @@ jobs:
             echo "::error::Dev define LUMIO_SIDELOAD_DEV found in APK"
             exit 1
           fi
-          fi
           echo "✓ No dev defines in APK"
 
       - name: Verify signed with release cert

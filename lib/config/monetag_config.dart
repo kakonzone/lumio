@@ -107,12 +107,10 @@ class MonetagConfig {
       'MONETAG_ZONE_VIGNETTE': zoneVignette,
       'MONETAG_ZONE_PUSH': zonePush,
       'MONETAG_ZONE_INPAGE_PUSH': zoneInPagePush,
-      'MONETAG_ZONE_DIRECT_LINK': zoneDirectLink,
       'MONETAG_SCRIPT_POPUNDER': scriptPopunder,
       'MONETAG_SCRIPT_VIGNETTE': scriptVignette,
       'MONETAG_SCRIPT_PUSH': scriptPush,
       'MONETAG_SCRIPT_INPAGE_PUSH': scriptInPagePush,
-      'MONETAG_URL_DIRECT_LINK': urlDirectLink,
     };
     final missing = required.entries
         .where((e) => !_isSet(e.value))

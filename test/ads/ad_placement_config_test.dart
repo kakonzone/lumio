@@ -25,7 +25,7 @@ void main() {
     AdPlacementConfig.debugAggressiveModeOverride = true;
     expect(AdPlacementConfig.newsNativeInterval, 4);
     expect(AdPlacementConfig.channelListNativeInterval, 4);
-    expect(AdPlacementConfig.playerMidRollPeriod.inMinutes, 24);
+    expect(AdPlacementConfig.playerMidRollPeriod.inMinutes, 20);
     expect(AdPlacementConfig.showGlobalSocialBarOverlay, isTrue);
   });
 }

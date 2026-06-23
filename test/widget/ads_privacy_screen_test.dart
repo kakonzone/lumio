@@ -10,13 +10,16 @@ void main() {
     });
   });
 
-  testWidgets('AdsPrivacyScreen shows both ad choices', (tester) async {
+  testWidgets('AdsPrivacyScreen shows legal links', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(home: AdsPrivacyScreen()),
     );
     await tester.pumpAndSettle();
     expect(find.text('Ads & privacy'), findsOneWidget);
-    expect(find.text('Personalized ads'), findsOneWidget);
-    expect(find.text('Limited ads only'), findsOneWidget);
+    expect(find.text('Legal'), findsOneWidget);
+    expect(find.text('Privacy Policy'), findsOneWidget);
+    expect(find.text('Terms of Service'), findsOneWidget);
+    expect(find.text('Contact support'), findsOneWidget);
+    expect(find.text('Data deletion request'), findsOneWidget);
   });
 }

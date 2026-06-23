@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import 'security_config.dart';
 import 'security_native.dart';
+import '../utils/agent_debug_log.dart';
 
 /// নিরাপত্তা চেকের ফলাফল
 enum SecurityCheckId {
@@ -112,7 +113,7 @@ class SecurityManager {
       _checkProxyDetection(),
       _checkNativeIntegrity(),
       if (SecurityConfig.strictModeInRelease &&
-          !SecurityConfig.sideloadDevBuild)
+          !SecurityConfig.relaxAdbDebuggingCheck)
         _checkAdbDebugging()
       else
         Future.value(true),
@@ -305,6 +306,17 @@ class SecurityManager {
   Future<void> _handleFailure(SecurityFailureMode mode) async {
     switch (mode) {
       case SecurityFailureMode.exitSilently:
+        // #region agent log
+        AgentDebugLog.log(
+          location: 'security_manager.dart:_handleFailure',
+          message: 'SecurityManager exit(1) — strict release check failed',
+          hypothesisId: 'C',
+          data: {
+            'sideloadDev': SecurityConfig.sideloadDevBuild,
+            'capLocalOnly': SecurityConfig.capLocalOnlyMode,
+          },
+        );
+        // #endregion
         // জেনেরিক বার্তা — রিভার্স ইঞ্জিনিয়ারদের সূত্র দেবেন না
         exit(1);
       case SecurityFailureMode.blockFeatures:

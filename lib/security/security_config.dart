@@ -21,6 +21,16 @@ class SecurityConfig {
     defaultValue: false,
   );
 
+  /// Local sideload QA when server cap URL is unset (see secrets.json).
+  static const bool capLocalOnlyMode = bool.fromEnvironment(
+    'CAP_LOCAL_ONLY_MODE',
+    defaultValue: false,
+  );
+
+  /// Skip strict ADB-debugging kill switch for sideload QA builds.
+  static bool get relaxAdbDebuggingCheck =>
+      sideloadDevBuild || capLocalOnlyMode;
+
   /// VPN ব্যবহারকারী ব্লক (অনেক লিগitimate ইউজার VPN ব্যবহার করে — ডিফল্ট false)
   static const bool blockVpn = false;
 

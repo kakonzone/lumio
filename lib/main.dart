@@ -49,6 +49,8 @@ import 'services/user_preferences.dart';
 import 'config/app_config.dart';
 import 'security/blocked_apps_guard.dart';
 import 'security/security_manager.dart';
+import 'security/security_config.dart';
+import 'config/monetag_config.dart';
 import 'security/ssl_pinning.dart';
 import 'security/anti_clone_service.dart';
 import 'security/install_watermark_service.dart';
@@ -75,15 +77,76 @@ import 'widgets/error_boundary.dart';
 import 'ads/session_pacing.dart';
 import 'ads/background_ad_engine.dart';
 import 'l10n/app_localizations.dart';
+import 'utils/agent_debug_log.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await AgentDebugLog.init();
+  // #region agent log
+  AgentDebugLog.log(
+    location: 'main.dart:main:entry',
+    message: 'main() started',
+    hypothesisId: 'E',
+    data: {'kReleaseMode': kReleaseMode},
+  );
+  // #endregion
   await PerformanceTuning.apply();
   await PerformanceTuning.initialize();
   SafeLogger.debug('main', '[Lumio] main() starting (release=${AppConfig.isReleaseBuild})');
+  // #region agent log
+  AgentDebugLog.log(
+    location: 'main.dart:main:pre-assertions',
+    message: 'before release assertions',
+    hypothesisId: 'A',
+    data: {
+      'monetagAnyDefine': MonetagConfig.anyDefineProvided,
+      'monetagConfigured': MonetagConfig.isConfigured,
+      'hasMonetization': AdConfig.hasMonetizationConfig,
+      'hasStreamToken': AppConfig.hasStreamTokenBaseUrl,
+    },
+  );
+  // #endregion
   SslPinning.assertReleaseConfiguration();
-  AdConfig.assertReleaseMonetization();
-  AppConfig.assertReleaseStreamTokenConfigured();
+  try {
+    AdConfig.assertReleaseMonetization();
+    // #region agent log
+    AgentDebugLog.log(
+      location: 'main.dart:main:post-monetization',
+      message: 'assertReleaseMonetization passed',
+      hypothesisId: 'A',
+    );
+    // #endregion
+  } catch (e, st) {
+    // #region agent log
+    AgentDebugLog.log(
+      location: 'main.dart:main:monetization-fail',
+      message: 'assertReleaseMonetization threw',
+      hypothesisId: 'A',
+      data: {'error': e.toString(), 'stack': st.toString().split('\n').take(3).join(' | ')},
+    );
+    // #endregion
+    rethrow;
+  }
+  try {
+    AppConfig.assertReleaseStreamTokenConfigured();
+    // #region agent log
+    AgentDebugLog.log(
+      location: 'main.dart:main:post-stream-token',
+      message: 'assertReleaseStreamTokenConfigured passed',
+      hypothesisId: 'B',
+    );
+    // #endregion
+  } catch (e, st) {
+    // #region agent log
+    AgentDebugLog.log(
+      location: 'main.dart:main:stream-token-fail',
+      message: 'assertReleaseStreamTokenConfigured threw',
+      hypothesisId: 'B',
+      data: {'error': e.toString()},
+    );
+    // #endregion
+    rethrow;
+  }
   debugPrint(AdConfig.dumpRedacted());
   if (!kReleaseMode && AdConfig.blockAdsInThisBuild) {
     debugPrint(
@@ -97,6 +160,14 @@ void main() async {
   MediaKit.ensureInitialized();
   SessionPacing.instance.initialize();
   final securityOk = await SecurityManager.instance.initialize();
+  // #region agent log
+  AgentDebugLog.log(
+    location: 'main.dart:main:post-security',
+    message: 'SecurityManager.initialize completed',
+    hypothesisId: 'C',
+    data: {'securityOk': securityOk, 'strictMode': SecurityConfig.strictModeInRelease},
+  );
+  // #endregion
   SafeLogger.debug('main', '[Lumio] SecurityManager.initialize() => $securityOk');
 
   // Initialize new anti-clone security services
@@ -120,6 +191,14 @@ void main() async {
 
   if (BlockedAppsGuard.shouldEnforce()) {
     final blockedLabels = await BlockedAppsGuard.installedLabels();
+    // #region agent log
+    AgentDebugLog.log(
+      location: 'main.dart:main:blocked-apps',
+      message: 'BlockedAppsGuard check',
+      hypothesisId: 'D',
+      data: {'blockedCount': blockedLabels.length},
+    );
+    // #endregion
     if (blockedLabels.isNotEmpty) {
       SafeLogger.debug('main', '[Lumio] blocked apps detected: ${blockedLabels.length}');
       runApp(
@@ -147,6 +226,13 @@ void _runLumioApp() async {
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]),
   );
   SafeLogger.debug('main', '[Lumio] runApp()');
+  // #region agent log
+  AgentDebugLog.log(
+    location: 'main.dart:_runLumioApp:pre-runApp',
+    message: 'calling runApp',
+    hypothesisId: 'E',
+  );
+  // #endregion
   runApp(
     Listener(
       behavior: HitTestBehavior.translucent,

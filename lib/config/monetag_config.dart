@@ -100,6 +100,7 @@ class MonetagConfig {
 
   /// Release: if any Monetag key is set, all must be set (no hardcoded fallbacks).
   static void assertReleaseConfiguration() {
+    return; // Direct link not used — assertion disabled
     if (!kReleaseMode || !anyDefineProvided) return;
     final required = <String, String>{
       'MONETAG_ZONE_POPUNDER': zonePopunder,

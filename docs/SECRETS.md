@@ -73,6 +73,69 @@ If missing, Toffee CDN requests send cookie prefix only (streams may 403 until s
 
 **After any leak:** rotate token at Toffee provider and rewrite git history — `docs/GIT_HISTORY_REWRITE.md`.
 
+## Flutter run development (debug/profile)
+
+For local development with `flutter run`, ads are **disabled by default** unless you set `ADS_ENABLED=true`. This is a safety measure to prevent accidental ad impressions during development.
+
+### Enabling ads for testing
+
+To enable ads in debug/profile builds:
+
+**Option 1: secrets.json**
+```json
+{
+  "ADS_ENABLED": "true",
+  "ADS_TEST_MODE": "false"
+}
+```
+
+**Option 2: Command line**
+```bash
+flutter run --dart-define=ADS_ENABLED=true
+```
+
+### Test ad units
+
+Use test ad units during development to avoid real impressions:
+
+**Unity Ads (test mode):**
+```json
+{
+  "UNITY_GAME_ID": "800000664",
+  "UNITY_TEST_MODE": "true"
+}
+```
+
+**LevelPlay (IronSource) test units:**
+```json
+{
+  "LEVELPLAY_APP_KEY": "YOUR_APP_KEY",
+  "LEVELPLAY_INTERSTITIAL_AD_UNIT": "DefaultInterstitial",
+  "LEVELPLAY_BANNER_AD_UNIT": "DefaultBanner"
+}
+```
+
+**Adsterra test URLs:**
+Use placeholder URLs or your own test landing page:
+```json
+{
+  "ADSTERRA_DIRECT_LINK": "https://your-test-site.com"
+}
+```
+
+### Server cap (CAP_LOCAL_ONLY_MODE)
+
+For development without a server cap API:
+```json
+{
+  "CAP_BASE_URL": "",
+  "CAP_HMAC_KEY": "",
+  "CAP_LOCAL_ONLY_MODE": "true"
+}
+```
+
+This uses local-only caps (defined in code) instead of server-side rate limits.
+
 ## Optional
 
 | Variable | Purpose |

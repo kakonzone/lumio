@@ -1,9 +1,6 @@
-name: Release APK
+name: Release APK (manual only)
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 concurrency:

@@ -84,7 +84,8 @@ class _AppOpenPromoScreenState extends State<AppOpenPromoScreen> {
     _failsafe?.cancel();
     if (!auto) HapticFeedback.lightImpact();
     if (!mounted) return;
-    Navigator.of(context).pop();
+    // Navigate to splash screen after app-open ad
+    Navigator.of(context).pushReplacementNamed('/splash');
   }
 
   @override

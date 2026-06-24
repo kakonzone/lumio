@@ -1,14 +1,12 @@
-import 'dart:math';
-
 import '../../config/ad_config.dart';
 import '../../config/monetag_config.dart';
 
-/// Picks a random URL from Adsterra and Monetag direct links per channel-tap browser open.
-/// Rotates between Adsterra and Monetag links for better monetization.
+/// Picks URLs from Adsterra and Monetag direct links per channel-tap browser open.
+/// Rotates sequentially (chain pattern) instead of random for consistent user experience.
 class DirectLinkRotator {
   DirectLinkRotator._();
 
-  static final _random = Random();
+  static int _currentIndex = 0;
 
   static String? pickUrl() {
     // Combine Adsterra and Monetag direct links for rotation
@@ -21,6 +19,16 @@ class DirectLinkRotator {
     final validPool = pool.where((url) => url.trim().isNotEmpty).toList();
 
     if (validPool.isEmpty) return null;
-    return validPool[_random.nextInt(validPool.length)];
+    
+    // Sequential rotation (chain pattern)
+    final url = validPool[_currentIndex % validPool.length];
+    _currentIndex = (_currentIndex + 1) % validPool.length;
+    
+    return url;
+  }
+  
+  /// Reset rotation index (for testing or manual reset)
+  static void reset() {
+    _currentIndex = 0;
   }
 }

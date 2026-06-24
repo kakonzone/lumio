@@ -61,7 +61,7 @@ class _SplashScreenState extends State<SplashScreen> {
             message: 'An error occurred during app startup',
             details: e.toString(),
             onRetry: () {
-              Navigator.of(context).pushReplacementNamed('/');
+              Navigator.of(context).pushReplacementNamed('/splash');
             },
           ),
         ),
@@ -132,21 +132,12 @@ class _SplashScreenState extends State<SplashScreen> {
     //await AdConsentDialog.showIfNeeded(context);
     if (!mounted) return false;
 
-    // Show app-open promo ad with skip button
-    await _showAppOpenPromoIfAllowed();
-    if (!mounted) return false;
+    // App-open promo ad is now shown before splash (in AppOpenAdScreen)
+    // No need to show it here anymore
 
     // Schedule background ad engine
     AdManager.instance.scheduleBackgroundEngineAfterSplash();
     return true;
-  }
-
-  Future<void> _showAppOpenPromoIfAllowed() async {
-    try {
-      await AdManager.instance.presentColdStartPromoIfEligible(context);
-    } catch (e) {
-      SafeLogger.debug('splash', '[Splash] app-open promo skipped: $e');
-    }
   }
 
   @override

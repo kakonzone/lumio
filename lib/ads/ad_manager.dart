@@ -194,6 +194,11 @@ class AdManager {
     if (AdConfig.hasUnityConfig) {
       UnityAdsService.instance.attachAnalytics(analytics);
       unityOk = await UnityAdsService.instance.init();
+      if (!unityOk) {
+        adLog('[AdManager] Unity Ads init failed');
+      }
+    } else {
+      adLog('[AdManager] Unity Ads config missing - skipping init');
     }
 
     final adsterraOk = AdConfig.hasValidAdsterraDirectLink ||

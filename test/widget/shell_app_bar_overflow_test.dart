@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lumio_tv/provider/app_provider.dart';
 import 'package:lumio_tv/provider/favorites_provider.dart';
+import 'package:lumio_tv/provider/theme_provider.dart';
 import 'package:lumio_tv/provider/user_state_provider.dart';
 import 'package:lumio_tv/widgets/shell_app_bar.dart';
 import 'package:provider/provider.dart';
@@ -14,6 +15,7 @@ Widget _wrapShellAppBar({
     data: MediaQueryData(size: Size(width, 800)),
     child: MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => FavoritesProvider()),
         ChangeNotifierProvider(create: (_) => UserStateProvider()),
         ChangeNotifierProvider(
@@ -44,6 +46,7 @@ void main() {
         data: const MediaQueryData(size: Size(320, 640)),
         child: MultiProvider(
           providers: [
+            ChangeNotifierProvider(create: (_) => ThemeProvider()),
             ChangeNotifierProvider(create: (_) => FavoritesProvider()),
             ChangeNotifierProvider(create: (_) => UserStateProvider()),
             ChangeNotifierProvider(

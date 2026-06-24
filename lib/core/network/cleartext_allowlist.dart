@@ -13,5 +13,6 @@ class CleartextAllowlist {
     'lib/security/stream_security_prober.dart',
     'lib/security/stream_upgrade_service.dart',
     'lib/widgets/sources/source_form.dart',
+    'lib/utils/agent_debug_log.dart',
   };
 }

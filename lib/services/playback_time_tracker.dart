@@ -40,7 +40,7 @@ class PlaybackTimeTracker {
     _triggeredMinutes.clear();
   }
 
-  void _tick() {
+  void _tick(Timer timer) {
     if (!_isPlaying || _lastUpdateTime == null) return;
 
     final now = DateTime.now();

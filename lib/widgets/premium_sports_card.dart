@@ -375,7 +375,7 @@ class _TeamDisplay extends StatelessWidget {
           child: ClipOval(
             child: TeamAvatar(
               name: teamName,
-              logoUrl: logoUrl,
+              logoUrl: logoUrl ?? '',
               sport: sport,
               size: 56,
             ),

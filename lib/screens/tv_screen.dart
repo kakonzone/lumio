@@ -171,8 +171,9 @@ class TvScreenState extends State<TvScreen>
                       onLiveTabTap: () {
                         if (_tabs.index != 1) _tabs.animateTo(1);
                       },
+                      onEventTap: _openChannelsPopup,
                     ),
-                    _LiveNowTab(onPlay: _openPlayer),
+                    _LiveNowTab(onPlay: _openPlayer, onEventTap: _openChannelsPopup),
                     _TodayTab(onPlay: _openPlayer),
                     _UpcomingTab(onPlay: _openPlayer),
                   ],
@@ -427,18 +428,25 @@ typedef PlayerCallback = void Function(
   String? browseCategory,
 });
 
+typedef EventCallback = void Function(
+  BuildContext context, {
+  required LiveEventMatch event,
+});
+
 // ── HOME TAB ──────────────────────────────────────────────────
 class _HomeTab extends StatefulWidget {
   final ValueNotifier<String?> highlightCategory;
   final PlayerCallback onPlay;
   final ValueChanged<String>? onCategoryTap;
   final VoidCallback? onLiveTabTap;
+  final EventCallback onEventTap;
 
   const _HomeTab({
     required this.highlightCategory,
     required this.onPlay,
     this.onCategoryTap,
     this.onLiveTabTap,
+    required this.onEventTap,
   });
 
   @override
@@ -633,7 +641,7 @@ class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
                             ),
                             child: PremiumSportsCard(
                               match: featuredEvents[index].match,
-                              onTap: () => _openChannelsPopup(context, event: featuredEvents[index]),
+                              onTap: () => widget.onEventTap(context, event: featuredEvents[index]),
                             ),
                           ),
                         ),
@@ -692,7 +700,7 @@ class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
                             ),
                             child: PremiumSportsCard(
                               match: liveEvents[index].match,
-                              onTap: () => _openChannelsPopup(context, event: liveEvents[index]),
+                              onTap: () => widget.onEventTap(context, event: liveEvents[index]),
                             ),
                           ),
                         ),
@@ -719,7 +727,8 @@ class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
 // ── LIVE NOW TAB ──────────────────────────────────────────────
 class _LiveNowTab extends StatefulWidget {
   final PlayerCallback onPlay;
-  const _LiveNowTab({required this.onPlay});
+  final EventCallback onEventTap;
+  const _LiveNowTab({required this.onPlay, required this.onEventTap});
 
   @override
   State<_LiveNowTab> createState() => _LiveNowTabState();
@@ -790,7 +799,7 @@ class _LiveNowTabState extends State<_LiveNowTab>
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: PremiumSportsCard(
                     match: liveEvents[index].match,
-                    onTap: () => _openChannelsPopup(context, event: liveEvents[index]),
+                    onTap: () => widget.onEventTap(context, event: liveEvents[index]),
                   ),
                 ),
                 childCount: liveEvents.length,

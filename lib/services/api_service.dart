@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import '../models/model.dart';
 
 class ApiService {
@@ -23,28 +23,46 @@ class ApiService {
   }
 
   static const Duration _timeout = Duration(seconds: 10);
+  static final Dio _dio = Dio(
+    BaseOptions(
+      connectTimeout: _timeout,
+      receiveTimeout: _timeout,
+      sendTimeout: _timeout,
+    ),
+  );
 
   // ── Internal helpers ───────────────────────────────────
 
   /// GET with timeout. Throws [ApiException] on non-200 or network error.
   static Future<Map<String, dynamic>> _get(Uri uri) async {
     try {
-      final res = await http.get(uri).timeout(_timeout);
+      final res = await _dio.get(uri.toString());
       if (res.statusCode == 200) {
-        return jsonDecode(res.body) as Map<String, dynamic>;
+        return res.data as Map<String, dynamic>;
       }
       throw ApiException(
         'Server returned ${res.statusCode}',
         statusCode: res.statusCode,
       );
-    } on SocketException {
-      throw ApiException('No internet connection');
-    } on HttpException {
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout) {
+        throw ApiException('Request timeout');
+      }
+      if (e.type == DioExceptionType.connectionError) {
+        throw ApiException('No internet connection');
+      }
+      if (e.type == DioExceptionType.badResponse) {
+        throw ApiException(
+          'Server returned ${e.response?.statusCode}',
+          statusCode: e.response?.statusCode,
+        );
+      }
       throw ApiException('Could not reach the server');
     } on FormatException {
       throw ApiException('Invalid response format from server');
     }
-    // TimeoutException bubbles up as-is — caller can catch ApiException | TimeoutException
   }
 
   // ── Channels ───────────────────────────────────────────

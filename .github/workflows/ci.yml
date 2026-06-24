@@ -40,10 +40,23 @@ jobs:
           fi
 
       - name: flutter analyze
-        run: flutter analyze || true
+        run: flutter analyze
+
+      - name: dart format check
+        run: dart format --set-exit-if-changed .
 
       - name: flutter test
         run: flutter test --coverage --reporter expanded
+
+      - name: Build debug APK artifact
+        run: flutter build apk --debug
+
+      - name: Upload debug APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumio-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 7
 
       - name: Upload test log
         if: always()

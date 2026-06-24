@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import '../core/api_config.dart';
 import '../models/model.dart';
 import '../utils/app_logger.dart';
@@ -21,10 +21,18 @@ class ScoreService {
   static const _ua =
       'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/124.0.0.0';
 
+  static final Dio _dio = Dio(
+    BaseOptions(
+      connectTimeout: const Duration(seconds: 8),
+      receiveTimeout: const Duration(seconds: 8),
+      sendTimeout: const Duration(seconds: 8),
+      headers: {'User-Agent': _ua},
+    ),
+  );
+
   static List<ScoreTournamentGroup>? _boardsCache;
   static DateTime? _boardsCacheAt;
   static const _cacheTtl = Duration(minutes: 3);
-  static const _requestTimeout = Duration(seconds: 8);
   static const _maxRetries = 3;
 
   static void clearCache() {
@@ -33,7 +41,7 @@ class ScoreService {
   }
 
   /// HTTP request with retry and timeout
-  static Future<http.Response> _fetchWithRetry(
+  static Future<Response> _fetchWithRetry(
     String url, {
     Map<String, String>? headers,
     int retries = _maxRetries,
@@ -43,21 +51,20 @@ class ScoreService {
 
     while (attempt < retries) {
       try {
-        return await http
-            .get(Uri.parse(url), headers: headers)
-            .timeout(_requestTimeout);
-      } on SocketException catch (e) {
+        return await _dio.get(url, options: Options(headers: headers));
+      } on DioException catch (e) {
         attempt++;
         if (attempt >= retries) rethrow;
-        AppLogger.warning('Network error, retry $attempt/$retries: $e', subsystem: 'ScoreService');
-        await Future.delayed(delay);
-        delay *= 2; // Exponential backoff
-      } on HttpException catch (e) {
-        attempt++;
-        if (attempt >= retries) rethrow;
-        AppLogger.warning('HTTP error, retry $attempt/$retries: $e', subsystem: 'ScoreService');
-        await Future.delayed(delay);
-        delay *= 2;
+        if (e.type == DioExceptionType.connectionError ||
+            e.type == DioExceptionType.connectionTimeout ||
+            e.type == DioExceptionType.receiveTimeout ||
+            e.type == DioExceptionType.sendTimeout) {
+          AppLogger.warning('Network error, retry $attempt/$retries: $e', subsystem: 'ScoreService');
+          await Future.delayed(delay);
+          delay *= 2; // Exponential backoff
+        } else {
+          rethrow;
+        }
       } catch (e) {
         rethrow;
       }
@@ -211,24 +218,19 @@ class ScoreService {
     String url,
   ) async {
     try {
-      final res = await _fetchWithRetry(url, headers: {'User-Agent': _ua});
+      final res = await _fetchWithRetry(url);
       if (res.statusCode != 200) {
         if (kDebugMode) {
           AppLogger.warning('ESPN returned status ${res.statusCode}', subsystem: 'ScoreService');
         }
         return ScoreTournamentGroup(tournament: name, matches: const []);
       }
-      final data = jsonDecode(res.body) as Map<String, dynamic>;
+      final data = res.data as Map<String, dynamic>;
       final matches = _parseEspnSoccerToday(data, name);
       return ScoreTournamentGroup(tournament: name, matches: matches);
-    } on SocketException catch (e) {
+    } on DioException catch (e) {
       if (kDebugMode) {
         AppLogger.warning('ESPN network error: $e', subsystem: 'ScoreService');
-      }
-      return ScoreTournamentGroup(tournament: name, matches: const []);
-    } on HttpException catch (e) {
-      if (kDebugMode) {
-        AppLogger.warning('ESPN HTTP error: $e', subsystem: 'ScoreService');
       }
       return ScoreTournamentGroup(tournament: name, matches: const []);
     } on FormatException catch (e) {
@@ -338,7 +340,6 @@ class ScoreService {
       final res = await _fetchWithRetry(
         'https://${ApiConfig.cricbuzzRapidApiHost}/matches/v1/live',
         headers: {
-          'User-Agent': _ua,
           'x-rapidapi-host': ApiConfig.cricbuzzRapidApiHost,
           'x-rapidapi-key': ApiConfig.cricbuzzRapidApiKey,
         },
@@ -349,7 +350,7 @@ class ScoreService {
         }
         return [];
       }
-      final data = jsonDecode(res.body);
+      final data = res.data;
       final matches = _parseCricbuzzRapid(data);
       if (matches.isEmpty) return [];
       return [
@@ -358,14 +359,9 @@ class ScoreService {
           matches: matches,
         ),
       ];
-    } on SocketException catch (e) {
+    } on DioException catch (e) {
       if (kDebugMode) {
         AppLogger.warning('Cricbuzz network error: $e', subsystem: 'ScoreService');
-      }
-      return [];
-    } on HttpException catch (e) {
-      if (kDebugMode) {
-        AppLogger.warning('Cricbuzz HTTP error: $e', subsystem: 'ScoreService');
       }
       return [];
     } on FormatException catch (e) {

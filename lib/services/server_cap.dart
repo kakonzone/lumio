@@ -1,7 +1,7 @@
 import 'dart:convert';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/ad_config.dart';
@@ -15,7 +15,13 @@ class ServerCap {
   static const _cacheTtl = Duration(minutes: 5);
   static const _timeout = Duration(seconds: 5);
 
-  final http.Client _http = http.Client();
+  final Dio _dio = Dio(
+    BaseOptions(
+      connectTimeout: _timeout,
+      receiveTimeout: _timeout,
+      sendTimeout: _timeout,
+    ),
+  );
 
   Map<String, int> _limits = {};
   DateTime? _syncedAt;
@@ -104,7 +110,7 @@ class ServerCap {
     final headers = <String, String>{'Accept': 'application/json'};
     // INTENTIONALLY OMITTED: Play Integrity disabled, server must rely on HMAC + install-ID dedup
     try {
-      final res = await _http.get(uri, headers: headers).timeout(_timeout);
+      final res = await _dio.get(uri.toString(), options: Options(headers: headers));
 
       if (res.statusCode != 200) {
         _failClosed = true;
@@ -112,7 +118,7 @@ class ServerCap {
         return;
       }
 
-      final decoded = jsonDecode(res.body);
+      final decoded = res.data;
       if (decoded is! Map<String, dynamic>) {
         _failClosed = true;
         _logFailClosedOnce('invalid_json');

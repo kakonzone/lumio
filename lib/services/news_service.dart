@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 
 import '../models/model.dart';
 import '../utils/news_priority.dart';
@@ -12,6 +12,15 @@ class NewsService {
 
   static const _ua =
       'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/124.0.0.0';
+
+  static final Dio _dio = Dio(
+    BaseOptions(
+      connectTimeout: const Duration(seconds: 12),
+      receiveTimeout: const Duration(seconds: 12),
+      sendTimeout: const Duration(seconds: 12),
+      headers: {'User-Agent': _ua},
+    ),
+  );
 
   static const _espnFeeds = <String, String>{
     'Top Stories':
@@ -49,10 +58,9 @@ class NewsService {
     MapEntry<String, String> feed,
   ) async {
     try {
-      final res = await http.get(Uri.parse(feed.value),
-          headers: {'User-Agent': _ua}).timeout(const Duration(seconds: 12));
+      final res = await _dio.get(feed.value);
       if (res.statusCode != 200) return [];
-      final data = jsonDecode(res.body) as Map<String, dynamic>;
+      final data = res.data as Map<String, dynamic>;
       final articles = data['articles'] as List? ?? [];
       final out = <NewsModel>[];
       for (final raw in articles) {
@@ -115,10 +123,9 @@ class NewsService {
 
   static Future<List<NewsModel>> _fetchBbcSportRss() async {
     try {
-      final res = await http.get(Uri.parse(_bbcSportRss),
-          headers: {'User-Agent': _ua}).timeout(const Duration(seconds: 12));
+      final res = await _dio.get(_bbcSportRss);
       if (res.statusCode != 200) return [];
-      return _parseRssItems(res.body, source: 'BBC Sport', idPrefix: 'bbc');
+      return _parseRssItems(res.data as String, source: 'BBC Sport', idPrefix: 'bbc');
     } catch (_) {
       return [];
     }

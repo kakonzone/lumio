@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 
 /// Downloads a remote image for Android Big Picture / iOS attachment notifications.
@@ -9,22 +9,31 @@ class NotificationImageLoader {
 
   static const _timeout = Duration(seconds: 12);
 
+  static final Dio _dio = Dio(
+    BaseOptions(
+      connectTimeout: _timeout,
+      receiveTimeout: _timeout,
+      sendTimeout: _timeout,
+      responseType: ResponseType.bytes,
+    ),
+  );
+
   /// Returns a temp file path, or null if download fails.
   static Future<String?> downloadToCache(String url) async {
     final uri = Uri.tryParse(url.trim());
     if (uri == null || !uri.hasScheme || uri.host.isEmpty) return null;
 
     try {
-      final response = await http.get(uri).timeout(_timeout);
-      if (response.statusCode != 200 || response.bodyBytes.isEmpty) {
+      final response = await _dio.get(url);
+      if (response.statusCode != 200 || (response.data as List).isEmpty) {
         return null;
       }
 
-      final ext = _extensionFromUri(uri, response.headers['content-type']);
+      final ext = _extensionFromUri(uri, response.headers['content-type']?.first);
       final dir = await getTemporaryDirectory();
       final path = '${dir.path}/lumio_notif_${uri.hashCode.abs()}.$ext';
       final file = File(path);
-      await file.writeAsBytes(response.bodyBytes, flush: true);
+      await file.writeAsBytes(response.data as List<int>, flush: true);
       return path;
     } catch (_) {
       return null;

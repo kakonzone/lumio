@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 
 import '../models/model.dart';
 
@@ -39,6 +39,15 @@ class StreamSecurityProber {
   static const _ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
       'AppleWebKit/537.36 (KHTML, like Gecko) '
       'Chrome/124.0.0.0 Safari/537.36';
+
+  static final Dio _dio = Dio(
+    BaseOptions(
+      connectTimeout: _timeout,
+      receiveTimeout: _timeout,
+      sendTimeout: _timeout,
+      headers: {'User-Agent': _ua},
+    ),
+  );
 
   static const _streamContentTypes = [
     'application/x-mpegURL',
@@ -83,9 +92,7 @@ class StreamSecurityProber {
   /// Probes an HTTPS URL to verify accessibility and content type.
   static Future<StreamProbeResult> _probeHttps(String url) async {
     try {
-      final response = await http
-          .head(Uri.parse(url), headers: {'User-Agent': _ua})
-          .timeout(_timeout);
+      final response = await _dio.head(url);
 
       final contentType = response.headers['content-type'];
       final isValidStream = _isValidStreamContentType(contentType);

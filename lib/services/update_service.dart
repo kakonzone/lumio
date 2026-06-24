@@ -1,14 +1,22 @@
 import 'dart:convert';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Force-update manifest from Cloudflare Pages (`web/version.json` → lumio.me).
 class UpdateService {
   UpdateService._();
+
+  static final Dio _dio = Dio(
+    BaseOptions(
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 10),
+      sendTimeout: const Duration(seconds: 10),
+    ),
+  );
 
   static const String versionUrl = String.fromEnvironment(
     'FORCE_UPDATE_VERSION_URL',
@@ -39,12 +47,10 @@ class UpdateService {
 
   static Future<String?> _fetchPendingUpdate() async {
     try {
-      final response = await http
-          .get(Uri.parse(versionUrl))
-          .timeout(const Duration(seconds: 10));
+      final response = await _dio.get(versionUrl);
       if (response.statusCode != 200) return null;
 
-      final data = jsonDecode(response.body);
+      final data = response.data;
       if (data is! Map<String, dynamic>) return null;
 
       final latestVersion = (data['version'] as String? ?? '').trim();

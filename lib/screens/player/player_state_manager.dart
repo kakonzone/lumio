@@ -12,26 +12,25 @@ extension _PlayerState on _PlayerScreenState {
     // Pause playback
     _player.pause();
     
-    // Show custom rewarded ad overlay
+    // Show custom rewarded ad overlay as in-player overlay
     if (!mounted) return 0;
     
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => CustomRewardedAdOverlay(
-          totalAdsInChain: adsCount,
-          onDismissed: () {
-            // Resume playback after ad
-            if (mounted && _initialized) {
-              _player.play();
-            }
-          },
-          onRewardEarned: () {
-            // Optional: track reward earned
-          },
-        ),
-        fullscreenDialog: true,
-      ),
+    setState(() => _showVideoAdOverlay = true);
+    _videoAdCompleter = Completer<void>();
+    
+    // Show Unity Ads directly without overlay screen
+    final earned = await AdManager.instance.showRewarded(
+      trigger: 'playback_time_$minute',
     );
+    
+    if (!mounted) return 0;
+    setState(() => _showVideoAdOverlay = false);
+    _videoAdCompleter?.complete();
+    
+    // Resume playback after ad
+    if (mounted && _initialized) {
+      _player.play();
+    }
     
     return adsCount;
   }
@@ -383,13 +382,20 @@ extension _PlayerState on _PlayerScreenState {
       final uri = Uri.tryParse(link.url);
       if (uri == null || !uri.hasScheme) continue;
       unawaited(
-        http
-            .head(uri, headers: {
-              'User-Agent': link.headers?['User-Agent'] ??
-                  'Mozilla/5.0 LumioTV/1.0',
-            })
-            .timeout(const Duration(seconds: 3))
-            .catchError((_) => http.Response('', 599)),
+        Dio(BaseOptions(
+          connectTimeout: const Duration(seconds: 3),
+          receiveTimeout: const Duration(seconds: 3),
+          sendTimeout: const Duration(seconds: 3),
+          headers: {
+            'User-Agent': link.headers?['User-Agent'] ??
+                'Mozilla/5.0 LumioTV/1.0',
+          },
+        ))
+            .head(uri.toString())
+            .catchError((_) => Response(
+              requestOptions: RequestOptions(path: uri.path),
+              statusCode: 599,
+            )),
       );
     }
   }

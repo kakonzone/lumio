@@ -1,13 +1,25 @@
 import 'dart:convert';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 
 /// Discovers `.m3u` / `.m3u8` files in a public GitHub repo (GITUN third-party).
 class GitunRepoDiscovery {
   GitunRepoDiscovery._();
 
   static final _datedSnapshot = RegExp(r'\.\d{2}\.\d{2}\.\d{4}\.');
+
+  static final Dio _dio = Dio(
+    BaseOptions(
+      connectTimeout: const Duration(seconds: 20),
+      receiveTimeout: const Duration(seconds: 20),
+      sendTimeout: const Duration(seconds: 20),
+      headers: const {
+        'Accept': 'application/vnd.github+json',
+        'User-Agent': 'LumioTV/1.0',
+      },
+    ),
+  );
 
   /// GitHub blob URLs for playlist files on [branch] (skips dated snapshot copies).
   static Future<List<String>> discoverPlaylistBlobUrls({
@@ -18,13 +30,7 @@ class GitunRepoDiscovery {
     final api =
         'https://api.github.com/repos/$owner/$repo/contents/?ref=$branch';
     try {
-      final res = await http.get(
-        Uri.parse(api),
-        headers: const {
-          'Accept': 'application/vnd.github+json',
-          'User-Agent': 'LumioTV/1.0',
-        },
-      ).timeout(const Duration(seconds: 20));
+      final res = await _dio.get(api);
 
       if (res.statusCode != 200) {
         if (kDebugMode) {
@@ -33,7 +39,7 @@ class GitunRepoDiscovery {
         return const [];
       }
 
-      final list = jsonDecode(res.body) as List<dynamic>;
+      final list = res.data as List<dynamic>;
       final urls = <String>[];
       for (final item in list) {
         if (item is! Map) continue;

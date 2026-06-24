@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 
 import '../config/app_config.dart';
 import '../network/secure_dio.dart';
@@ -37,9 +36,6 @@ class StreamTokenService {
   static const int _maxAttempts = 3;
 
   @visibleForTesting
-  http.Client? httpClientOverride;
-
-  @visibleForTesting
   Dio? dioOverrideForTest;
 
   @visibleForTesting
@@ -47,8 +43,6 @@ class StreamTokenService {
 
   final Map<String, StreamTokenResult> _cache = {};
   bool _loggedMissingBase = false;
-
-  http.Client get _http => httpClientOverride ?? http.Client();
 
   Uri? _tokenEndpointUri() {
     final base =
@@ -243,21 +237,6 @@ class StreamTokenService {
     Uri tokenUri,
     Map<String, dynamic> body,
   ) async {
-    if (httpClientOverride != null) {
-      final httpResponse = await _http
-          .post(
-            tokenUri,
-            headers: const {'Content-Type': 'application/json'},
-            body: jsonEncode(body),
-          )
-          .timeout(_requestTimeout);
-      return Response<dynamic>(
-        requestOptions: RequestOptions(path: tokenUri.path),
-        data: httpResponse.body,
-        statusCode: httpResponse.statusCode,
-      );
-    }
-
     final dio = _dioFor(tokenUri);
     final path = tokenUri.path.isEmpty ? '/' : tokenUri.path;
     return dio.post<dynamic>(

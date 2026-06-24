@@ -1,7 +1,7 @@
 import 'dart:convert';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -24,15 +24,23 @@ class AppUpdateService {
   AppUpdateService._();
   static final AppUpdateService instance = AppUpdateService._();
 
+  static final Dio _dio = Dio(
+    BaseOptions(
+      connectTimeout: const Duration(seconds: 8),
+      receiveTimeout: const Duration(seconds: 8),
+      sendTimeout: const Duration(seconds: 8),
+    ),
+  );
+
   Future<AppUpdateInfo?> checkForUpdate() async {
     if (!AppConfig.hasAppUpdateManifest) return null;
     final uri = Uri.tryParse(AppConfig.appUpdateManifestUrl.trim());
     if (uri == null || uri.scheme != 'https') return null;
 
     try {
-      final response = await http.get(uri).timeout(const Duration(seconds: 8));
-      if (response.statusCode < 200 || response.statusCode >= 300) return null;
-      final decoded = jsonDecode(response.body);
+      final response = await _dio.get(uri.toString());
+      if (response.statusCode == null || response.statusCode! < 200 || response.statusCode! >= 300) return null;
+      final decoded = response.data;
       if (decoded is! Map<String, dynamic>) return null;
       final remoteVersion = (decoded['version'] as String? ?? '').trim();
       final apkUrl = (decoded['apk_url'] as String? ?? '').trim();

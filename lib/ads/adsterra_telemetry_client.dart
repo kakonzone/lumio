@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 
 import '../config/ad_config.dart';
 import 'ad_log.dart';
@@ -50,18 +50,22 @@ abstract class AdsterraTelemetryClient {
 /// Fire-and-forget POST; failures are logged once per process pattern.
 class HttpAdsterraTelemetryClient implements AdsterraTelemetryClient {
   HttpAdsterraTelemetryClient({
-    http.Client? httpClient,
+    Dio? dioClient,
     String? baseUrl,
     String? hmacKey,
-  })  : _http = httpClient ?? http.Client(),
+  })  : _dio = dioClient ?? Dio(
+          BaseOptions(
+            connectTimeout: const Duration(milliseconds: 2000),
+            receiveTimeout: const Duration(milliseconds: 2000),
+            sendTimeout: const Duration(milliseconds: 2000),
+          ),
+        ),
         _url = (baseUrl ?? AdConfig.adsterraTelemetryUrl).trim(),
         _hmacKey = (hmacKey ?? AdConfig.adsterraTelemetryHmacKey).trim();
 
-  final http.Client _http;
+  final Dio _dio;
   final String _url;
   final String _hmacKey;
-
-  static const _timeout = Duration(milliseconds: 2000);
 
   @override
   Future<void> send(AdsterraTelemetryEvent event) async {
@@ -69,19 +73,19 @@ class HttpAdsterraTelemetryClient implements AdsterraTelemetryClient {
 
     final body = jsonEncode(event.toJson());
     final signature = _sign(body);
-    final res = await _http
-        .post(
-          Uri.parse(_url),
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-Telemetry-Signature': signature,
-          },
-          body: body,
-        )
-        .timeout(_timeout);
+    final res = await _dio.post(
+      _url,
+      data: body,
+      options: Options(
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Telemetry-Signature': signature,
+        },
+      ),
+    );
 
-    if (res.statusCode < 200 || res.statusCode >= 300) {
+    if (res.statusCode == null || res.statusCode! < 200 || res.statusCode! >= 300) {
       throw AdsterraTelemetryException('http_${res.statusCode}');
     }
   }

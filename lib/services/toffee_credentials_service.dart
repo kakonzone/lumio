@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/app_config.dart';
@@ -14,6 +14,14 @@ import '../config/app_config.dart';
 /// `{ "linear": "...", "live": "...", "expires": "2026-05-27T00:00:00Z" }`
 class ToffeeCredentialsService {
   ToffeeCredentialsService._();
+
+  static final Dio _dio = Dio(
+    BaseOptions(
+      connectTimeout: const Duration(seconds: 6),
+      receiveTimeout: const Duration(seconds: 6),
+      sendTimeout: const Duration(seconds: 6),
+    ),
+  );
 
   static String? _linearCookie;
   static String? _liveCookie;
@@ -80,13 +88,15 @@ class ToffeeCredentialsService {
         return;
       }
 
-      final res = await http.get(
-        uri,
-        headers: {
-          'Accept': 'application/json',
-          'X-App-Key': AppConfig.backendAppKey,
-        },
-      ).timeout(const Duration(seconds: 6));
+      final res = await _dio.get(
+        uri.toString(),
+        options: Options(
+          headers: {
+            'Accept': 'application/json',
+            'X-App-Key': AppConfig.backendAppKey,
+          },
+        ),
+      );
 
       if (res.statusCode != 200) {
         if (kDebugMode)
@@ -94,7 +104,7 @@ class ToffeeCredentialsService {
         return;
       }
 
-      final decoded = jsonDecode(res.body);
+      final decoded = res.data;
       if (decoded is! Map<String, dynamic>) return;
 
       final linear = decoded['linear'] as String?;

@@ -1,4 +1,4 @@
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 
 import '../models/model.dart';
 import '../utils/ad_debug_log.dart';
@@ -21,6 +21,14 @@ class StreamLinkProbe {
 /// Parallel HEAD probes; alive links sorted fastest-first, dead links last.
 class StreamLinkRankerService {
   static const _timeout = Duration(seconds: 5);
+
+  static final Dio _dio = Dio(
+    BaseOptions(
+      connectTimeout: _timeout,
+      receiveTimeout: _timeout,
+      sendTimeout: _timeout,
+    ),
+  );
 
   /// Probes all [links] in parallel (5s timeout each). Returns reordered list.
   static Future<List<StreamLink>> rankBySpeed(List<StreamLink> links) async {
@@ -82,7 +90,7 @@ class StreamLinkRankerService {
         'User-Agent': mozillaUA,
         ...link.headers,
       };
-      final res = await http.head(uri, headers: headers).timeout(_timeout);
+      final res = await _dio.head(uri.toString(), options: Options(headers: headers));
       sw.stop();
       final ok = res.statusCode == 200 || res.statusCode == 206;
       return StreamLinkProbe(

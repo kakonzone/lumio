@@ -1,4 +1,4 @@
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 import '../models/model.dart';
 
 /// Parallel m3u8 reachability checks for LIVE badges.
@@ -7,6 +7,15 @@ class StreamHealthService {
   static const _playerProbeTimeout = Duration(seconds: 2);
   static const _ua =
       'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/124.0.0.0';
+
+  static final Dio _dio = Dio(
+    BaseOptions(
+      connectTimeout: _timeout,
+      receiveTimeout: _timeout,
+      sendTimeout: _timeout,
+      headers: {'User-Agent': _ua},
+    ),
+  );
 
   /// Returns channel id → any stream URL reachable (HTTP 200/206).
   static Future<Map<String, bool>> checkChannels(
@@ -62,18 +71,20 @@ class StreamHealthService {
     };
 
     try {
-      final head = await http.head(uri, headers: httpHeaders).timeout(timeout);
+      final head = await _dio.head(uri.toString(), options: Options(headers: httpHeaders));
       if (head.statusCode == 200 || head.statusCode == 206) return true;
     } catch (_) {}
 
     try {
-      final get = await http.get(
-        uri,
-        headers: {
-          ...httpHeaders,
-          'Range': 'bytes=0-0',
-        },
-      ).timeout(timeout);
+      final get = await _dio.get(
+        uri.toString(),
+        options: Options(
+          headers: {
+            ...httpHeaders,
+            'Range': 'bytes=0-0',
+          },
+        ),
+      );
       return get.statusCode == 200 || get.statusCode == 206;
     } catch (_) {
       return false;

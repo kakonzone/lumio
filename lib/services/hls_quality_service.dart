@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 
 /// Parsed HLS variant from a master playlist.
 class HlsVariant {
@@ -42,6 +42,15 @@ class HlsQualityService {
   static const _ua =
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
       '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+
+  static final Dio _dio = Dio(
+    BaseOptions(
+      connectTimeout: const Duration(seconds: 6),
+      receiveTimeout: const Duration(seconds: 6),
+      sendTimeout: const Duration(seconds: 6),
+      headers: {'User-Agent': _ua},
+    ),
+  );
 
   /// Quick master parse for fast first frame (does not block long on slow CDN).
   static Future<List<HlsVariant>> fetchVariantsFast(
@@ -112,11 +121,9 @@ class HlsQualityService {
     Map<String, String> headers,
   ) async {
     try {
-      final res = await http
-          .get(Uri.parse(url), headers: headers)
-          .timeout(const Duration(seconds: 6));
+      final res = await _dio.get(url, options: Options(headers: headers));
       if (res.statusCode != 200) return [];
-      return _parsePlaylist(res.body, url);
+      return _parsePlaylist(res.data as String, url);
     } catch (_) {
       return [];
     }
@@ -280,10 +287,7 @@ class HlsQualityService {
   }) async {
     if (!streamUrl.contains('.m3u8')) return;
     try {
-      await http.head(
-        Uri.parse(streamUrl),
-        headers: {'User-Agent': _ua, ...?headers},
-      ).timeout(const Duration(seconds: 4));
+      await _dio.head(streamUrl, options: Options(headers: headers));
     } catch (_) {}
   }
 }

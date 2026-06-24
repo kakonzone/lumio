@@ -1,6 +1,6 @@
 import 'package:dart_appwrite/dart_appwrite.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 
 import '../../config/appwrite_config.dart';
 import '../../config/special_link_config.dart';
@@ -19,6 +19,18 @@ class GitunPlaylistService {
   static final GitunPlaylistService instance = GitunPlaylistService._();
 
   static const _gitunOnlyCategory = 'GITUN';
+
+  static final Dio _dio = Dio(
+    BaseOptions(
+      connectTimeout: const Duration(seconds: 25),
+      receiveTimeout: const Duration(seconds: 25),
+      sendTimeout: const Duration(seconds: 25),
+      headers: const {
+        'User-Agent': 'Mozilla/5.0 (compatible; LumioTV/1.0)',
+        'Accept': '*/*',
+      },
+    ),
+  );
 
   late final Client _client = Client()
       .setEndpoint(AppwriteConfig.endpoint)
@@ -209,13 +221,7 @@ class GitunPlaylistService {
       var keptCount = 0;
 
       try {
-        final res = await http.get(
-          Uri.parse(rawUrl),
-          headers: const {
-            'User-Agent': 'Mozilla/5.0 (compatible; LumioTV/1.0)',
-            'Accept': '*/*',
-          },
-        ).timeout(const Duration(seconds: 25));
+        final res = await _dio.get(rawUrl);
 
         if (res.statusCode != 200) {
           if (kDebugMode) {
@@ -227,7 +233,7 @@ class GitunPlaylistService {
         final result = await compute(
           parseM3uGitunIsolate,
           (
-            res.body,
+            res.data as String,
             '$idPrefix${playlistIndex++}',
             source.includeAllChannels,
             _gitunOnlyCategory,

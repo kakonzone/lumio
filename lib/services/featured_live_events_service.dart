@@ -1,8 +1,8 @@
 import 'dart:convert';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
 
 import '../config/appwrite_config.dart';
 import '../models/live_event_match.dart';
@@ -46,6 +46,14 @@ class FeaturedLiveEventsService {
   static final FeaturedLiveEventsService instance =
       FeaturedLiveEventsService._();
 
+  static final Dio _dio = Dio(
+    BaseOptions(
+      connectTimeout: const Duration(seconds: 5),
+      receiveTimeout: const Duration(seconds: 5),
+      sendTimeout: const Duration(seconds: 5),
+    ),
+  );
+
   static const _githubEventsUrl =
       'https://raw.githubusercontent.com/kakonzone/lumio-config/main/featured_live_events.json';
   static const _assetPath = 'assets/data/featured_live_events.json';
@@ -68,12 +76,9 @@ class FeaturedLiveEventsService {
 
   Future<FeaturedLiveEventsPayload?> _fetchFromGitHub() async {
     try {
-      final uri = Uri.parse(_githubEventsUrl);
-      final response = await http.get(uri).timeout(
-        const Duration(seconds: 5),
-      );
+      final response = await _dio.get(_githubEventsUrl);
       if (response.statusCode != 200) return null;
-      final map = jsonDecode(response.body) as Map<String, dynamic>;
+      final map = response.data as Map<String, dynamic>;
       final payload = FeaturedLiveEventsPayload.fromJson(map);
       if (payload.events.isEmpty) return null;
       if (kDebugMode) {
@@ -90,23 +95,7 @@ class FeaturedLiveEventsService {
   }
 
   Future<FeaturedLiveEventsLoadResult> load({bool forceRefresh = false}) async {
-    // 1. Try GitHub raw JSON first (fast, no auth needed)
-    if (forceRefresh || true) {
-      final githubPayload = await _fetchFromGitHub();
-      if (githubPayload != null) {
-        await FeaturedLiveEventsCache.instance.write(
-          githubPayload,
-          remoteUpdatedAt: DateTime.now().toIso8601String(),
-        );
-        return FeaturedLiveEventsLoadResult(
-          payload: githubPayload,
-          source: FeaturedLiveEventsSource.appwrite, // reuse enum value
-          remoteUpdatedAt: DateTime.now().toIso8601String(),
-        );
-      }
-    }
-
-    // 2. Check disk cache
+    // 1. Check disk cache first (fastest)
     if (!forceRefresh) {
       final cached = await FeaturedLiveEventsCache.instance.read();
       if (cached != null && cached.events.isNotEmpty) {
@@ -116,6 +105,22 @@ class FeaturedLiveEventsService {
         );
       }
     }
+
+    // 2. Try GitHub raw JSON (disabled - URL 404)
+    // if (forceRefresh || true) {
+    //   final githubPayload = await _fetchFromGitHub();
+    //   if (githubPayload != null) {
+    //     await FeaturedLiveEventsCache.instance.write(
+    //       githubPayload,
+    //       remoteUpdatedAt: DateTime.now().toIso8601String(),
+    //     );
+    //     return FeaturedLiveEventsLoadResult(
+    //       payload: githubPayload,
+    //       source: FeaturedLiveEventsSource.appwrite, // reuse enum value
+    //       remoteUpdatedAt: DateTime.now().toIso8601String(),
+    //     );
+    //   }
+    // }
 
     // 3. Fallback: Appwrite (if configured)
     if (AppwriteConfig.isConfigured) {

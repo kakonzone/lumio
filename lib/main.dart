@@ -25,6 +25,7 @@ import 'screens/dev_diagnostics_screen.dart';
 import 'ads/adsterra/adsterra_native_cache.dart';
 import 'screens/category_channels_screen.dart';
 import 'screens/splash_screen.dart';
+import 'screens/app_open_promo_screen.dart';
 import 'widgets/app_drawer.dart';
 import 'provider/ad_gate_provider.dart';
 import 'provider/ads_settings_provider.dart';
@@ -372,10 +373,15 @@ class _LumioAppState extends State<LumioApp> {
           ),
         );
       },
-      initialRoute: '/',
+      initialRoute: '/app_open',
       onGenerateRoute: (settings) {
         switch (settings.name) {
-          case '/':
+          case '/app_open':
+            return PageRouteBuilder(
+              settings: settings,
+              pageBuilder: (_, __, ___) => const AppOpenPromoScreen(),
+            );
+          case '/splash':
             return PageRouteBuilder(
               settings: settings,
               pageBuilder: (_, __, ___) => const SplashScreen(),

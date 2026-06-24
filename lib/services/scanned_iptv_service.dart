@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 
 import '../config/app_config.dart';
 
@@ -15,6 +15,15 @@ class ScannedIptvService {
 
   static const _timeout = Duration(seconds: 15);
   static const _ua = 'Mozilla/5.0 Lumio/1.0';
+
+  static final Dio _dio = Dio(
+    BaseOptions(
+      connectTimeout: _timeout,
+      receiveTimeout: _timeout,
+      sendTimeout: _timeout,
+      headers: {'User-Agent': _ua},
+    ),
+  );
 
   static const _manualM3u = '''
 #EXTM3U
@@ -50,18 +59,16 @@ http://202.70.146.135:8000/play/a04c/index.m3u8
     final parts = <String>[_manualM3u.trim()];
 
     try {
-      final scan = await http.get(Uri.parse(_scanPlaylistUrl),
-          headers: {'User-Agent': _ua}).timeout(_timeout);
-      if (scan.statusCode == 200 && scan.body.contains('#EXTM3U')) {
-        parts.add(scan.body.trim());
+      final scan = await _dio.get(_scanPlaylistUrl);
+      if (scan.statusCode == 200 && (scan.data as String).contains('#EXTM3U')) {
+        parts.add((scan.data as String).trim());
       }
     } catch (_) {}
 
     try {
-      final jio = await http.get(Uri.parse(_jioChannelsUrl),
-          headers: {'User-Agent': _ua}).timeout(_timeout);
+      final jio = await _dio.get(_jioChannelsUrl);
       if (jio.statusCode == 200) {
-        final m3u = _jioJsonToM3u(jio.body);
+        final m3u = _jioJsonToM3u(jio.data as String);
         if (m3u.isNotEmpty) parts.add(m3u);
       }
     } catch (_) {}

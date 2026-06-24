@@ -1,5 +1,5 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 
 import '../models/model.dart';
 
@@ -12,6 +12,19 @@ class FootyStreamService {
 
   static const _ua =
       'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/124.0.0.0 Mobile Safari/537.36';
+
+  static final Dio _dio = Dio(
+    BaseOptions(
+      connectTimeout: const Duration(seconds: 14),
+      receiveTimeout: const Duration(seconds: 14),
+      sendTimeout: const Duration(seconds: 14),
+      headers: {
+        'User-Agent': _ua,
+        'Accept': 'text/html,application/xhtml+xml',
+        'Accept-Language': 'en',
+      },
+    ),
+  );
 
   static List<MatchModel>? _pkCache;
   static List<MatchModel>? _todayCache;
@@ -56,16 +69,9 @@ class FootyStreamService {
 
   static Future<String?> _getHtml(String url) async {
     try {
-      final res = await http.get(
-        Uri.parse(url),
-        headers: {
-          'User-Agent': _ua,
-          'Accept': 'text/html,application/xhtml+xml',
-          'Accept-Language': 'en',
-        },
-      ).timeout(const Duration(seconds: 14));
+      final res = await _dio.get(url);
       if (res.statusCode != 200) return null;
-      return res.body;
+      return res.data as String;
     } catch (_) {
       return null;
     }

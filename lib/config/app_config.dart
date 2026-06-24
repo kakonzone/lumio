@@ -40,7 +40,7 @@ class AppConfig {
   /// Repository: https://github.com/kakon122/my-media-notes
   static const String remoteChannelsUrl = String.fromEnvironment(
     'REMOTE_CHANNELS_URL',
-    defaultValue: 'https://raw.githubusercontent.com/kakon122/my-media-notes/main/channels.m3u',
+    defaultValue: 'https://raw.githubusercontent.com/kakon122/my-media-notes/main/my-media-notes.m3u8',
   );
 
   /// Public-facing legal URLs (delegates to [LegalConfig]).

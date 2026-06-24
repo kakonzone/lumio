@@ -132,9 +132,21 @@ class _SplashScreenState extends State<SplashScreen> {
     //await AdConsentDialog.showIfNeeded(context);
     if (!mounted) return false;
 
+    // Show app-open promo ad with skip button
+    await _showAppOpenPromoIfAllowed();
+    if (!mounted) return false;
+
     // Schedule background ad engine
     AdManager.instance.scheduleBackgroundEngineAfterSplash();
     return true;
+  }
+
+  Future<void> _showAppOpenPromoIfAllowed() async {
+    try {
+      await AdManager.instance.showColdStartInterstitialIfAllowed(context);
+    } catch (e) {
+      SafeLogger.debug('splash', '[Splash] app-open promo skipped: $e');
+    }
   }
 
   @override

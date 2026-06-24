@@ -53,16 +53,8 @@ extension _PlayerOverlay on _PlayerScreenState {
     } catch (_) {}
     if (!mounted) return;
 
-    setState(() => _showVideoAdOverlay = true);
-    _videoAdCompleter = Completer<void>();
-
-    Future.delayed(const Duration(seconds: 15), () {
-      if (mounted && _showVideoAdOverlay) {
-        _dismissPlayerVideoAd();
-      }
-    });
-
-    await _videoAdCompleter!.future;
+    // Show Unity Ads rewarded video for midroll
+    await AdManager.instance.showRewarded(trigger: 'midroll');
 
     if (!mounted) return;
     if (_initialized && !_hasError) {
@@ -74,27 +66,13 @@ extension _PlayerOverlay on _PlayerScreenState {
     }
   }
 
-  Future<void> _dismissPlayerVideoAd() async {
-    if (!mounted) return;
-    setState(() => _showVideoAdOverlay = false);
-    _videoAdCompleter?.complete();
-    _videoAdCompleter = null;
-    if (_initialized && !_hasError) {
-      try {
-        await _player.play();
-      } catch (e) {
-        debugPrint('[VideoAdDismiss] resume play failed: $e');
-      }
-    }
-  }
-
   void _startMidRollTimer() {
     _midRollTimer?.cancel();
     if (!AdManager.instance.adsEnabled) return;
     _midRollTimer = Timer.periodic(
       AdPlacementConfig.playerMidRollPeriod,
       (_) {
-        if (!mounted || _showVideoAdOverlay || _hasError || !_initialized) {
+        if (!mounted || _hasError || !_initialized) {
           return;
         }
         unawaited(_presentMidRollInterstitial());

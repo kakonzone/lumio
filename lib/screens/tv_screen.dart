@@ -24,6 +24,7 @@ import 'package:lumio_tv/widgets/list_skeletons.dart';
 import 'package:lumio_tv/widgets/home_promo_carousel.dart';
 import 'package:lumio_tv/widgets/home_category_grid.dart';
 import 'package:lumio_tv/widgets/score_state_widget.dart';
+import 'package:lumio_tv/widgets/premium_sports_card.dart';
 import 'package:lumio_tv/core/performance_tuning.dart';
 import 'package:lumio_tv/theme/tokens/colors.dart';
 
@@ -52,6 +53,9 @@ class TvScreenState extends State<TvScreen>
       }
       if (!events.hasFeaturedLiveEventsData) {
         events.loadFeaturedLiveEvents();
+      }
+      if (!events.hasLiveEventsData) {
+        events.loadLiveEvents(channels: catalog.channels);
       }
     });
   }
@@ -613,7 +617,10 @@ class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
                               horizontal: 16,
                               vertical: 8,
                             ),
-                            child: _LiveEventCard(event: featuredEvents[index]),
+                            child: PremiumSportsCard(
+                              match: featuredEvents[index].match,
+                              onTap: () => _openChannelsPopup(context, event: featuredEvents[index]),
+                            ),
                           ),
                         ),
                         childCount: featuredEvents.length,
@@ -669,7 +676,10 @@ class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
                               horizontal: 16,
                               vertical: 8,
                             ),
-                            child: _LiveEventCard(event: liveEvents[index]),
+                            child: PremiumSportsCard(
+                              match: liveEvents[index].match,
+                              onTap: () => _openChannelsPopup(context, event: liveEvents[index]),
+                            ),
                           ),
                         ),
                         childCount: liveEvents.length,
@@ -764,7 +774,10 @@ class _LiveNowTabState extends State<_LiveNowTab>
                 (context, index) => Padding(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: _LiveEventCard(event: liveEvents[index]),
+                  child: PremiumSportsCard(
+                    match: liveEvents[index].match,
+                    onTap: () => _openChannelsPopup(context, event: liveEvents[index]),
+                  ),
                 ),
                 childCount: liveEvents.length,
               ),

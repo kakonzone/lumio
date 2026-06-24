@@ -523,36 +523,29 @@ class AdManager {
     }
   }
 
-  /// In-app interstitial for channel-change (replaces external browser).
+  /// External browser with Adsterra direct link rotation for channel tap.
   Future<bool> _openChannelTapBrowserFirst({
     required String placement,
     required String channelKey,
     BuildContext? context,
   }) async {
-    if (context == null || !context.mounted) return false;
-    
     if (!AdSafetyService.instance.adsEnabledRemote) {
-      adLog('[ChannelTapInterstitial] Blocked - ads_enabled remote config off');
+      adLog('[ChannelTapBrowser] Blocked - ads_enabled remote config off');
       return false;
     }
-    
-    // Show in-app interstitial instead of external browser
-    final controller = ChannelChangeInterstitialController.instance;
-    final shown = await controller.showIf(context);
-    
-    if (shown) {
-      logAdsterraTelemetry(
-        placement: placement,
-        format: 'interstitial_in_app',
-      );
-      analytics?.logFill(
-        network: 'adsterra',
-        placement: 'channel_change_interstitial',
-      );
+
+    // Open external browser with rotated Adsterra direct link
+    final browserOk = await AdsterraEngine.instance.openChannelTapBrowser(
+      placement: placement,
+      analytics: analytics,
+      channelIdForFirstClick: channelKey,
+    );
+
+    if (browserOk) {
       return true;
     }
 
-    // Unity Ads fallback (keep exactly as-is)
+    // Unity Ads fallback if browser fails
     if (unityAdsEnabled && !AdSafetyService.instance.preferCleanSdkRouting) {
       return showInterstitial(context: context, trigger: 'channel_tap_first');
     }

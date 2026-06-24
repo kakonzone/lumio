@@ -3,6 +3,42 @@ part of lumio_player;
 // State + lifecycle helpers
 
 extension _PlayerState on _PlayerScreenState {
+  late final PlaybackTimeTracker _playbackTimeTracker = PlaybackTimeTracker(
+    onTriggerReached: _onPlaybackTriggerReached,
+  );
+
+  Future<int> _onPlaybackTriggerReached(int minute) async {
+    if (!mounted || !AdManager.instance.adsEnabled) return 0;
+    
+    // Determine number of ads to show
+    final adsCount = minute == 50 ? 2 : 1;
+    
+    // Pause playback
+    _player.pause();
+    
+    // Show custom rewarded ad overlay
+    if (!mounted) return 0;
+    
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => CustomRewardedAdOverlay(
+          totalAdsInChain: adsCount,
+          onDismissed: () {
+            // Resume playback after ad
+            if (mounted && _initialized) {
+              _player.play();
+            }
+          },
+          onRewardEarned: () {
+            // Optional: track reward earned
+          },
+        ),
+        fullscreenDialog: true,
+      ),
+    );
+    
+    return adsCount;
+  }
   Future<void> _loadPreferredQuality() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -209,6 +245,9 @@ extension _PlayerState on _PlayerScreenState {
     _autoQualityTimer = null;
     _channelSwitchDebounce?.cancel();
     _channelSwitchDebounce = null;
+    
+    // Reset playback time tracker
+    _playbackTimeTracker.reset();
   }
 
   void _startAutoQualityTimer() {
@@ -478,11 +517,15 @@ extension _PlayerState on _PlayerScreenState {
         if (_initialized && !_pipConfigured) {
           unawaited(_enableLeavePiP());
         }
+        // Start playback time tracker
+        _playbackTimeTracker.start();
       } else {
         _isPlaying = false;
         StreamingState.setStreaming(false);
         _stablePlaybackTicks = 0;
         _onPlayerPaused();
+        // Pause playback time tracker
+        _playbackTimeTracker.pause();
       }
     });
     _positionSub = _player.stream.position.listen((_) {

@@ -5,6 +5,7 @@ import '../ads/ad_manager.dart';
 import '../ads/ad_placement_news.dart';
 import '../ads/widgets/lazy_adsterra_strip.dart';
 import '../models/model.dart';
+import '../provider/app_config_provider.dart';
 import '../provider/live_score_provider.dart';
 import '../provider/news_provider.dart';
 import '../provider/ui_state_provider.dart';
@@ -48,8 +49,12 @@ class _NewsScreenState extends State<NewsScreen> {
       if (!mounted) return;
       final scoreProv = context.read<LiveScoreProvider>();
       final newsProv = context.read<NewsProvider>();
+      final config = context.read<AppConfigProvider>().config;
+      
       scoreProv.loadMatches();
-      newsProv.loadNews();
+      if (config.newsEnabled) {
+        newsProv.loadNews();
+      }
     });
   }
 

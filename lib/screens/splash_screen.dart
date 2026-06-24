@@ -143,7 +143,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _showAppOpenPromoIfAllowed() async {
     try {
-      await AdManager.instance.showColdStartInterstitialIfAllowed(context);
+      await AdManager.instance.presentColdStartPromoIfEligible(context);
     } catch (e) {
       SafeLogger.debug('splash', '[Splash] app-open promo skipped: $e');
     }

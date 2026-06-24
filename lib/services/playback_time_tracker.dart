@@ -5,9 +5,6 @@ import 'package:flutter/foundation.dart';
 /// Tracks playback time and triggers rewarded ads at specific intervals.
 /// Triggers: 0s (start), 20min, 50min, then every 40min (90min, 130min, etc.)
 class PlaybackTimeTracker {
-  PlaybackTimeTracker._();
-  static final PlaybackTimeTracker instance = PlaybackTimeTracker._();
-
   Timer? _timer;
   Duration _totalPlaybackTime = Duration.zero;
   DateTime? _lastUpdateTime;

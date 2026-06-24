@@ -75,6 +75,20 @@ class TvScreenState extends State<TvScreen>
     _highlightCategory.value = cat == 'All' ? null : cat;
   }
 
+  void _openChannelsPopup(
+    BuildContext context, {
+    required LiveEventMatch event,
+  }) {
+    showDialog<void>(
+      context: context,
+      barrierColor: Colors.black54,
+      builder: (dialogCtx) => _LiveEventChannelsDialog(
+        event: event,
+        parentContext: context,
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _tabs.dispose();

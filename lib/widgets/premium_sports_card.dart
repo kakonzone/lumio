@@ -5,6 +5,7 @@ import '../theme/app_theme.dart';
 import '../theme/tokens/colors.dart';
 import '../utils/bdt_time.dart';
 import '../widgets/channel_avatar.dart';
+import '../widgets/team_avatar.dart';
 
 /// Premium futuristic sports match card with neon glow effects.
 /// 16:9 landscape aspect ratio with glassmorphism and broadcast graphics.

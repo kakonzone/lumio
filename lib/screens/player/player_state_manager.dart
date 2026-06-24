@@ -3,10 +3,6 @@ part of lumio_player;
 // State + lifecycle helpers
 
 extension _PlayerState on _PlayerScreenState {
-  late final PlaybackTimeTracker _playbackTimeTracker = PlaybackTimeTracker(
-    onTriggerReached: _onPlaybackTriggerReached,
-  );
-
   Future<int> _onPlaybackTriggerReached(int minute) async {
     if (!mounted || !AdManager.instance.adsEnabled) return 0;
     

@@ -157,6 +157,12 @@ class _PlayerScreenState extends State<PlayerScreen>
   bool _pauseAdVisible = false;
   bool _pauseAdShown = false;
   DateTime? _playbackStartedAt;
+  late final PlaybackTimeTracker _playbackTimeTracker;
+
+  void _dismissPlayerVideoAd() {
+    if (!mounted) return;
+    setState(() => _showVideoAdOverlay = false);
+  }
 
   // ── Vertical drag (volume / brightness) ───────────────
   bool _isDragging = false;
@@ -201,6 +207,9 @@ class _PlayerScreenState extends State<PlayerScreen>
     _loadBrightness();
     _loadPreferredQuality();
     _loadFitMode();
+    _playbackTimeTracker = PlaybackTimeTracker(
+      onTriggerReached: _onPlaybackTriggerReached,
+    );
     _attachListeners();
     _scheduleIdleWork();
     unawaited(_bindBackgroundPlayback());

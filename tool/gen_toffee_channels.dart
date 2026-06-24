@@ -43,7 +43,7 @@ class ToffeeChannelsData {
   buf.writeln('  ];');
   buf.writeln('}');
   File(outPath).writeAsStringSync(buf.toString());
-  print('Wrote ${list.length} channels to $outPath');
+  stdout.writeln('Wrote ${list.length} channels to $outPath');
 }
 
 String _q(String s) => "r'${s.replaceAll("'", "\\'")}'";

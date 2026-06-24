@@ -10,6 +10,7 @@ import 'core/logging/safe_logger.dart';
 import 'config/ad_config.dart';
 import 'ads/ad_manager.dart';
 import 'ads/ad_placement_config.dart';
+import 'ads/chained_interstitial_service.dart';
 import 'ads/widgets/global_social_bar.dart';
 import 'ads/widgets/background_ad_host.dart';
 import 'ads/adsterra/adsterra_popunder.dart';
@@ -580,6 +581,12 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
         unawaited(DeepLinkService.instance.capturePendingLink());
         unawaited(_applyPendingDeepLinkWhenReady());
         unawaited(AppOpenRewardedService.instance.onAppOpen());
+        // Show chained interstitials on app resume
+        unawaited(
+          ChainedInterstitialService.instance.showChainedInterstitials(
+            placement: 'app_resume',
+          ),
+        );
         break;
       case AppLifecycleState.paused:
       case AppLifecycleState.inactive:

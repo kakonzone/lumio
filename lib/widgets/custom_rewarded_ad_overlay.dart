@@ -69,9 +69,8 @@ class _CustomRewardedAdOverlayState extends State<CustomRewardedAdOverlay> {
 
   Future<void> _showAd() async {
     setState(() => _adShowing = true);
-    final earned = await AdManager.instance.showRewarded(
-      trigger: 'custom_rewarded_overlay',
-    );
+    // Unity Ads disabled - no rewarded ad shown
+    final earned = false;
     if (!mounted) return;
     setState(() => _adShowing = false);
     

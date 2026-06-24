@@ -708,12 +708,7 @@ class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
                       ),
                     ),
                 ],
-                if (AdManager.instance.adsEnabled)
-                  SliverToBoxAdapter(
-                    child: CollapsibleAdSlot(
-                      placement: 'home_bottom_banner',
-                    ),
-                  ),
+                // Home bottom banner removed - replaced with chained interstitials
                 const SliverToBoxAdapter(child: SizedBox(height: 72)),
               ],
             ),

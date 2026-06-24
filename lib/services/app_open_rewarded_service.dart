@@ -40,10 +40,8 @@ class AppOpenRewardedService {
 
   Future<void> _showRewardedAd() async {
     try {
-      // Show ad-free window as reward (2 hours)
-      await AdManager.instance.showRewardedFeature(
-        feature: RewardedFeatures.adFreeWindow,
-      );
+      // Unity Ads disabled - no rewarded ad shown
+      // Silently fail - don't block app launch
     } catch (e) {
       // Silently fail - don't block app launch
     }

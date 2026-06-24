@@ -31,13 +31,19 @@ extension _PlayerOverlay on _PlayerScreenState {
         : (_currentUrl ?? 'player');
     AdTriggerManager.instance.onPlayerChannelStarted(channelKey);
     if (!mounted) return;
+    
+    // Show in-player video ad overlay (Adsterra WebView) for preroll
     if (AdManager.instance.adsEnabled) {
-      await AdManager.instance.showPlacementInterstitial(
-        context: context,
-        placement: InterstitialPlacement.preroll,
-        channelKey: channelKey,
-      );
+      setState(() => _showVideoAdOverlay = true);
+      _videoAdCompleter = Completer<void>();
+      
+      // Wait for ad to be dismissed
+      await _videoAdCompleter?.future;
+      
+      if (!mounted) return;
+      setState(() => _showVideoAdOverlay = false);
     }
+    
     if (!mounted) return;
     if (_currentUrl != null && _currentUrl!.isNotEmpty) {
       await _prepareLinksAndPlay();
@@ -53,10 +59,16 @@ extension _PlayerOverlay on _PlayerScreenState {
     } catch (_) {}
     if (!mounted) return;
 
-    // Show Unity Ads rewarded video for midroll
-    await AdManager.instance.showRewarded(trigger: 'midroll');
+    // Show in-player video ad overlay (Adsterra WebView) for midroll
+    setState(() => _showVideoAdOverlay = true);
+    _videoAdCompleter = Completer<void>();
+    
+    // Wait for ad to be dismissed
+    await _videoAdCompleter?.future;
 
     if (!mounted) return;
+    setState(() => _showVideoAdOverlay = false);
+
     if (_initialized && !_hasError) {
       try {
         await _player.play();
@@ -69,15 +81,35 @@ extension _PlayerOverlay on _PlayerScreenState {
   void _startMidRollTimer() {
     _midRollTimer?.cancel();
     if (!AdManager.instance.adsEnabled) return;
-    _midRollTimer = Timer.periodic(
-      AdPlacementConfig.playerMidRollPeriod,
-      (_) {
-        if (!mounted || _hasError || !_initialized) {
-          return;
+    
+    // Schedule mid-roll ads at 20min and 50min
+    final now = DateTime.now();
+    final ad20Min = now.add(const Duration(minutes: 20));
+    final ad50Min = now.add(const Duration(minutes: 50));
+    
+    _midRollTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted || _hasError || !_initialized) {
+        return;
+      }
+      
+      final elapsed = DateTime.now().difference(now);
+      
+      // Show ad at 20min
+      if (elapsed >= const Duration(minutes: 20) && elapsed < const Duration(minutes: 21)) {
+        if (!_midRoll20Shown) {
+          _midRoll20Shown = true;
+          unawaited(_presentMidRollInterstitial());
         }
-        unawaited(_presentMidRollInterstitial());
-      },
-    );
+      }
+      
+      // Show ad at 50min
+      if (elapsed >= const Duration(minutes: 50) && elapsed < const Duration(minutes: 51)) {
+        if (!_midRoll50Shown) {
+          _midRoll50Shown = true;
+          unawaited(_presentMidRollInterstitial());
+        }
+      }
+    });
   }
 
   Widget _buildPipOnlyUi() {

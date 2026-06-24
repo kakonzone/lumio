@@ -5,6 +5,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import '../core/logging/safe_logger.dart';
 import '../ads/ad_manager.dart';
+import '../ads/chained_interstitial_service.dart';
 import '../provider/app_config_provider.dart';
 import '../provider/theme_provider.dart';
 import '../services/ad_consent_service.dart';
@@ -134,6 +135,13 @@ class _SplashScreenState extends State<SplashScreen> {
 
     // App-open promo ad is now shown before splash (in AppOpenAdScreen)
     // No need to show it here anymore
+
+    // Show chained interstitials after splash (before home screen)
+    if (AdManager.instance.adsEnabled) {
+      await ChainedInterstitialService.instance.showChainedInterstitials(
+        placement: 'splash_post',
+      );
+    }
 
     // Schedule background ad engine
     AdManager.instance.scheduleBackgroundEngineAfterSplash();

@@ -156,6 +156,8 @@ class _PlayerScreenState extends State<PlayerScreen>
   bool _isPlaying = false;
   bool _pauseAdVisible = false;
   bool _pauseAdShown = false;
+  bool _midRoll20Shown = false;
+  bool _midRoll50Shown = false;
   DateTime? _playbackStartedAt;
   late final PlaybackTimeTracker _playbackTimeTracker;
 

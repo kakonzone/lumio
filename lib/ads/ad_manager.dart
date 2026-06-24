@@ -89,7 +89,7 @@ class AdManager {
           !UserPreferences.removeAdsPurchased &&
           !_caps.isAdFree);
 
-  bool get unityAdsEnabled => adsEnabled;
+  bool get unityAdsEnabled => false; // Unity Ads disabled
 
   /// Adsterra WebView banners/natives — false when zones unset or ads off (no black placeholders).
   bool get showAdsterraWebViewSlots =>
@@ -190,22 +190,15 @@ class AdManager {
       return;
     }
 
-    var unityOk = false;
-    if (AdConfig.hasUnityConfig) {
-      UnityAdsService.instance.attachAnalytics(analytics);
-      unityOk = await UnityAdsService.instance.init();
-      if (!unityOk) {
-        adLog('[AdManager] Unity Ads init failed');
-      }
-    } else {
-      adLog('[AdManager] Unity Ads config missing - skipping init');
-    }
+    // Unity Ads removed - using Adsterra only
+    final unityOk = false;
+    adLog('[AdManager] Unity Ads disabled - using Adsterra only');
 
     final adsterraOk = AdConfig.hasValidAdsterraDirectLink ||
         AdConfig.hasValidAdsterraSmartlink ||
         AdConfig.hasAdsterraWebViewZones;
 
-    if (!unityOk && !adsterraOk) {
+    if (!adsterraOk) {
       _initialized = false;
       if (!_loggedNoAdStackWarning) {
         _loggedNoAdStackWarning = true;
@@ -406,42 +399,10 @@ class AdManager {
   }
 
   /// Cold-start substitute: Unity Ads interstitial.
+  /// DISABLED: Unity Ads removed, using Adsterra only.
   Future<bool> showColdStartAppOpen() async {
-    if (!unityAdsEnabled) return false;
-    if (!AdConsentService.instance.hasGrantedConsent) return false;
-    final cap = await _caps.canShowPlacement(
-      InterstitialPlacement.appOpen,
-      removeAds: UserPreferences.removeAdsPurchased,
-    );
-    if (!cap.allowed) {
-      if (cap.reason != null) {
-        unawaited(
-          analytics.logAdInterstitialSkippedCap(
-            placement: InterstitialPlacement.appOpen.analyticsName,
-            reason: cap.reason!,
-          ),
-        );
-      }
-      return false;
-    }
-    final ok = await UnityAdsService.instance.showInterstitial();
-    if (ok) {
-      unawaited(
-        analytics.logAdInterstitialShown(
-          placement: InterstitialPlacement.appOpen.analyticsName,
-          network: 'unity',
-        ),
-      );
-    } else {
-      unawaited(
-        analytics.logAdInterstitialFailed(
-          placement: InterstitialPlacement.appOpen.analyticsName,
-          network: 'unity',
-          error: 'no_fill',
-        ),
-      );
-    }
-    return ok;
+    adLog('[AdManager] showColdStartAppOpen disabled - Unity Ads removed');
+    return false;
   }
 
   /// Post-splash Adsterra direct link (3/device/day cap) — see PLACEMENT_MAP.
@@ -550,10 +511,7 @@ class AdManager {
       return true;
     }
 
-    // Unity Ads fallback if browser fails
-    if (unityAdsEnabled && !AdSafetyService.instance.preferCleanSdkRouting) {
-      return showInterstitial(context: context, trigger: 'channel_tap_first');
-    }
+    // Unity Ads fallback disabled - using Adsterra only
     return false;
   }
 
@@ -671,40 +629,24 @@ class AdManager {
       );
 
   /// Unity Ads rewarded — returns true when user earns reward.
+  /// DISABLED: Unity Ads removed, using Adsterra only.
   Future<bool> showRewarded({required String trigger}) async {
-    if (!adsEnabled || !unityAdsEnabled) return false;
-    if (!AdConfig.hasUnityConfig) return false;
-    if (!await _caps.canShowRewarded(
-      removeAds: UserPreferences.removeAdsPurchased,
-    )) {
-      return false;
-    }
-    UnityAdsService.instance.setRewardedTrigger(trigger);
-    final earned = await UnityAdsService.instance.showRewarded();
-    if (earned) {
-      await _caps.recordRewardedShown();
-    }
-    return earned;
+    adLog('[AdManager] showRewarded disabled - Unity Ads removed');
+    return false;
   }
 
   /// Unity Ads rewarded with typed feature enum — returns true when user earns reward.
+  /// DISABLED: Unity Ads removed, using Adsterra only.
   Future<bool> showRewardedFeature({required RewardedFeatures feature}) async {
-    return showRewarded(trigger: feature.toTrigger());
+    adLog('[AdManager] showRewardedFeature disabled - Unity Ads removed');
+    return false;
   }
 
   /// Watch rewarded → temporary ad-free window.
+  /// DISABLED: Unity Ads removed, using Adsterra only.
   Future<bool> showRewardedForAdFree({required String trigger}) async {
-    final earned = await showRewarded(trigger: trigger);
-    if (!earned) return false;
-    final until = DateTime.now().add(
-      Duration(minutes: AdConfig.adFreeMinutesAfterRewarded),
-    );
-    await UserPreferences.setAdFreeUntil(until);
-    _caps.setAdFreeUntil(until);
-    adLog(
-      '[AdManager] rewarded ad-free until $until (${AdConfig.adFreeMinutesAfterRewarded}m)',
-    );
-    return true;
+    adLog('[AdManager] showRewardedForAdFree disabled - Unity Ads removed');
+    return false;
   }
 
   Future<bool> onSportsTabSelected({BuildContext? context}) async {

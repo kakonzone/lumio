@@ -172,9 +172,8 @@ class _DevDiagnosticsScreenState extends State<DevDiagnosticsScreen> {
               FilledButton(
                 onPressed: AdManager.instance.adsEnabled
                     ? () async {
-                        final earned = await AdManager.instance.showRewarded(
-                          trigger: 'diagnostics_test',
-                        );
+                        // Unity Ads disabled - no rewarded ad shown
+                        final earned = false;
                         if (!mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(

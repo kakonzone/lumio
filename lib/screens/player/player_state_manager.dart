@@ -12,20 +12,17 @@ extension _PlayerState on _PlayerScreenState {
     // Pause playback
     _player.pause();
     
-    // Show custom rewarded ad overlay as in-player overlay
+    // Show in-player video ad overlay (Adsterra WebView)
     if (!mounted) return 0;
     
     setState(() => _showVideoAdOverlay = true);
     _videoAdCompleter = Completer<void>();
     
-    // Show Unity Ads directly without overlay screen
-    final earned = await AdManager.instance.showRewarded(
-      trigger: 'playback_time_$minute',
-    );
+    // Wait for ad to be dismissed (via PlayerVideoAdOverlay)
+    await _videoAdCompleter?.future;
     
     if (!mounted) return 0;
     setState(() => _showVideoAdOverlay = false);
-    _videoAdCompleter?.complete();
     
     // Resume playback after ad
     if (mounted && _initialized) {

@@ -1,4 +1,4 @@
-name: Release APK (manual)
+name: Release APK (manual trigger)
 
 on:
   workflow_dispatch:

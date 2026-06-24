@@ -1,6 +1,9 @@
 name: Release APK (manual trigger)
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 concurrency:

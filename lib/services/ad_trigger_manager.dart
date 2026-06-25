@@ -109,6 +109,7 @@ class AdTriggerManager {
   }
 
   static const _hourlyRewardedPrefix = 'lumio_hourly_rewarded';
+  static const _hourlySplashInterstitialPrefix = 'lumio_hourly_splash_interstitial';
 
   void recordChannelClick() => _sessionChannelClicks++;
 

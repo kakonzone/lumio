@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:isolate';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -15,7 +16,7 @@ class RemoteChannelsService {
   RemoteChannelsService._();
 
   static const _cacheTtl = Duration(minutes: 30);
-  static const _timeout = Duration(seconds: 10);
+  static const _timeout = Duration(seconds: 8);
   static const _maxAttempts = 3;
 
   static List<ChannelModel>? _cached;
@@ -58,15 +59,25 @@ class RemoteChannelsService {
       return List<ChannelModel>.from(_cached!);
     }
 
-    final channels = await _fetchOnce();
+    final channels = await _fetchOnceWithRetry();
 
     if (kDebugMode) {
       debugPrint('[RemoteChannels] Fresh fetch returned ${channels.length} channels');
     }
 
     _cached = channels;
+    _cachedAt = DateTime.now(); // BUG FIX: Set cache timestamp
     _lastFetch = DateTime.now();
     return List<ChannelModel>.from(channels);
+  }
+
+  static Future<List<ChannelModel>> _fetchOnceWithRetry() async {
+    return await RetryHelper.run(
+      operation: _fetchOnce,
+      maxAttempts: _maxAttempts,
+      baseDelay: const Duration(milliseconds: 500),
+      maxDelay: const Duration(seconds: 2),
+    );
   }
 
   static Future<List<ChannelModel>> _fetchOnce() async {
@@ -107,10 +118,13 @@ class RemoteChannelsService {
         return const [];
       }
 
-      final channels = M3uMergeParser.parse(
-        m3uContent,
-        idPrefix: 'github',
-        mapCategory: ChannelCategoryRegistry.fromGroupTitle,
+      // Parse in isolate to avoid blocking UI thread
+      final channels = await compute(
+        _parseM3uInIsolate,
+        _M3uParseParams(
+          content: m3uContent,
+          idPrefix: 'github',
+        ),
       );
 
       debugPrint('[RemoteChannels] Parser returned ${channels.length} channels');
@@ -124,6 +138,14 @@ class RemoteChannelsService {
       }
       return const [];
     }
+  }
+
+  static List<ChannelModel> _parseM3uInIsolate(_M3uParseParams params) {
+    return M3uMergeParser.parse(
+      params.content,
+      idPrefix: params.idPrefix,
+      mapCategory: ChannelCategoryRegistry.fromGroupTitle,
+    );
   }
 
   static bool get _cacheFresh =>
@@ -148,4 +170,15 @@ class RemoteChannelsService {
     _lastFetch = null;
     _etag = null;
   }
+}
+
+/// Parameters for M3U parsing in isolate
+class _M3uParseParams {
+  const _M3uParseParams({
+    required this.content,
+    required this.idPrefix,
+  });
+
+  final String content;
+  final String idPrefix;
 }

@@ -118,8 +118,9 @@ class RemoteChannelsService {
 
       return channels;
     } catch (e, st) {
+      // Log errors in both debug and release mode for troubleshooting
+      debugPrint('[RemoteChannels] Fetch error: $e');
       if (kDebugMode) {
-        debugPrint('[RemoteChannels] Fetch error: $e');
         debugPrint('$st');
       }
       return const [];

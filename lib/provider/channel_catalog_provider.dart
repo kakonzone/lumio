@@ -393,14 +393,15 @@ class ChannelCatalogProvider extends ChangeNotifier {
 
   // ── Channels (GitHub playlist only) ───────────────────────
   Future<void> loadChannels({bool forceRefresh = false}) async {
-    if (!forceRefresh) {
+    // Show cached data immediately for fast startup, but still fetch from GitHub
+    if (!forceRefresh && _channels.isEmpty) {
       final warm = await SpecialLinkCache.instance.readAppCatalogChannels(
         ignoreTtl: true,
       );
-      if (warm != null && warm.isNotEmpty && _channels.isEmpty) {
+      if (warm != null && warm.isNotEmpty) {
         applyChannelCatalog(warm);
         _scheduleBackgroundCatalogRefresh();
-        return;
+        // Don't return - continue to fetch from GitHub for latest data
       }
     }
 

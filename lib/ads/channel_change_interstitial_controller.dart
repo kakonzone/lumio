@@ -3,28 +3,24 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/logging/safe_logger.dart';
-import 'adsterra/adsterra_html.dart';
-import 'adsterra/adsterra_webview.dart';
+import 'interstitial_chain_controller.dart';
 
 /// Controller for channel-change interstitial ads.
 ///
 /// Features:
-/// - Shows at most ONE interstitial per 5 minutes per user
-/// - Dismissible after 5 seconds
-/// - ONLY on channel-change (not on resume or rotation)
-/// - In-app WebView (no external browser)
+/// - Shows 4 Adsterra direct links sequentially in external browser
+/// - At most ONE chain per 5 minutes per user
+/// - Uses InterstitialChainController for consistent ad flow
 class ChannelChangeInterstitialController {
   ChannelChangeInterstitialController._();
   static final ChannelChangeInterstitialController instance =
       ChannelChangeInterstitialController._();
 
   static const _cooldownMinutes = 5;
-  static const _dismissibleAfterSeconds = 5;
   static const _lastShownKey = 'channel_change_interstitial_last_shown';
-  static const _channelChangeCountKey = 'channel_change_count';
+  static const _chainCountKey = 'channel_change_chain_count';
 
   DateTime? _lastShownTime;
-  int _channelChangeCount = 0;
   bool _isShowing = false;
 
   /// Check if interstitial can be shown (respects 5-minute cooldown)
@@ -52,25 +48,16 @@ class ChannelChangeInterstitialController {
     return false;
   }
 
-  /// Record a channel change event
-  Future<void> recordChannelChange() async {
-    final prefs = await SharedPreferences.getInstance();
-    _channelChangeCount = prefs.getInt(_channelChangeCountKey) ?? 0;
-    _channelChangeCount++;
-    await prefs.setInt(_channelChangeCountKey, _channelChangeCount);
-  }
-
-  /// Show interstitial if eligible
+  /// Show interstitial chain if eligible
   Future<bool> showIf(BuildContext context) async {
     if (!await canShow()) {
       return false;
     }
 
-    await recordChannelChange();
     return show(context);
   }
 
-  /// Show interstitial (call only if canShow() returns true)
+  /// Show interstitial chain (4 Adsterra direct links in external browser)
   Future<bool> show(BuildContext context) async {
     if (!context.mounted) return false;
     if (_isShowing) return false;
@@ -78,14 +65,10 @@ class ChannelChangeInterstitialController {
     _isShowing = true;
     
     try {
-      final result = await showDialog<bool>(
-        context: context,
-        barrierDismissible: false,
-        builder: (dialogContext) => _ChannelChangeInterstitialDialog(
-          onDismiss: () {
-            Navigator.of(dialogContext).pop(true);
-          },
-        ),
+      await InterstitialChainController.showAdChain(
+        context,
+        adCount: 4,
+        skipSeconds: 5,
       );
 
       // Record last shown time
@@ -95,10 +78,10 @@ class ChannelChangeInterstitialController {
         DateTime.now().millisecondsSinceEpoch,
       );
 
-      SafeLogger.debug('ad', '[ChannelChangeInterstitial] Shown successfully');
-      return result ?? false;
+      SafeLogger.debug('ad', '[ChannelChangeInterstitial] Chain shown successfully');
+      return true;
     } catch (e) {
-      SafeLogger.debug('ad', '[ChannelChangeInterstitial] Error showing: $e');
+      SafeLogger.debug('ad', '[ChannelChangeInterstitial] Error showing chain: $e');
       return false;
     } finally {
       _isShowing = false;
@@ -109,134 +92,7 @@ class ChannelChangeInterstitialController {
   Future<void> resetCooldown() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_lastShownKey);
-    await prefs.remove(_channelChangeCountKey);
-    _channelChangeCount = 0;
+    await prefs.remove(_chainCountKey);
     _lastShownTime = null;
-  }
-}
-
-/// In-app interstitial dialog with auto-dismiss after 5 seconds
-class _ChannelChangeInterstitialDialog extends StatefulWidget {
-  const _ChannelChangeInterstitialDialog({
-    required this.onDismiss,
-  });
-
-  final VoidCallback onDismiss;
-
-  @override
-  State<_ChannelChangeInterstitialDialog> createState() =>
-      _ChannelChangeInterstitialDialogState();
-}
-
-class _ChannelChangeInterstitialDialogState
-    extends State<_ChannelChangeInterstitialDialog> {
-  Timer? _dismissTimer;
-  bool _canDismiss = false;
-
-  @override
-  void initState() {
-    super.initState();
-    
-    // Allow dismiss after 5 seconds
-    _dismissTimer = Timer(
-      const Duration(seconds: ChannelChangeInterstitialController._dismissibleAfterSeconds),
-      () {
-        if (mounted) {
-          setState(() {
-            _canDismiss = true;
-          });
-        }
-      },
-    );
-  }
-
-  @override
-  void dispose() {
-    _dismissTimer?.cancel();
-    super.dispose();
-  }
-
-  void _handleDismiss() {
-    if (_canDismiss) {
-      widget.onDismiss();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      insetPadding: EdgeInsets.zero,
-      backgroundColor: Colors.transparent,
-      child: Stack(
-        children: [
-          // Ad content
-          SizedBox(
-            width: double.infinity,
-            height: MediaQuery.of(context).size.height * 0.7,
-            child: AdsterraWebView(
-              html: AdsterraHtml.interstitial(),
-              height: MediaQuery.of(context).size.height * 0.7,
-              placement: 'channel_change_interstitial',
-              userVisible: true,
-            ),
-          ),
-          // Dismiss button (appears after 5 seconds)
-          if (_canDismiss)
-            Positioned(
-              top: 16,
-              right: 16,
-              child: GestureDetector(
-                onTap: _handleDismiss,
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.7),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.close,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                ),
-              ),
-            ),
-          // Countdown/Loading indicator
-          if (!_canDismiss)
-            Positioned(
-              top: 16,
-              right: 16,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.7),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Loading...',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
   }
 }

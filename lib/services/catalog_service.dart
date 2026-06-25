@@ -11,7 +11,22 @@ import 'special_link/special_link_cache.dart';
 
 /// CPU-heavy catalog normalization — off main isolate when list is large.
 List<ChannelModel> normalizeAndExpandCatalogIsolate(List<ChannelModel> raw) {
-  var list = ChannelHubProcessor.expand(ChannelCatalog.normalizeAll(raw));
+  if (kDebugMode) {
+    debugPrint('[Catalog] Before normalization: ${raw.length}');
+  }
+
+  var list = ChannelCatalog.normalizeAll(raw);
+
+  if (kDebugMode) {
+    debugPrint('[Catalog] After normalization: ${list.length}');
+  }
+
+  list = ChannelHubProcessor.expand(list);
+
+  if (kDebugMode) {
+    debugPrint('[Catalog] After hub expansion: ${list.length}');
+  }
+
   list = list.map((ch) {
     final primary = ch.streamUrl.trim();
     if (primary.isEmpty) return ch;
@@ -19,7 +34,18 @@ List<ChannelModel> normalizeAndExpandCatalogIsolate(List<ChannelModel> raw) {
     if (upgraded == primary) return ch;
     return ch.copyWith(streamUrl: upgraded);
   }).toList();
-  return PriorityBroadcasters.sort(list);
+
+  if (kDebugMode) {
+    debugPrint('[Catalog] After URL upgrade: ${list.length}');
+  }
+
+  list = PriorityBroadcasters.sort(list);
+
+  if (kDebugMode) {
+    debugPrint('[Catalog] Final output count: ${list.length}');
+  }
+
+  return list;
 }
 
 /// Channel catalog — loaded from Appwrite ([AppwriteService]) for the whole app.
@@ -33,28 +59,40 @@ class CatalogService {
     var fromStaleCache = false;
 
     // 1. Try RemoteChannelsService (Cloudflare Worker / GitHub M3U)
-    var channels = await RemoteChannelsService.fetch(force: forceRefresh);
+    var channels = await RemoteChannelsService.fetch(force: true);
 
-    // 2. Fallback: NY Appwrite (if remote returns empty)
-    if (channels.isEmpty) {
-      channels = await AppwriteService.instance.fetchChannels(
-        forceRefresh: forceRefresh,
-      );
+    if (kDebugMode) {
+      debugPrint('[Catalog] Remote returned ${channels.length} channels');
     }
 
-    // 3. Fallback: stale disk cache
-    if (channels.isEmpty) {
-      final stale = await SpecialLinkCache.instance.readAppCatalogChannels(
-        ignoreTtl: true,
-      );
-      if (stale != null && stale.isNotEmpty) {
-        channels = stale;
-        fromStaleCache = true;
-        error = 'Using cached channel list. Pull to refresh when online.';
-      } else {
-        error = AppwriteService.instance.lastFetchError ??
-            'Could not load channels. Check connection and pull to refresh.';
-      }
+    // TEMP: disable fallback while debugging GitHub source
+    // if (channels.isEmpty) {
+    //   channels = await AppwriteService.instance.fetchChannels(
+    //     forceRefresh: forceRefresh,
+    //   );
+    // }
+
+    if (channels.isEmpty && kDebugMode) {
+      debugPrint('[Catalog] Remote returned 0 channels. Fallback disabled for debugging.');
+    }
+
+    // TEMP: disable stale cache fallback while debugging GitHub source
+    // if (channels.isEmpty) {
+    //   final stale = await SpecialLinkCache.instance.readAppCatalogChannels(
+    //     ignoreTtl: true,
+    //   );
+    //   if (stale != null && stale.isNotEmpty) {
+    //     channels = stale;
+    //     fromStaleCache = true;
+    //     error = 'Using cached channel list. Pull to refresh when online.';
+    //   } else {
+    //     error = AppwriteService.instance.lastFetchError ??
+    //         'Could not load channels. Check connection and pull to refresh.';
+    //   }
+    // }
+
+    if (channels.isEmpty && kDebugMode) {
+      error = 'GitHub source returned 0 channels. All fallbacks disabled for debugging.';
     }
 
     // 4. Save to disk cache on success

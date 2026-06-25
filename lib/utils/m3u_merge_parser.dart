@@ -65,6 +65,8 @@ class M3uMergeParser {
     var pendingGroup = '';
     var pendingLogo = '';
     final orphanUrls = <String>[];
+    var extinfCount = 0;
+    var urlCount = 0;
 
     void flushOrphanUrls() {
       if (orphanUrls.isEmpty) return;
@@ -84,11 +86,12 @@ class M3uMergeParser {
       orphanUrls.clear();
     }
 
-    for (var raw in lines) {
-      final line = raw.trim();
+    for (int i = 0; i < lines.length; i++) {
+      final line = lines[i].trim();
       if (line.isEmpty) continue;
 
       if (line.startsWith('#EXTINF')) {
+        extinfCount++;
         flushOrphanUrls();
         pendingName = ChannelNameNormalizer.clean(
           _afterComma(line),
@@ -96,38 +99,57 @@ class M3uMergeParser {
         );
         pendingGroup = _attr(line, 'group-title');
         pendingLogo = _attr(line, 'tvg-logo');
-        continue;
+
+        // Search forward for URL (handles blank lines, comments, #EXTVLCOPT between EXTINF and URL)
+        String? url;
+        for (int j = i + 1; j < lines.length; j++) {
+          final next = lines[j].trim();
+          if (next.isEmpty) continue;
+          if (next.startsWith('#EXTINF')) break;
+          if (next.startsWith('http://') ||
+              next.startsWith('https://') ||
+              next.startsWith('rtmp://') ||
+              next.startsWith('rtsp://')) {
+            url = next;
+            break;
+          }
+        }
+
+        if (url != null && pendingName.isNotEmpty) {
+          urlCount++;
+          final name = pendingName;
+          final key = _nameKey(name);
+          final b = byName.putIfAbsent(
+            key,
+            () => _Builder(
+              id: '${idPrefix}_${byName.length}',
+              name: name,
+              category: mapCategory?.call(pendingGroup, name) ??
+                  categoryForGroup(pendingGroup, name),
+              country: mapCountry?.call(pendingGroup, name) ??
+                  _defaultCountry(pendingGroup, name),
+              group: pendingGroup,
+              logo: pendingLogo,
+            ),
+          );
+          b.addUrl(url);
+        }
+
+        pendingName = '';
+        pendingGroup = '';
+        pendingLogo = '';
       }
-
-      if (!_isStreamLine(line)) continue;
-
-      if (pendingName.isEmpty) {
-        orphanUrls.add(line);
-        continue;
-      }
-
-      final name = pendingName;
-      final key = _nameKey(name);
-      final b = byName.putIfAbsent(
-        key,
-        () => _Builder(
-          id: '${idPrefix}_${byName.length}',
-          name: name,
-          category: mapCategory?.call(pendingGroup, name) ??
-              categoryForGroup(pendingGroup, name),
-          country: mapCountry?.call(pendingGroup, name) ??
-              _defaultCountry(pendingGroup, name),
-          group: pendingGroup,
-          logo: pendingLogo,
-        ),
-      );
-      b.addUrl(line);
-      pendingName = '';
-      pendingGroup = '';
-      pendingLogo = '';
     }
 
     flushOrphanUrls();
+
+    if (kDebugMode) {
+      debugPrint('[M3uParser] Input lines: ${lines.length}');
+      debugPrint('[M3uParser] #EXTINF lines: $extinfCount');
+      debugPrint('[M3uParser] URL-like lines: $urlCount');
+      debugPrint('[M3uParser] Unique channels parsed: ${byName.length}');
+      debugPrint('[M3uParser] Orphan URLs: ${orphanUrls.length}');
+    }
 
     return byName.values
         .map((b) => b.build())

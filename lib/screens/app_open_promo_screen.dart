@@ -145,10 +145,6 @@ class _AppOpenPromoScreenState extends State<AppOpenPromoScreen> {
                   ),
                 ),
               ),
-              Padding(
-                padding: EdgeInsets.fromLTRB(16, 10, 16, bottom + 10),
-                child: _SkipButton(onPressed: () => unawaited(_dismiss())),
-              ),
             ],
           ),
         ),
@@ -260,33 +256,6 @@ class _CountdownBadge extends StatelessWidget {
           seconds > 0 ? '$seconds' : '·',
           style: GF.head(
               fontSize: 15, fontWeight: FontWeight.w800, color: Colors.white),
-        ),
-      ),
-    );
-  }
-}
-
-class _SkipButton extends StatelessWidget {
-  final VoidCallback onPressed;
-
-  const _SkipButton({required this.onPressed});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: FilledButton(
-        onPressed: onPressed,
-        style: FilledButton.styleFrom(
-          backgroundColor: AppTokens.accent,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        ),
-        child: Text(
-          'Skip',
-          style: GF.body(fontSize: 16, fontWeight: FontWeight.w800),
         ),
       ),
     );

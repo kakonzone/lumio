@@ -38,6 +38,13 @@ class SpecialLinkCache {
   Future<void> writeGitunChannels(List<ChannelModel> channels) =>
       _write(_gitunBodyKey, _gitunTsKey, channels);
 
+  /// Clear app catalog cache for debugging
+  Future<void> clearAppCatalogChannels() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_appCatalogBodyKey);
+    await prefs.remove(_appCatalogTsKey);
+  }
+
   Future<List<ChannelModel>?> _read(
     String bodyKey,
     String tsKey, {

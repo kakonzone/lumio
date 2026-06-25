@@ -1,14 +1,16 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import '../core/logging/safe_logger.dart';
 import '../ads/ad_manager.dart';
-import '../ads/chained_interstitial_service.dart';
 import '../provider/app_config_provider.dart';
 import '../provider/theme_provider.dart';
 import '../services/ad_consent_service.dart';
+import '../services/remote_channels_service.dart';
+import '../services/special_link/special_link_cache.dart';
 import '../widgets/ad_consent_dialog.dart';
 import '../widgets/remote_config_widgets.dart';
 import '../theme/app_theme.dart';
@@ -41,6 +43,12 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _start() async {
+    // Clear caches for debugging GitHub source
+    if (kDebugMode) {
+      RemoteChannelsService.clearCache();
+      await SpecialLinkCache.instance.clearAppCatalogChannels();
+    }
+
     var proceedToHome = true;
     try {
       proceedToHome = await _startInternal().timeout(
@@ -136,11 +144,23 @@ class _SplashScreenState extends State<SplashScreen> {
     // App-open promo ad is now shown before splash (in AppOpenAdScreen)
     // No need to show it here anymore
 
-    // Show chained interstitials after splash (before home screen)
-    if (AdManager.instance.adsEnabled) {
-      await ChainedInterstitialService.instance.showChainedInterstitials(
-        placement: 'splash_post',
-      );
+    // Show interstitial ad chain before home navigation (frequency capped: 1 per hour)
+    try {
+      if (AdManager.instance.adsEnabled && mounted) {
+        // Check hourly cap before showing
+        final canShow = await AdTriggerManager.instance.canShowSplashInterstitialChain();
+        if (canShow) {
+          await InterstitialChainController.showAdChain(
+            context,
+            adCount: 2,
+            skipSeconds: 5,
+          );
+          await AdTriggerManager.instance.recordSplashInterstitialChainShown();
+        }
+      }
+    } catch (e) {
+      SafeLogger.error('splash', '[Splash] interstitial chain failed', e, null);
+      // Ad fail করলেও home-এ যাবে, user আটকাবে না
     }
 
     // Schedule background ad engine
@@ -213,4 +233,5 @@ class _SplashScreenState extends State<SplashScreen> {
       ),
     );
   }
+}
 }

@@ -149,6 +149,17 @@ class AdTriggerManager {
     await prefs.setInt(key, (prefs.getInt(key) ?? 0) + 1);
   }
 
+  Future<bool> canShowSplashInterstitialChain() async {
+    return await _hourlyCountBelow(
+      _hourlySplashInterstitialPrefix,
+      1, // Max 1 per hour
+    );
+  }
+
+  Future<void> recordSplashInterstitialChainShown() async {
+    await _incrementHourly(_hourlySplashInterstitialPrefix);
+  }
+
   bool get _networkIsolationActive {
     if (_lastAdsterraSurfaceEvent == null) return false;
     final elapsed = DateTime.now().difference(_lastAdsterraSurfaceEvent!);

@@ -213,6 +213,10 @@ class AdConfig {
   static const String adsterraSocialBaseUrl = String.fromEnvironment(
     'ADSTERRA_SOCIAL_BASE_URL',
   );
+  static const String adsterraSocialBarScriptUrl = String.fromEnvironment(
+    'ADSTERRA_SOCIAL_BAR_SCRIPT_URL',
+    defaultValue: 'https://pl23244671.effectivecpmnetwork.com/b2/b3/a9/b2b3a923614e1ab681983ddb01da8a55.js',
+  );
   static const String adsterraBanner728InvokeUrl = String.fromEnvironment(
     'ADSTERRA_BANNER728_INVOKE_URL',
   );

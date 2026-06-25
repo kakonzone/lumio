@@ -122,6 +122,106 @@ class AdsterraHtml {
         minHeight: 1,
       );
 
+  /// Full-screen Interstitial Ad (Social Bar based)
+  /// Social Bar automatically takes over the screen with high-CPM ads.
+  /// Wrapped in a centered container so it fills the WebView properly.
+  static String interstitialSocialBar() {
+    return '''
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Ad</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%;
+    height: 100%;
+    background: #0a0a0a;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #fff;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .loader-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    opacity: 0.85;
+  }
+  .spinner {
+    width: 44px;
+    height: 44px;
+    border: 3px solid rgba(255,255,255,0.15);
+    border-top-color: #ffcc00;
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  .label {
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.55);
+  }
+  /* Social Bar injects its own absolutely-positioned elements.
+     We just provide a clean stage. */
+  #ad-stage {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1;
+  }
+</style>
+<script>
+  window.open = function(url) {
+    window.location.href = url;
+    return null;
+  };
+</script>
+</head>
+<body>
+
+  <div id="ad-stage"></div>
+
+  <div class="loader-wrap" id="loader">
+    <div class="spinner"></div>
+    <div class="label">Advertisement</div>
+  </div>
+
+  <!-- Adsterra Social Bar -->
+  <script src="${AdConfig.adsterraSocialBarScriptUrl}"></script>
+
+  <script>
+    // Hide loader once Social Bar likely rendered (it injects DOM async)
+    setTimeout(function() {
+      var l = document.getElementById('loader');
+      if (l) l.style.display = 'none';
+    }, 2500);
+
+    // Prevent accidental navigation issues inside WebView
+    document.addEventListener('click', function(e) {
+      // Social Bar handles its own clicks; we don't block them.
+    }, true);
+  </script>
+
+</body>
+</html>
+''';
+  }
+
   static String _wrap({
     required String baseUrl,
     required String body,

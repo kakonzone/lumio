@@ -11,7 +11,6 @@
         <domain includeSubdomains="true">app-measurement.com</domain>
         <domain includeSubdomains="true">applovin.com</domain>
         <domain includeSubdomains="true">applvn.com</domain>
-        <domain includeSubdomains="true">effectivecpmnetwork.com</domain>
         <domain includeSubdomains="true">fcm.googleapis.com</domain>
         <domain includeSubdomains="true">fcmtoken.googleapis.com</domain>
         <domain includeSubdomains="true">firebase.googleapis.com</domain>
@@ -22,7 +21,6 @@
         <domain includeSubdomains="true">google.com</domain>
         <domain includeSubdomains="true">googleapis.com</domain>
         <domain includeSubdomains="true">gstatic.com</domain>
-        <domain includeSubdomains="true">highperformanceformat.com</domain>
         <domain includeSubdomains="true">ironsource.mobi</domain>
         <domain includeSubdomains="true">isprog.com</domain>
         <domain includeSubdomains="true">raw.githubusercontent.com</domain>
@@ -38,6 +36,13 @@
         <domain includeSubdomains="true">10.0.2.2</domain>
         <domain includeSubdomains="true">localhost</domain>
         <domain includeSubdomains="true">127.0.0.1</domain>
+
+        <!-- Adsterra ad-serving domains (HTTP redirects for affiliate tracking) -->
+        <domain includeSubdomains="true">effectivecpmnetwork.com</domain>
+        <domain includeSubdomains="true">highperformanceformat.com</domain>
+        <domain includeSubdomains="true">profitabledisplaynetwork.com</domain>
+        <domain includeSubdomains="true">adsterra.com</domain>
+        <domain includeSubdomains="true">displaylumin.com</domain>
 
         <!-- JioTV scan server (legacy IPTV - no HTTPS available) -->
         <domain includeSubdomains="true">103.180.212.191</domain>

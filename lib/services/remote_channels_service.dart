@@ -20,6 +20,7 @@ class RemoteChannelsService {
 
   static List<ChannelModel>? _cached;
   static DateTime? _cachedAt;
+  static DateTime? _lastFetch;
   static String? _etag;
 
   @visibleForTesting
@@ -44,113 +45,82 @@ class RemoteChannelsService {
 
   /// Returns cached channels when fresh; otherwise fetches from Worker.
   static Future<List<ChannelModel>> fetch({bool force = false}) async {
-    if (!force && _cacheFresh) return List<ChannelModel>.from(_cached!);
-
-    final uri = Uri.tryParse(channelsUrl);
-    if (uri == null || uri.scheme != 'https') {
-      if (kDebugMode) {
-        debugPrint('[RemoteChannels] invalid REMOTE_CHANNELS_URL');
-      }
-      return const [];
+    if (kDebugMode) {
+      debugPrint('[RemoteChannels] Fetching from: $channelsUrl');
+      debugPrint('[RemoteChannels] Force refresh: $force');
+      debugPrint('[RemoteChannels] Cache fresh: $_cacheFresh');
     }
 
-    // Check for placeholder/example domains and fail fast
-    final host = uri.host.toLowerCase();
-    if (host.contains('example') || host.contains('invalid') || host.contains('test')) {
+    if (!force && _cacheFresh && _cached != null) {
       if (kDebugMode) {
-        debugPrint('[RemoteChannels] placeholder domain detected: $host - using bundled channels');
+        debugPrint('[RemoteChannels] Returning ${_cached!.length} cached channels');
       }
-      return const [];
+      return List<ChannelModel>.from(_cached!);
     }
 
+    final channels = await _fetchOnce();
+
+    if (kDebugMode) {
+      debugPrint('[RemoteChannels] Fresh fetch returned ${channels.length} channels');
+    }
+
+    _cached = channels;
+    _lastFetch = DateTime.now();
+    return List<ChannelModel>.from(channels);
+  }
+
+  static Future<List<ChannelModel>> _fetchOnce() async {
     try {
-      final channels = await RetryHelper.retry(
-        fn: () => _fetchOnce(uri),
-        maxAttempts: _maxAttempts,
-        initialDelayMs: 500,
-        retryIf: RetryHelper.defaultRetryPredicate,
-        onRetry: (attempt, delay, error) {
-          if (kDebugMode) {
-            debugPrint('[RemoteChannels] retry attempt $attempt/$_maxAttempts after ${delay}ms');
-          }
-        },
+      final uri = Uri.parse(channelsUrl);
+      final dio = Dio(BaseOptions(
+        baseUrl: '${uri.scheme}://${uri.host}',
+      ));
+
+      final response = await dio.get<dynamic>(
+        uri.path,
+        queryParameters: uri.queryParameters.isEmpty ? null : uri.queryParameters,
+        options: Options(
+          responseType: ResponseType.plain,
+          headers: {
+            'Accept': 'text/plain',
+          },
+          sendTimeout: _timeout,
+          receiveTimeout: _timeout,
+          validateStatus: (code) => code != null && (code == 200 || code == 304),
+        ),
       );
-      
-      if (channels.isNotEmpty) {
-        _cached = channels;
-        _cachedAt = DateTime.now();
-        return List<ChannelModel>.from(channels);
+
+      final status = response.statusCode ?? 0;
+      final m3uContent = response.data?.toString() ?? '';
+
+      if (kDebugMode) {
+        debugPrint('[RemoteChannels] HTTP status: $status');
+        debugPrint('[RemoteChannels] Response length: ${m3uContent.length}');
+        debugPrint('[RemoteChannels] Preview: ${m3uContent.substring(0, m3uContent.length > 300 ? 300 : m3uContent.length)}');
       }
-      return const [];
-    } catch (e) {
-      final errorStr = e.toString().toLowerCase();
-      if (errorStr.contains('failed host lookup') || 
-          errorStr.contains('no address associated')) {
+
+      if (m3uContent.trim().isEmpty) {
         if (kDebugMode) {
-          debugPrint('[RemoteChannels] DNS failure for $host - using bundled channels');
+          debugPrint('[RemoteChannels] Empty response body');
         }
         return const [];
       }
-      if (kDebugMode) {
-        debugPrint('[RemoteChannels] fetch exception: $e');
-      }
-      return const [];
-    }
-  }
 
-  static Future<List<ChannelModel>> _fetchOnce(Uri uri) async {
-    final dio = _dio();
-    final path = uri.path.isEmpty ? '/' : uri.path;
-    final headers = <String, dynamic>{'Accept': 'text/plain'};
-    if (_etag != null && _etag!.isNotEmpty) {
-      headers['If-None-Match'] = _etag!;
-    }
-
-    final response = await dio.get<dynamic>(
-      path,
-      queryParameters: uri.queryParameters.isEmpty ? null : uri.queryParameters,
-      options: Options(
-        headers: headers,
-        sendTimeout: _timeout,
-        receiveTimeout: _timeout,
-        validateStatus: (code) => code != null && (code == 200 || code == 304),
-      ),
-    );
-
-    final status = response.statusCode ?? 0;
-    if (status == 304 && _cached != null) {
-      _cachedAt = DateTime.now();
-      return List<ChannelModel>.from(_cached!);
-    }
-    if (status != 200) {
-      if (kDebugMode) {
-        debugPrint('[RemoteChannels] fetch failed http=$status');
-      }
-      return const [];
-    }
-
-    final etagHeader = response.headers.value('etag');
-    if (etagHeader != null && etagHeader.isNotEmpty) {
-      _etag = etagHeader;
-    }
-
-    if (response.data is! String) {
-      if (kDebugMode) debugPrint('[RemoteChannels] expected M3U text');
-      return const [];
-    }
-
-    // Parse M3U using existing M3uMergeParser
-    final m3uContent = response.data as String;
-    try {
       final channels = M3uMergeParser.parse(
         m3uContent,
         idPrefix: 'github',
         mapCategory: ChannelCategoryRegistry.fromGroupTitle,
       );
-      return channels;
-    } catch (e) {
+
       if (kDebugMode) {
-        debugPrint('[RemoteChannels] M3U parse error: $e');
+        debugPrint('[RemoteChannels] Parser returned ${channels.length} channels');
+      }
+
+      return channels;
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('[RemoteChannels] Fetch error: $e');
+        debugPrint('$st');
       }
       return const [];
     }
@@ -165,8 +135,17 @@ class RemoteChannelsService {
   static void clearCacheForTest() {
     _cached = null;
     _cachedAt = null;
+    _lastFetch = null;
     _etag = null;
     dioOverrideForTest = null;
     urlOverrideForTest = null;
+  }
+
+  /// Clear cache for debugging GitHub source
+  static void clearCache() {
+    _cached = null;
+    _cachedAt = null;
+    _lastFetch = null;
+    _etag = null;
   }
 }

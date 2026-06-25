@@ -35,6 +35,7 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   bool _didNavigate = false;
+  bool _interstitialChainStarted = false;
 
   @override
   void initState() {
@@ -58,6 +59,8 @@ class _SplashScreenState extends State<SplashScreen> {
         onTimeout: () {
           SafeLogger.debug('splash',
               '[Splash] timed out — opening home (providers will load lazily)');
+          // BUG FIX: Cancel interstitial chain if it started
+          _interstitialChainStarted = false;
           return true;
         },
       );
@@ -79,6 +82,13 @@ class _SplashScreenState extends State<SplashScreen> {
       );
       return;
     }
+    
+    // BUG FIX: Check if interstitial chain started navigation
+    if (_interstitialChainStarted) {
+      SafeLogger.debug('splash', '[Splash] Interstitial chain handled navigation, skipping home');
+      return;
+    }
+    
     if (!mounted || _didNavigate || !proceedToHome) return;
     _didNavigate = true;
     SafeLogger.debug('splash', '[Splash] pushReplacementNamed /home');
@@ -152,16 +162,32 @@ class _SplashScreenState extends State<SplashScreen> {
         // Check hourly cap before showing
         final canShow = await AdTriggerManager.instance.canShowSplashInterstitialChain();
         if (canShow) {
+          // BUG FIX: Set flag before starting interstitial chain
+          _interstitialChainStarted = true;
+          _didNavigate = true;
+          
+          if (!mounted) return false;
+          
           await InterstitialChainController.showAdChain(
             context,
             adCount: 2,
             skipSeconds: 5,
           );
+          
+          // BUG FIX: Check mounted after interstitial chain
+          if (!mounted) return false;
+          
           await AdTriggerManager.instance.recordSplashInterstitialChainShown();
+          
+          // BUG FIX: Reset flag if interstitial chain completed without navigation
+          _interstitialChainStarted = false;
         }
       }
     } catch (e) {
       SafeLogger.error('splash', '[Splash] interstitial chain failed', e, null);
+      // BUG FIX: Reset flag on error
+      _interstitialChainStarted = false;
+      _didNavigate = false;
       // Ad fail করলেও home-এ যাবে, user আটকাবে না
     }
 

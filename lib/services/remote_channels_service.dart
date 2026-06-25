@@ -76,6 +76,8 @@ class RemoteChannelsService {
         baseUrl: '${uri.scheme}://${uri.host}',
       ));
 
+      debugPrint('[RemoteChannels] Fetching from: $channelsUrl');
+
       final response = await dio.get<dynamic>(
         uri.path,
         queryParameters: uri.queryParameters.isEmpty ? null : uri.queryParameters,
@@ -93,16 +95,15 @@ class RemoteChannelsService {
       final status = response.statusCode ?? 0;
       final m3uContent = response.data?.toString() ?? '';
 
+      debugPrint('[RemoteChannels] HTTP status: $status');
+      debugPrint('[RemoteChannels] Response length: ${m3uContent.length}');
+
       if (kDebugMode) {
-        debugPrint('[RemoteChannels] HTTP status: $status');
-        debugPrint('[RemoteChannels] Response length: ${m3uContent.length}');
         debugPrint('[RemoteChannels] Preview: ${m3uContent.substring(0, m3uContent.length > 300 ? 300 : m3uContent.length)}');
       }
 
       if (m3uContent.trim().isEmpty) {
-        if (kDebugMode) {
-          debugPrint('[RemoteChannels] Empty response body');
-        }
+        debugPrint('[RemoteChannels] Empty response body');
         return const [];
       }
 
@@ -112,9 +113,7 @@ class RemoteChannelsService {
         mapCategory: ChannelCategoryRegistry.fromGroupTitle,
       );
 
-      if (kDebugMode) {
-        debugPrint('[RemoteChannels] Parser returned ${channels.length} channels');
-      }
+      debugPrint('[RemoteChannels] Parser returned ${channels.length} channels');
 
       return channels;
     } catch (e, st) {

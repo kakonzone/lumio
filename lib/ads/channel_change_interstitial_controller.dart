@@ -8,9 +8,10 @@ import 'interstitial_chain_controller.dart';
 /// Controller for channel-change interstitial ads.
 ///
 /// Features:
-/// - Shows 4 Adsterra direct links sequentially in external browser
-/// - At most ONE chain per 5 minutes per user
+/// - Shows 1 Adsterra direct link in external browser
+/// - At most ONE ad per 5 minutes per user
 /// - Uses InterstitialChainController for consistent ad flow
+/// - User returns to app after closing browser, channel opens
 class ChannelChangeInterstitialController {
   ChannelChangeInterstitialController._();
   static final ChannelChangeInterstitialController instance =
@@ -57,7 +58,7 @@ class ChannelChangeInterstitialController {
     return show(context);
   }
 
-  /// Show interstitial chain (4 Adsterra direct links in external browser)
+  /// Show single Adsterra direct link in external browser
   Future<bool> show(BuildContext context) async {
     if (!context.mounted) return false;
     if (_isShowing) return false;
@@ -67,7 +68,7 @@ class ChannelChangeInterstitialController {
     try {
       await InterstitialChainController.showAdChain(
         context,
-        adCount: 4,
+        adCount: 1,  // Only 1 ad, not 4
         skipSeconds: 5,
       );
 
@@ -78,10 +79,10 @@ class ChannelChangeInterstitialController {
         DateTime.now().millisecondsSinceEpoch,
       );
 
-      SafeLogger.debug('ad', '[ChannelChangeInterstitial] Chain shown successfully');
+      SafeLogger.debug('ad', '[ChannelChangeInterstitial] Ad shown successfully');
       return true;
     } catch (e) {
-      SafeLogger.debug('ad', '[ChannelChangeInterstitial] Error showing chain: $e');
+      SafeLogger.debug('ad', '[ChannelChangeInterstitial] Error showing ad: $e');
       return false;
     } finally {
       _isShowing = false;

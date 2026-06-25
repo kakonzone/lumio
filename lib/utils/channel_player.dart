@@ -120,7 +120,7 @@ Future<void> _runChannelTapWithAds(
     if (_lastChannelTapKey == key &&
         _lastChannelTapAt != null &&
         now.difference(_lastChannelTapAt!) <
-            const Duration(milliseconds: 400)) {
+            const Duration(milliseconds: 300)) { // BUG FIX: Reduced from 400ms to 300ms for better responsiveness
       return;
     }
     _lastChannelTapKey = key;

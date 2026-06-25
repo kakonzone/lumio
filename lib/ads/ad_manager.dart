@@ -465,6 +465,15 @@ class AdManager {
         context: context,
       );
 
+      // BUG FIX: Check mounted after browser operation
+      if (context != null && !context.mounted) {
+        _channelTapFirstTapInFlight.remove(key);
+        return const ChannelTapResult(
+          played: false,
+          showTapAgainHint: true,
+        );
+      }
+
       if (kDebugMode) {
         debugPrint(
           '[ChannelTap] first tap key=$key browser monetized=$monetized',
@@ -479,6 +488,16 @@ class AdManager {
       }
 
       // Browser unavailable — play now; do not require a second tap.
+      await onPlay();
+      return const ChannelTapResult(
+        played: true,
+        showTapAgainHint: false,
+      );
+    } catch (e) {
+      // BUG FIX: Ensure key is removed on error
+      _channelTapFirstTapInFlight.remove(key);
+      SafeLogger.error('ad', '[ChannelTap] Error in handleChannelTap', e, null);
+      // On error, play immediately to not block user
       await onPlay();
       return const ChannelTapResult(
         played: true,

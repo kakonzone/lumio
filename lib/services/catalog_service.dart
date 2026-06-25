@@ -61,9 +61,7 @@ class CatalogService {
     // 1. Try RemoteChannelsService (Cloudflare Worker / GitHub M3U)
     var channels = await RemoteChannelsService.fetch(force: true);
 
-    if (kDebugMode) {
-      debugPrint('[Catalog] Remote returned ${channels.length} channels');
-    }
+    debugPrint('[Catalog] Remote returned ${channels.length} channels from ${RemoteChannelsService.channelsUrl}');
 
     // TEMP: disable fallback while debugging GitHub source
     // if (channels.isEmpty) {

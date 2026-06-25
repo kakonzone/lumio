@@ -52,7 +52,8 @@ class RemoteChannelsService {
       debugPrint('[RemoteChannels] Cache fresh: $_cacheFresh');
     }
 
-    if (!force && _cacheFresh && _cached != null) {
+    // Return cached data if fresh and non-empty
+    if (!force && _cacheFresh && _cached != null && _cached!.isNotEmpty) {
       if (kDebugMode) {
         debugPrint('[RemoteChannels] Returning ${_cached!.length} cached channels');
       }
@@ -61,12 +62,23 @@ class RemoteChannelsService {
 
     final channels = await _fetchOnceWithRetry();
 
-    if (kDebugMode) {
-      debugPrint('[RemoteChannels] Fresh fetch returned ${channels.length} channels');
+    // Only update cache if fetch succeeded with non-empty list
+    if (channels.isNotEmpty) {
+      _cached = channels;
+      _cachedAt = DateTime.now();
+      if (kDebugMode) {
+        debugPrint('[RemoteChannels] Cache updated with ${channels.length} channels');
+      }
+    } else {
+      // Fallback to old cache if fetch failed
+      if (_cached != null && _cached!.isNotEmpty) {
+        if (kDebugMode) {
+          debugPrint('[RemoteChannels] Fetch failed, returning stale cache (${_cached!.length} channels)');
+        }
+        return List<ChannelModel>.from(_cached!);
+      }
     }
 
-    _cached = channels;
-    _cachedAt = DateTime.now(); // BUG FIX: Set cache timestamp
     _lastFetch = DateTime.now();
     return List<ChannelModel>.from(channels);
   }
@@ -83,20 +95,27 @@ class RemoteChannelsService {
   static Future<List<ChannelModel>> _fetchOnce() async {
     try {
       final uri = Uri.parse(channelsUrl);
-      final dio = Dio(BaseOptions(
-        baseUrl: '${uri.scheme}://${uri.host}',
-      ));
+      
+      // BUG FIX: Use _dio() for SSL pinning instead of plain Dio
+      final dio = _dio();
 
       debugPrint('[RemoteChannels] Fetching from: $channelsUrl');
+
+      final headers = <String, String>{
+        'Accept': 'text/plain',
+      };
+      
+      // BUG FIX: Add ETag support for HTTP caching
+      if (_etag != null) {
+        headers['If-None-Match'] = _etag!;
+      }
 
       final response = await dio.get<dynamic>(
         uri.path,
         queryParameters: uri.queryParameters.isEmpty ? null : uri.queryParameters,
         options: Options(
           responseType: ResponseType.plain,
-          headers: {
-            'Accept': 'text/plain',
-          },
+          headers: headers,
           sendTimeout: _timeout,
           receiveTimeout: _timeout,
           validateStatus: (code) => code != null && (code == 200 || code == 304),
@@ -104,6 +123,15 @@ class RemoteChannelsService {
       );
 
       final status = response.statusCode ?? 0;
+      
+      // BUG FIX: Handle 304 Not Modified (content unchanged)
+      if (status == 304 && _cached != null && _cached!.isNotEmpty) {
+        if (kDebugMode) {
+          debugPrint('[RemoteChannels] 304 Not Modified, returning cached channels');
+        }
+        return List<ChannelModel>.from(_cached!);
+      }
+
       final m3uContent = response.data?.toString() ?? '';
 
       debugPrint('[RemoteChannels] HTTP status: $status');
@@ -116,6 +144,15 @@ class RemoteChannelsService {
       if (m3uContent.trim().isEmpty) {
         debugPrint('[RemoteChannels] Empty response body');
         return const [];
+      }
+
+      // BUG FIX: Store ETag from response headers
+      final responseEtag = response.headers.value('etag');
+      if (responseEtag != null) {
+        _etag = responseEtag;
+        if (kDebugMode) {
+          debugPrint('[RemoteChannels] ETag stored: $_etag');
+        }
       }
 
       // Parse in isolate to avoid blocking UI thread

@@ -84,11 +84,11 @@ class RemoteChannelsService {
   }
 
   static Future<List<ChannelModel>> _fetchOnceWithRetry() async {
-    return await RetryHelper.run(
-      operation: _fetchOnce,
+    return await RetryHelper.retry(
+      fn: _fetchOnce,
       maxAttempts: _maxAttempts,
-      baseDelay: const Duration(milliseconds: 500),
-      maxDelay: const Duration(seconds: 2),
+      initialDelayMs: 500,
+      maxDelayMs: 2000,
     );
   }
 

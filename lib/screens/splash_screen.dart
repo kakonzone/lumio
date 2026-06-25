@@ -6,9 +6,11 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import '../core/logging/safe_logger.dart';
 import '../ads/ad_manager.dart';
+import '../ads/interstitial_chain_controller.dart';
 import '../provider/app_config_provider.dart';
 import '../provider/theme_provider.dart';
 import '../services/ad_consent_service.dart';
+import '../services/ad_trigger_manager.dart';
 import '../services/remote_channels_service.dart';
 import '../services/special_link/special_link_cache.dart';
 import '../widgets/ad_consent_dialog.dart';
@@ -233,6 +235,4 @@ class _SplashScreenState extends State<SplashScreen> {
       ),
     );
   }
-}
-}
 }

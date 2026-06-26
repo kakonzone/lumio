@@ -48,6 +48,7 @@ import 'utils/channel_player.dart';
 import 'services/lumio_audio_service.dart';
 import 'services/user_preferences.dart';
 import 'config/app_config.dart';
+import 'config/appwrite_config.dart';
 import 'security/blocked_apps_guard.dart';
 import 'security/security_manager.dart';
 import 'security/security_config.dart';
@@ -137,12 +138,32 @@ void main() async {
       hypothesisId: 'B',
     );
     // #endregion
-  } catch (e, st) {
+  } catch (e, _) {
     // #region agent log
     AgentDebugLog.log(
       location: 'main.dart:main:stream-token-fail',
       message: 'assertReleaseStreamTokenConfigured threw',
       hypothesisId: 'B',
+      data: {'error': e.toString()},
+    );
+    // #endregion
+    rethrow;
+  }
+  try {
+    AppwriteConfig.assertReleaseConfigured();
+    // #region agent log
+    AgentDebugLog.log(
+      location: 'main.dart:main:post-appwrite',
+      message: 'assertReleaseConfigured passed',
+      hypothesisId: 'C',
+    );
+    // #endregion
+  } catch (e, _) {
+    // #region agent log
+    AgentDebugLog.log(
+      location: 'main.dart:main:appwrite-fail',
+      message: 'assertReleaseConfigured threw',
+      hypothesisId: 'C',
       data: {'error': e.toString()},
     );
     // #endregion
@@ -159,7 +180,7 @@ void main() async {
     );
   }
   MediaKit.ensureInitialized();
-  SessionPacing.instance.initialize();
+  SessionPacing.instance.initialize(); // sync — no await needed
   final securityOk = await SecurityManager.instance.initialize();
   // #region agent log
   AgentDebugLog.log(
@@ -205,17 +226,18 @@ void main() async {
       runApp(
         BlockedAppsScreen(
           appLabels: blockedLabels,
-          onCleared: () => _runLumioApp(),
+          onCleared: () => unawaited(_runLumioApp()),
         ),
       );
       return;
     }
   }
 
-  _runLumioApp();
+  unawaited(_runLumioApp());
 }
 
-void _runLumioApp() async {
+Future<void> _runLumioApp() async {
+  DateTime? lastInteractionMark;
   await UserPreferences.ensureInit();
   
   // Initialize logger
@@ -237,7 +259,14 @@ void _runLumioApp() async {
   runApp(
     Listener(
       behavior: HitTestBehavior.translucent,
-      onPointerDown: (_) => BackgroundAdEngine.markUserInteraction(),
+      onPointerDown: (_) {
+        final now = DateTime.now();
+        if (lastInteractionMark == null ||
+            now.difference(lastInteractionMark!) > const Duration(seconds: 1)) {
+          lastInteractionMark = now;
+          BackgroundAdEngine.markUserInteraction();
+        }
+      },
       child: MultiProvider(
         providers: [
           // New focused providers (Phase 1 - Infrastructure)
@@ -265,7 +294,7 @@ void _runLumioApp() async {
               context.read<UserStateProvider>(),
               catalogIn: context.read<ChannelCatalogProvider>(),
               uiIn: context.read<UiStateProvider>(),
-            )..init(),
+            )..init(), // init() catches errors internally - dropped Future is safe
           ),
           ChangeNotifierProvider(create: (_) => AppConfigProvider()),
         ],
@@ -278,9 +307,16 @@ void _runLumioApp() async {
 
 Future<void> _deferredBootstrap() async {
   await Future.wait([
-    NotificationService.initialize(),
-    FirebaseBootstrap.initialize(),
-    AttributionService.instance.restorePendingFromPrefs(),
+    NotificationService.initialize().catchError((Object e, StackTrace st) {
+      SafeLogger.error('bootstrap', '[Lumio] NotificationService init failed', e, st);
+    }),
+    FirebaseBootstrap.initialize().catchError((Object e, StackTrace st) {
+      SafeLogger.error('bootstrap', '[Lumio] FirebaseBootstrap init failed', e, st);
+    }),
+    AttributionService.instance.restorePendingFromPrefs()
+        .catchError((Object e, StackTrace st) {
+      SafeLogger.error('bootstrap', '[Lumio] Attribution restore failed', e, st);
+    }),
   ]);
   if (FirebaseBootstrap.isInitialized) {
     unawaited(AdSafetyService.instance.prefetchRemoteConfig());
@@ -402,8 +438,12 @@ class _LumioAppState extends State<LumioApp> {
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
           builder: (_) => PlayerScreen(
-            streamUrl: args?['streamUrl'] as String? ?? '',
-            title: args?['title'] as String? ?? '',
+            streamUrl: args?['streamUrl'] is String
+                ? args!['streamUrl'] as String
+                : '',
+            title: args?['title'] is String
+                ? args!['title'] as String
+                : '',
           ),
         );
       default:
@@ -429,6 +469,7 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   int _navIdx = 0;
+  bool _isHandlingPop = false;
 
   /// Index into [AppDrawerDestination] (int avoids hot-reload type mismatch after drawer refactor).
   int _drawerSelectedIndex = 0;
@@ -475,7 +516,11 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
       case AppDrawerDestination.entertainment:
       case AppDrawerDestination.kDrama:
       case AppDrawerDestination.movies:
-        final cat = dest.categoryName!;
+        final cat = dest.categoryName;
+        if (cat == null) {
+          assert(false, 'categoryName is null for $dest — check AppDrawerDestination enum');
+          return;
+        }
         Navigator.of(context).push(
           MaterialPageRoute<void>(
             builder: (_) => CategoryChannelsScreen(
@@ -500,6 +545,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // releasePlacementsForTab is safe to call before pool warm-up - no-op if pool is empty
       WebViewPool.instance.releasePlacementsForTab(_navIdx);
       unawaited(AdManager.instance.maybeShowPopunder());
       if (!AdManager.instance.isReady) {
@@ -534,6 +580,12 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
       if (!mounted) return;
       if (!prov.channelsLoading || prov.channels.isNotEmpty) break;
       await Future.delayed(const Duration(milliseconds: 150));
+      if (i == 39) {
+        SafeLogger.warn(
+          'deeplink',
+          '[Lumio] Channel load poll timed out after 6s — deep link may not apply',
+        );
+      }
     }
     if (!mounted) return;
     await _applyPendingDeepLink();
@@ -614,10 +666,15 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
         child: PopScope(
           canPop: false,
           onPopInvokedWithResult: (didPop, _) async {
-            if (didPop) return;
-            final exit = await _onWillPop();
-            if (exit && context.mounted) {
-              SystemNavigator.pop();
+            if (didPop || _isHandlingPop) return;
+            _isHandlingPop = true;
+            try {
+              final exit = await _onWillPop();
+              if (exit && context.mounted) {
+                SystemNavigator.pop();
+              }
+            } finally {
+              _isHandlingPop = false;
             }
           },
           child: Scaffold(

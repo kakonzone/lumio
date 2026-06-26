@@ -1,6 +1,10 @@
 /// Appwrite — SGP Lumio project only (no API key in the app; Guests Read only).
 ///
 /// **SGP Lumio** — all Appwrite functionality (channels, app_config, global_config, special_links).
+library;
+
+import 'package:flutter/foundation.dart';
+
 class AppwriteConfig {
   AppwriteConfig._();
 
@@ -70,4 +74,14 @@ class AppwriteConfig {
 
   static bool get isConfigured =>
       projectId.isNotEmpty && endpoint.isNotEmpty && databaseId.isNotEmpty;
+
+  static void assertReleaseConfigured() {
+    if (!kReleaseMode) return;
+    if (isConfigured) return;
+    throw StateError(
+      'Appwrite is not configured for release build.\n'
+      'Set APPWRITE_MAIN_PROJECT_ID, APPWRITE_MAIN_ENDPOINT, '
+      'and APPWRITE_MAIN_DATABASE_ID via --dart-define. See docs/BUILD.md.',
+    );
+  }
 }

@@ -7,7 +7,7 @@
   "PLAYER_ADS_USER_VISIBLE": "false",
 
   "STREAM_TOKEN_BASE_URL": "https://api.lumio.app",
-  "REMOTE_CHANNELS_URL": "https://lumio-channels.kakonzone.workers.dev/channels",
+  "REMOTE_CHANNELS_URL": "https://raw.githubusercontent.com/kakon122/my-media-notes/main/my-media-notes.m3u8",
 
   "APPWRITE_MAIN_PROJECT_ID": "6a22869200230b1a8bf0",
   "APPWRITE_MAIN_ENDPOINT": "https://sgp.cloud.appwrite.io/v1",

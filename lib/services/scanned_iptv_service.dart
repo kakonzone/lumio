@@ -58,20 +58,24 @@ http://202.70.146.135:8000/play/a04c/index.m3u8
 
     final parts = <String>[_manualM3u.trim()];
 
-    try {
-      final scan = await _dio.get(_scanPlaylistUrl);
-      if (scan.statusCode == 200 && (scan.data as String).contains('#EXTM3U')) {
-        parts.add((scan.data as String).trim());
-      }
-    } catch (_) {}
+    if (AppConfig.hasScannedIptvScan) {
+      try {
+        final scan = await _dio.get(_scanPlaylistUrl);
+        if (scan.statusCode == 200 && (scan.data as String).contains('#EXTM3U')) {
+          parts.add((scan.data as String).trim());
+        }
+      } catch (_) {}
+    }
 
-    try {
-      final jio = await _dio.get(_jioChannelsUrl);
-      if (jio.statusCode == 200) {
-        final m3u = _jioJsonToM3u(jio.data as String);
-        if (m3u.isNotEmpty) parts.add(m3u);
-      }
-    } catch (_) {}
+    if (AppConfig.hasScannedIptvJio) {
+      try {
+        final jio = await _dio.get(_jioChannelsUrl);
+        if (jio.statusCode == 200) {
+          final m3u = _jioJsonToM3u(jio.data as String);
+          if (m3u.isNotEmpty) parts.add(m3u);
+        }
+      } catch (_) {}
+    }
 
     if (parts.length <= 1 && parts.first == _manualM3u.trim()) {
       return null;

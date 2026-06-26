@@ -58,17 +58,17 @@ class AppConfig {
   /// Scanned IPTV service URLs (JioTV + scan server).
   static const String scannedIptvJioChannelsUrl = String.fromEnvironment(
     'SCANNED_IPTV_JIO_CHANNELS_URL',
-    defaultValue: 'http://103.180.212.191:3500/channels',
+    defaultValue: '',
   );
 
   static const String scannedIptvScanPlaylistUrl = String.fromEnvironment(
     'SCANNED_IPTV_SCAN_PLAYLIST_URL',
-    defaultValue: 'http://202.70.146.135:8000/playlist.m3u8',
+    defaultValue: '',
   );
 
   static const String scannedIptvJioStreamBase = String.fromEnvironment(
     'SCANNED_IPTV_JIO_STREAM_BASE',
-    defaultValue: 'http://103.180.212.191:3500/live/{id}.m3u8',
+    defaultValue: '',
   );
 
   static bool get hasBackend =>
@@ -78,20 +78,33 @@ class AppConfig {
   static bool get hasStreamTokenBaseUrl =>
       streamTokenBaseUrl.trim().isNotEmpty &&
       streamTokenBaseUrl != '__MISSING__';
+  static bool get hasScannedIptvJio =>
+      scannedIptvJioChannelsUrl.trim().isNotEmpty;
+  static bool get hasScannedIptvScan =>
+      scannedIptvScanPlaylistUrl.trim().isNotEmpty;
 
   /// Release requires [streamTokenBaseUrl] unless local cap sideload mode is on.
   /// Disabled for sideload APK builds where dart-defines may not be passed.
   static void assertReleaseStreamTokenConfigured() {
-    return; // Disabled for sideload builds - stream token config optional
+    // DISABLED: stream token infra not deployed for sideload builds yet.
+    // To re-enable: change enforceStreamToken to true.
+    const enforceStreamToken = false;
+    if (!enforceStreamToken) return;
+
+    // ignore: dead_code
     if (!isReleaseBuild) return;
+    // ignore: dead_code
     if (hasStreamTokenBaseUrl) return;
-    // Import cycle avoided — duplicate gate condition from AdConfig.
+    // ignore: dead_code
     const capLocal = bool.fromEnvironment('CAP_LOCAL_ONLY_MODE');
+    // ignore: dead_code
     const sideloadDev = bool.fromEnvironment('LUMIO_SIDELOAD_DEV');
+    // ignore: dead_code
     if (capLocal || sideloadDev) return;
+    // ignore: dead_code
     throw StateError(
-      'STREAM_TOKEN_BASE_URL must be set for release builds when '
-      'CAP_LOCAL_ONLY_MODE and LUMIO_SIDELOAD_DEV are false (see docs/BUILD.md).',
+      'STREAM_TOKEN_BASE_URL must be set for release builds. '
+      'See docs/BUILD.md.',
     );
   }
 

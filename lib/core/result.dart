@@ -9,6 +9,7 @@
 ///   // Handle error
 /// }
 /// ```
+library;
 
 /// Base class for Result type
 sealed class Result<T> {
@@ -38,7 +39,7 @@ class Failure<T> extends Result<T> {
   bool isError<E>() => error is E;
   
   /// Get error as specific type
-  E? asError<E>() => error as E?;
+  E? asError<E>() => error is E ? error as E : null;
 }
 
 /// Network-specific errors
@@ -78,11 +79,15 @@ class HttpError extends NetworkError {
   bool get isServerError => statusCode != null && statusCode! >= 500 && statusCode! < 600;
   
   /// Check if this is a timeout error
-  bool get isTimeout => statusCode == null || message.toLowerCase().contains('timeout');
-  
+  bool get isTimeout =>
+      message.toLowerCase().contains('timeout') ||
+      message.toLowerCase().contains('timed out');
+
+  // TODO: string matching is fragile if the HTTP client changes.
+  // Replace with typed exception checking when HTTP client is abstracted.
   /// Check if this is a network connectivity error
-  bool get isNetworkError => statusCode == null && 
-      (message.toLowerCase().contains('network') || 
+  bool get isNetworkError => statusCode == null &&
+      (message.toLowerCase().contains('network') ||
        message.toLowerCase().contains('connection') ||
        message.toLowerCase().contains('internet'));
 }

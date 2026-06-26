@@ -252,24 +252,27 @@ class FeaturedLiveEventsService {
       );
     }
 
-    if (kDebugMode) {
-      try {
-        final assetBody = await rootBundle.loadString(_assetPath);
-        final payload = FeaturedLiveEventsPayload.fromJson(
-          jsonDecode(assetBody) as Map<String, dynamic>,
+    // Always try bundled asset as fallback (not just debug mode)
+    try {
+      final assetBody = await rootBundle.loadString(_assetPath);
+      final payload = FeaturedLiveEventsPayload.fromJson(
+        jsonDecode(assetBody) as Map<String, dynamic>,
+      );
+      if (payload.events.isNotEmpty) {
+        _logLoaded(
+          source: FeaturedLiveEventsSource.bundledAsset,
+          payload: payload,
         );
-        if (payload.events.isNotEmpty) {
-          _logLoaded(
-            source: FeaturedLiveEventsSource.bundledAsset,
-            payload: payload,
-          );
-          return FeaturedLiveEventsLoadResult(
-            payload: payload,
-            source: FeaturedLiveEventsSource.bundledAsset,
-            errorMessage: errorMessage,
-          );
-        }
-      } catch (_) {}
+        return FeaturedLiveEventsLoadResult(
+          payload: payload,
+          source: FeaturedLiveEventsSource.bundledAsset,
+          errorMessage: errorMessage,
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[FeaturedLiveEvents] bundled asset load error: $e');
+      }
     }
 
     return FeaturedLiveEventsLoadResult(

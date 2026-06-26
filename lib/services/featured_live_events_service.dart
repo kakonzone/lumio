@@ -106,21 +106,21 @@ class FeaturedLiveEventsService {
       }
     }
 
-    // 2. Try GitHub raw JSON (disabled - URL 404)
-    // if (forceRefresh || true) {
-    //   final githubPayload = await _fetchFromGitHub();
-    //   if (githubPayload != null) {
-    //     await FeaturedLiveEventsCache.instance.write(
-    //       githubPayload,
-    //       remoteUpdatedAt: DateTime.now().toIso8601String(),
-    //     );
-    //     return FeaturedLiveEventsLoadResult(
-    //       payload: githubPayload,
-    //       source: FeaturedLiveEventsSource.appwrite, // reuse enum value
-    //       remoteUpdatedAt: DateTime.now().toIso8601String(),
-    //     );
-    //   }
-    // }
+    // 2. Try GitHub raw JSON (primary source)
+    if (forceRefresh || true) {
+      final githubPayload = await _fetchFromGitHub();
+      if (githubPayload != null) {
+        await FeaturedLiveEventsCache.instance.write(
+          githubPayload,
+          remoteUpdatedAt: DateTime.now().toIso8601String(),
+        );
+        return FeaturedLiveEventsLoadResult(
+          payload: githubPayload,
+          source: FeaturedLiveEventsSource.appwrite, // reuse enum value for GitHub
+          remoteUpdatedAt: DateTime.now().toIso8601String(),
+        );
+      }
+    }
 
     // 3. Fallback: Appwrite (if configured)
     if (AppwriteConfig.isConfigured) {

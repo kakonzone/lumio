@@ -1,19 +1,16 @@
 import '../../config/ad_config.dart';
-import '../../config/monetag_config.dart';
 
-/// Picks URLs from Adsterra and Monetag direct links per channel-tap browser open.
+/// Picks URLs from Adsterra direct links per channel-tap browser open.
 /// Rotates sequentially (chain pattern) instead of random for consistent user experience.
+/// Monetag removed - using only Adsterra direct links.
 class DirectLinkRotator {
   DirectLinkRotator._();
 
   static int _currentIndex = 0;
 
   static String? pickUrl() {
-    // Combine Adsterra and Monetag direct links for rotation
-    final pool = <String>[
-      ...AdConfig.adsterraDirectLinksReleaseSafe,
-      if (MonetagConfig.isConfigured) MonetagConfig.directLinkUrl,
-    ];
+    // Use only Adsterra direct links (Monetag removed)
+    final pool = AdConfig.adsterraDirectLinksReleaseSafe;
 
     // Filter out empty strings
     final validPool = pool.where((url) => url.trim().isNotEmpty).toList();

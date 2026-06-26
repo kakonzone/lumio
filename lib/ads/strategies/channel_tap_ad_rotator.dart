@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import '../../config/app_constants.dart';
-import '../../config/monetag_config.dart';
 import '../../services/ad_safety_service.dart';
 import '../../services/user_preferences.dart';
 
@@ -14,9 +13,6 @@ import '../../services/user_preferences.dart';
 enum ChannelTapAdNetwork {
   adsterra,
 
-  /// Monetag smartlink / direct (PropellerAds-family).
-  propeller,
-
   /// Unity Ads interstitial — rotation slot A.
   unityA,
 
@@ -28,7 +24,6 @@ extension ChannelTapAdNetworkX on ChannelTapAdNetwork {
   /// Firebase / debug label.
   String get analyticsName => switch (this) {
         ChannelTapAdNetwork.adsterra => 'adsterra',
-        ChannelTapAdNetwork.propeller => 'monetag',
         ChannelTapAdNetwork.unityA => 'unity_interstitial_a',
         ChannelTapAdNetwork.unityB => 'unity_interstitial_b',
       };
@@ -36,7 +31,6 @@ extension ChannelTapAdNetworkX on ChannelTapAdNetwork {
   /// Passed to [AdAnalytics.logInterstitialShown] via Unity Ads trigger string.
   String get interstitialTrigger => switch (this) {
         ChannelTapAdNetwork.adsterra => 'channel_tap_adsterra',
-        ChannelTapAdNetwork.propeller => 'channel_tap_monetag',
         ChannelTapAdNetwork.unityA => 'channel_tap_unity_a',
         ChannelTapAdNetwork.unityB => 'channel_tap_unity_b',
       };
@@ -51,40 +45,32 @@ class ChannelTapAdRotator {
 
   static final _rng = Random();
 
-  /// Sequential rotation: Monetag → Adsterra → Unity A → Unity B → loop
+  /// Sequential rotation: Adsterra → Unity A → Unity B → loop (Monetag removed)
   static ChannelTapAdNetwork selectFirstTapNetwork() {
     if (AdSafetyService.instance.preferCleanSdkRouting) {
       return _rng.nextBool()
           ? ChannelTapAdNetwork.unityA
           : ChannelTapAdNetwork.unityB;
     }
-    if (!MonetagConfig.isConfigured) {
-      final roll = _rng.nextInt(100);
-      if (roll < 55) return ChannelTapAdNetwork.adsterra;
-      return roll < 75
-          ? ChannelTapAdNetwork.unityA
-          : ChannelTapAdNetwork.unityB;
-    }
-    final rand = _rng.nextInt(100);
-    if (rand < 40) return ChannelTapAdNetwork.adsterra;
-    if (rand < 70) return ChannelTapAdNetwork.propeller;
-    if (rand < 85) return ChannelTapAdNetwork.unityA;
-    return ChannelTapAdNetwork.unityB;
+    final roll = _rng.nextInt(100);
+    if (roll < 70) return ChannelTapAdNetwork.adsterra;
+    return roll < 85
+        ? ChannelTapAdNetwork.unityA
+        : ChannelTapAdNetwork.unityB;
   }
 
-  /// Sequential rotation: tap 1→Monetag, tap 2→Adsterra, tap 3→Unity A, tap 4→Unity B, loop
+  /// Sequential rotation: tap 1→Adsterra, tap 2→Unity A, tap 3→Unity B, loop (Monetag removed)
   static Future<ChannelTapAdNetwork> next() async {
     await UserPreferences.ensureInit();
     final i =
         UserPreferences.p.getInt(AppConstants.prefChannelTapAdRotation) ?? 0;
-    final rotationIndex = i % 4;
+    final rotationIndex = i % 3;
 
     final network = switch (rotationIndex) {
-      0 => ChannelTapAdNetwork.propeller, // Monetag direct
-      1 => ChannelTapAdNetwork.adsterra, // Adsterra direct
-      2 => ChannelTapAdNetwork.unityA, // Unity A
-      3 => ChannelTapAdNetwork.unityB, // Unity B
-      _ => ChannelTapAdNetwork.propeller,
+      0 => ChannelTapAdNetwork.adsterra, // Adsterra direct
+      1 => ChannelTapAdNetwork.unityA, // Unity A
+      2 => ChannelTapAdNetwork.unityB, // Unity B
+      _ => ChannelTapAdNetwork.adsterra,
     };
 
     await UserPreferences.p.setInt(

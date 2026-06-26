@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:http/http.dart' as http;
 
 import '../models/model.dart';
 
@@ -94,7 +95,7 @@ class StreamSecurityProber {
     try {
       final response = await _dio.head(url);
 
-      final contentType = response.headers['content-type'];
+      final contentType = response.headers['content-type']?.first;
       final isValidStream = _isValidStreamContentType(contentType);
 
       return StreamProbeResult(

@@ -6,11 +6,9 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import '../core/logging/safe_logger.dart';
 import '../ads/ad_manager.dart';
-import '../ads/interstitial_chain_controller.dart';
 import '../provider/app_config_provider.dart';
 import '../provider/theme_provider.dart';
 import '../services/ad_consent_service.dart';
-import '../services/ad_trigger_manager.dart';
 import '../services/remote_channels_service.dart';
 import '../services/special_link/special_link_cache.dart';
 import '../widgets/ad_consent_dialog.dart';
@@ -35,7 +33,6 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   bool _didNavigate = false;
-  bool _interstitialChainStarted = false;
 
   @override
   void initState() {
@@ -59,8 +56,6 @@ class _SplashScreenState extends State<SplashScreen> {
         onTimeout: () {
           SafeLogger.debug('splash',
               '[Splash] timed out — opening home (providers will load lazily)');
-          // BUG FIX: Cancel interstitial chain if it started
-          _interstitialChainStarted = false;
           return true;
         },
       );
@@ -80,12 +75,6 @@ class _SplashScreenState extends State<SplashScreen> {
           ),
         ),
       );
-      return;
-    }
-    
-    // BUG FIX: Check if interstitial chain started navigation
-    if (_interstitialChainStarted) {
-      SafeLogger.debug('splash', '[Splash] Interstitial chain handled navigation, skipping home');
       return;
     }
     
@@ -156,40 +145,8 @@ class _SplashScreenState extends State<SplashScreen> {
     // App-open promo ad is now shown before splash (in AppOpenAdScreen)
     // No need to show it here anymore
 
-    // Show interstitial ad chain before home navigation (frequency capped: 1 per hour)
-    try {
-      if (AdManager.instance.adsEnabled && mounted) {
-        // Check hourly cap before showing
-        final canShow = await AdTriggerManager.instance.canShowSplashInterstitialChain();
-        if (canShow) {
-          // BUG FIX: Set flag before starting interstitial chain
-          _interstitialChainStarted = true;
-          _didNavigate = true;
-          
-          if (!mounted) return false;
-          
-          await InterstitialChainController.showAdChain(
-            context,
-            adCount: 2,
-            skipSeconds: 5,
-          );
-          
-          // BUG FIX: Check mounted after interstitial chain
-          if (!mounted) return false;
-          
-          await AdTriggerManager.instance.recordSplashInterstitialChainShown();
-          
-          // BUG FIX: Reset flag if interstitial chain completed without navigation
-          _interstitialChainStarted = false;
-        }
-      }
-    } catch (e) {
-      SafeLogger.error('splash', '[Splash] interstitial chain failed', e, null);
-      // BUG FIX: Reset flag on error
-      _interstitialChainStarted = false;
-      _didNavigate = false;
-      // Ad fail করলেও home-এ যাবে, user আটকাবে না
-    }
+    // Interstitial ad chain removed from splash screen
+    // Navigate to home directly
 
     // Schedule background ad engine
     AdManager.instance.scheduleBackgroundEngineAfterSplash();

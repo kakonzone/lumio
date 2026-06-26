@@ -32,7 +32,6 @@ import 'ad_placement_config.dart';
 import '../services/app_session_tracker.dart';
 import 'strategies/geo_targeting.dart';
 // import 'utils/webview_pool.dart'; // REMOVED: Unused import
-import '../screens/app_open_promo_screen.dart';
 
 /// Global ad orchestration — singleton.
 class AdManager {
@@ -333,7 +332,7 @@ class AdManager {
     AdDebugLog.info('AdManager', 'popunder mounted — session cap recorded');
   }
 
-  /// After home is visible: preload SDK → Unity Ads interstitial → Adsterra promo.
+  /// After home is visible: preload SDK.
   Future<void> warmupAfterHomeVisible(BuildContext context) async {
     if (_postHomeWarmupStarted) return;
     _postHomeWarmupStarted = true;
@@ -342,49 +341,7 @@ class AdManager {
     await preloadFromSplash();
     if (!context.mounted) return;
     await AdColdStartEligibility.evaluateAndLog();
-    if (!context.mounted) return;
-    await Future.delayed(
-      Duration(milliseconds: AdConfig.appOpenPromoDeferMs),
-    );
-    if (!context.mounted) return;
-    await presentColdStartPromoIfEligible(context);
-  }
-
-  /// Unity Ads interstitial first, then in-app Adsterra WebView promo.
-  Future<bool> presentColdStartPromoIfEligible(BuildContext context) async {
-    final report = await AdColdStartEligibility.evaluate();
-    if (!report.canShowAnyPromo) {
-      _logColdStartSkipped(report);
-      return false;
-    }
-    if (!context.mounted) return false;
-
-    if (report.canShowUnity) {
-      final unityShown = await showColdStartAppOpen();
-      if (unityShown) return true;
-    }
-
-    final showPromoScreen = report.canShowAdsterra || report.canShowHousePromo;
-    if (!showPromoScreen) {
-      unawaited(
-        analytics.logAdInterstitialFailed(
-          placement: InterstitialPlacement.appOpen.analyticsName,
-          network: 'cold_start',
-          error: AdColdStartBlockerCode.noThirdPartyFill.name,
-        ),
-      );
-      report.logToConsole();
-      return false;
-    }
-    if (!context.mounted) return false;
-
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (_) => const AppOpenPromoScreen(),
-        fullscreenDialog: true,
-      ),
-    );
-    return true;
+    // App-open promo removed - no ad shown after home
   }
 
   void _logColdStartSkipped(AdColdStartEligibilityReport report) {

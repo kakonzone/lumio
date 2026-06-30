@@ -240,7 +240,7 @@ class _BrightnessIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(tokens.SpacingTokens.s16),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: tokens.AppTokens.surface2,
         borderRadius: tokens.RadiusTokens.circularLg,
       ),
@@ -275,7 +275,7 @@ class _VolumeIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(tokens.SpacingTokens.s16),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: tokens.AppTokens.surface2,
         borderRadius: tokens.RadiusTokens.circularLg,
       ),

@@ -205,7 +205,7 @@ class _PageIndicators extends StatelessWidget {
           child: Container(
             width: isCurrent ? 24 : 8,
             height: 8,
-            margin: EdgeInsets.symmetric(horizontal: 4),
+            margin: const EdgeInsets.symmetric(horizontal: 4),
             decoration: BoxDecoration(
               color: isCurrent
                   ? tokens.AppTokens.accent

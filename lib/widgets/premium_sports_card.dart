@@ -1,10 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/model.dart';
-import '../theme/app_theme.dart';
-import '../theme/tokens/colors.dart';
 import '../utils/bdt_time.dart';
-import '../widgets/channel_avatar.dart';
 import '../widgets/team_avatar.dart';
 
 /// Premium futuristic sports match card with neon glow effects.

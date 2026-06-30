@@ -75,7 +75,7 @@ class ChannelNameNormalizer {
     var name = _decodeHtml(raw.trim());
 
     if (name.isEmpty && (tvgName?.trim().isNotEmpty ?? false)) {
-      name = _decodeHtml(tvgName!.trim());
+      name = _decodeHtml(tvgName?.trim() ?? '');
     }
 
     name = name.replaceAll(_urlInName, '').trim();
@@ -89,7 +89,7 @@ class ChannelNameNormalizer {
     name = name.replaceAll(RegExp(r'\s{2,}'), ' ').trim();
 
     if (_looksBroken(name) && (tvgName?.trim().isNotEmpty ?? false)) {
-      name = _decodeHtml(tvgName!.trim());
+      name = _decodeHtml(tvgName?.trim() ?? '');
       name = name.replaceAll(_urlInName, '').trim();
     }
 

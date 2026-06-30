@@ -25,8 +25,8 @@ class Skeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final baseColor = tokens.AppTokens.surface2;
-    final highlightColor = tokens.AppTokens.surface3;
+    const baseColor = tokens.AppTokens.surface2;
+    const highlightColor = tokens.AppTokens.surface3;
     final reduceMotion = tokens.MotionTokens.reduceMotion(context);
 
     return Container(
@@ -39,7 +39,7 @@ class Skeleton extends StatelessWidget {
       ),
       child: reduceMotion
           ? null
-          : _ShimmerEffect(
+          : const _ShimmerEffect(
               baseColor: baseColor,
               highlightColor: highlightColor,
             ),

@@ -17,12 +17,12 @@ class ScoreStateWidget extends StatelessWidget {
       ScoreInitial() => const _InitialState(),
       ScoreLoading() => const _LoadingState(),
       ScoreLoaded() => const SizedBox.shrink(),
-      ScoreCached() => _CachedState(state: scoreState as ScoreCached),
-      ScoreNetworkError() => _NetworkErrorState(state: scoreState as ScoreNetworkError),
-      ScoreApiError() => _ApiErrorState(state: scoreState as ScoreApiError),
-      ScoreParseError() => _ParseErrorState(state: scoreState as ScoreParseError),
-      ScoreTimeoutError() => _TimeoutErrorState(state: scoreState as ScoreTimeoutError),
-      ScoreUnknownError() => _UnknownErrorState(state: scoreState as ScoreUnknownError),
+      ScoreCached() => _CachedState(state: scoreState),
+      ScoreNetworkError() => _NetworkErrorState(state: scoreState),
+      ScoreApiError() => _ApiErrorState(state: scoreState),
+      ScoreParseError() => _ParseErrorState(state: scoreState),
+      ScoreTimeoutError() => _TimeoutErrorState(state: scoreState),
+      ScoreUnknownError() => _UnknownErrorState(state: scoreState),
       ScoreEmpty() => const _EmptyState(),
     };
   }

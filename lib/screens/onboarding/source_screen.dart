@@ -33,14 +33,14 @@ class SourceScreen extends StatelessWidget {
       backgroundColor: tokens.AppTokens.background,
       body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.symmetric(
+          padding: const EdgeInsets.symmetric(
             horizontal: tokens.SpacingTokens.s24,
           ),
           child: Column(
             children: [
               // Heading
               Padding(
-                padding: EdgeInsets.only(
+                padding: const EdgeInsets.only(
                   top: tokens.SpacingTokens.s40,
                   bottom: tokens.SpacingTokens.s32,
                 ),
@@ -65,7 +65,7 @@ class SourceScreen extends StatelessWidget {
                         onSourceSelected(OnboardingSourceType.m3u);
                       },
                     ),
-                    SizedBox(height: tokens.SpacingTokens.s16),
+                    const SizedBox(height: tokens.SpacingTokens.s16),
                     _SourceOptionCard(
                       icon: PhosphorIcons.database(),
                       title: Strings.onboardingSourceXtream,
@@ -75,7 +75,7 @@ class SourceScreen extends StatelessWidget {
                         onSourceSelected(OnboardingSourceType.xtream);
                       },
                     ),
-                    SizedBox(height: tokens.SpacingTokens.s16),
+                    const SizedBox(height: tokens.SpacingTokens.s16),
                     _SourceOptionCard(
                       icon: PhosphorIcons.uploadSimple(),
                       title: Strings.onboardingSourceUpload,
@@ -101,7 +101,7 @@ class SourceScreen extends StatelessWidget {
                 ),
               ),
 
-              SizedBox(height: tokens.SpacingTokens.s24),
+              const SizedBox(height: tokens.SpacingTokens.s24),
             ],
           ),
         ),
@@ -139,7 +139,7 @@ class _SourceOptionCard extends StatelessWidget {
           ),
         ),
         child: Padding(
-          padding: EdgeInsets.symmetric(
+          padding: const EdgeInsets.symmetric(
             horizontal: tokens.SpacingTokens.s16,
           ),
           child: Row(
@@ -150,7 +150,7 @@ class _SourceOptionCard extends StatelessWidget {
                 size: 32,
                 color: tokens.AppTokens.accent,
               ),
-              SizedBox(width: tokens.SpacingTokens.s16),
+              const SizedBox(width: tokens.SpacingTokens.s16),
 
               // Title and description
               Expanded(
@@ -162,7 +162,7 @@ class _SourceOptionCard extends StatelessWidget {
                       title,
                       style: tokens.TypographyTokens.bodyPrimary,
                     ),
-                    SizedBox(height: tokens.SpacingTokens.s4),
+                    const SizedBox(height: tokens.SpacingTokens.s4),
                     Text(
                       description,
                       style: tokens.TypographyTokens.captionSecondary,

@@ -21,6 +21,7 @@ class AdWaterfall {
   AdAnalytics? _analytics;
 
   final Map<String, int> _sessionFailures = {};
+  bool _isRunning = false;
 
   void attach({
     required UnityAdsService unityAds,
@@ -31,7 +32,7 @@ class AdWaterfall {
   }
 
   Duration get _networkTimeout =>
-      Duration(seconds: AdConfig.waterfallTimeoutSeconds);
+      const Duration(seconds: 8);
 
   bool _isSkipped(String network) {
     final n = _sessionFailures[network] ?? 0;
@@ -124,111 +125,132 @@ class AdWaterfall {
     BuildContext? context, {
     required String trigger,
   }) async {
-    final analytics = _analytics;
-    final ua = _unityAds;
+    if (_isRunning) {
+      adLog('[AdWaterfall] already running, skipping concurrent call');
+      return false;
+    }
+    _isRunning = true;
+    try {
+      final analytics = _analytics;
+      final ua = _unityAds;
 
-    if (ua != null && ua.isInitialized && !_isSkipped('unity')) {
+      if (ua != null && ua.isInitialized && !_isSkipped('unity')) {
+        unawaited(
+          analytics?.logWaterfallAttempt(
+            format: 'interstitial',
+            network: 'unity',
+            trigger: trigger,
+          ),
+        );
+        ua.setInterstitialTrigger(trigger);
+
+        final uaOk = await _tryUnityInterstitial(ua).timeout(
+          _networkTimeout,
+          onTimeout: () {
+            adLog('[AdWaterfall] unity interstitial timeout');
+            return false;
+          },
+        );
+
+        if (uaOk) {
+          _recordSuccess('unity');
+          unawaited(
+            analytics?.logFill(network: 'unity', placement: 'interstitial'),
+          );
+          return true;
+        }
+
+        _recordFailure('unity');
+        unawaited(
+          analytics?.logWaterfallFallback(
+            format: 'interstitial',
+            fromNetwork: 'unity',
+            toNetwork: 'adsterra',
+            trigger: trigger,
+            reason: 'no_fill_or_timeout',
+          ),
+        );
+      }
+
+      if (!AdSafetyService.instance.adsterraEnabled || _isSkipped('adsterra')) {
+        unawaited(
+          analytics?.logWaterfallFailure(
+            format: 'interstitial',
+            trigger: trigger,
+            lastNetwork: 'unity',
+          ),
+        );
+        unawaited(analytics?.logNoFill(placement: 'interstitial'));
+        return false;
+      }
+
       unawaited(
         analytics?.logWaterfallAttempt(
           format: 'interstitial',
-          network: 'unity',
+          network: 'adsterra',
           trigger: trigger,
         ),
       );
-      ua.setInterstitialTrigger(trigger);
 
-      final uaOk = await _tryUnityInterstitial(ua).timeout(
+      if (context != null && context.mounted) {
+        final webOk = await _showAdsterraFullscreen(
+          context,
+          placement: 'waterfall_interstitial_$trigger',
+          minSeconds: AdConfig.channelTapAdMinSeconds,
+        ).timeout(
+          _networkTimeout,
+          onTimeout: () {
+            adLog('[AdWaterfall] adsterra fullscreen timeout');
+            return false;
+          },
+        );
+        if (webOk) {
+          _recordSuccess('adsterra');
+          unawaited(
+            analytics?.logFill(
+              network: 'adsterra',
+              placement: 'waterfall_interstitial_webview',
+            ),
+          );
+          return true;
+        }
+      }
+
+      final linkOk = await AdsterraEngine.instance.openDirectLink(
+        placement: 'waterfall_interstitial_$trigger',
+        analytics: analytics,
+      ).timeout(
         _networkTimeout,
         onTimeout: () {
-          adLog('[AdWaterfall] unity interstitial timeout');
+          adLog('[AdWaterfall] adsterra direct link timeout');
           return false;
         },
       );
 
-      if (uaOk) {
-        _recordSuccess('unity');
-        unawaited(
-          analytics?.logFill(network: 'unity', placement: 'interstitial'),
-        );
-        return true;
-      }
-
-      _recordFailure('unity');
-      unawaited(
-        analytics?.logWaterfallFallback(
-          format: 'interstitial',
-          fromNetwork: 'unity',
-          toNetwork: 'adsterra',
-          trigger: trigger,
-          reason: 'no_fill_or_timeout',
-        ),
-      );
-    }
-
-    if (!AdSafetyService.instance.adsterraEnabled || _isSkipped('adsterra')) {
-      unawaited(
-        analytics?.logWaterfallFailure(
-          format: 'interstitial',
-          trigger: trigger,
-          lastNetwork: 'unity',
-        ),
-      );
-      unawaited(analytics?.logNoFill(placement: 'interstitial'));
-      return false;
-    }
-
-    unawaited(
-      analytics?.logWaterfallAttempt(
-        format: 'interstitial',
-        network: 'adsterra',
-        trigger: trigger,
-      ),
-    );
-
-    if (context != null && context.mounted) {
-      final webOk = await _showAdsterraFullscreen(
-        context,
-        placement: 'waterfall_interstitial_$trigger',
-        minSeconds: AdConfig.channelTapAdMinSeconds,
-      );
-      if (webOk) {
+      if (linkOk) {
         _recordSuccess('adsterra');
         unawaited(
           analytics?.logFill(
             network: 'adsterra',
-            placement: 'waterfall_interstitial_webview',
+            placement: 'waterfall_interstitial_direct',
           ),
         );
         return true;
       }
-    }
 
-    final linkOk = await AdsterraEngine.instance.openDirectLink(
-      placement: 'waterfall_interstitial_$trigger',
-      analytics: analytics,
-    );
-
-    if (linkOk) {
-      _recordSuccess('adsterra');
+      _recordFailure('adsterra');
       unawaited(
-        analytics?.logFill(
-          network: 'adsterra',
-          placement: 'waterfall_interstitial_direct',
+        analytics?.logWaterfallFailure(
+          format: 'interstitial',
+          trigger: trigger,
+          lastNetwork: 'adsterra',
         ),
       );
-      return true;
+      unawaited(analytics?.logNoFill(placement: 'interstitial'));
+      return false;
+    } finally {
+      _isRunning = false;
     }
-
-    _recordFailure('adsterra');
-    unawaited(
-      analytics?.logWaterfallFailure(
-        format: 'interstitial',
-        trigger: trigger,
-        lastNetwork: 'adsterra',
-      ),
-    );
-    unawaited(analytics?.logNoFill(placement: 'interstitial'));
-    return false;
   }
 
   Future<bool> _tryUnityInterstitial(UnityAdsService ua) async {
@@ -274,6 +296,12 @@ class AdWaterfall {
 
   @visibleForTesting
   void resetFailureCountsForTest() => _sessionFailures.clear();
+
+  /// Cancel any ongoing waterfall operation (called on app exit).
+  void dispose() {
+    _isRunning = false;
+    _sessionFailures.clear();
+  }
 }
 
 /// Fullscreen Adsterra WebView fallback (interstitial).

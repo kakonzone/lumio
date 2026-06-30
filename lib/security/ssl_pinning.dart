@@ -5,17 +5,18 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 
 import '../config/app_config.dart';
-import '../utils/ad_debug_log.dart';
 import 'security_config.dart';
 
 /// TLS SPKI pinning — used by [SecureDio] via [validateCertificate].
 class SslPinning {
   SslPinning._();
 
-  static bool _loggedFirstPinSuccess = false;
-
-  @visibleForTesting
-  static void resetPinLogForTest() => _loggedFirstPinSuccess = false;
+  /// CDN domains exempt from pinning (certificates rotate frequently)
+  static const _exemptDomains = [
+    'raw.githubusercontent.com',
+    'github.com',
+    'cdn.jsdelivr.net',
+  ];
 
   /// Call from `main()` before any HTTP client is created.
   static void assertReleaseConfiguration() {
@@ -24,6 +25,8 @@ class SslPinning {
 
   static bool hostRequiresPinning(String host) {
     final normalized = host.toLowerCase();
+    // Exempt CDN domains from pinning (certificates rotate frequently)
+    if (_exemptDomains.contains(normalized)) return false;
     if (SecurityConfig.hostPins.containsKey(normalized)) return true;
     if (!AppConfig.hasStreamTokenBaseUrl) return false;
     final tokenHost =
@@ -46,7 +49,13 @@ class SslPinning {
   }
 
   static bool validateCertificate(X509Certificate? cert, String host) {
-    return true; // SSL pinning disabled — not required for sideload APK
+    // SSL pinning disabled — not required for sideload APK
+    // TODO: Re-enable pinning for production builds when pins are configured
+    if (cert == null) {
+      debugPrint('[SSL] Null certificate for $host');
+      return false;
+    }
+    return true;
   }
 
   @visibleForTesting

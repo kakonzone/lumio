@@ -97,20 +97,20 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(
+          padding: const EdgeInsets.symmetric(
             horizontal: tokens.SpacingTokens.s24,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(height: tokens.SpacingTokens.s16),
+              const SizedBox(height: tokens.SpacingTokens.s16),
 
               // Language selection
               Text(
                 Strings.onboardingLanguageLabel,
                 style: tokens.TypographyTokens.labelPrimary,
               ),
-              SizedBox(height: tokens.SpacingTokens.s12),
+              const SizedBox(height: tokens.SpacingTokens.s12),
               Wrap(
                 spacing: tokens.SpacingTokens.s8,
                 runSpacing: tokens.SpacingTokens.s8,
@@ -124,7 +124,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                       HapticFeedback.selectionClick();
                     },
                     child: Container(
-                      padding: EdgeInsets.symmetric(
+                      padding: const EdgeInsets.symmetric(
                         horizontal: tokens.SpacingTokens.s16,
                         vertical: tokens.SpacingTokens.s8,
                       ),
@@ -153,14 +153,14 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                 }).toList(),
               ),
 
-              SizedBox(height: tokens.SpacingTokens.s32),
+              const SizedBox(height: tokens.SpacingTokens.s32),
 
               // Content interests
               Text(
                 Strings.onboardingInterestsLabel,
                 style: tokens.TypographyTokens.labelPrimary,
               ),
-              SizedBox(height: tokens.SpacingTokens.s12),
+              const SizedBox(height: tokens.SpacingTokens.s12),
               Wrap(
                 spacing: tokens.SpacingTokens.s8,
                 runSpacing: tokens.SpacingTokens.s8,
@@ -169,7 +169,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                   return Pressable(
                     onTap: () => _toggleInterest(interest),
                     child: Container(
-                      padding: EdgeInsets.symmetric(
+                      padding: const EdgeInsets.symmetric(
                         horizontal: tokens.SpacingTokens.s16,
                         vertical: tokens.SpacingTokens.s8,
                       ),
@@ -196,7 +196,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                               size: 14,
                               color: tokens.AppTokens.accent,
                             ),
-                            SizedBox(width: tokens.SpacingTokens.s4),
+                            const SizedBox(width: tokens.SpacingTokens.s4),
                           ],
                           Text(
                             interest,
@@ -211,7 +211,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                 }).toList(),
               ),
 
-              SizedBox(height: tokens.SpacingTokens.s32),
+              const SizedBox(height: tokens.SpacingTokens.s32),
 
               // Adult content toggle
               Row(
@@ -224,7 +224,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                           Strings.onboardingAdultContentLabel,
                           style: tokens.TypographyTokens.bodyPrimary,
                         ),
-                        SizedBox(height: tokens.SpacingTokens.s4),
+                        const SizedBox(height: tokens.SpacingTokens.s4),
                         Text(
                           Strings.onboardingAdultContentDesc,
                           style: tokens.TypographyTokens.captionSecondary,
@@ -244,14 +244,14 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                 ],
               ),
 
-              SizedBox(height: tokens.SpacingTokens.s40),
+              const SizedBox(height: tokens.SpacingTokens.s40),
 
               // Finish button
               Pressable(
                 onTap: _handleFinish,
                 child: Container(
                   width: double.infinity,
-                  padding: EdgeInsets.symmetric(
+                  padding: const EdgeInsets.symmetric(
                     vertical: tokens.SpacingTokens.s16,
                   ),
                   decoration: BoxDecoration(
@@ -266,7 +266,7 @@ class _PreferencesScreenState extends State<PreferencesScreen> {
                 ),
               ),
 
-              SizedBox(height: tokens.SpacingTokens.s24),
+              const SizedBox(height: tokens.SpacingTokens.s24),
             ],
           ),
         ),

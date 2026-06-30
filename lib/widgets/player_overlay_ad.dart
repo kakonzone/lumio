@@ -187,13 +187,13 @@ class _PlayerOverlayAdState extends State<PlayerOverlayAd> {
   Widget _buildAdContent() {
     // Use AdsterraNativeBanner or PropellerInPagePushBanner based on config
     if (AdConfig.hasAdsterraWebViewZones) {
-      return AdsterraNativeBanner(
+      return const AdsterraNativeBanner(
         placement: 'player_overlay',
         height: 34,
         userVisible: AdConfig.playerAdsUserVisible,
       );
     } else if (MonetagConfig.isConfigured) {
-      return PropellerInPagePushBanner(
+      return const PropellerInPagePushBanner(
         placement: 'player_overlay_monetag',
         height: 34,
         userVisible: AdConfig.playerAdsUserVisible,

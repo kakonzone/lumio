@@ -155,7 +155,7 @@ class EmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: EdgeInsets.symmetric(
+        padding: const EdgeInsets.symmetric(
           horizontal: tokens.SpacingTokens.s32,
           vertical: tokens.SpacingTokens.s56,
         ),
@@ -165,7 +165,7 @@ class EmptyState extends StatelessWidget {
             // Illustration
             _buildIllustration(),
 
-            SizedBox(height: tokens.SpacingTokens.s24),
+            const SizedBox(height: tokens.SpacingTokens.s24),
 
             // Title
             Text(
@@ -174,7 +174,7 @@ class EmptyState extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
 
-            SizedBox(height: tokens.SpacingTokens.s12),
+            const SizedBox(height: tokens.SpacingTokens.s12),
 
             // Subtitle
             Text(
@@ -185,7 +185,7 @@ class EmptyState extends StatelessWidget {
 
             // Action button (if provided)
             if (actionLabel != null && onAction != null) ...[
-              SizedBox(height: tokens.SpacingTokens.s24),
+              const SizedBox(height: tokens.SpacingTokens.s24),
               _ActionButton(
                 label: actionLabel!,
                 onPressed: onAction!,
@@ -260,7 +260,7 @@ class _ActionButton extends StatelessWidget {
     return Pressable(
       onTap: onPressed,
       child: Container(
-        padding: EdgeInsets.symmetric(
+        padding: const EdgeInsets.symmetric(
           horizontal: tokens.SpacingTokens.s24,
           vertical: tokens.SpacingTokens.s12,
         ),

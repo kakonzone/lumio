@@ -1,6 +1,5 @@
 import 'package:dart_appwrite/models.dart' as aw_models;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lumio_tv/models/model.dart';
 import 'package:lumio_tv/services/appwrite_channel_mapper.dart';
 import 'package:lumio_tv/utils/channel_playback_links.dart';
 

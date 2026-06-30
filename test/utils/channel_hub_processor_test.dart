@@ -30,7 +30,7 @@ void main() {
   });
 
   test('playerRelated returns hub children for hub parent', () {
-    final hub = ChannelModel(
+    const hub = ChannelModel(
       id: 'hub_test',
       name: 'Test Hub',
       category: 'Entertainment',
@@ -39,7 +39,7 @@ void main() {
       isHubParent: true,
       hubGroupId: 'hub_test',
     );
-    final child = ChannelModel(
+    const child = ChannelModel(
       id: 'hub_test_b',
       name: 'Test Hub Beta',
       category: 'Entertainment',

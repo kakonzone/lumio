@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
+import 'package:flutter/foundation.dart' show kDebugMode, debugPrint, kIsWeb, visibleForTesting;
 
 import '../security/security_config.dart';
 import '../security/encryption_helper.dart';
@@ -71,7 +71,7 @@ class SecureDio {
       BaseOptions(
         baseUrl: baseUrl,
         connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 20),
+        receiveTimeout: const Duration(seconds: 30),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -103,6 +103,9 @@ class SecureDio {
               try {
                 await SecurityManager.instance.assertSecureOrThrow();
               } catch (e) {
+                if (kDebugMode) {
+                  debugPrint('[SecureDio] Security check failed for ${options.uri.host}: $e');
+                }
                 return handler.reject(
                   DioException(
                     requestOptions: options,

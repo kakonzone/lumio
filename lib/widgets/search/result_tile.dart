@@ -58,11 +58,11 @@ class ResultTile extends StatelessWidget {
       onTap: onTap,
       child: Container(
         height: 88,
-        padding: EdgeInsets.symmetric(
+        padding: const EdgeInsets.symmetric(
           horizontal: tokens.SpacingTokens.s16,
           vertical: tokens.SpacingTokens.s12,
         ),
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: tokens.AppTokens.surface1,
           border: Border(
             bottom: BorderSide(
@@ -79,7 +79,7 @@ class ResultTile extends StatelessWidget {
               type: result.type,
               isLive: result.isLive,
             ),
-            SizedBox(width: tokens.SpacingTokens.s12),
+            const SizedBox(width: tokens.SpacingTokens.s12),
 
             // Content
             Expanded(
@@ -94,7 +94,7 @@ class ResultTile extends StatelessWidget {
                   ),
 
                   if (result.subtitle != null) ...[
-                    SizedBox(height: tokens.SpacingTokens.s4),
+                    const SizedBox(height: tokens.SpacingTokens.s4),
                     Text(
                       result.subtitle!,
                       style: tokens.TypographyTokens.captionSecondary,
@@ -104,7 +104,7 @@ class ResultTile extends StatelessWidget {
                   ],
 
                   if (result.metadata != null) ...[
-                    SizedBox(height: tokens.SpacingTokens.s4),
+                    const SizedBox(height: tokens.SpacingTokens.s4),
                     Text(
                       result.metadata!,
                       style: tokens.TypographyTokens.captionTertiary,
@@ -214,7 +214,8 @@ class _HighlightedTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (matchedQuery == null || matchedQuery!.isEmpty) {
+    final matchedQueryLocal = matchedQuery;
+    if (matchedQueryLocal == null || matchedQueryLocal.isEmpty) {
       return Text(
         title,
         style: tokens.TypographyTokens.bodyPrimary,
@@ -224,7 +225,7 @@ class _HighlightedTitle extends StatelessWidget {
     }
 
     // Find and highlight matched substring
-    final queryLower = matchedQuery!.toLowerCase();
+    final queryLower = matchedQueryLocal.toLowerCase();
     final titleLower = title.toLowerCase();
     final startIndex = titleLower.indexOf(queryLower);
 
@@ -237,7 +238,7 @@ class _HighlightedTitle extends StatelessWidget {
       );
     }
 
-    final endIndex = startIndex + matchedQuery!.length;
+    final endIndex = startIndex + matchedQueryLocal.length;
     return RichText(
       text: TextSpan(
         children: [
@@ -266,7 +267,7 @@ class _LiveBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(
+      padding: const EdgeInsets.symmetric(
         horizontal: tokens.SpacingTokens.s8,
         vertical: tokens.SpacingTokens.s4,
       ),
@@ -325,11 +326,11 @@ class ResultTileSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 88,
-      padding: EdgeInsets.symmetric(
+      padding: const EdgeInsets.symmetric(
         horizontal: tokens.SpacingTokens.s16,
         vertical: tokens.SpacingTokens.s12,
       ),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: tokens.AppTokens.surface1,
         border: Border(
           bottom: BorderSide(
@@ -345,16 +346,16 @@ class ResultTileSkeleton extends StatelessWidget {
             height: 64,
             borderRadius: BorderRadius.circular(tokens.RadiusTokens.sm),
           ),
-          SizedBox(width: tokens.SpacingTokens.s12),
+          const SizedBox(width: tokens.SpacingTokens.s12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 SkeletonShapes.title(width: 150),
-                SizedBox(height: tokens.SpacingTokens.s4),
+                const SizedBox(height: tokens.SpacingTokens.s4),
                 SkeletonShapes.textLine(width: 100),
-                SizedBox(height: tokens.SpacingTokens.s4),
+                const SizedBox(height: tokens.SpacingTokens.s4),
                 SkeletonShapes.textLine(width: 80),
               ],
             ),

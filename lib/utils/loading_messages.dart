@@ -113,7 +113,7 @@ class LoadingMessages {
   /// Get the current cycling message
   static String getCurrentMessage() {
     if (!_isCycling) {
-      return "Loading...";
+      return 'Loading...';
     }
     return _currentMessage;
   }
@@ -126,6 +126,11 @@ class LoadingMessages {
     _currentIndex = 0;
     _messages = [];
     _currentMessage = '';
+  }
+
+  /// Dispose singleton state (called on app exit)
+  static void dispose() {
+    stopCycling();
   }
 
   /// Check if cycling is active

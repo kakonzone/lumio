@@ -135,9 +135,9 @@ class _WhatsNewSheetState extends State<WhatsNewSheet> {
       maxChildSize: 0.7,
       builder: (context, scrollController) {
         return Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: AppTokens.surface2,
-            borderRadius: const BorderRadius.vertical(
+            borderRadius: BorderRadius.vertical(
               top: Radius.circular(16),
             ),
           ),
@@ -146,7 +146,7 @@ class _WhatsNewSheetState extends State<WhatsNewSheet> {
               // Handle bar
               Center(
                 child: Padding(
-                  padding: EdgeInsets.only(top: 12),
+                  padding: const EdgeInsets.only(top: 12),
                   child: SizedBox(
                     width: 40,
                     height: 4,
@@ -166,9 +166,9 @@ class _WhatsNewSheetState extends State<WhatsNewSheet> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
+                    const Text(
                       Strings.whatsNewTitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: AppTokens.textPrimary,

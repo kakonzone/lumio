@@ -88,10 +88,10 @@ class _AdsPrivacyScreenState extends State<AdsPrivacyScreen> {
                   : () async {
                       setState(() => _loading = true);
                       // Unity Ads disabled - no rewarded ad shown
-                      final earned = false;
+                      const earned = false;
                       if (!mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
+                        const SnackBar(
                           content: Text(
                             earned
                                 ? 'Ad-free for ${AdConfig.adFreeMinutesAfterRewarded} minutes'

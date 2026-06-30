@@ -21,7 +21,8 @@ class UnityAdsService {
   bool _initialized = false;
   bool _interstitialReady = false;
   bool _rewardedReady = false;
-  bool _rewardedEarnedThisShow = false;
+  // bool _rewardedEarnedThisShow = false; // Reserved for future reward tracking
+  bool _isDisposed = false;
   DateTime? _initCompletedAt;
   String? _lastInitError;
   String? _lastLoadError;
@@ -163,6 +164,7 @@ class UnityAdsService {
       UnityAds.showVideoAd(
         placementId: _interstitialId,
         onComplete: (id) {
+          if (_isDisposed) return;
           _interstitialReady = false;
           _analytics?.logAdShown(
             network: 'unity',
@@ -174,6 +176,7 @@ class UnityAdsService {
           if (!completer.isCompleted) completer.complete(true);
         },
         onFailed: (id, error, message) {
+          if (_isDisposed) return;
           _interstitialReady = false;
           _lastLoadError = '$error: $message';
           adLog('[Unity] interstitial failed: $id $error $message');
@@ -181,6 +184,7 @@ class UnityAdsService {
           if (!completer.isCompleted) completer.complete(false);
         },
         onSkipped: (id) {
+          if (_isDisposed) return;
           _interstitialReady = false;
           adLog('[Unity] interstitial skipped: $id');
           unawaited(loadInterstitial());
@@ -250,14 +254,15 @@ class UnityAdsService {
       return false;
     }
 
-    _rewardedEarnedThisShow = false;
+    // _rewardedEarnedThisShow = false; // Reserved for future reward tracking
     final completer = Completer<bool>();
     try {
       UnityAds.showVideoAd(
         placementId: _rewardedId,
         onComplete: (id) {
+          if (_isDisposed) return;
           _rewardedReady = false;
-          _rewardedEarnedThisShow = true;
+          // _rewardedEarnedThisShow = true; // Reserved for future reward tracking
           _analytics?.logAdShown(
             network: 'unity',
             format: 'rewarded',
@@ -268,6 +273,7 @@ class UnityAdsService {
           if (!completer.isCompleted) completer.complete(true);
         },
         onFailed: (id, error, message) {
+          if (_isDisposed) return;
           _rewardedReady = false;
           _lastLoadError = '$error: $message';
           adLog('[Unity] rewarded failed: $id $error $message');
@@ -275,6 +281,7 @@ class UnityAdsService {
           if (!completer.isCompleted) completer.complete(false);
         },
         onSkipped: (id) {
+          if (_isDisposed) return;
           _rewardedReady = false;
           adLog('[Unity] rewarded skipped: $id');
           unawaited(loadRewarded());
@@ -310,22 +317,25 @@ class UnityAdsService {
       return;
     }
 
-    _rewardedEarnedThisShow = false;
+    // _rewardedEarnedThisShow = false; // Reserved for future reward tracking
     try {
       UnityAds.showVideoAd(
         placementId: _rewardedId,
         onComplete: (id) {
+          if (_isDisposed) return;
           _rewardedReady = false;
-          _rewardedEarnedThisShow = true;
+          // _rewardedEarnedThisShow = true; // Reserved for future reward tracking
           unawaited(loadRewarded());
           onComplete?.call();
         },
         onFailed: (id, error, message) {
+          if (_isDisposed) return;
           _rewardedReady = false;
           unawaited(loadRewarded());
           onFail?.call('$error: $message');
         },
         onSkipped: (id) {
+          if (_isDisposed) return;
           _rewardedReady = false;
           unawaited(loadRewarded());
           onSkip?.call();
@@ -346,9 +356,9 @@ class UnityAdsService {
   }) async {
     if (_adPodInProgress) return;
     _adPodInProgress = true;
-    int completedAds = 0;
+    var completedAds = 0;
     try {
-      for (int i = 0; i < totalAds; i++) {
+      for (var i = 0; i < totalAds; i++) {
         _currentAdIndex = i + 1;
         onAdStart(_currentAdIndex);
         try {
@@ -371,6 +381,14 @@ class UnityAdsService {
     }
   }
 
-  void setRewardedEarned(bool earned) => _rewardedEarnedThisShow = earned;
-  void dispose() {}
+  // void setRewardedEarned(bool earned) => _rewardedEarnedThisShow = earned; // Reserved for future reward tracking
+  
+  void dispose() {
+    _isDisposed = true;
+    _initialized = false;
+    _interstitialReady = false;
+    _rewardedReady = false;
+    _adPodInProgress = false;
+    _currentAdIndex = 0;
+  }
 }

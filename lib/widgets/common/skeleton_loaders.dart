@@ -19,10 +19,10 @@ class SkeletonLoaders {
         children: [
           // Poster thumbnail
           SkeletonShapes.thumbnail(width: 160),
-          SizedBox(height: tokens.SpacingTokens.s8),
+          const SizedBox(height: tokens.SpacingTokens.s8),
           // Title
           SkeletonShapes.title(height: 16),
-          SizedBox(height: tokens.SpacingTokens.s4),
+          const SizedBox(height: tokens.SpacingTokens.s4),
           // Subtitle
           SkeletonShapes.textLine(height: 12),
         ],
@@ -34,7 +34,7 @@ class SkeletonLoaders {
   static Widget channelRow() {
     return Container(
       height: 64,
-      padding: EdgeInsets.symmetric(horizontal: tokens.SpacingTokens.s16),
+      padding: const EdgeInsets.symmetric(horizontal: tokens.SpacingTokens.s16),
       child: Row(
         children: [
           // Channel logo
@@ -43,7 +43,7 @@ class SkeletonLoaders {
             height: 48,
             borderRadius: BorderRadius.circular(tokens.RadiusTokens.sm),
           ),
-          SizedBox(width: tokens.SpacingTokens.s12),
+          const SizedBox(width: tokens.SpacingTokens.s12),
           // Channel info
           Expanded(
             child: Column(
@@ -51,7 +51,7 @@ class SkeletonLoaders {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SkeletonShapes.title(height: 16),
-                SizedBox(height: tokens.SpacingTokens.s4),
+                const SizedBox(height: tokens.SpacingTokens.s4),
                 SkeletonShapes.textLine(height: 12),
               ],
             ),
@@ -70,11 +70,11 @@ class SkeletonLoaders {
   /// EPG program block skeleton
   static Widget epgProgramBlock() {
     return Container(
-      margin: EdgeInsets.symmetric(
+      margin: const EdgeInsets.symmetric(
         vertical: tokens.SpacingTokens.s4,
         horizontal: tokens.SpacingTokens.s4,
       ),
-      padding: EdgeInsets.symmetric(
+      padding: const EdgeInsets.symmetric(
         horizontal: tokens.SpacingTokens.s8,
         vertical: tokens.SpacingTokens.s8,
       ),
@@ -87,7 +87,7 @@ class SkeletonLoaders {
         mainAxisSize: MainAxisSize.min,
         children: [
           SkeletonShapes.title(height: 14),
-          SizedBox(height: tokens.SpacingTokens.s4),
+          const SizedBox(height: tokens.SpacingTokens.s4),
           SkeletonShapes.textLine(height: 12, width: 100),
         ],
       ),
@@ -98,7 +98,7 @@ class SkeletonLoaders {
   static Widget settingsRow() {
     return Container(
       height: 56,
-      padding: EdgeInsets.symmetric(horizontal: tokens.SpacingTokens.s16),
+      padding: const EdgeInsets.symmetric(horizontal: tokens.SpacingTokens.s16),
       child: Row(
         children: [
           // Icon placeholder
@@ -107,7 +107,7 @@ class SkeletonLoaders {
             height: 24,
             borderRadius: BorderRadius.circular(tokens.RadiusTokens.xs),
           ),
-          SizedBox(width: tokens.SpacingTokens.s16),
+          const SizedBox(width: tokens.SpacingTokens.s16),
           // Text
           Expanded(
             child: Column(
@@ -115,7 +115,7 @@ class SkeletonLoaders {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SkeletonShapes.title(height: 16),
-                SizedBox(height: tokens.SpacingTokens.s4),
+                const SizedBox(height: tokens.SpacingTokens.s4),
                 SkeletonShapes.textLine(height: 12),
               ],
             ),
@@ -135,12 +135,12 @@ class SkeletonLoaders {
   static Widget searchResult() {
     return Container(
       height: 80,
-      padding: EdgeInsets.symmetric(horizontal: tokens.SpacingTokens.s16),
+      padding: const EdgeInsets.symmetric(horizontal: tokens.SpacingTokens.s16),
       child: Row(
         children: [
           // Thumbnail
           SkeletonShapes.thumbnail(width: 100),
-          SizedBox(width: tokens.SpacingTokens.s12),
+          const SizedBox(width: tokens.SpacingTokens.s12),
           // Content
           Expanded(
             child: Column(
@@ -148,9 +148,9 @@ class SkeletonLoaders {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SkeletonShapes.title(height: 16),
-                SizedBox(height: tokens.SpacingTokens.s8),
+                const SizedBox(height: tokens.SpacingTokens.s8),
                 SkeletonShapes.textLine(height: 12),
-                SizedBox(height: tokens.SpacingTokens.s4),
+                const SizedBox(height: tokens.SpacingTokens.s4),
                 SkeletonShapes.textLine(height: 12, width: 150),
               ],
             ),
@@ -163,19 +163,19 @@ class SkeletonLoaders {
   /// Full page loading skeleton
   static Widget fullPage() {
     return Padding(
-      padding: EdgeInsets.all(tokens.SpacingTokens.s16),
+      padding: const EdgeInsets.all(tokens.SpacingTokens.s16),
       child: Column(
         children: [
           // Header
           SkeletonShapes.title(height: 32),
-          SizedBox(height: tokens.SpacingTokens.s24),
+          const SizedBox(height: tokens.SpacingTokens.s24),
           // Cards
           ...List.generate(
               3,
               (index) => Column(
                     children: [
                       SkeletonShapes.card(height: 120),
-                      SizedBox(height: tokens.SpacingTokens.s16),
+                      const SizedBox(height: tokens.SpacingTokens.s16),
                     ],
                   )),
         ],
@@ -190,7 +190,7 @@ class SkeletonLoaders {
       itemCount: count,
       itemBuilder: (context, index) {
         return Padding(
-          padding: EdgeInsets.only(right: tokens.SpacingTokens.s12),
+          padding: const EdgeInsets.only(right: tokens.SpacingTokens.s12),
           child: movieCard(),
         );
       },
@@ -205,7 +205,7 @@ class SkeletonLoaders {
         return Column(
           children: [
             SkeletonShapes.card(height: 80),
-            SizedBox(height: tokens.SpacingTokens.s16),
+            const SizedBox(height: tokens.SpacingTokens.s16),
           ],
         );
       },

@@ -475,14 +475,14 @@ class _DrawerFooterState extends State<_DrawerFooter> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                const Row(
                   children: [
                     Icon(
                       Icons.info_outline_rounded,
                       size: 14,
                       color: AppTokens.accent,
                     ),
-                    const SizedBox(width: 6),
+                    SizedBox(width: 6),
                     Text(
                       'CONTENT DISCLAIMER',
                       style: TextStyle(

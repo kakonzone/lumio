@@ -31,7 +31,7 @@ class WelcomeScreen extends StatelessWidget {
       backgroundColor: tokens.AppTokens.background,
       body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.symmetric(
+          padding: const EdgeInsets.symmetric(
             horizontal: tokens.SpacingTokens.s24,
           ),
           child: Column(
@@ -43,7 +43,7 @@ class WelcomeScreen extends StatelessWidget {
                     // Animated illustration
                     _AnimatedIllustration(),
 
-                    SizedBox(height: tokens.SpacingTokens.s40),
+                    const SizedBox(height: tokens.SpacingTokens.s40),
 
                     // Heading
                     Text(
@@ -52,7 +52,7 @@ class WelcomeScreen extends StatelessWidget {
                       textAlign: TextAlign.center,
                     ),
 
-                    SizedBox(height: tokens.SpacingTokens.s16),
+                    const SizedBox(height: tokens.SpacingTokens.s16),
 
                     // Body text
                     Text(
@@ -72,7 +72,7 @@ class WelcomeScreen extends StatelessWidget {
                 },
                 child: Container(
                   width: double.infinity,
-                  padding: EdgeInsets.symmetric(
+                  padding: const EdgeInsets.symmetric(
                     vertical: tokens.SpacingTokens.s16,
                   ),
                   decoration: BoxDecoration(
@@ -87,7 +87,7 @@ class WelcomeScreen extends StatelessWidget {
                 ),
               ),
 
-              SizedBox(height: tokens.SpacingTokens.s16),
+              const SizedBox(height: tokens.SpacingTokens.s16),
             ],
           ),
         ),

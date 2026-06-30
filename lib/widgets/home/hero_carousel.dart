@@ -183,7 +183,7 @@ class _HeroSlide extends StatelessWidget {
                     horizontal: tokens.SpacingTokens.s8,
                     vertical: tokens.SpacingTokens.s4,
                   ),
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: tokens.AppTokens.liveRed,
                     borderRadius: tokens.RadiusTokens.circularSm,
                   ),
@@ -228,11 +228,11 @@ class _HeroSlide extends StatelessWidget {
                         horizontal: tokens.SpacingTokens.s24,
                         vertical: tokens.SpacingTokens.s12,
                       ),
-                      shape: RoundedRectangleBorder(
+                      shape: const RoundedRectangleBorder(
                         borderRadius: tokens.RadiusTokens.circularMd,
                       ),
                     ),
-                    child: Text(strings.Strings.continueText),
+                    child: const Text(strings.Strings.continueText),
                   ),
 
                   const SizedBox(width: tokens.SpacingTokens.s12),
@@ -242,7 +242,7 @@ class _HeroSlide extends StatelessWidget {
                     onPressed: onMoreInfo,
                     style: OutlinedButton.styleFrom(
                       foregroundColor: tokens.AppTokens.textPrimary,
-                      side: BorderSide(
+                      side: const BorderSide(
                         color: tokens.AppTokens.border,
                         width: 1,
                       ),
@@ -250,7 +250,7 @@ class _HeroSlide extends StatelessWidget {
                         horizontal: tokens.SpacingTokens.s24,
                         vertical: tokens.SpacingTokens.s12,
                       ),
-                      shape: RoundedRectangleBorder(
+                      shape: const RoundedRectangleBorder(
                         borderRadius: tokens.RadiusTokens.circularMd,
                       ),
                     ),

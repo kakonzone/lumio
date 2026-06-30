@@ -232,6 +232,7 @@ class AppProvider extends ChangeNotifier {
   String? _newsError;
   ScoreState _scoreState = const ScoreInitial();
   bool _scoresRequested = false;
+  bool _isDisposed = false;
 
   bool get matchesLoading => _matchesLoading;
   bool get newsLoading => _newsLoading;
@@ -304,7 +305,7 @@ class AppProvider extends ChangeNotifier {
     _matchesLoading = true;
     _matchesError = null;
     _scoreState = const ScoreLoading();
-    notifyListeners();
+    if (!_isDisposed) notifyListeners();
     try {
       final footyTodayFuture = FootyStreamService.fetchToday();
       _scoreGroups = await ScoreService.fetchTodayScoreboards();
@@ -399,7 +400,7 @@ class AppProvider extends ChangeNotifier {
       _predictions = const [];
     } finally {
       _matchesLoading = false;
-      notifyListeners();
+      if (!_isDisposed) notifyListeners();
     }
   }
 
@@ -407,7 +408,7 @@ class AppProvider extends ChangeNotifier {
   Future<void> loadNews() async {
     _newsLoading = true;
     _newsError = null;
-    notifyListeners();
+    if (!_isDisposed) notifyListeners();
     try {
       final fetched = await NewsService.fetchLatest();
       _news = fetched; // No demo fallback - honest empty state
@@ -416,7 +417,7 @@ class AppProvider extends ChangeNotifier {
       _news = const []; // Empty on error - no fake news
     } finally {
       _newsLoading = false;
-      notifyListeners();
+      if (!_isDisposed) notifyListeners();
     }
   }
 
@@ -424,7 +425,7 @@ class AppProvider extends ChangeNotifier {
   Future<void> loadFeaturedLiveEvents({bool force = false}) async {
     if (!hasFeaturedLiveEventsData) {
       _featuredLiveEventsLoading = true;
-      notifyListeners();
+      if (!_isDisposed) notifyListeners();
     }
 
     try {
@@ -445,7 +446,7 @@ class AppProvider extends ChangeNotifier {
       _featuredLiveEventsError = e.toString();
     } finally {
       _featuredLiveEventsLoading = false;
-      notifyListeners();
+      if (!_isDisposed) notifyListeners();
     }
   }
 
@@ -464,7 +465,7 @@ class AppProvider extends ChangeNotifier {
 
     if (!hasLiveEventsData) {
       _liveEventsLoading = true;
-      notifyListeners();
+      if (!_isDisposed) notifyListeners();
     }
 
     try {
@@ -481,7 +482,7 @@ class AppProvider extends ChangeNotifier {
       }
     } finally {
       _liveEventsLoading = false;
-      notifyListeners();
+      if (!_isDisposed) notifyListeners();
       SafeLogger.debug('provider', 'app_provider.dart:loadLiveEvents: fetch done (H2) ms=${DateTime.now().millisecondsSinceEpoch - loadStart} football=${_liveEventFootball.length} cricket=${_liveEventCricket.length}');
     }
   }
@@ -567,6 +568,7 @@ class AppProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _isDisposed = true;
     userState.removeListener(notifyListeners);
     catalog.removeListener(notifyListeners);
     ui.removeListener(notifyListeners);

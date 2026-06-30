@@ -19,19 +19,19 @@ class PlayerAdSlot extends StatelessWidget {
       return const SizedBox(height: 8);
     }
 
-    final visible = AdConfig.playerAdsUserVisible;
+    const visible = AdConfig.playerAdsUserVisible;
     final children = <Widget>[];
 
     if (AdConfig.hasAdsterraBanner728) {
       children.add(
-        AdsterraBanner728(
+        const AdsterraBanner728(
           placement: 'player_below',
           userVisible: visible,
         ),
       );
     } else if (MonetagConfig.isConfigured) {
       children.add(
-        PropellerInPagePushBanner(
+        const PropellerInPagePushBanner(
           placement: 'player_below_monetag',
           height: _bannerHeight,
           userVisible: visible,
@@ -61,11 +61,11 @@ class PlayerStickyAdStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!AdManager.instance.adsEnabled) return const SizedBox.shrink();
 
-    final visible = AdConfig.playerAdsUserVisible;
+    const visible = AdConfig.playerAdsUserVisible;
     const h = 50.0;
 
     if (MonetagConfig.isConfigured) {
-      return PropellerInPagePushBanner(
+      return const PropellerInPagePushBanner(
         placement: 'monetag_player_sticky_social',
         height: h,
         userVisible: visible,
@@ -74,7 +74,7 @@ class PlayerStickyAdStrip extends StatelessWidget {
 
     if (AdConfig.adsterraSocialScriptUrl.trim().isNotEmpty &&
         AdConfig.adsterraSocialBaseUrl.trim().isNotEmpty) {
-      return AdsterraSocialBar(
+      return const AdsterraSocialBar(
         placement: 'player_sticky_social',
         userVisible: visible,
       );

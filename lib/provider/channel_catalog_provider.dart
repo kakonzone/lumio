@@ -26,7 +26,7 @@ class ChannelCatalogProvider extends ChangeNotifier {
   List<ChannelModel> _liveChannels = [];
   Map<String, List<ChannelModel>>? _byCategoryIndex;
   List<ChannelModel>? _sportsBrowseCache;
-  Map<String, bool> _streamHealth = {};
+  final Map<String, bool> _streamHealth = {};
   final Map<String, bool> _streamUrlHealth = {};
   final Set<String> _pendingStreamUrlChecks = {};
   final Map<String, DateTime> _streamHealthAt = {};
@@ -43,6 +43,7 @@ class ChannelCatalogProvider extends ChangeNotifier {
   static const _sportsHealthScanCap = 72;
 
   bool _streamHealthScanScheduled = false;
+  bool _isDisposed = false;
   List<ChannelModel> get channels => _channels;
   List<ChannelModel> get gitunChannels => _gitunChannels;
   List<ChannelModel> get liveChannels => _liveChannels;
@@ -113,7 +114,7 @@ class ChannelCatalogProvider extends ChangeNotifier {
 
   void setGitunChannels(List<ChannelModel> channels) {
     _gitunChannels = PriorityBroadcasters.sort(channels);
-    notifyListeners();
+    if (!_isDisposed) notifyListeners();
   }
 
   /// Loads GITUN playlists (cache first) for Special Link + player recommendations.
@@ -124,7 +125,7 @@ class ChannelCatalogProvider extends ChangeNotifier {
       final cached = await SpecialLinkCache.instance.readGitunChannels();
       if (cached != null && cached.isNotEmpty) {
         _gitunChannels = PriorityBroadcasters.sort(cached);
-        notifyListeners();
+        if (!_isDisposed) notifyListeners();
         return;
       }
     }
@@ -133,7 +134,7 @@ class ChannelCatalogProvider extends ChangeNotifier {
       forceRefresh: forceRefresh,
     );
     _gitunChannels = PriorityBroadcasters.sort(list);
-    notifyListeners();
+    if (!_isDisposed) notifyListeners();
   }
 
   Future<void> preloadGitunChannelsFromCache() async {
@@ -141,7 +142,7 @@ class ChannelCatalogProvider extends ChangeNotifier {
     final cached = await SpecialLinkCache.instance.readGitunChannels();
     if (cached == null || cached.isEmpty) return;
     _gitunChannels = PriorityBroadcasters.sort(cached);
-    notifyListeners();
+    if (!_isDisposed) notifyListeners();
   }
 
   /// Live nav — pinned sports row (Appwrite Sports m3u8 only).
@@ -226,7 +227,7 @@ class ChannelCatalogProvider extends ChangeNotifier {
 
     if (!scheduled) return;
     _streamHealthLoading = true;
-    notifyListeners();
+    if (!_isDisposed) notifyListeners();
     await drainStreamHealthQueue();
   }
 
@@ -291,7 +292,7 @@ class ChannelCatalogProvider extends ChangeNotifier {
       return;
     }
     _lastStreamHealthNotify = now;
-    notifyListeners();
+    if (!_isDisposed) notifyListeners();
   }
 
   /// One background scan after channels load (sports first, capped).
@@ -410,7 +411,7 @@ class ChannelCatalogProvider extends ChangeNotifier {
       _channelsLoading = true;
       _channelsError = null;
       _catalogFromStaleCache = false;
-      notifyListeners();
+      if (!_isDisposed) notifyListeners();
     }
 
     final catalog = await CatalogService.instance.loadCatalog(
@@ -433,7 +434,7 @@ class ChannelCatalogProvider extends ChangeNotifier {
     _byCategoryIndex = null;
     _sportsBrowseCache = null;
     _channelsLoading = false;
-    notifyListeners();
+    if (!_isDisposed) notifyListeners();
     scheduleCatalogFollowUp();
   }
 
@@ -506,7 +507,7 @@ class ChannelCatalogProvider extends ChangeNotifier {
     if (!channel.allStreams.any((l) => l.url.isNotEmpty)) return false;
 
     _pendingStreamHealthIds.add(channel.id);
-    notifyListeners();
+    if (!_isDisposed) notifyListeners();
     try {
       final ok = await StreamHealthService.isChannelActive(
         channel,
@@ -521,7 +522,7 @@ class ChannelCatalogProvider extends ChangeNotifier {
       return false;
     } finally {
       _pendingStreamHealthIds.remove(channel.id);
-      notifyListeners();
+      if (!_isDisposed) notifyListeners();
     }
   }
 
@@ -531,7 +532,7 @@ class ChannelCatalogProvider extends ChangeNotifier {
   }) async {
     if (link.url.isEmpty) return false;
     _pendingStreamUrlChecks.add(link.url);
-    notifyListeners();
+    if (!_isDisposed) notifyListeners();
     try {
       final ok = await StreamHealthService.isUrlActive(
         link.url,
@@ -551,7 +552,7 @@ class ChannelCatalogProvider extends ChangeNotifier {
       return false;
     } finally {
       _pendingStreamUrlChecks.remove(link.url);
-      notifyListeners();
+      if (!_isDisposed) notifyListeners();
     }
   }
 
@@ -689,5 +690,12 @@ class ChannelCatalogProvider extends ChangeNotifier {
     clearStreamHealthCache();
     _streamHealthScanScheduled = false;
     _catalogFollowUpTimer?.cancel();
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    _catalogFollowUpTimer?.cancel();
+    super.dispose();
   }
 }

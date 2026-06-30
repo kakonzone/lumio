@@ -10,6 +10,8 @@
 /// ```json
 /// { "strings": { "api_host": "api.yourdomain.com" } }
 /// ```
+library;
+
 import 'dart:convert';
 import 'dart:io';
 

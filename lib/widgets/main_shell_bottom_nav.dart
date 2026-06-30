@@ -51,7 +51,7 @@ class MainShellBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: tokens.AppTokens.surface1,
         border: Border(top: BorderSide(color: tokens.AppTokens.border)),
       ),
@@ -161,7 +161,7 @@ class _NavTile extends StatelessWidget {
                       ),
               ),
             ),
-            SizedBox(height: tokens.SpacingTokens.s4),
+            const SizedBox(height: tokens.SpacingTokens.s4),
             // Icon with live badge
             Stack(
               clipBehavior: Clip.none,
@@ -180,7 +180,7 @@ class _NavTile extends StatelessWidget {
                     color: active
                         ? tokens.AppTokens.accent
                         : tokens.AppTokens.textTertiary,
-                    key: ValueKey('${spec.label}_${active}'),
+                    key: ValueKey('${spec.label}_$active'),
                   ),
                 ),
                 if (showLiveBadge)
@@ -209,7 +209,7 @@ class _NavTile extends StatelessWidget {
                   ),
               ],
             ),
-            SizedBox(height: tokens.SpacingTokens.s4),
+            const SizedBox(height: tokens.SpacingTokens.s4),
             // Label (11px)
             AnimatedSwitcher(
               duration: tokens.MotionTokens.navIndicator,
@@ -230,7 +230,7 @@ class _NavTile extends StatelessWidget {
                   letterSpacing: 0,
                 ),
                 maxLines: 1,
-                key: ValueKey('${spec.label}_text_${active}'),
+                key: ValueKey('${spec.label}_text_$active'),
               ),
             ),
           ],

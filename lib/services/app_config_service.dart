@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:dart_appwrite/dart_appwrite.dart';
@@ -45,7 +46,7 @@ class AppConfigService {
         databaseId: AppwriteConfig.databaseId,
         collectionId: AppwriteConfig.appConfigCollectionId,
         documentId: AppwriteConfig.globalConfigDocumentId,
-      );
+      ).timeout(const Duration(seconds: 10));
       final model = AppConfigModel.fromMap(
         Map<String, dynamic>.from(doc.data),
       );
@@ -57,6 +58,16 @@ class AppConfigService {
             '[AppConfig] fetched global_config updated_at=${model.updatedAt}');
       }
       return model;
+    } on TimeoutException catch (e) {
+      if (kDebugMode) {
+        debugPrint('[AppConfig] fetch timeout: $e');
+      }
+      return _loadCacheOrDefault();
+    } on FormatException catch (e) {
+      if (kDebugMode) {
+        debugPrint('[AppConfig] config parse error: $e');
+      }
+      return _loadCacheOrDefault();
     } on AppwriteException catch (e) {
       if (kDebugMode) {
         debugPrint('[AppConfig] Appwrite error: ${e.message} (code=${e.code})');

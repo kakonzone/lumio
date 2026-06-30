@@ -55,15 +55,15 @@ class MonetagConfig {
 
   // Effective zone IDs (rc1 aliases with legacy fallbacks)
   static String get effectiveOnclickZoneId =>
-      resolve(zoneNative, String.fromEnvironment('MONETAG_ONCLICK_ZONE'));
+      resolve(zoneNative, const String.fromEnvironment('MONETAG_ONCLICK_ZONE'));
   static String get effectiveVignetteZoneId =>
-      resolve(zoneVignette, String.fromEnvironment('MONETAG_VIGNETTE_ZONE'));
+      resolve(zoneVignette, const String.fromEnvironment('MONETAG_VIGNETTE_ZONE'));
   static String get effectivePushZoneId =>
-      resolve(zonePush, String.fromEnvironment('MONETAG_PUSH_ZONE'));
+      resolve(zonePush, const String.fromEnvironment('MONETAG_PUSH_ZONE'));
   static String get effectiveInPagePushZoneId =>
-      resolve(zoneInPagePush, String.fromEnvironment('MONETAG_INPAGE_ZONE'));
+      resolve(zoneInPagePush, const String.fromEnvironment('MONETAG_INPAGE_ZONE'));
   static String get effectiveDirectLinkZoneId =>
-      resolve(zoneDirectLink, String.fromEnvironment('MONETAG_DIRECT_ZONE'));
+      resolve(zoneDirectLink, const String.fromEnvironment('MONETAG_DIRECT_ZONE'));
 
   // Legacy script hosts/URLs
   static const String onclickScriptHost =

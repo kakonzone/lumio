@@ -162,7 +162,7 @@ class _TimeMarkers extends StatelessWidget {
 
     return Container(
       height: 32,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: tokens.AppTokens.surface1,
         border: Border(
           bottom: BorderSide(
@@ -177,7 +177,7 @@ class _TimeMarkers extends StatelessWidget {
         itemBuilder: (context, index) {
           return Container(
             width: 100,
-            padding: EdgeInsets.symmetric(
+            padding: const EdgeInsets.symmetric(
               horizontal: tokens.SpacingTokens.s8,
               vertical: tokens.SpacingTokens.s8,
             ),
@@ -193,7 +193,7 @@ class _TimeMarkers extends StatelessWidget {
 
   List<String> _generateTimeMarkers() {
     final times = <String>[];
-    for (int hour = 0; hour < 24; hour++) {
+    for (var hour = 0; hour < 24; hour++) {
       times.add('${hour.toString().padLeft(2, '0')}:00');
       if (hour < 23) {
         times.add('${hour.toString().padLeft(2, '0')}:30');
@@ -242,7 +242,7 @@ class _ProgramBlock extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       child: Container(
-        margin: EdgeInsets.symmetric(
+        margin: const EdgeInsets.symmetric(
           vertical: tokens.SpacingTokens.s4,
           horizontal: tokens.SpacingTokens.s4,
         ),
@@ -257,7 +257,7 @@ class _ProgramBlock extends StatelessWidget {
             ),
           ),
         ),
-        padding: EdgeInsets.symmetric(
+        padding: const EdgeInsets.symmetric(
           horizontal: tokens.SpacingTokens.s8,
           vertical: tokens.SpacingTokens.s8,
         ),
@@ -272,14 +272,14 @@ class _ProgramBlock extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            SizedBox(height: tokens.SpacingTokens.s4),
+            const SizedBox(height: tokens.SpacingTokens.s4),
 
             // Time
             Row(
               children: [
                 if (program.isLive) ...[
                   Container(
-                    padding: EdgeInsets.symmetric(
+                    padding: const EdgeInsets.symmetric(
                       horizontal: tokens.SpacingTokens.s4,
                       vertical: tokens.SpacingTokens.s4,
                     ),
@@ -288,7 +288,7 @@ class _ProgramBlock extends StatelessWidget {
                       borderRadius:
                           BorderRadius.circular(tokens.RadiusTokens.xs),
                     ),
-                    child: Text(
+                    child: const Text(
                       Strings.liveIndicator,
                       style: TextStyle(
                         color: Colors.white,
@@ -297,7 +297,7 @@ class _ProgramBlock extends StatelessWidget {
                       ),
                     ),
                   ),
-                  SizedBox(width: tokens.SpacingTokens.s4),
+                  const SizedBox(width: tokens.SpacingTokens.s4),
                 ],
                 Text(
                   program.timeRange,

@@ -50,7 +50,8 @@ class _BlockedAppsOverlayState extends State<BlockedAppsOverlay>
 
   @override
   Widget build(BuildContext context) {
-    if (_blockingLabels == null || _blockingLabels!.isEmpty) {
+    final blockingLabels = _blockingLabels;
+    if (blockingLabels == null || blockingLabels.isEmpty) {
       return widget.child;
     }
     return Stack(
@@ -58,7 +59,7 @@ class _BlockedAppsOverlayState extends State<BlockedAppsOverlay>
       children: [
         widget.child,
         BlockedAppsScreen(
-          appLabels: _blockingLabels!,
+          appLabels: blockingLabels,
           onCleared: () {
             setState(() => _blockingLabels = null);
           },

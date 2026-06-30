@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lumio_tv/config/ad_config.dart';
 import 'package:lumio_tv/services/ad_safety_service.dart';
-import 'package:lumio_tv/services/fraud/vpn_detector.dart';
 import 'package:lumio_tv/services/vpn_signal_service.dart';
 
 void main() {

@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import '../core/api_config.dart';
@@ -46,8 +44,8 @@ class ScoreService {
     Map<String, String>? headers,
     int retries = _maxRetries,
   }) async {
-    int attempt = 0;
-    Duration delay = const Duration(seconds: 1);
+    var attempt = 0;
+    var delay = const Duration(seconds: 1);
 
     while (attempt < retries) {
       try {

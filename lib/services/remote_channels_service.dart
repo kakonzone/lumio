@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:isolate';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -21,7 +20,6 @@ class RemoteChannelsService {
 
   static List<ChannelModel>? _cached;
   static DateTime? _cachedAt;
-  static DateTime? _lastFetch;
   static String? _etag;
 
   @visibleForTesting
@@ -79,7 +77,6 @@ class RemoteChannelsService {
       }
     }
 
-    _lastFetch = DateTime.now();
     return List<ChannelModel>.from(channels);
   }
 
@@ -194,7 +191,6 @@ class RemoteChannelsService {
   static void clearCacheForTest() {
     _cached = null;
     _cachedAt = null;
-    _lastFetch = null;
     _etag = null;
     dioOverrideForTest = null;
     urlOverrideForTest = null;
@@ -204,7 +200,6 @@ class RemoteChannelsService {
   static void clearCache() {
     _cached = null;
     _cachedAt = null;
-    _lastFetch = null;
     _etag = null;
   }
 }

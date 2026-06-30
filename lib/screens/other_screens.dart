@@ -1046,7 +1046,6 @@ class _WideGenreCard extends StatelessWidget {
 
   const _WideGenreCard({
     required this.emoji,
-    this.icon,
     required this.title,
     required this.subtitle,
     required this.badge,
@@ -1527,8 +1526,6 @@ class _ChannelCard extends StatelessWidget {
 
   const _ChannelCard({
     required this.channel,
-    this.onPlay,
-    this.onLongPress,
   });
 
   @override

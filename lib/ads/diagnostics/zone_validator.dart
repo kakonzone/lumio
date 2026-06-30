@@ -104,21 +104,21 @@ class ZoneValidator {
             ? AdConfig.adsterraDirectLinksReleaseSafe.first
             : '',
       ),
-      _ZoneProbe(
+      const _ZoneProbe(
         network: 'adsterra',
         zoneId: 'popunder',
         placement: 'webview',
         format: 'popunder',
         probeUrl: AdConfig.adsterraPopunderScriptUrl,
       ),
-      _ZoneProbe(
+      const _ZoneProbe(
         network: 'adsterra',
         zoneId: 'native',
         placement: 'webview',
         format: 'native',
         probeUrl: AdConfig.adsterraNativeInvokeUrl,
       ),
-      _ZoneProbe(
+      const _ZoneProbe(
         network: 'adsterra',
         zoneId: 'banner728',
         placement: 'webview',

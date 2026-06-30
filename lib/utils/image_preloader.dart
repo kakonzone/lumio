@@ -133,15 +133,16 @@ class _ScrollImagePreloaderState extends State<ScrollImagePreloader> {
   }
 
   void _handleScroll() {
-    if (_scrollController == null) return;
+    final scrollController = _scrollController;
+    if (scrollController == null) return;
 
-    final position = _scrollController!.position;
+    final position = scrollController.position;
     final pixels = position.pixels;
 
     // Calculate which images are near the viewport
-    final itemHeight = 100; // Estimated, should be calculated
+    const itemHeight = 100; // Estimated, should be calculated
 
-    for (int i = 0; i < widget.imageUrls.length; i++) {
+    for (var i = 0; i < widget.imageUrls.length; i++) {
       if (_preloadedIndices.contains(i.toString())) continue;
 
       final itemPosition = i * itemHeight;

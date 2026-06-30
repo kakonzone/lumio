@@ -41,7 +41,7 @@ class ChainedInterstitialService {
 
     _showing = true;
     _currentAdIndex = 0;
-    int adsShown = 0;
+    var adsShown = 0;
 
     try {
       // Show Ad 1

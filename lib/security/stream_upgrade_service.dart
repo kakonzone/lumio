@@ -113,8 +113,8 @@ class StreamUpgradeService {
     Map<String, StreamProbeResult> probeResults,
   ) async {
     // Upgrade primary stream URL
-    String newStreamUrl = channel.streamUrl;
-    StreamSecurity newSecurity = channel.streamSecurity;
+    var newStreamUrl = channel.streamUrl;
+    var newSecurity = channel.streamSecurity;
 
     if (channel.streamUrl.startsWith('http://')) {
       final result = probeResults[channel.streamUrl];
@@ -131,7 +131,7 @@ class StreamUpgradeService {
     // Upgrade alternate streams
     final upgradedAlternates = <StreamLink>[];
     for (final alt in channel.alternateStreams) {
-      String newAltUrl = alt.url;
+      var newAltUrl = alt.url;
       if (alt.url.startsWith('http://')) {
         final result = probeResults[alt.url];
         if (result != null && result.isHttpsAvailable && result.upgradedUrl != null) {
@@ -217,7 +217,7 @@ class StreamUpgradeService {
 
     // Apply proxy to primary stream URL
     final proxiedUrl = _buildProxiedUrl(channel.streamUrl, proxyBaseUrl);
-    StreamSecurity newSecurity = StreamSecurity.proxied;
+    var newSecurity = StreamSecurity.proxied;
 
     // Apply proxy to alternate streams
     final proxiedAlternates = <StreamLink>[];

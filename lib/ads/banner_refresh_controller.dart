@@ -26,7 +26,7 @@ class BannerRefreshController {
     stop();
     if (!_isPaused) {
       _refreshTimer = Timer.periodic(
-        Duration(seconds: _defaultRefreshSeconds),
+        const Duration(seconds: _defaultRefreshSeconds),
         (_) {
           if (!_isPaused) {
             onRefresh();

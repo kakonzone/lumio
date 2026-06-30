@@ -32,29 +32,29 @@ class _HomePromoCarouselState extends State<HomePromoCarousel> {
   int _page = 0;
 
   static final _slides = <_PromoSlide>[
-    _PromoSlide(
+    const _PromoSlide(
       assetPath: 'assets/images/fifa_wc26_banner_1.webp',
       action: _PromoTapAction.liveEvents,
     ),
-    _PromoSlide(
+    const _PromoSlide(
       assetPath: 'assets/images/fifa_wc26_banner_2.webp',
       action: _PromoTapAction.liveEvents,
     ),
-    _PromoSlide(
+    const _PromoSlide(
       title: 'Live Sports',
       subtitle: 'Cricket, football, IPL, BPL & more',
       emoji: '⚽',
       gradient: [Color(0xFF1A237E), Color(0xFF3949AB), Color(0xFF5C6BC0)],
       action: _PromoTapAction.sports,
     ),
-    _PromoSlide(
+    const _PromoSlide(
       title: 'Live Events',
       subtitle: 'Scores & channels for today\'s matches',
       emoji: '🏏',
       gradient: [Color(0xFF004D40), Color(0xFF00695C), Color(0xFF00897B)],
       action: _PromoTapAction.liveEvents,
     ),
-    _PromoSlide(
+    const _PromoSlide(
       title: 'Browse Channels',
       subtitle: 'Sports, movies, news & entertainment',
       emoji: '📺',

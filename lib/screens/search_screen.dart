@@ -256,7 +256,7 @@ class _SearchScreenState extends State<SearchScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(height: tokens.SpacingTokens.s24),
+            const SizedBox(height: tokens.SpacingTokens.s24),
 
             // Recent searches
             RecentSearches(
@@ -311,7 +311,7 @@ class _SearchScreenState extends State<SearchScreen>
               },
             ),
 
-            SizedBox(height: tokens.SpacingTokens.s32),
+            const SizedBox(height: tokens.SpacingTokens.s32),
           ],
         ),
       ),
@@ -322,7 +322,7 @@ class _SearchScreenState extends State<SearchScreen>
     return ListView.builder(
       itemCount: 5,
       itemBuilder: (context, index) {
-        return ResultTileSkeleton();
+        return const ResultTileSkeleton();
       },
     );
   }
@@ -330,7 +330,7 @@ class _SearchScreenState extends State<SearchScreen>
   Widget _buildNoResults() {
     return Center(
       child: Padding(
-        padding: EdgeInsets.all(tokens.SpacingTokens.s32),
+        padding: const EdgeInsets.all(tokens.SpacingTokens.s32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -339,21 +339,21 @@ class _SearchScreenState extends State<SearchScreen>
               size: 64,
               color: tokens.AppTokens.textTertiary,
             ),
-            SizedBox(height: tokens.SpacingTokens.s24),
+            const SizedBox(height: tokens.SpacingTokens.s24),
             Text(
               '${Strings.searchNothingMatches} "$_query"',
               style: tokens.TypographyTokens.titlePrimary,
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: tokens.SpacingTokens.s8),
+            const SizedBox(height: tokens.SpacingTokens.s8),
             Text(
               Strings.searchNoResultsSubtitle,
               style: tokens.TypographyTokens.bodySecondary,
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: tokens.SpacingTokens.s24),
+            const SizedBox(height: tokens.SpacingTokens.s24),
             // Suggestion chips
-            Wrap(
+            const Wrap(
               spacing: tokens.SpacingTokens.s8,
               runSpacing: tokens.SpacingTokens.s8,
               alignment: WrapAlignment.center,
@@ -427,7 +427,7 @@ class _SearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.all(tokens.SpacingTokens.s16),
+      padding: const EdgeInsets.all(tokens.SpacingTokens.s16),
       child: Row(
         children: [
           // Search input
@@ -444,13 +444,13 @@ class _SearchBar extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  SizedBox(width: tokens.SpacingTokens.s12),
+                  const SizedBox(width: tokens.SpacingTokens.s12),
                   Icon(
                     PhosphorIcons.magnifyingGlass(),
                     size: 20,
                     color: tokens.AppTokens.textSecondary,
                   ),
-                  SizedBox(width: tokens.SpacingTokens.s12),
+                  const SizedBox(width: tokens.SpacingTokens.s12),
                   Expanded(
                     child: TextField(
                       controller: controller,
@@ -472,7 +472,7 @@ class _SearchBar extends StatelessWidget {
                     Pressable(
                       onTap: onClear,
                       child: Padding(
-                        padding: EdgeInsets.all(tokens.SpacingTokens.s8),
+                        padding: const EdgeInsets.all(tokens.SpacingTokens.s8),
                         child: Icon(
                           PhosphorIcons.x(),
                           size: 20,
@@ -480,12 +480,12 @@ class _SearchBar extends StatelessWidget {
                         ),
                       ),
                     ),
-                  SizedBox(width: tokens.SpacingTokens.s8),
+                  const SizedBox(width: tokens.SpacingTokens.s8),
                 ],
               ),
             ),
           ),
-          SizedBox(width: tokens.SpacingTokens.s12),
+          const SizedBox(width: tokens.SpacingTokens.s12),
           // Cancel button
           Pressable(
             onTap: () => Navigator.pop(context),
@@ -516,7 +516,7 @@ class _SearchTabs extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 48,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: tokens.AppTokens.surface1,
         border: Border(
           bottom: BorderSide(
@@ -534,7 +534,7 @@ class _SearchTabs extends StatelessWidget {
           return Pressable(
             onTap: () => onTabChange(index),
             child: Container(
-              padding: EdgeInsets.symmetric(
+              padding: const EdgeInsets.symmetric(
                 horizontal: tokens.SpacingTokens.s16,
                 vertical: tokens.SpacingTokens.s12,
               ),
@@ -575,7 +575,7 @@ class _SuggestionChip extends StatelessWidget {
         // Handle suggestion tap
       },
       child: Container(
-        padding: EdgeInsets.symmetric(
+        padding: const EdgeInsets.symmetric(
           horizontal: tokens.SpacingTokens.s16,
           vertical: tokens.SpacingTokens.s8,
         ),

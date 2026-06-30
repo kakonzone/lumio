@@ -10,7 +10,7 @@ class InterstitialChainController {
     int adCount = 2,
     int skipSeconds = 5,
   }) async {
-    for (int i = 0; i < adCount; i++) {
+    for (var i = 0; i < adCount; i++) {
       if (!context.mounted) return;
       await _showSingleAd(context, index: i + 1, skipSeconds: skipSeconds);
     }
@@ -25,6 +25,7 @@ class InterstitialChainController {
     
     // 10-second timeout to prevent user getting stuck if ad fails to load
     final timeout = Timer(const Duration(seconds: 10), () {
+      if (!context.mounted) return;
       if (!completer.isCompleted) {
         Navigator.of(context).pop();
         completer.complete();

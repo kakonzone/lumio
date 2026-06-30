@@ -74,7 +74,7 @@ class WebViewAdHost {
   
   static Future<void> _hardenWebView(WebViewController controller) async {
     // Inject anti-detection JavaScript before page load
-    final antiDetectionJs = '''
+    const antiDetectionJs = '''
 (function(){
   // Chrome object spoof
   if (!window.chrome) {

@@ -1,9 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import '../ads/ad_manager.dart';
-import '../theme/app_theme.dart';
 import '../theme/tokens/colors.dart';
 
 /// Custom rewarded ad overlay with 15s skip button and 30s auto-close.
@@ -70,7 +67,7 @@ class _CustomRewardedAdOverlayState extends State<CustomRewardedAdOverlay> {
   Future<void> _showAd() async {
     setState(() => _adShowing = true);
     // Unity Ads disabled - no rewarded ad shown
-    final earned = false;
+    const earned = false;
     if (!mounted) return;
     setState(() => _adShowing = false);
     

@@ -50,9 +50,11 @@ class AppwriteService {
     try {
       channels = await RetryHelper.retry(
         fn: () async {
-          final fetched = await _fetchChannelDocuments();
+          final fetched = await _fetchChannelDocuments()
+              .timeout(const Duration(seconds: 30));
           if (fetched.isEmpty && lastFetchError == null) {
-            return await _fetchPlaylistM3u();
+            return await _fetchPlaylistM3u()
+                .timeout(const Duration(seconds: 30));
           }
           return fetched;
         },
@@ -64,7 +66,7 @@ class AppwriteService {
             debugPrint('[Appwrite] Retry attempt $attempt after ${delay}ms: $error');
           }
         },
-      );
+      ).timeout(const Duration(seconds: 90));
     } on AppwriteException catch (e) {
       lastFetchError = _friendlyAppwriteError(e);
       if (kDebugMode) {

@@ -440,7 +440,7 @@ class NotificationService {
     if (!await _shouldShow()) return;
     if (!await isLiveAlertsEnabled()) return;
 
-    final title = '🔴 Live Now';
+    const title = '🔴 Live Now';
     final body = '${match.teamA} vs ${match.teamB} has kicked off!';
     await _showRichNotification(
       id: _NotifId.fromString(match.id),
@@ -577,7 +577,7 @@ class NotificationService {
             priority: Priority.high,
           ),
         ),
-        payload: NotificationPayload(
+        payload: const NotificationPayload(
           type: NotificationPayloadType.matchLive,
           entityId: '',
           streamUrl: null,
@@ -721,7 +721,7 @@ class NotificationService {
     String? ticker,
     StyleInformation? fallbackStyle,
   }) async {
-    StyleInformation? androidStyle = fallbackStyle;
+    var androidStyle = fallbackStyle;
     List<DarwinNotificationAttachment>? iosAttachments;
 
     final url = imageUrl?.trim();

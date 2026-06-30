@@ -163,7 +163,7 @@ class _CategoryTile extends StatelessWidget {
                 horizontal: tokens.SpacingTokens.s8,
                 vertical: tokens.SpacingTokens.s4,
               ),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: tokens.AppTokens.liveRed,
                 borderRadius: tokens.RadiusTokens.circularSm,
               ),

@@ -175,7 +175,7 @@ class StreamSecurityProber {
     final results = <String, StreamProbeResult>{};
 
     // Process in batches to limit concurrency
-    for (int i = 0; i < urls.length; i += concurrency) {
+    for (var i = 0; i < urls.length; i += concurrency) {
       final batch = urls.skip(i).take(concurrency);
       final futures = batch.map((url) async {
         final result = await probeUrl(url);

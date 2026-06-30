@@ -318,7 +318,7 @@ class FeaturedLiveEventsService {
       }
     }
     return const FeaturedLiveEventsLoadResult(
-      payload: const FeaturedLiveEventsPayload(),
+      payload: FeaturedLiveEventsPayload(),
       source: FeaturedLiveEventsSource.empty,
       errorMessage: 'Appwrite not configured and no valid bundled asset',
     );

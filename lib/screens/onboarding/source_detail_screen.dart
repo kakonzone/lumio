@@ -128,7 +128,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(
+          padding: const EdgeInsets.symmetric(
             horizontal: tokens.SpacingTokens.s24,
             vertical: tokens.SpacingTokens.s16,
           ),
@@ -152,10 +152,10 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
           ] else ...[
             _buildForm(),
             if (_errorMessage != null) ...[
-              SizedBox(height: tokens.SpacingTokens.s16),
+              const SizedBox(height: tokens.SpacingTokens.s16),
               _buildErrorState(),
             ],
-            SizedBox(height: tokens.SpacingTokens.s32),
+            const SizedBox(height: tokens.SpacingTokens.s32),
             _buildSubmitButton(),
           ],
         ],
@@ -182,7 +182,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
           Strings.onboardingSourceUrlLabel,
           style: tokens.TypographyTokens.labelPrimary,
         ),
-        SizedBox(height: tokens.SpacingTokens.s8),
+        const SizedBox(height: tokens.SpacingTokens.s8),
         TextFormField(
           controller: _urlController,
           decoration: InputDecoration(
@@ -193,7 +193,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
               borderRadius: BorderRadius.circular(tokens.RadiusTokens.md),
               borderSide: BorderSide.none,
             ),
-            contentPadding: EdgeInsets.symmetric(
+            contentPadding: const EdgeInsets.symmetric(
               horizontal: tokens.SpacingTokens.s16,
               vertical: tokens.SpacingTokens.s12,
             ),
@@ -222,7 +222,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
           Strings.onboardingSourceServerUrlLabel,
           style: tokens.TypographyTokens.labelPrimary,
         ),
-        SizedBox(height: tokens.SpacingTokens.s8),
+        const SizedBox(height: tokens.SpacingTokens.s8),
         TextFormField(
           controller: _serverUrlController,
           decoration: InputDecoration(
@@ -233,7 +233,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
               borderRadius: BorderRadius.circular(tokens.RadiusTokens.md),
               borderSide: BorderSide.none,
             ),
-            contentPadding: EdgeInsets.symmetric(
+            contentPadding: const EdgeInsets.symmetric(
               horizontal: tokens.SpacingTokens.s16,
               vertical: tokens.SpacingTokens.s12,
             ),
@@ -246,12 +246,12 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
             return null;
           },
         ),
-        SizedBox(height: tokens.SpacingTokens.s16),
+        const SizedBox(height: tokens.SpacingTokens.s16),
         Text(
           Strings.onboardingSourceUsernameLabel,
           style: tokens.TypographyTokens.labelPrimary,
         ),
-        SizedBox(height: tokens.SpacingTokens.s8),
+        const SizedBox(height: tokens.SpacingTokens.s8),
         TextFormField(
           controller: _usernameController,
           decoration: InputDecoration(
@@ -262,7 +262,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
               borderRadius: BorderRadius.circular(tokens.RadiusTokens.md),
               borderSide: BorderSide.none,
             ),
-            contentPadding: EdgeInsets.symmetric(
+            contentPadding: const EdgeInsets.symmetric(
               horizontal: tokens.SpacingTokens.s16,
               vertical: tokens.SpacingTokens.s12,
             ),
@@ -275,12 +275,12 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
             return null;
           },
         ),
-        SizedBox(height: tokens.SpacingTokens.s16),
+        const SizedBox(height: tokens.SpacingTokens.s16),
         Text(
           Strings.onboardingSourcePasswordLabel,
           style: tokens.TypographyTokens.labelPrimary,
         ),
-        SizedBox(height: tokens.SpacingTokens.s8),
+        const SizedBox(height: tokens.SpacingTokens.s8),
         TextFormField(
           controller: _passwordController,
           obscureText: true,
@@ -292,7 +292,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
               borderRadius: BorderRadius.circular(tokens.RadiusTokens.md),
               borderSide: BorderSide.none,
             ),
-            contentPadding: EdgeInsets.symmetric(
+            contentPadding: const EdgeInsets.symmetric(
               horizontal: tokens.SpacingTokens.s16,
               vertical: tokens.SpacingTokens.s12,
             ),
@@ -335,12 +335,12 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
               size: 48,
               color: tokens.AppTokens.accent,
             ),
-            SizedBox(height: tokens.SpacingTokens.s16),
+            const SizedBox(height: tokens.SpacingTokens.s16),
             Text(
               'Tap to select M3U file',
               style: tokens.TypographyTokens.bodyPrimary,
             ),
-            SizedBox(height: tokens.SpacingTokens.s8),
+            const SizedBox(height: tokens.SpacingTokens.s8),
             Text(
               'Supports .m3u and .m3u8 files',
               style: tokens.TypographyTokens.captionSecondary,
@@ -359,7 +359,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
           const CircularProgressIndicator(
             color: tokens.AppTokens.accent,
           ),
-          SizedBox(height: tokens.SpacingTokens.s16),
+          const SizedBox(height: tokens.SpacingTokens.s16),
           Text(
             Strings.onboardingSourceValidating,
             style: tokens.TypographyTokens.bodySecondary,
@@ -387,7 +387,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
               color: Colors.white,
             ),
           ),
-          SizedBox(height: tokens.SpacingTokens.s24),
+          const SizedBox(height: tokens.SpacingTokens.s24),
           Text(
             Strings.onboardingSourceSuccess,
             style: tokens.TypographyTokens.titlePrimary,
@@ -399,7 +399,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
 
   Widget _buildErrorState() {
     return Container(
-      padding: EdgeInsets.all(tokens.SpacingTokens.s16),
+      padding: const EdgeInsets.all(tokens.SpacingTokens.s16),
       decoration: BoxDecoration(
         color: tokens.AppTokens.surface2,
         borderRadius: BorderRadius.circular(tokens.RadiusTokens.md),
@@ -415,7 +415,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
             color: tokens.AppTokens.danger,
             size: 20,
           ),
-          SizedBox(width: tokens.SpacingTokens.s12),
+          const SizedBox(width: tokens.SpacingTokens.s12),
           Expanded(
             child: Text(
               _errorMessage ?? Strings.onboardingSourceError,
@@ -439,7 +439,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
       onTap: _handleSubmit,
       child: Container(
         width: double.infinity,
-        padding: EdgeInsets.symmetric(
+        padding: const EdgeInsets.symmetric(
           vertical: tokens.SpacingTokens.s16,
         ),
         decoration: BoxDecoration(

@@ -589,7 +589,7 @@ extension _PlayerControls on _PlayerScreenState {
             ),
           ),
           const SizedBox(height: 16),
-          PlayerConnectingDots(),
+          const PlayerConnectingDots(),
         ],
       ),
     );

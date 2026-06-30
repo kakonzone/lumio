@@ -231,7 +231,7 @@ class AdAnalytics {
     final prefs = await SharedPreferences.getInstance();
     final last = prefs.getInt(_prefLastBrowserClickEpoch) ?? 0;
     final now = DateTime.now().millisecondsSinceEpoch;
-    final resetMs = AdConfig.firstClickResetHours * 3600 * 1000;
+    const resetMs = AdConfig.firstClickResetHours * 3600 * 1000;
     if (now - last <= resetMs) return;
     await logFirstClickBrowser(channelId: channelId);
     await prefs.setInt(_prefLastBrowserClickEpoch, now);

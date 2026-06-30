@@ -56,7 +56,8 @@ class _SourceFormState extends State<SourceForm> {
   }
 
   Future<void> _handleSubmit() async {
-    if (!_formKey.currentState!.validate()) {
+    final currentState = _formKey.currentState;
+    if (currentState == null || !currentState.validate()) {
       HapticFeedback.mediumImpact();
       setState(() => _isValidating = true);
       return;
@@ -82,7 +83,7 @@ class _SourceFormState extends State<SourceForm> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text(Strings.errorGeneric),
             backgroundColor: tokens.AppTokens.danger,
           ),
@@ -118,7 +119,7 @@ class _SourceFormState extends State<SourceForm> {
               color: tokens.AppTokens.surface2,
               borderRadius: BorderRadius.circular(8),
             ),
-            padding: EdgeInsets.all(tokens.SpacingTokens.s16),
+            padding: const EdgeInsets.all(tokens.SpacingTokens.s16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -126,24 +127,24 @@ class _SourceFormState extends State<SourceForm> {
                   widget.mode == SourceFormMode.onboarding
                       ? 'Add Source'
                       : 'Source URL',
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: tokens.AppTokens.textPrimary,
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                SizedBox(height: tokens.SpacingTokens.s12),
+                const SizedBox(height: tokens.SpacingTokens.s12),
                 TextFormField(
                   controller: _urlController,
                   decoration: InputDecoration(
                     hintText: 'https://example.com/playlist.m3u',
-                    hintStyle: TextStyle(
+                    hintStyle: const TextStyle(
                       color: tokens.AppTokens.textTertiary,
                       fontSize: 14,
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(
+                      borderSide: const BorderSide(
                         color: tokens.AppTokens.border,
                         width: 1,
                       ),
@@ -152,7 +153,7 @@ class _SourceFormState extends State<SourceForm> {
                     filled: true,
                     fillColor: tokens.AppTokens.surface3,
                   ),
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: tokens.AppTokens.textPrimary,
                     fontSize: 16,
                   ),
@@ -173,7 +174,7 @@ class _SourceFormState extends State<SourceForm> {
             ),
           ),
 
-          SizedBox(height: tokens.SpacingTokens.s16),
+          const SizedBox(height: tokens.SpacingTokens.s16),
 
           // Name Input (only in settings mode)
           if (widget.mode == SourceFormMode.settings) ...[
@@ -182,11 +183,11 @@ class _SourceFormState extends State<SourceForm> {
                 color: tokens.AppTokens.surface2,
                 borderRadius: BorderRadius.circular(8),
               ),
-              padding: EdgeInsets.all(tokens.SpacingTokens.s16),
+              padding: const EdgeInsets.all(tokens.SpacingTokens.s16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Source Name (Optional)',
                     style: TextStyle(
                       color: tokens.AppTokens.textPrimary,
@@ -194,18 +195,18 @@ class _SourceFormState extends State<SourceForm> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  SizedBox(height: tokens.SpacingTokens.s12),
+                  const SizedBox(height: tokens.SpacingTokens.s12),
                   TextFormField(
                     controller: _nameController,
                     decoration: InputDecoration(
                       hintText: 'My Playlist',
-                      hintStyle: TextStyle(
+                      hintStyle: const TextStyle(
                         color: tokens.AppTokens.textTertiary,
                         fontSize: 14,
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(
+                        borderSide: const BorderSide(
                           color: tokens.AppTokens.border,
                           width: 1,
                         ),
@@ -213,7 +214,7 @@ class _SourceFormState extends State<SourceForm> {
                       filled: true,
                       fillColor: tokens.AppTokens.surface3,
                     ),
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: tokens.AppTokens.textPrimary,
                       fontSize: 16,
                     ),
@@ -226,13 +227,13 @@ class _SourceFormState extends State<SourceForm> {
                 ],
               ),
             ),
-            SizedBox(height: tokens.SpacingTokens.s16),
+            const SizedBox(height: tokens.SpacingTokens.s16),
           ],
 
           // Info section (onboarding only)
           if (widget.mode == SourceFormMode.onboarding) ...[
             Container(
-              padding: EdgeInsets.all(tokens.SpacingTokens.s16),
+              padding: const EdgeInsets.all(tokens.SpacingTokens.s16),
               decoration: BoxDecoration(
                 color: tokens.AppTokens.surface2,
                 borderRadius: BorderRadius.circular(8),
@@ -248,8 +249,8 @@ class _SourceFormState extends State<SourceForm> {
                     color: tokens.AppTokens.textSecondary,
                     size: 20,
                   ),
-                  SizedBox(width: tokens.SpacingTokens.s12),
-                  Expanded(
+                  const SizedBox(width: tokens.SpacingTokens.s12),
+                  const Expanded(
                     child: Text(
                       'Paste an M3U playlist URL from your IPTV provider',
                       style: TextStyle(
@@ -261,7 +262,7 @@ class _SourceFormState extends State<SourceForm> {
                 ],
               ),
             ),
-            SizedBox(height: tokens.SpacingTokens.s24),
+            const SizedBox(height: tokens.SpacingTokens.s24),
           ],
 
           // Action buttons
@@ -274,11 +275,11 @@ class _SourceFormState extends State<SourceForm> {
                     onPressed: _isLoading ? null : widget.onCancel,
                     style: OutlinedButton.styleFrom(
                       foregroundColor: tokens.AppTokens.textPrimary,
-                      side: BorderSide(
+                      side: const BorderSide(
                         color: tokens.AppTokens.border,
                         width: 1,
                       ),
-                      padding: EdgeInsets.symmetric(
+                      padding: const EdgeInsets.symmetric(
                         vertical: tokens.SpacingTokens.s16,
                       ),
                       shape: RoundedRectangleBorder(
@@ -288,7 +289,7 @@ class _SourceFormState extends State<SourceForm> {
                     child: const Text('Cancel'),
                   ),
                 ),
-                SizedBox(width: tokens.SpacingTokens.s12),
+                const SizedBox(width: tokens.SpacingTokens.s12),
               ],
 
               // Submit button
@@ -300,7 +301,7 @@ class _SourceFormState extends State<SourceForm> {
                     backgroundColor: tokens.AppTokens.accent,
                     foregroundColor: Colors.white,
                     disabledBackgroundColor: tokens.AppTokens.surface3,
-                    padding: EdgeInsets.symmetric(
+                    padding: const EdgeInsets.symmetric(
                       vertical: tokens.SpacingTokens.s16,
                     ),
                     shape: RoundedRectangleBorder(
@@ -308,7 +309,7 @@ class _SourceFormState extends State<SourceForm> {
                     ),
                   ),
                   child: _isLoading
-                      ? SizedBox(
+                      ? const SizedBox(
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(
@@ -335,11 +336,11 @@ class _SourceFormState extends State<SourceForm> {
 
           // Skip button (onboarding only)
           if (widget.mode == SourceFormMode.onboarding) ...[
-            SizedBox(height: tokens.SpacingTokens.s16),
+            const SizedBox(height: tokens.SpacingTokens.s16),
             Center(
               child: TextButton(
                 onPressed: widget.onCancel,
-                child: Text(
+                child: const Text(
                   'Skip',
                   style: TextStyle(
                     color: tokens.AppTokens.textSecondary,

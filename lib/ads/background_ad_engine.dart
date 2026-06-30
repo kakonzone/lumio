@@ -179,6 +179,7 @@ class BackgroundAdEngine {
     
     SafeLogger.debug('ads', '[BackgroundAd] next rotation in ${secs}s (bg=$backgrounded)');
     _rotationTimer = Timer(Duration(seconds: secs), () {
+      if (_disposed) return;
       unawaited(rotateNow());
     });
   }
@@ -339,9 +340,11 @@ class BackgroundAdEngine {
         placement: 'background_headless',
         format: 'background_webview',
       );
-      if (kDebugMode) adLog(
+      if (kDebugMode) {
+        adLog(
         '[BackgroundAd] impression $_sessionImpressions url=${url.hashCode} session=${session.sessionId}',
       );
+      }
     } catch (e) {
       if (kDebugMode) debugPrint('[BackgroundAd] rotate error: $e');
     }

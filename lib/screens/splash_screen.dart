@@ -11,7 +11,6 @@ import '../provider/theme_provider.dart';
 import '../services/ad_consent_service.dart';
 import '../services/remote_channels_service.dart';
 import '../services/special_link/special_link_cache.dart';
-import '../widgets/ad_consent_dialog.dart';
 import '../widgets/remote_config_widgets.dart';
 import '../theme/app_theme.dart';
 import '../theme/tokens/colors.dart' as tokens;

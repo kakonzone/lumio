@@ -56,8 +56,8 @@ class LoadMoreIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!hasMore) {
       return noMoreWidget ??
-          Padding(
-            padding: const EdgeInsets.all(16),
+          const Padding(
+            padding: EdgeInsets.all(16),
             child: Text(
               'No more items',
               style: TextStyle(
@@ -86,7 +86,7 @@ class LoadMoreIndicator extends StatelessWidget {
       child: Center(
         child: TextButton(
           onPressed: onLoadMore,
-          child: Text(
+          child: const Text(
             'Load more',
             style: TextStyle(
               color: tokens.AppTokens.accent,
@@ -124,7 +124,7 @@ class EndOfListIndicator extends StatelessWidget {
           const SizedBox(width: 12),
           Text(
             message,
-            style: TextStyle(
+            style: const TextStyle(
               color: tokens.AppTokens.textTertiary,
               fontSize: 12,
             ),

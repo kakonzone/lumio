@@ -26,7 +26,7 @@ class FavoritesScreen extends StatelessWidget {
 
     if (favorites.isEmpty) {
       return ShellPageScaffold(
-        appBar: ShellAppBar(
+        appBar: const ShellAppBar(
           showBack: true,
           blendWithScaffold: true,
           hideSubtitleInBar: true,
@@ -71,7 +71,7 @@ class FavoritesScreen extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 child: LazyAdViewport(
                   placeholderHeight: 100,
-                  builder: () => AdsterraNativeBanner(
+                  builder: () => const AdsterraNativeBanner(
                     placement: 'favorites_list_0',
                     height: 100,
                     userVisible: AdConfig.playerAdsUserVisible,

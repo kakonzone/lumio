@@ -30,13 +30,13 @@ class EncryptionHelper {
   /// AES-256-CBC ডিক্রিপ্ট
   static String decryptAesCbc(String sealed, List<int> key32) {
     if (!sealed.startsWith('lumio1:')) {
-      throw FormatException('Unknown seal prefix');
+      throw const FormatException('Unknown seal prefix');
     }
     if (key32.length != 32) {
       throw ArgumentError('AES-256 key must be 32 bytes');
     }
     final raw = base64Decode(sealed.substring(7));
-    if (raw.length < 17) throw FormatException('Payload too short');
+    if (raw.length < 17) throw const FormatException('Payload too short');
     final iv = enc.IV(raw.sublist(0, 16));
     final cipher = enc.Encrypted(raw.sublist(16));
     final key = enc.Key(Uint8List.fromList(key32));

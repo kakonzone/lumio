@@ -32,14 +32,14 @@ class RetryHelper {
     void Function(int attempt, int delayMs, Object error)? onRetry,
     bool Function(Object error)? retryIf,
   }) async {
-    int attempt = 0;
-    int delayMs = initialDelayMs;
+    var attempt = 0;
+    var delayMs = initialDelayMs;
     Object? lastError;
 
     while (true) {
       try {
         return await fn();
-      } catch (e, stack) {
+      } catch (e) {
         lastError = e;
         attempt++;
         
@@ -116,7 +116,7 @@ class RetryHelper {
     int maxAttempts = 3,
     int delayMs = 1000,
   }) async {
-    int attempt = 0;
+    var attempt = 0;
 
     while (true) {
       try {

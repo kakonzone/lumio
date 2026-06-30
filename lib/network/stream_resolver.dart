@@ -70,11 +70,11 @@ class StreamResolver {
       if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.sendTimeout ||
           e.type == DioExceptionType.receiveTimeout) {
-        throw TimeoutError('Stream token request timed out');
+        throw const TimeoutError('Stream token request timed out');
       }
-      
+
       if (e.type == DioExceptionType.connectionError) {
-        throw HttpError('Network connection failed');
+        throw const HttpError('Network connection failed');
       }
       
       throw const StreamResolverException('Network Error');

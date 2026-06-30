@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import '../ads/adsterra/adsterra_html.dart';
 import '../ads/utils/lumio_webview_config.dart';
 
 class FullscreenInterstitialAd extends StatefulWidget {

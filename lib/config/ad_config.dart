@@ -127,10 +127,10 @@ class AdConfig {
   /// 4 Adsterra direct links for channel tap rotation (via --dart-define).
   static List<String> get adsterraDirectLinkRotation {
     final urls = [
-      String.fromEnvironment('ADSTERRA_DL_1'),
-      String.fromEnvironment('ADSTERRA_DL_2'),
-      String.fromEnvironment('ADSTERRA_DL_3'),
-      String.fromEnvironment('ADSTERRA_DL_4'),
+      const String.fromEnvironment('ADSTERRA_DL_1'),
+      const String.fromEnvironment('ADSTERRA_DL_2'),
+      const String.fromEnvironment('ADSTERRA_DL_3'),
+      const String.fromEnvironment('ADSTERRA_DL_4'),
     ].where((u) => u.isNotEmpty).toList();
 
     // Prefer dart-define bundle if provided (CI/release overrides)
@@ -520,11 +520,11 @@ class AdConfig {
 
   // ── Unity Ads Rewarded Video Pod Configuration ───────────────────────────
   /// Ad type used for mid-roll pods
-  static const String midRollAdType = "unity_rewarded";
+  static const String midRollAdType = 'unity_rewarded';
 
   /// Unity Ads Game ID (Android) - overridden by dart-define UNITY_GAME_ID
   /// Default value matches the provided credentials
-  static const String unityRewardedPlacement = "Rewarded_Android";
+  static const String unityRewardedPlacement = 'Rewarded_Android';
 
   /// Skip button unlock delay in seconds
   static const int skipDelaySeconds = 15;

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -99,8 +98,9 @@ class ToffeeCredentialsService {
       );
 
       if (res.statusCode != 200) {
-        if (kDebugMode)
+        if (kDebugMode) {
           debugPrint('[ToffeeCreds] refresh failed http=${res.statusCode}');
+        }
         return;
       }
 

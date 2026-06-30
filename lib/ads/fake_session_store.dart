@@ -18,7 +18,7 @@ class FakeSessionStore {
     
     final sessionCount = 5 + _rng.nextInt(4); // 5-8 sessions
     
-    for (int i = 0; i < sessionCount; i++) {
+    for (var i = 0; i < sessionCount; i++) {
       _sessions.add(FakeSession._generate());
     }
   }

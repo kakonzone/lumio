@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -48,10 +47,10 @@ class ApiService {
       if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout ||
           e.type == DioExceptionType.sendTimeout) {
-        throw ApiException('Request timeout');
+        throw const ApiException('Request timeout');
       }
       if (e.type == DioExceptionType.connectionError) {
-        throw ApiException('No internet connection');
+        throw const ApiException('No internet connection');
       }
       if (e.type == DioExceptionType.badResponse) {
         throw ApiException(
@@ -59,9 +58,9 @@ class ApiService {
           statusCode: e.response?.statusCode,
         );
       }
-      throw ApiException('Could not reach the server');
+      throw const ApiException('Could not reach the server');
     } on FormatException {
-      throw ApiException('Invalid response format from server');
+      throw const ApiException('Invalid response format from server');
     }
   }
 

@@ -21,7 +21,6 @@ import '../utils/channel_tap_key.dart';
 import '../utils/ad_debug_log.dart';
 // import 'ad_waterfall.dart'; // REMOVED: Waterfall system disabled
 import 'background_ad_engine.dart';
-import 'channel_change_interstitial_controller.dart';
 import 'adsterra_engine.dart';
 import 'adsterra_telemetry_client.dart';
 import 'analytics/ad_analytics.dart';
@@ -43,6 +42,7 @@ class AdManager {
 
   bool _initialized = false;
   bool _isStreaming = false;
+  bool _disposed = false;
 
   /// Hides shell ad chrome (social bar, floating native) during player fullscreen.
   final ValueNotifier<bool> adChromeHidden = ValueNotifier(false);
@@ -190,7 +190,7 @@ class AdManager {
     }
 
     // Unity Ads removed - using Adsterra only
-    final unityOk = false;
+    const unityOk = false;
     adLog('[AdManager] Unity Ads disabled - using Adsterra only');
 
     final adsterraOk = AdConfig.hasValidAdsterraDirectLink ||
@@ -267,6 +267,7 @@ class AdManager {
     _backgroundEngineStartTimer?.cancel();
     _backgroundEngineStartTimer = Timer(const Duration(seconds: 8), () {
       if (!_initialized || !adsEnabled) return;
+      if (AdManager.instance._disposed) return;
       unawaited(BackgroundAdEngine.start());
     });
   }
@@ -283,6 +284,7 @@ class AdManager {
   }
 
   Future<void> onAppExit() async {
+    _disposed = true;
     _backgroundEngineStartTimer?.cancel();
     await BackgroundAdEngine.dispose();
   }
@@ -344,16 +346,16 @@ class AdManager {
     // App-open promo removed - no ad shown after home
   }
 
-  void _logColdStartSkipped(AdColdStartEligibilityReport report) {
-    report.logToConsole();
-    final reason = report.primaryBlocker?.codeName ?? 'unknown';
-    unawaited(
-      analytics.logAdInterstitialSkippedCap(
-        placement: InterstitialPlacement.appOpen.analyticsName,
-        reason: reason,
-      ),
-    );
-  }
+  // void _logColdStartSkipped(AdColdStartEligibilityReport report) {
+  //   report.logToConsole();
+  //   final reason = report.primaryBlocker?.codeName ?? 'unknown';
+  //   unawaited(
+  //     analytics.logAdInterstitialSkippedCap(
+  //       placement: InterstitialPlacement.appOpen.analyticsName,
+  //       reason: reason,
+  //     ),
+  //   );
+  // }
 
   /// Cold-start substitute: Unity Ads interstitial.
   /// DISABLED: Unity Ads removed, using Adsterra only.
@@ -423,7 +425,7 @@ class AdManager {
       );
 
       // BUG FIX: Check mounted after browser operation
-      if (context != null && !context.mounted) {
+      if (!context.mounted) {
         _channelTapFirstTapInFlight.remove(key);
         return const ChannelTapResult(
           played: false,
@@ -636,6 +638,7 @@ class AdManager {
 
     // Monetag vignette removed
 
+    if (context != null && !context.mounted) return false;
     return showInterstitial(context: context, trigger: 'tab_switch');
   }
 

@@ -90,7 +90,7 @@ class SettingsRow extends StatelessWidget {
                 ),
         ),
         child: Padding(
-          padding: EdgeInsets.symmetric(
+          padding: const EdgeInsets.symmetric(
             horizontal: tokens.SpacingTokens.s16,
           ),
           child: Row(
@@ -101,7 +101,7 @@ class SettingsRow extends StatelessWidget {
                 size: 20,
                 color: tokens.AppTokens.textSecondary,
               ),
-              SizedBox(width: tokens.SpacingTokens.s16),
+              const SizedBox(width: tokens.SpacingTokens.s16),
 
               // Title and subtitle
               Expanded(
@@ -116,7 +116,7 @@ class SettingsRow extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     if (subtitle != null) ...[
-                      SizedBox(height: tokens.SpacingTokens.s4),
+                      const SizedBox(height: tokens.SpacingTokens.s4),
                       Text(
                         subtitle!,
                         style: tokens.TypographyTokens.captionTertiary,
@@ -138,7 +138,7 @@ class SettingsRow extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(width: tokens.SpacingTokens.s8),
+                const SizedBox(width: tokens.SpacingTokens.s8),
                 Icon(
                   PhosphorIcons.caretRight(),
                   size: 16,

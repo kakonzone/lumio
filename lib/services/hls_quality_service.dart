@@ -136,7 +136,7 @@ class HlsQualityService {
     final variants = <HlsVariant>[];
     int? pendingWidth;
     int? pendingHeight;
-    int pendingBw = 0;
+    var pendingBw = 0;
 
     for (final raw in lines) {
       final line = raw.trim();

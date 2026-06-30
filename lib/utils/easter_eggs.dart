@@ -46,6 +46,7 @@ class EasterEggManager {
 
   // New Year confetti state
   bool _newYearShown = false;
+  bool _disposed = false;
 
   /// Initialize and load persisted state
   Future<void> initialize() async {
@@ -187,6 +188,12 @@ class EasterEggManager {
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('new_year_shown_${_getCurrentYear()}');
+  }
+
+  /// Dispose singleton state (called on app exit)
+  void dispose() {
+    _disposed = true;
+    _versionTapResetTimer?.cancel();
   }
 
   /// Widget wrapper for version tap handling

@@ -219,7 +219,7 @@ class InstallWatermarkService {
   Future<String> _generateRegistrationSignature() async {
     // Create signature using HMAC secret (in production, use proper crypto)
     final payload = '$_installId|$_deviceFingerprint|${DateTime.now().millisecondsSinceEpoch}';
-    final secret = SecurityConfig.hmacSecret;
+    const secret = SecurityConfig.hmacSecret;
     
     if (secret.isEmpty) {
       return _sha256Hash(utf8.encode(payload));

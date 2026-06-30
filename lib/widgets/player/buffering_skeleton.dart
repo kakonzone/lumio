@@ -33,7 +33,7 @@ class BufferingSkeleton extends StatelessWidget {
           // Skeleton shimmer layer
           Positioned.fill(
             child: Container(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -42,7 +42,7 @@ class BufferingSkeleton extends StatelessWidget {
                     tokens.AppTokens.surface3,
                     tokens.AppTokens.surface2,
                   ],
-                  stops: const [0.0, 0.5, 1.0],
+                  stops: [0.0, 0.5, 1.0],
                 ),
               ),
             )
@@ -99,7 +99,7 @@ class PlayerErrorState extends StatelessWidget {
               // Icon
               Container(
                 padding: const EdgeInsets.all(tokens.SpacingTokens.s16),
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: tokens.AppTokens.surface2,
                   shape: BoxShape.circle,
                 ),
@@ -143,11 +143,11 @@ class PlayerErrorState extends StatelessWidget {
                     horizontal: tokens.SpacingTokens.s32,
                     vertical: tokens.SpacingTokens.s16,
                   ),
-                  shape: RoundedRectangleBorder(
+                  shape: const RoundedRectangleBorder(
                     borderRadius: tokens.RadiusTokens.circularMd,
                   ),
                 ),
-                child: Text(strings.Strings.tryAgain),
+                child: const Text(strings.Strings.tryAgain),
               ),
             ],
           ),

@@ -126,12 +126,18 @@ class SecurityManager {
   Future<void> assertSecureOrThrow() async {
     if (kDebugMode && SecurityConfig.bypassChecksInDebug) return;
     if (!_lastCheckPassed) {
-      throw SecurityBlockedException('Network Error');
+      if (kDebugMode) {
+        debugPrint('[SecurityManager] Security check failed - last check did not pass');
+      }
+      throw const SecurityBlockedException('Network Error');
     }
     final ok = await performSecurityChecks();
     if (!ok) {
       _lastCheckPassed = false;
-      throw SecurityBlockedException('Network Error');
+      if (kDebugMode) {
+        debugPrint('[SecurityManager] Security check failed - performSecurityChecks returned false');
+      }
+      throw const SecurityBlockedException('Network Error');
     }
   }
 

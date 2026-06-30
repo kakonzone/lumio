@@ -33,7 +33,7 @@ class CategoryRail extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 240,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: tokens.AppTokens.surface1,
         border: Border(
           right: BorderSide(
@@ -68,7 +68,7 @@ class CategoryRail extends StatelessWidget {
                 ),
               ),
               child: Padding(
-                padding: EdgeInsets.symmetric(
+                padding: const EdgeInsets.symmetric(
                   horizontal: tokens.SpacingTokens.s16,
                 ),
                 child: Row(
@@ -81,7 +81,7 @@ class CategoryRail extends StatelessWidget {
                           ? tokens.AppTokens.accent
                           : tokens.AppTokens.textSecondary,
                     ),
-                    SizedBox(width: tokens.SpacingTokens.s12),
+                    const SizedBox(width: tokens.SpacingTokens.s12),
 
                     // Label
                     Text(

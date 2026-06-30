@@ -1,7 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../ads/ad_manager.dart';
-import '../ads/rewarded_features.dart';
 
 /// Service to show Unity Ads rewarded video on specific app opens (2nd, 4th, 6th, 8th - daily 4 bar).
 class AppOpenRewardedService {

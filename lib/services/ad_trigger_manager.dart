@@ -19,6 +19,7 @@ class AdTriggerManager {
 
   final _rng = Random();
 
+  // ignore: unused_field
   DateTime? _sessionStart;
   DateTime? _adsEligibleAfter;
   DateTime? _lastUnityInterstitial;
@@ -38,7 +39,10 @@ class AdTriggerManager {
   int _sessionMidrollShown = 0;
   DateTime? _lastMidrollAt;
   DateTime? _currentChannelStartedAt;
+  // ignore: unused_field
   String? _currentChannelKey;
+  // ignore: unused_field
+  bool _isDisposed = false;
 
   String _hourKey() {
     final n = DateTime.now();
@@ -189,6 +193,7 @@ class AdTriggerManager {
   }
 
   Duration get interstitialNaturalDelay {
+    // ignore: prefer_const_declarations
     final span =
         AdConfig.interstitialDelayMaxMs - AdConfig.interstitialDelayMinMs;
     final ms = AdConfig.interstitialDelayMinMs + _rng.nextInt(span + 1);
@@ -605,4 +610,21 @@ class AdTriggerManager {
   }
 
   void recordExitAdShown() => _exitAdShown = true;
+
+  /// Dispose singleton state (called on app exit).
+  void dispose() {
+    _isDisposed = true;
+    _sessionStart = null;
+    _adsEligibleAfter = null;
+    _lastUnityInterstitial = null;
+    _lastAdsterraSurfaceEvent = null;
+    _lastAppOpenSubstitute = null;
+    _adFreeUntil = null;
+    _lastMidrollAt = null;
+    _currentChannelStartedAt = null;
+    _currentChannelKey = null;
+    _channelTapBrowserShown.clear();
+    _newsArticleAdShown.clear();
+    _prerollShownChannelKeys.clear();
+  }
 }

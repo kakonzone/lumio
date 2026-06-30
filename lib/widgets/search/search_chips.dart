@@ -28,7 +28,7 @@ class SearchChip extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.symmetric(
+        padding: const EdgeInsets.symmetric(
           horizontal: tokens.SpacingTokens.s16,
           vertical: tokens.SpacingTokens.s12,
         ),
@@ -53,7 +53,7 @@ class SearchChip extends StatelessWidget {
                     ? tokens.TypographyTokens.labelAccent
                     : tokens.TypographyTokens.labelPrimary,
               ),
-              SizedBox(width: tokens.SpacingTokens.s8),
+              const SizedBox(width: tokens.SpacingTokens.s8),
               Pressable(
                 onTap: onRemove,
                 child: Icon(
@@ -99,7 +99,7 @@ class RecentSearches extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.symmetric(
+          padding: const EdgeInsets.symmetric(
             horizontal: tokens.SpacingTokens.s24,
             vertical: tokens.SpacingTokens.s16,
           ),
@@ -109,7 +109,7 @@ class RecentSearches extends StatelessWidget {
           ),
         ),
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: tokens.SpacingTokens.s24),
+          padding: const EdgeInsets.symmetric(horizontal: tokens.SpacingTokens.s24),
           child: Wrap(
             spacing: tokens.SpacingTokens.s8,
             runSpacing: tokens.SpacingTokens.s8,
@@ -149,7 +149,7 @@ class TrendingSearches extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.symmetric(
+          padding: const EdgeInsets.symmetric(
             horizontal: tokens.SpacingTokens.s24,
             vertical: tokens.SpacingTokens.s16,
           ),
@@ -159,7 +159,7 @@ class TrendingSearches extends StatelessWidget {
           ),
         ),
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: tokens.SpacingTokens.s24),
+          padding: const EdgeInsets.symmetric(horizontal: tokens.SpacingTokens.s24),
           child: Wrap(
             spacing: tokens.SpacingTokens.s8,
             runSpacing: tokens.SpacingTokens.s8,
@@ -195,7 +195,7 @@ class CategoryGrid extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.symmetric(
+          padding: const EdgeInsets.symmetric(
             horizontal: tokens.SpacingTokens.s24,
             vertical: tokens.SpacingTokens.s16,
           ),
@@ -205,7 +205,7 @@ class CategoryGrid extends StatelessWidget {
           ),
         ),
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: tokens.SpacingTokens.s24),
+          padding: const EdgeInsets.symmetric(horizontal: tokens.SpacingTokens.s24),
           child: GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),

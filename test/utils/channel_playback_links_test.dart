@@ -35,7 +35,7 @@ void main() {
       name: 'Star Sports 1',
       streamUrl: 'https://a.test/1.m3u8',
       alternateStreams: [
-        StreamLink(url: 'https://a.test/2.m3u8', label: 'Link 2'),
+        const StreamLink(url: 'https://a.test/2.m3u8', label: 'Link 2'),
       ],
     );
     expect(ChannelPlaybackLinks.resolve(ch, [ch]).length, 2);

@@ -117,9 +117,9 @@ class NotFoundMoment extends StatelessWidget {
             color: Colors.grey,
           ),
           const SizedBox(height: 16),
-          Text(
+          const Text(
             Strings.notFoundMessage,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               color: Colors.grey,
             ),
@@ -239,13 +239,13 @@ class Milestone100HoursMoment extends StatelessWidget {
             size: 24,
           ),
           const SizedBox(width: 12),
-          Expanded(
+          const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   Strings.milestone100HoursTitle,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
@@ -253,7 +253,7 @@ class Milestone100HoursMoment extends StatelessWidget {
                 ),
                 Text(
                   Strings.milestone100HoursMessage,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey,
                   ),
@@ -384,11 +384,11 @@ class _Milestone100HoursCheckerState extends State<Milestone100HoursChecker> {
 
   void _showMilestoneToast() {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
+      const SnackBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        content: const Milestone100HoursMoment(),
-        duration: const Duration(seconds: 4),
+        content: Milestone100HoursMoment(),
+        duration: Duration(seconds: 4),
         behavior: SnackBarBehavior.floating,
       ),
     );

@@ -68,7 +68,7 @@ class _StickyBottomNativeState extends State<StickyBottomNative> {
       child: Stack(
         children: [
           // Native ad content
-          AdsterraNativeBanner(
+          const AdsterraNativeBanner(
             placement: 'categories_sticky_bottom',
             height: 60,
             userVisible: AdConfig.playerAdsUserVisible,

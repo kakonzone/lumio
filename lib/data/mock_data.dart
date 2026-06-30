@@ -4,7 +4,7 @@ import '../models/model.dart';
 
 final List<ChannelModel> mockChannels = [
   // ── SPORTS ──────────────────────────────────────────────
-  ChannelModel(
+  const ChannelModel(
     id: 'c1',
     name: 'Gazi TV Sports',
     category: 'Sports',
@@ -14,7 +14,7 @@ final List<ChannelModel> mockChannels = [
     viewers: 12400,
     currentShow: 'Bangladesh vs India T20',
   ),
-  ChannelModel(
+  const ChannelModel(
     id: 'c2',
     name: 'Star Sports 1',
     category: 'Sports',
@@ -24,7 +24,7 @@ final List<ChannelModel> mockChannels = [
     viewers: 18300,
     currentShow: 'India vs England Test',
   ),
-  ChannelModel(
+  const ChannelModel(
     id: 'c3',
     name: 'Sony Sports',
     category: 'Sports',
@@ -34,7 +34,7 @@ final List<ChannelModel> mockChannels = [
     viewers: 31700,
     currentShow: 'Arsenal vs Chelsea EPL',
   ),
-  ChannelModel(
+  const ChannelModel(
     id: 'c4',
     name: 'ESPN',
     category: 'Sports',
@@ -44,7 +44,7 @@ final List<ChannelModel> mockChannels = [
     viewers: 8900,
     currentShow: 'Lakers vs Bulls NBA',
   ),
-  ChannelModel(
+  const ChannelModel(
     id: 'c5',
     name: 'F1 TV',
     category: 'Sports',
@@ -54,7 +54,7 @@ final List<ChannelModel> mockChannels = [
     viewers: 22100,
     currentShow: 'Bahrain Grand Prix',
   ),
-  ChannelModel(
+  const ChannelModel(
     id: 'c6',
     name: 'DAZN Boxing',
     category: 'Sports',
@@ -64,7 +64,7 @@ final List<ChannelModel> mockChannels = [
     viewers: 45600,
     currentShow: 'Fury vs Usyk 2',
   ),
-  ChannelModel(
+  const ChannelModel(
     id: 'c7',
     name: 'PTV Sports',
     category: 'Sports',
@@ -74,7 +74,7 @@ final List<ChannelModel> mockChannels = [
     viewers: 6300,
     currentShow: 'Karachi vs Lahore PSL',
   ),
-  ChannelModel(
+  const ChannelModel(
     id: 'c8',
     name: 'Eurosport',
     category: 'Sports',
@@ -84,7 +84,7 @@ final List<ChannelModel> mockChannels = [
     viewers: 9100,
     currentShow: 'Djokovic vs Alcaraz',
   ),
-  ChannelModel(
+  const ChannelModel(
     id: 'c9',
     name: 'Star Sports 2',
     category: 'Sports',
@@ -94,7 +94,7 @@ final List<ChannelModel> mockChannels = [
     viewers: 0,
     currentShow: '',
   ),
-  ChannelModel(
+  const ChannelModel(
     id: 'c10',
     name: 'Ten Sports',
     category: 'Sports',
@@ -106,7 +106,7 @@ final List<ChannelModel> mockChannels = [
   ),
 
   // ── BANGLADESH ───────────────────────────────────────────
-  ChannelModel(
+  const ChannelModel(
     id: 'c11',
     name: 'NTV Bangladesh',
     category: 'Bangladesh',
@@ -116,7 +116,7 @@ final List<ChannelModel> mockChannels = [
     viewers: 4700,
     currentShow: 'News at 8',
   ),
-  ChannelModel(
+  const ChannelModel(
     id: 'c12',
     name: 'Channel i',
     category: 'Bangladesh',
@@ -126,7 +126,7 @@ final List<ChannelModel> mockChannels = [
     viewers: 3200,
     currentShow: 'Entertainment Show',
   ),
-  ChannelModel(
+  const ChannelModel(
     id: 'c13',
     name: 'RTV Bangladesh',
     category: 'Bangladesh',
@@ -136,7 +136,7 @@ final List<ChannelModel> mockChannels = [
     viewers: 2800,
     currentShow: 'Drama Serial',
   ),
-  ChannelModel(
+  const ChannelModel(
     id: 'c14',
     name: 'Bangla TV',
     category: 'Bangladesh',
@@ -148,7 +148,7 @@ final List<ChannelModel> mockChannels = [
   ),
 
   // ── ENTERTAINMENT ────────────────────────────────────────
-  ChannelModel(
+  const ChannelModel(
     id: 'c15',
     name: 'Star Jalsha',
     category: 'Entertainment',
@@ -158,7 +158,7 @@ final List<ChannelModel> mockChannels = [
     viewers: 7800,
     currentShow: 'Bengali Drama',
   ),
-  ChannelModel(
+  const ChannelModel(
     id: 'c16',
     name: 'Colors TV',
     category: 'Entertainment',
@@ -168,7 +168,7 @@ final List<ChannelModel> mockChannels = [
     viewers: 11200,
     currentShow: 'Bigg Boss',
   ),
-  ChannelModel(
+  const ChannelModel(
     id: 'c17',
     name: 'Star Plus',
     category: 'Entertainment',
@@ -178,7 +178,7 @@ final List<ChannelModel> mockChannels = [
     viewers: 9400,
     currentShow: 'Anupamaa',
   ),
-  ChannelModel(
+  const ChannelModel(
     id: 'c18',
     name: 'Zee TV',
     category: 'Entertainment',
@@ -190,7 +190,7 @@ final List<ChannelModel> mockChannels = [
   ),
 
   // ── MOVIES ───────────────────────────────────────────────
-  ChannelModel(
+  const ChannelModel(
     id: 'c19',
     name: 'Zee Cinema',
     category: 'Movies',
@@ -200,7 +200,7 @@ final List<ChannelModel> mockChannels = [
     viewers: 3400,
     currentShow: 'Bollywood Movie',
   ),
-  ChannelModel(
+  const ChannelModel(
     id: 'c20',
     name: 'Star Gold',
     category: 'Movies',
@@ -210,7 +210,7 @@ final List<ChannelModel> mockChannels = [
     viewers: 2900,
     currentShow: 'Hindi Movie',
   ),
-  ChannelModel(
+  const ChannelModel(
     id: 'c21',
     name: 'HBO',
     category: 'Movies',
@@ -222,7 +222,7 @@ final List<ChannelModel> mockChannels = [
   ),
 
   // ── KDRAMA ───────────────────────────────────────────────
-  ChannelModel(
+  const ChannelModel(
     id: 'c22',
     name: 'KBS World',
     category: 'KDrama',
@@ -232,7 +232,7 @@ final List<ChannelModel> mockChannels = [
     viewers: 8200,
     currentShow: 'Korean Drama',
   ),
-  ChannelModel(
+  const ChannelModel(
     id: 'c23',
     name: 'tvN Drama',
     category: 'KDrama',
@@ -244,7 +244,7 @@ final List<ChannelModel> mockChannels = [
   ),
 
   // ── KIDS ─────────────────────────────────────────────────
-  ChannelModel(
+  const ChannelModel(
     id: 'c24',
     name: 'Cartoon Network',
     category: 'Kids',
@@ -254,7 +254,7 @@ final List<ChannelModel> mockChannels = [
     viewers: 2100,
     currentShow: 'Tom & Jerry',
   ),
-  ChannelModel(
+  const ChannelModel(
     id: 'c25',
     name: 'Nickelodeon',
     category: 'Kids',
@@ -264,7 +264,7 @@ final List<ChannelModel> mockChannels = [
     viewers: 1800,
     currentShow: 'SpongeBob',
   ),
-  ChannelModel(
+  const ChannelModel(
     id: 'c26',
     name: 'Disney Channel',
     category: 'Kids',
@@ -276,7 +276,7 @@ final List<ChannelModel> mockChannels = [
   ),
 
   // ── ENGLISH NEWS ─────────────────────────────────────────
-  ChannelModel(
+  const ChannelModel(
     id: 'c27',
     name: 'BBC News',
     category: 'English',
@@ -286,7 +286,7 @@ final List<ChannelModel> mockChannels = [
     viewers: 5200,
     currentShow: 'World News',
   ),
-  ChannelModel(
+  const ChannelModel(
     id: 'c28',
     name: 'CNN International',
     category: 'English',
@@ -296,7 +296,7 @@ final List<ChannelModel> mockChannels = [
     viewers: 4100,
     currentShow: 'Breaking News',
   ),
-  ChannelModel(
+  const ChannelModel(
     id: 'c29',
     name: 'Sky News',
     category: 'English',
@@ -308,7 +308,7 @@ final List<ChannelModel> mockChannels = [
   ),
 
   // ── HINDI ────────────────────────────────────────────────
-  ChannelModel(
+  const ChannelModel(
     id: 'c30',
     name: 'Aaj Tak',
     category: 'Hindi',
@@ -318,7 +318,7 @@ final List<ChannelModel> mockChannels = [
     viewers: 9800,
     currentShow: 'Hindi News',
   ),
-  ChannelModel(
+  const ChannelModel(
     id: 'c31',
     name: 'Republic TV',
     category: 'Hindi',
@@ -328,7 +328,7 @@ final List<ChannelModel> mockChannels = [
     viewers: 7600,
     currentShow: 'Debate Show',
   ),
-  ChannelModel(
+  const ChannelModel(
     id: 'c32',
     name: 'Zee Hindi',
     category: 'Hindi',
@@ -340,7 +340,7 @@ final List<ChannelModel> mockChannels = [
   ),
 
   // ── PAKISTAN ─────────────────────────────────────────────
-  ChannelModel(
+  const ChannelModel(
     id: 'c33',
     name: 'ARY News',
     category: 'Pakistan',
@@ -350,7 +350,7 @@ final List<ChannelModel> mockChannels = [
     viewers: 8300,
     currentShow: 'Pakistan News',
   ),
-  ChannelModel(
+  const ChannelModel(
     id: 'c34',
     name: 'Geo TV',
     category: 'Pakistan',
@@ -360,7 +360,7 @@ final List<ChannelModel> mockChannels = [
     viewers: 6700,
     currentShow: 'Geo Program',
   ),
-  ChannelModel(
+  const ChannelModel(
     id: 'c35',
     name: 'HUM TV',
     category: 'Pakistan',

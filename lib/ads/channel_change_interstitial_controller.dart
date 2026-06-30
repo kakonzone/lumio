@@ -41,7 +41,7 @@ class ChannelChangeInterstitialController {
     final lastShown = DateTime.fromMillisecondsSinceEpoch(lastShownTimestamp);
     final timeSinceLastShown = DateTime.now().difference(lastShown);
     
-    if (timeSinceLastShown >= Duration(minutes: _cooldownMinutes)) {
+    if (timeSinceLastShown >= const Duration(minutes: _cooldownMinutes)) {
       return true;
     }
 

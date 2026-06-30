@@ -5,6 +5,7 @@ import '../models/model.dart';
 class StreamHealthService {
   static const _timeout = Duration(seconds: 5);
   static const _playerProbeTimeout = Duration(seconds: 2);
+  static const _cacheDuration = Duration(minutes: 2);
   static const _ua =
       'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/124.0.0.0';
 
@@ -16,6 +17,8 @@ class StreamHealthService {
       headers: {'User-Agent': _ua},
     ),
   );
+
+  static final Map<String, (bool, DateTime)> _healthCache = {};
 
   /// Returns channel id → any stream URL reachable (HTTP 200/206).
   static Future<Map<String, bool>> checkChannels(
@@ -65,29 +68,44 @@ class StreamHealthService {
     final uri = Uri.tryParse(url);
     if (uri == null) return false;
 
+    // Check cache first
+    final cacheKey = '$url${headers?.toString() ?? ''}';
+    final cached = _healthCache[cacheKey];
+    if (cached != null) {
+      final age = DateTime.now().difference(cached.$2);
+      if (age < _cacheDuration) {
+        return cached.$1;
+      }
+    }
+
     final httpHeaders = <String, String>{
       'User-Agent': _ua,
       ...?headers,
     };
 
+    var result = false;
     try {
       final head = await _dio.head(uri.toString(), options: Options(headers: httpHeaders));
-      if (head.statusCode == 200 || head.statusCode == 206) return true;
+      if (head.statusCode == 200 || head.statusCode == 206) result = true;
     } catch (_) {}
 
-    try {
-      final get = await _dio.get(
-        uri.toString(),
-        options: Options(
-          headers: {
-            ...httpHeaders,
-            'Range': 'bytes=0-0',
-          },
-        ),
-      );
-      return get.statusCode == 200 || get.statusCode == 206;
-    } catch (_) {
-      return false;
+    if (!result) {
+      try {
+        final get = await _dio.get(
+          uri.toString(),
+          options: Options(
+            headers: {
+              ...httpHeaders,
+              'Range': 'bytes=0-0',
+            },
+          ),
+        );
+        result = get.statusCode == 200 || get.statusCode == 206;
+      } catch (_) {}
     }
+
+    // Cache result
+    _healthCache[cacheKey] = (result, DateTime.now());
+    return result;
   }
 }

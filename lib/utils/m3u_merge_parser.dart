@@ -86,7 +86,7 @@ class M3uMergeParser {
       orphanUrls.clear();
     }
 
-    for (int i = 0; i < lines.length; i++) {
+    for (var i = 0; i < lines.length; i++) {
       final line = lines[i].trim();
       if (line.isEmpty) continue;
 
@@ -102,7 +102,7 @@ class M3uMergeParser {
 
         // Search forward for URL (handles blank lines, comments, #EXTVLCOPT between EXTINF and URL)
         String? url;
-        for (int j = i + 1; j < lines.length; j++) {
+        for (var j = i + 1; j < lines.length; j++) {
           final next = lines[j].trim();
           if (next.isEmpty) continue;
           if (next.startsWith('#EXTINF')) break;

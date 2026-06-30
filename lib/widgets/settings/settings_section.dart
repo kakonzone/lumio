@@ -34,7 +34,7 @@ class SettingsSection extends StatelessWidget {
       children: [
         // Section header
         Padding(
-          padding: EdgeInsets.only(
+          padding: const EdgeInsets.only(
             top: tokens.SpacingTokens.s24,
             bottom: tokens.SpacingTokens.s8,
             left: tokens.SpacingTokens.s16,
@@ -71,7 +71,7 @@ class SettingsSection extends StatelessWidget {
         ),
 
         // Gap between sections
-        SizedBox(height: tokens.SpacingTokens.s24),
+        const SizedBox(height: tokens.SpacingTokens.s24),
       ],
     );
   }

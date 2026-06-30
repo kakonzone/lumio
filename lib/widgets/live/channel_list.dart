@@ -68,7 +68,7 @@ class _ChannelListState extends State<ChannelList> {
   Widget build(BuildContext context) {
     return Container(
       width: 320,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: tokens.AppTokens.background,
         border: Border(
           right: BorderSide(
@@ -81,7 +81,7 @@ class _ChannelListState extends State<ChannelList> {
         children: [
           // Search input
           Padding(
-            padding: EdgeInsets.all(tokens.SpacingTokens.s16),
+            padding: const EdgeInsets.all(tokens.SpacingTokens.s16),
             child: Container(
               height: 40,
               decoration: BoxDecoration(
@@ -100,7 +100,7 @@ class _ChannelListState extends State<ChannelList> {
                     color: tokens.AppTokens.textSecondary,
                   ),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(
+                  contentPadding: const EdgeInsets.symmetric(
                     horizontal: tokens.SpacingTokens.s12,
                   ),
                 ),
@@ -111,7 +111,7 @@ class _ChannelListState extends State<ChannelList> {
 
           // Filter chips
           Padding(
-            padding: EdgeInsets.symmetric(
+            padding: const EdgeInsets.symmetric(
               horizontal: tokens.SpacingTokens.s16,
             ),
             child: SingleChildScrollView(
@@ -123,20 +123,20 @@ class _ChannelListState extends State<ChannelList> {
                     isSelected: _selectedFilter == Strings.epgFilterAll,
                     onTap: () => _handleFilterChange(Strings.epgFilterAll),
                   ),
-                  SizedBox(width: tokens.SpacingTokens.s8),
+                  const SizedBox(width: tokens.SpacingTokens.s8),
                   _FilterChip(
                     label: Strings.epgFilterLive,
                     isSelected: _selectedFilter == Strings.epgFilterLive,
                     onTap: () => _handleFilterChange(Strings.epgFilterLive),
                   ),
-                  SizedBox(width: tokens.SpacingTokens.s8),
+                  const SizedBox(width: tokens.SpacingTokens.s8),
                   _FilterChip(
                     label: Strings.epgFilterFavorites,
                     isSelected: _selectedFilter == Strings.epgFilterFavorites,
                     onTap: () =>
                         _handleFilterChange(Strings.epgFilterFavorites),
                   ),
-                  SizedBox(width: tokens.SpacingTokens.s8),
+                  const SizedBox(width: tokens.SpacingTokens.s8),
                   _FilterChip(
                     label: Strings.epgFilterRecentlyWatched,
                     isSelected:
@@ -149,7 +149,7 @@ class _ChannelListState extends State<ChannelList> {
             ),
           ),
 
-          SizedBox(height: tokens.SpacingTokens.s16),
+          const SizedBox(height: tokens.SpacingTokens.s16),
 
           // Channel list
           Expanded(
@@ -176,7 +176,7 @@ class _ChannelListState extends State<ChannelList> {
                           : Colors.transparent,
                     ),
                     child: Padding(
-                      padding: EdgeInsets.symmetric(
+                      padding: const EdgeInsets.symmetric(
                         horizontal: tokens.SpacingTokens.s16,
                       ),
                       child: Row(
@@ -186,7 +186,7 @@ class _ChannelListState extends State<ChannelList> {
                             imageUrl: channel.logoUrl,
                             channelName: channel.name,
                           ),
-                          SizedBox(width: tokens.SpacingTokens.s12),
+                          const SizedBox(width: tokens.SpacingTokens.s12),
 
                           // Channel info
                           Expanded(
@@ -201,7 +201,7 @@ class _ChannelListState extends State<ChannelList> {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                SizedBox(height: tokens.SpacingTokens.s4),
+                                const SizedBox(height: tokens.SpacingTokens.s4),
 
                                 // Current program
                                 Row(
@@ -217,9 +217,9 @@ class _ChannelListState extends State<ChannelList> {
                                       ),
                                     ),
                                     if (channel.isLive) ...[
-                                      SizedBox(width: tokens.SpacingTokens.s8),
+                                      const SizedBox(width: tokens.SpacingTokens.s8),
                                       Container(
-                                        padding: EdgeInsets.symmetric(
+                                        padding: const EdgeInsets.symmetric(
                                           horizontal: tokens.SpacingTokens.s4,
                                           vertical: tokens.SpacingTokens.s4,
                                         ),
@@ -228,7 +228,7 @@ class _ChannelListState extends State<ChannelList> {
                                           borderRadius: BorderRadius.circular(
                                               tokens.RadiusTokens.xs),
                                         ),
-                                        child: Text(
+                                        child: const Text(
                                           Strings.liveIndicator,
                                           style: TextStyle(
                                             color: Colors.white,
@@ -244,7 +244,7 @@ class _ChannelListState extends State<ChannelList> {
                                 // Progress bar (if program has progress)
                                 if (channel.programProgress != null &&
                                     channel.programProgress! > 0) ...[
-                                  SizedBox(height: tokens.SpacingTokens.s4),
+                                  const SizedBox(height: tokens.SpacingTokens.s4),
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(
                                         tokens.RadiusTokens.xs),
@@ -252,7 +252,7 @@ class _ChannelListState extends State<ChannelList> {
                                       value: channel.programProgress,
                                       backgroundColor:
                                           tokens.AppTokens.surface3,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                      valueColor: const AlwaysStoppedAnimation<Color>(
                                         tokens.AppTokens.accent,
                                       ),
                                       minHeight: 2,
@@ -357,7 +357,7 @@ class _FilterChip extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.symmetric(
+        padding: const EdgeInsets.symmetric(
           horizontal: tokens.SpacingTokens.s12,
           vertical: tokens.SpacingTokens.s4,
         ),

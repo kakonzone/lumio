@@ -6,7 +6,7 @@ import '../ads/ad_manager.dart';
 import 'ad_debug_log.dart';
 import '../models/model.dart';
 import '../provider/app_provider.dart';
-import '../screens/player_screen.dart';
+import '../screens/player/lumio_player.dart';
 import '../services/ad_trigger_manager.dart';
 import '../services/channel_resolver.dart';
 import 'channel_tap_key.dart';

@@ -201,7 +201,7 @@ void main() async {
 
   // Register install with backend (in production)
   if (antiCloneOk && watermarkOk && kReleaseMode) {
-    final backendUrl = String.fromEnvironment('INTEGRITY_VERIFICATION_ENDPOINT', 
+    const backendUrl = String.fromEnvironment('INTEGRITY_VERIFICATION_ENDPOINT', 
       defaultValue: 'https://api.example.com');
     unawaited(
       InstallWatermarkService.instance.registerWithBackend(backendUrl).catchError((e) {
@@ -476,7 +476,7 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
   int _lastNavIdx = 0;
 
   AppDrawerDestination get _drawerSelected {
-    final values = AppDrawerDestination.values;
+    const values = AppDrawerDestination.values;
     final i = _drawerSelectedIndex;
     if (i >= 0 && i < values.length) return values[i];
     return AppDrawerDestination.allChannels;

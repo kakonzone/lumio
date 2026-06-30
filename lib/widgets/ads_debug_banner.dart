@@ -33,11 +33,11 @@ class _AdsDebugBannerState extends State<AdsDebugBanner> {
               const Icon(Icons.warning_amber_rounded,
                   color: Colors.white, size: 20),
               const SizedBox(width: 8),
-              Expanded(
+              const Expanded(
                 child: Text(
                   'ADS DISABLED — use scripts/flutter_run_with_ads.sh '
                   'or set ADS_ENABLED=true',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
                     fontSize: 12,
                     fontWeight: FontWeight.w700,

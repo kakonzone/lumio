@@ -72,12 +72,12 @@ class AppTheme {
         onSurface: tokens.AppTokens.textPrimary,
         outline: tokens.AppTokens.border,
       ),
-      cardTheme: CardThemeData(
+      cardTheme: const CardThemeData(
         color: tokens.AppTokens.surface1,
         elevation: tokens.ElevationTokens.none,
         shape: RoundedRectangleBorder(
           borderRadius: tokens.RadiusTokens.circularMd,
-          side: const BorderSide(color: tokens.AppTokens.border),
+          side: BorderSide(color: tokens.AppTokens.border),
         ),
       ),
       dividerColor: tokens.AppTokens.border,

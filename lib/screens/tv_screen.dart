@@ -19,7 +19,6 @@ import 'package:lumio_tv/ads/ad_manager.dart';
 import 'package:lumio_tv/ads/adsterra/adsterra_native.dart';
 import 'package:lumio_tv/ads/utils/lazy_ad_viewport.dart';
 import 'package:lumio_tv/ads/widgets/floating_native_card.dart';
-import 'package:lumio_tv/ads/widgets/collapsible_ad_slot.dart';
 import 'package:lumio_tv/widgets/list_skeletons.dart';
 import 'package:lumio_tv/widgets/home_promo_carousel.dart';
 import 'package:lumio_tv/widgets/home_category_grid.dart';
@@ -850,7 +849,7 @@ class _TodayTabState extends State<_TodayTab>
                   ),
                   child: Text(
                     'FootyStream · ${DateTime.now().day}/${DateTime.now().month}',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
                       color: AppTokens.success,
@@ -870,10 +869,10 @@ class _TodayTabState extends State<_TodayTab>
             ),
           ),
           if (matches.isEmpty && !scores.matchesLoading)
-            SliverToBoxAdapter(
+            const SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: const ScoreStateWidget(),
+                padding: EdgeInsets.all(24),
+                child: ScoreStateWidget(),
               ),
             ),
           SliverList(
@@ -999,7 +998,7 @@ class ScoreCardsSection extends StatelessWidget {
   final bool showHeader;
   final bool showEmptyMessage;
 
-  const ScoreCardsSection({
+  const ScoreCardsSection({super.key, 
     required this.title,
     required this.matches,
     required this.loading,
@@ -1460,7 +1459,7 @@ class _LiveEventCardState extends State<_LiveEventCard> {
                         ),
                       ),
                       if (effectiveLive)
-                        _LiveCornerBadge(onGradient: true)
+                        const _LiveCornerBadge(onGradient: true)
                       else if (finished)
                         Container(
                           padding: const EdgeInsets.symmetric(

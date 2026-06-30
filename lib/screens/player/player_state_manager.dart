@@ -384,7 +384,7 @@ extension _PlayerState on _PlayerScreenState {
           receiveTimeout: const Duration(seconds: 3),
           sendTimeout: const Duration(seconds: 3),
           headers: {
-            'User-Agent': link.headers?['User-Agent'] ??
+            'User-Agent': link.headers['User-Agent'] ??
                 'Mozilla/5.0 LumioTV/1.0',
           },
         ))
@@ -567,10 +567,6 @@ extension _PlayerState on _PlayerScreenState {
     );
   }
 
-  bool get _isSingleRenditionStream {
-    if (_hlsVariants.length > 1) return false;
-    return _selectableVideoTracks.isEmpty;
-  }
 
   void _refreshSourceHeight() {
     final h = _player.state.height ?? 0;
@@ -733,8 +729,9 @@ extension _PlayerState on _PlayerScreenState {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt('preferred_quality_height', targetH);
     } catch (e) {
-      if (kDebugMode)
+      if (kDebugMode) {
         SafeLogger.error('player', 'player_screen.dart:_persistQualityPref: prefs write failed', e);
+      }
     }
   }
 
@@ -753,8 +750,9 @@ extension _PlayerState on _PlayerScreenState {
       if (cap == null) {
         await native.setProperty('vf', '');
         _lastMpvCapHeight = null;
-        if (kDebugMode)
+        if (kDebugMode) {
           SafeLogger.debug('player', 'player_screen.dart:_applyMpvHeightCap: vf cleared (Auto) (H-tier3)');
+        }
         return;
       }
       _refreshSourceHeight();

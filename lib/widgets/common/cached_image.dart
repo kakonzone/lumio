@@ -60,7 +60,7 @@ class CachedImage extends StatelessWidget {
             borderRadius:
                 borderRadius ?? BorderRadius.circular(tokens.RadiusTokens.sm),
           ),
-          child: Icon(
+          child: const Icon(
             Icons.broken_image,
             color: tokens.AppTokens.textTertiary,
           ),
@@ -172,7 +172,7 @@ class CachedLogo extends StatelessWidget {
       height: height,
       fit: fit,
       borderRadius: BorderRadius.circular(8),
-      errorWidget: name != null && name!.isNotEmpty
+      errorWidget: name != null && name.isNotEmpty
           ? Container(
               width: width,
               height: height,

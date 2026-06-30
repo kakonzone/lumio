@@ -145,9 +145,9 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
       backgroundColor: tokens.AppTokens.background,
       appBar: AppBar(
         backgroundColor: tokens.AppTokens.surface1,
-        title: Text('Live TV'),
+        title: const Text('Live TV'),
         bottom: TabBar(
-          tabs: [
+          tabs: const [
             Tab(text: Strings.epgTabCategories),
             Tab(text: Strings.epgTabChannels),
             Tab(text: Strings.epgTabGuide),
@@ -193,7 +193,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
             decoration: BoxDecoration(
               color:
                   isSelected ? tokens.AppTokens.surface2 : Colors.transparent,
-              border: Border(
+              border: const Border(
                 bottom: BorderSide(
                   color: tokens.AppTokens.border,
                   width: 1,
@@ -201,7 +201,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
               ),
             ),
             child: Padding(
-              padding: EdgeInsets.symmetric(
+              padding: const EdgeInsets.symmetric(
                 horizontal: tokens.SpacingTokens.s16,
               ),
               child: Row(
@@ -213,14 +213,14 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                         ? tokens.AppTokens.accent
                         : tokens.AppTokens.textSecondary,
                   ),
-                  SizedBox(width: tokens.SpacingTokens.s16),
+                  const SizedBox(width: tokens.SpacingTokens.s16),
                   Text(
                     category.label,
                     style: isSelected
                         ? tokens.TypographyTokens.bodyAccent
                         : tokens.TypographyTokens.bodyPrimary,
                   ),
-                  Spacer(),
+                  const Spacer(),
                   Icon(
                     PhosphorIcons.caretRight(),
                     size: 20,
@@ -241,15 +241,15 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
         // Filter chips (horizontal scroll)
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          padding: EdgeInsets.all(tokens.SpacingTokens.s16),
+          padding: const EdgeInsets.all(tokens.SpacingTokens.s16),
           child: Row(
             children: [
               portraitFilterChip(Strings.epgFilterAll),
-              SizedBox(width: tokens.SpacingTokens.s8),
+              const SizedBox(width: tokens.SpacingTokens.s8),
               portraitFilterChip(Strings.epgFilterLive),
-              SizedBox(width: tokens.SpacingTokens.s8),
+              const SizedBox(width: tokens.SpacingTokens.s8),
               portraitFilterChip(Strings.epgFilterFavorites),
-              SizedBox(width: tokens.SpacingTokens.s8),
+              const SizedBox(width: tokens.SpacingTokens.s8),
               portraitFilterChip(Strings.epgFilterRecentlyWatched),
             ],
           ),
@@ -281,7 +281,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                     color: isSelected
                         ? tokens.AppTokens.surface2
                         : Colors.transparent,
-                    border: Border(
+                    border: const Border(
                       bottom: BorderSide(
                         color: tokens.AppTokens.border,
                         width: 1,
@@ -289,14 +289,14 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                     ),
                   ),
                   child: Padding(
-                    padding: EdgeInsets.symmetric(
+                    padding: const EdgeInsets.symmetric(
                       horizontal: tokens.SpacingTokens.s16,
                     ),
                     child: Row(
                       children: [
                         // Logo
                         portraitChannelLogo(channel.logoUrl, channel.name),
-                        SizedBox(width: tokens.SpacingTokens.s12),
+                        const SizedBox(width: tokens.SpacingTokens.s12),
 
                         // Channel info
                         Expanded(
@@ -310,7 +310,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              SizedBox(height: tokens.SpacingTokens.s4),
+                              const SizedBox(height: tokens.SpacingTokens.s4),
                               Text(
                                 channel.currentProgram ??
                                     Strings.channelNoProgram,
@@ -350,7 +350,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
         // Time markers header
         Container(
           height: 40,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: tokens.AppTokens.surface1,
             border: Border(
               bottom: BorderSide(
@@ -362,7 +362,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
           child: ListView.builder(
             addAutomaticKeepAlives: true,
             scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.symmetric(
+            padding: const EdgeInsets.symmetric(
               horizontal: tokens.SpacingTokens.s8,
             ),
             itemCount: 24,
@@ -417,11 +417,11 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
     return Pressable(
       onTap: () => _showProgramDetails(program),
       child: Container(
-        margin: EdgeInsets.symmetric(
+        margin: const EdgeInsets.symmetric(
           horizontal: tokens.SpacingTokens.s16,
           vertical: tokens.SpacingTokens.s8,
         ),
-        padding: EdgeInsets.all(tokens.SpacingTokens.s12),
+        padding: const EdgeInsets.all(tokens.SpacingTokens.s12),
         decoration: BoxDecoration(
           color: tokens.AppTokens.surface2,
           borderRadius: BorderRadius.circular(tokens.RadiusTokens.md),
@@ -442,12 +442,12 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            SizedBox(height: tokens.SpacingTokens.s8),
+            const SizedBox(height: tokens.SpacingTokens.s8),
             Row(
               children: [
                 if (program.isLive) ...[
                   Container(
-                    padding: EdgeInsets.symmetric(
+                    padding: const EdgeInsets.symmetric(
                       horizontal: tokens.SpacingTokens.s8,
                       vertical: tokens.SpacingTokens.s4,
                     ),
@@ -456,7 +456,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                       borderRadius:
                           BorderRadius.circular(tokens.RadiusTokens.xs),
                     ),
-                    child: Text(
+                    child: const Text(
                       Strings.liveIndicator,
                       style: TextStyle(
                         color: Colors.white,
@@ -465,7 +465,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                       ),
                     ),
                   ),
-                  SizedBox(width: tokens.SpacingTokens.s8),
+                  const SizedBox(width: tokens.SpacingTokens.s8),
                 ],
                 Text(
                   program.timeRange,
@@ -481,7 +481,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
 
   Widget portraitFilterChip(String label) {
     return Container(
-      padding: EdgeInsets.symmetric(
+      padding: const EdgeInsets.symmetric(
         horizontal: tokens.SpacingTokens.s16,
         vertical: tokens.SpacingTokens.s8,
       ),
@@ -518,7 +518,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: tokens.AppTokens.surface2,
           borderRadius: BorderRadius.vertical(
             top: Radius.circular(tokens.RadiusTokens.lg),
@@ -530,7 +530,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
             children: [
               // Header
               Padding(
-                padding: EdgeInsets.all(tokens.SpacingTokens.s16),
+                padding: const EdgeInsets.all(tokens.SpacingTokens.s16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -548,7 +548,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
 
               // Program info
               Padding(
-                padding: EdgeInsets.symmetric(
+                padding: const EdgeInsets.symmetric(
                   horizontal: tokens.SpacingTokens.s16,
                 ),
                 child: Column(
@@ -558,13 +558,13 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                       program.title,
                       style: tokens.TypographyTokens.headingPrimary,
                     ),
-                    SizedBox(height: tokens.SpacingTokens.s8),
+                    const SizedBox(height: tokens.SpacingTokens.s8),
                     Text(
                       program.timeRange,
                       style: tokens.TypographyTokens.bodySecondary,
                     ),
                     if (program.description != null) ...[
-                      SizedBox(height: tokens.SpacingTokens.s16),
+                      const SizedBox(height: tokens.SpacingTokens.s16),
                       Text(
                         program.description!,
                         style: tokens.TypographyTokens.bodyPrimary,
@@ -574,11 +574,11 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                 ),
               ),
 
-              SizedBox(height: tokens.SpacingTokens.s24),
+              const SizedBox(height: tokens.SpacingTokens.s24),
 
               // Actions
               Padding(
-                padding: EdgeInsets.symmetric(
+                padding: const EdgeInsets.symmetric(
                   horizontal: tokens.SpacingTokens.s16,
                 ),
                 child: Row(
@@ -605,7 +605,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                                   size: 20,
                                   color: Colors.white,
                                 ),
-                                SizedBox(width: tokens.SpacingTokens.s8),
+                                const SizedBox(width: tokens.SpacingTokens.s8),
                                 Text(
                                   Strings.epgRecord,
                                   style: tokens.TypographyTokens.labelPrimary,
@@ -616,7 +616,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                         ),
                       ),
                     ),
-                    SizedBox(width: tokens.SpacingTokens.s12),
+                    const SizedBox(width: tokens.SpacingTokens.s12),
                     Expanded(
                       child: Pressable(
                         onTap: () {
@@ -639,7 +639,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                                   size: 20,
                                   color: tokens.AppTokens.textPrimary,
                                 ),
-                                SizedBox(width: tokens.SpacingTokens.s8),
+                                const SizedBox(width: tokens.SpacingTokens.s8),
                                 Text(
                                   Strings.epgReminder,
                                   style: tokens.TypographyTokens.labelPrimary,
@@ -654,7 +654,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                 ),
               ),
 
-              SizedBox(height: tokens.SpacingTokens.s16),
+              const SizedBox(height: tokens.SpacingTokens.s16),
             ],
           ),
         ),

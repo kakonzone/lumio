@@ -17,7 +17,7 @@ class DebounceThrottle {
 
     return () {
       if (timer?.isActive ?? false) {
-        timer!.cancel();
+        timer?.cancel();
       }
 
       timer = Timer(duration, callback as void Function());
@@ -33,7 +33,7 @@ class DebounceThrottle {
 
     return (param) {
       if (timer?.isActive ?? false) {
-        timer!.cancel();
+        timer?.cancel();
       }
 
       timer = Timer(duration, () => callback(param));
@@ -47,7 +47,7 @@ class DebounceThrottle {
     Function callback, {
     Duration duration = const Duration(milliseconds: 100),
   }) {
-    bool isThrottled = false;
+    var isThrottled = false;
     Timer? timer;
 
     return () {
@@ -68,7 +68,7 @@ class DebounceThrottle {
     Function callback, {
     Duration duration = const Duration(milliseconds: 100),
   }) {
-    bool isThrottled = false;
+    var isThrottled = false;
     Timer? timer;
 
     return (param) {

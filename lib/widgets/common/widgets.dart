@@ -359,7 +359,7 @@ class PredictionCard extends StatelessWidget {
                 ),
                 Text(
                   '${match.winChanceB.toInt()}%',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                     color: AppTokens.success,
@@ -941,9 +941,9 @@ class _StatusBadge extends StatelessWidget {
 
 class _LiveDot extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Row(
+  Widget build(BuildContext context) => const Row(
         mainAxisSize: MainAxisSize.min,
-        children: const [
+        children: [
           SizedBox(
             width: 6,
             height: 6,

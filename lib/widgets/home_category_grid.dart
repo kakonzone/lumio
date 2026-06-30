@@ -217,148 +217,148 @@ class _CategoryVisual {
   static _CategoryVisual forCategory(String cat, bool isDark) {
     switch (cat) {
       case 'Sports':
-        return _CategoryVisual(
+        return const _CategoryVisual(
           icon: Icons.sports_soccer_rounded,
-          gradient: const [
+          gradient: [
             Color(0xFF0D47A1),
             Color(0xFF1565C0),
             Color(0xFF1B5E20),
           ],
-          glow: const Color(0xFF66BB6A),
+          glow: Color(0xFF66BB6A),
           iconFg: Colors.white,
-          badgeBg: const Color(0xFF2E7D32),
+          badgeBg: Color(0xFF2E7D32),
         );
       case 'Entertainment':
-        return _CategoryVisual(
+        return const _CategoryVisual(
           icon: Icons.theater_comedy_rounded,
-          gradient: const [
+          gradient: [
             Color(0xFF4A148C),
             Color(0xFF7B1FA2),
             Color(0xFFAD1457),
           ],
-          glow: const Color(0xFFCE93D8),
+          glow: Color(0xFFCE93D8),
           iconFg: Colors.white,
-          badgeBg: const Color(0xFF8E24AA),
+          badgeBg: Color(0xFF8E24AA),
         );
       case 'Movies':
-        return _CategoryVisual(
+        return const _CategoryVisual(
           icon: Icons.movie_rounded,
-          gradient: const [
+          gradient: [
             Color(0xFFE65100),
             Color(0xFFFF6F00),
             Color(0xFFFFB300),
           ],
-          glow: const Color(0xFFFFB74D),
+          glow: Color(0xFFFFB74D),
           iconFg: Colors.white,
-          badgeBg: const Color(0xFFEF6C00),
+          badgeBg: Color(0xFFEF6C00),
         );
       case 'KDrama':
-        return _CategoryVisual(
+        return const _CategoryVisual(
           icon: Icons.live_tv_rounded,
-          gradient: const [
+          gradient: [
             Color(0xFF880E4F),
             Color(0xFFC2185B),
             Color(0xFFEC407A),
           ],
-          glow: const Color(0xFFF48FB1),
+          glow: Color(0xFFF48FB1),
           iconFg: Colors.white,
-          badgeBg: const Color(0xFFD81B60),
+          badgeBg: Color(0xFFD81B60),
         );
       case 'Bangladesh':
-        return _CategoryVisual(
+        return const _CategoryVisual(
           icon: Icons.language_rounded,
-          gradient: const [
+          gradient: [
             Color(0xFF004D40),
             Color(0xFF00695C),
             Color(0xFF2E7D32),
           ],
-          glow: const Color(0xFF4DB6AC),
+          glow: Color(0xFF4DB6AC),
           iconFg: Colors.white,
-          badgeBg: const Color(0xFF00897B),
+          badgeBg: Color(0xFF00897B),
         );
       case 'News':
-        return _CategoryVisual(
+        return const _CategoryVisual(
           icon: Icons.newspaper_rounded,
-          gradient: const [
+          gradient: [
             Color(0xFF0D47A1),
             Color(0xFF1976D2),
             Color(0xFF0277BD),
           ],
-          glow: const Color(0xFF64B5F6),
+          glow: Color(0xFF64B5F6),
           iconFg: Colors.white,
-          badgeBg: const Color(0xFF1565C0),
+          badgeBg: Color(0xFF1565C0),
         );
       case 'Kids':
-        return _CategoryVisual(
+        return const _CategoryVisual(
           icon: Icons.child_care_rounded,
-          gradient: const [
+          gradient: [
             Color(0xFF1B5E20),
             Color(0xFF388E3C),
             Color(0xFF689F38),
           ],
-          glow: const Color(0xFF81C784),
+          glow: Color(0xFF81C784),
           iconFg: Colors.white,
-          badgeBg: const Color(0xFF43A047),
+          badgeBg: Color(0xFF43A047),
         );
       case 'Hindi':
-        return _CategoryVisual(
+        return const _CategoryVisual(
           icon: Icons.movie_filter_rounded,
-          gradient: const [
+          gradient: [
             Color(0xFFE65100),
             Color(0xFFFF8F00),
             Color(0xFFFFB300),
           ],
-          glow: const Color(0xFFFFCC80),
+          glow: Color(0xFFFFCC80),
           iconFg: Colors.white,
-          badgeBg: const Color(0xFFEF6C00),
+          badgeBg: Color(0xFFEF6C00),
         );
       case 'English':
-        return _CategoryVisual(
+        return const _CategoryVisual(
           icon: Icons.public_rounded,
-          gradient: const [
+          gradient: [
             Color(0xFF0D47A1),
             Color(0xFF283593),
             Color(0xFF4527A0),
           ],
-          glow: const Color(0xFF7986CB),
+          glow: Color(0xFF7986CB),
           iconFg: Colors.white,
-          badgeBg: const Color(0xFF3949AB),
+          badgeBg: Color(0xFF3949AB),
         );
       case 'Pakistan':
-        return _CategoryVisual(
+        return const _CategoryVisual(
           icon: Icons.flag_rounded,
-          gradient: const [
+          gradient: [
             Color(0xFF1B5E20),
             Color(0xFF2E7D32),
             Color(0xFF388E3C),
           ],
-          glow: const Color(0xFF66BB6A),
+          glow: Color(0xFF66BB6A),
           iconFg: Colors.white,
-          badgeBg: const Color(0xFF2E7D32),
+          badgeBg: Color(0xFF2E7D32),
         );
       case 'Live TV':
-        return _CategoryVisual(
+        return const _CategoryVisual(
           icon: Icons.sensors_rounded,
-          gradient: const [
+          gradient: [
             Color(0xFF37474F),
             Color(0xFF455A64),
             Color(0xFF546E7A),
           ],
-          glow: const Color(0xFF90A4AE),
+          glow: Color(0xFF90A4AE),
           iconFg: Colors.white,
-          badgeBg: const Color(0xFF607D8B),
+          badgeBg: Color(0xFF607D8B),
         );
       case '__special_link__':
-        return _CategoryVisual(
+        return const _CategoryVisual(
           icon: Icons.link_rounded,
-          gradient: const [
+          gradient: [
             Color(0xFF311B92),
             Color(0xFF4527A0),
             Color(0xFF00695C),
           ],
-          glow: const Color(0xFF80CBC4),
+          glow: Color(0xFF80CBC4),
           iconFg: Colors.white,
-          badgeBg: const Color(0xFF5E35B1),
+          badgeBg: Color(0xFF5E35B1),
         );
       default:
         return more(isDark);
@@ -489,7 +489,7 @@ class _CategoryTileState extends State<_CategoryTile> {
                     child: Opacity(
                       opacity: 0.35,
                       child: Text(
-                        widget.emoji!,
+                        widget.emoji ?? '',
                         style: const TextStyle(fontSize: 36),
                       ),
                     ),

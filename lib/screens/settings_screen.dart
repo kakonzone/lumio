@@ -62,14 +62,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return ShellPageScaffold(
-      appBar: ShellAppBar(
+      appBar: const ShellAppBar(
         title: 'Settings',
         showBack: true,
       ),
       slivers: [
         SliverToBoxAdapter(
           child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(
+            padding: const EdgeInsets.symmetric(
               vertical: tokens.SpacingTokens.s24,
             ),
             child: Column(
@@ -344,7 +344,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
 
                 // Bottom padding
-                SizedBox(height: tokens.SpacingTokens.s32),
+                const SizedBox(height: tokens.SpacingTokens.s32),
               ],
             ),
           ),
@@ -358,7 +358,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: tokens.AppTokens.surface2,
           borderRadius: BorderRadius.vertical(
             top: Radius.circular(tokens.RadiusTokens.lg),
@@ -370,7 +370,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               // Header
               Padding(
-                padding: EdgeInsets.all(tokens.SpacingTokens.s16),
+                padding: const EdgeInsets.all(tokens.SpacingTokens.s16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -419,7 +419,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   HapticFeedback.selectionClick();
                 },
               ),
-              SizedBox(height: tokens.SpacingTokens.s16),
+              const SizedBox(height: tokens.SpacingTokens.s16),
             ],
           ),
         ),
@@ -485,11 +485,11 @@ class _ThemeOption extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.symmetric(
+        padding: const EdgeInsets.symmetric(
           horizontal: tokens.SpacingTokens.s16,
           vertical: tokens.SpacingTokens.s16,
         ),
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           border: Border(
             bottom: BorderSide(
               color: tokens.AppTokens.border,

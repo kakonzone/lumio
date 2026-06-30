@@ -84,8 +84,6 @@ extension _PlayerOverlay on _PlayerScreenState {
     
     // Schedule mid-roll ads at 20min and 50min
     final now = DateTime.now();
-    final ad20Min = now.add(const Duration(minutes: 20));
-    final ad50Min = now.add(const Duration(minutes: 50));
     
     _midRollTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted || _hasError || !_initialized) {

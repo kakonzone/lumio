@@ -402,8 +402,9 @@ class MatchChannelMatcher {
         if (hasIndia) {
           if (blob.contains('star sports')) score += 50;
           if (blob.contains('fancode')) score += 45;
-          if (blob.contains('sony sports') || blob.contains('sony ten'))
+          if (blob.contains('sony sports') || blob.contains('sony ten')) {
             score += 40;
+          }
           if (blob.contains('willow')) score += 30;
         }
 
@@ -428,19 +429,24 @@ class MatchChannelMatcher {
         // Major international teams (Brazil, Argentina, France, Germany, Spain etc.)
         // Best on: beIN Sports, FOX Sports, TNT, Sony, T Sports (for BD viewers)
         if (isMajorIntlFootball) {
-          if (blob.contains('bein sports') || blob.contains('bein'))
+          if (blob.contains('bein sports') || blob.contains('bein')) {
             score += 60;
+          }
           if (blob.contains('fox sports')) score += 45;
           if (blob.contains('tnt sports')) score += 40;
-          if (blob.contains('sony sports') || blob.contains('sony ten'))
+          if (blob.contains('sony sports') || blob.contains('sony ten')) {
             score += 30;
-          if (blob.contains('t sports') || blob.contains('tsports'))
+          }
+          if (blob.contains('t sports') || blob.contains('tsports')) {
             score += 28;
-          if (blob.contains('toffee sports') || blob.contains('toffee'))
+          }
+          if (blob.contains('toffee sports') || blob.contains('toffee')) {
             score += 22;
+          }
           if (blob.contains('espn')) score += 28;
-          if (blob.contains('eurosport') || blob.contains('euro sport'))
+          if (blob.contains('eurosport') || blob.contains('euro sport')) {
             score += 22;
+          }
         }
 
         // England / Premier League clubs — Sky Sports, TNT
@@ -452,7 +458,9 @@ class MatchChannelMatcher {
             _hasTeam(teamBlob, 'liverpool') ||
             _hasTeam(teamBlob, 'tottenham')) {
           if (blob.contains('sky sports epl') ||
-              blob.contains('sky sports football')) score += 55;
+              blob.contains('sky sports football')) {
+            score += 55;
+          }
           if (blob.contains('sky sports main event')) score += 45;
           if (blob.contains('sky sports')) score += 35;
           if (blob.contains('tnt sports')) score += 40;
@@ -462,8 +470,9 @@ class MatchChannelMatcher {
         if (_hasTeam(teamBlob, 'real madrid') ||
             _hasTeam(teamBlob, 'barcelona') ||
             _hasTeam(teamBlob, 'atletico madrid')) {
-          if (blob.contains('bein sports') || blob.contains('bein'))
+          if (blob.contains('bein sports') || blob.contains('bein')) {
             score += 55;
+          }
           if (blob.contains('espn')) score += 30;
         }
 
@@ -473,29 +482,36 @@ class MatchChannelMatcher {
             _hasTeam(teamBlob, 'abahani') ||
             _hasTeam(teamBlob, 'sheikh russel') ||
             tournament.contains('bfl')) {
-          if (blob.contains('t sports') || blob.contains('tsports'))
+          if (blob.contains('t sports') || blob.contains('tsports')) {
             score += 60;
+          }
           if (blob.contains('toffee')) score += 45;
           if (blob.contains('nagorik')) score += 35;
           if (blob.contains('gazi')) score += 30;
         }
       } else if (isTennis) {
-        if (blob.contains('sky sports tennis') || blob.contains('tennis'))
+        if (blob.contains('sky sports tennis') || blob.contains('tennis')) {
           score += 65;
-        if (blob.contains('eurosport') || blob.contains('euro sport'))
+        }
+        if (blob.contains('eurosport') || blob.contains('euro sport')) {
           score += 55;
+        }
         if (blob.contains('bein sports') || blob.contains('bein')) score += 35;
         if (blob.contains('espn')) score += 30;
       } else if (isF1) {
         if (blob.contains('sky sports') &&
-            (blob.contains('f1') || blob.contains('formula'))) score += 70;
+            (blob.contains('f1') || blob.contains('formula'))) {
+          score += 70;
+        }
         if (blob.contains('sky sports main event')) score += 50;
         if (blob.contains('sky sports action')) score += 40;
         if (blob.contains('espn')) score += 35;
         if (blob.contains('fox sports')) score += 30;
       } else if (isBoxing) {
         if (blob.contains('sky sports main event') ||
-            blob.contains('sky sports action')) score += 60;
+            blob.contains('sky sports action')) {
+          score += 60;
+        }
         if (blob.contains('sky sports')) score += 45;
         if (blob.contains('tnt sports')) score += 50;
         if (blob.contains('espn')) score += 45;
@@ -557,10 +573,12 @@ class MatchChannelMatcher {
       if (c.contains('psl')) return 'psl';
       if (c.contains('cpl')) return 'cpl';
       if (c.contains('bbl')) return 'bbl';
-      if (c.contains('asia cup') || (c.contains('asia') && c.contains('cup')))
+      if (c.contains('asia cup') || (c.contains('asia') && c.contains('cup'))) {
         return 'asia cup';
-      if (c.contains('world cup') || c.contains('icc') || c.contains('wc'))
+      }
+      if (c.contains('world cup') || c.contains('icc') || c.contains('wc')) {
         return 'icc world cup';
+      }
       if (c.contains('wtc') || c.contains('world test')) return 'wtc';
       if (c.contains('test')) return 'test';
       if (c.contains('odi')) return 'odi';
@@ -568,40 +586,52 @@ class MatchChannelMatcher {
     }
 
     if (isFootball) {
-      if (c.contains('world cup') || c.contains('fifa'))
+      if (c.contains('world cup') || c.contains('fifa')) {
         return 'fifa world cup';
-      if (c.contains('champions') || c.contains('ucl'))
+      }
+      if (c.contains('champions') || c.contains('ucl')) {
         return 'champions league';
+      }
       if (c.contains('europa')) return 'europa league';
       if (c.contains('conference')) return 'conference league';
-      if (c.contains('premier') || c.contains('epl') || c.contains('eng.1'))
+      if (c.contains('premier') || c.contains('epl') || c.contains('eng.1')) {
         return 'premier league';
-      if (c.contains('la liga') || c.contains('laliga') || c.contains('esp.1'))
+      }
+      if (c.contains('la liga') || c.contains('laliga') || c.contains('esp.1')) {
         return 'la liga';
+      }
       if (c.contains('serie a') || c.contains('ita.1')) return 'serie a';
       if (c.contains('bundesliga') || c.contains('ger.1')) return 'bundesliga';
       if (c.contains('ligue') || c.contains('fra.1')) return 'ligue 1';
-      if (c.contains('copa america') || c.contains('copa'))
+      if (c.contains('copa america') || c.contains('copa')) {
         return 'copa america';
+      }
       if (c.contains('euro') && !c.contains('eurosport')) return 'euro';
-      if (c.contains('afcon') || (c.contains('africa') && c.contains('cup')))
+      if (c.contains('afcon') || (c.contains('africa') && c.contains('cup'))) {
         return 'afcon';
+      }
       if (c.contains('afc')) return 'afc championship';
       if (c.contains('bfl') ||
           c.contains('bashundhara') ||
           c.contains('mohammedan') ||
-          c.contains('abahani')) return 'bfl';
+          c.contains('abahani')) {
+        return 'bfl';
+      }
     }
 
-    if (c.contains('tennis') || c.contains('wimbledon') || c.contains('slam'))
+    if (c.contains('tennis') || c.contains('wimbledon') || c.contains('slam')) {
       return 'tennis';
-    if (c.contains('formula') || c.contains(' f1 ') || c.contains('grand prix'))
+    }
+    if (c.contains('formula') || c.contains(' f1 ') || c.contains('grand prix')) {
       return 'formula 1';
-    if (c.contains('boxing') || c.contains('wbc') || c.contains('wba'))
+    }
+    if (c.contains('boxing') || c.contains('wbc') || c.contains('wba')) {
       return 'boxing';
+    }
     if (c.contains('nba') || c.contains('basketball')) return 'basketball';
-    if (c.contains('golf') || c.contains('masters') || c.contains('open golf'))
+    if (c.contains('golf') || c.contains('masters') || c.contains('open golf')) {
       return 'golf';
+    }
 
     return hint; // Raw hint as fallback
   }
@@ -634,8 +664,9 @@ class MatchChannelMatcher {
   static int _scoreTournamentMapping(String blob, String tournament) {
     for (final entry in _tournamentChannels.entries) {
       // Both directions: tournament contains key OR key contains tournament
-      if (!tournament.contains(entry.key) && !entry.key.contains(tournament))
+      if (!tournament.contains(entry.key) && !entry.key.contains(tournament)) {
         continue;
+      }
       for (final kw in entry.value) {
         if (blob.contains(kw)) return 35; // First match wins; no stacking
       }
@@ -757,13 +788,15 @@ class MatchChannelMatcher {
   static int _bdCrossCategory(String blob) {
     if (blob.contains('nagorik tv') || blob.contains('nagorik')) return 30;
     if (blob.contains('gazi tv') || blob.contains('gazi')) return 25;
-    if (blob.contains('btv') || blob.contains('bangladesh television'))
+    if (blob.contains('btv') || blob.contains('bangladesh television')) {
       return 18;
+    }
     if (blob.contains('channel i') || blob.contains('channeli')) return 12;
     if (blob.contains('somoy')) return 10;
     if (blob.contains('deepto')) return 8;
-    if (blob.contains('bangla vision') || blob.contains('banglavision'))
+    if (blob.contains('bangla vision') || blob.contains('banglavision')) {
       return 8;
+    }
     return 0;
   }
 

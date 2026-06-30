@@ -8,6 +8,7 @@ class AppConfigProvider extends ChangeNotifier {
   AppConfigModel _config = AppConfigModel.defaultConfig();
   bool _isLoading = false;
   bool _initialized = false;
+  bool _isDisposed = false;
 
   AppConfigModel get config => _config;
   bool get isLoading => _isLoading;
@@ -30,7 +31,13 @@ class AppConfigProvider extends ChangeNotifier {
       // Keep default config — do not rethrow
     } finally {
       _isLoading = false;
-      notifyListeners();
+      if (!_isDisposed) notifyListeners();
     }
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
   }
 }

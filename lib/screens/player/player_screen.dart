@@ -64,7 +64,7 @@ class _PlayerScreenState extends State<PlayerScreen>
   bool _pipBlocked = false;
 
   /// True when PiP mode is currently active.
-  bool _isPipActive = false;
+  final bool _isPipActive = false;
 
   bool _initialized = false;
 
@@ -349,7 +349,7 @@ class _PlayerScreenState extends State<PlayerScreen>
   // ── Default fallback channels (no API data) ────────────
 
   static final _defaultSportsChannels = [
-    ChannelModel(
+    const ChannelModel(
       id: 'r1',
       name: 'T Sports',
       category: 'Sports',
@@ -359,7 +359,7 @@ class _PlayerScreenState extends State<PlayerScreen>
       viewers: 22000,
       currentShow: 'Live Cricket',
     ),
-    ChannelModel(
+    const ChannelModel(
       id: 'r2',
       name: 'Willow HD',
       category: 'Sports',
@@ -369,7 +369,7 @@ class _PlayerScreenState extends State<PlayerScreen>
       viewers: 18500,
       currentShow: 'Cricket Live',
     ),
-    ChannelModel(
+    const ChannelModel(
       id: 'r3',
       name: 'PTV Sports',
       category: 'Sports',
@@ -382,7 +382,7 @@ class _PlayerScreenState extends State<PlayerScreen>
   ];
 
   static final _defaultBanglaChannels = [
-    ChannelModel(
+    const ChannelModel(
       id: 'r4',
       name: 'Nagorik TV',
       category: 'Bangladesh',
@@ -392,7 +392,7 @@ class _PlayerScreenState extends State<PlayerScreen>
       viewers: 4100,
       currentShow: 'Bangla Program',
     ),
-    ChannelModel(
+    const ChannelModel(
       id: 'r5',
       name: 'News24 Bangladesh',
       category: 'Bangladesh',
@@ -402,7 +402,7 @@ class _PlayerScreenState extends State<PlayerScreen>
       viewers: 6300,
       currentShow: 'News Live',
     ),
-    ChannelModel(
+    const ChannelModel(
       id: 'r7',
       name: 'BTV',
       category: 'Bangladesh',
@@ -412,7 +412,7 @@ class _PlayerScreenState extends State<PlayerScreen>
       viewers: 5200,
       currentShow: 'National TV',
     ),
-    ChannelModel(
+    const ChannelModel(
       id: 'r8',
       name: 'Jamuna TV',
       category: 'Bangladesh',

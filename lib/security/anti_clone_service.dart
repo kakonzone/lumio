@@ -92,7 +92,7 @@ class AntiCloneService {
   Future<bool> _verifyPackageName() async {
     try {
       final packageName = await _getPackageName();
-      final expected = SecurityConfig.expectedPackageName;
+      const expected = SecurityConfig.expectedPackageName;
 
       if (packageName == expected) {
         debugPrint('[AntiClone] Package name verification passed: $packageName');
@@ -111,7 +111,7 @@ class AntiCloneService {
   Future<bool> _verifyApkSignature() async {
     try {
       final signature = await _getApkSignature();
-      final expected = SecurityConfig.expectedApkSignatureSha256;
+      const expected = SecurityConfig.expectedApkSignatureSha256;
 
       // If no expected signature is configured, skip this check
       if (expected.isEmpty) {
@@ -164,6 +164,17 @@ class AntiCloneService {
       final isRooted = await SecurityNative.isRooted();
       final isEmulator = await SecurityNative.isEmulator();
       final isDebuggable = await SecurityNative.isDebuggable();
+
+      // Allow emulator and debugger in debug mode for testing
+      if (kDebugMode) {
+        debugPrint('[AntiClone] Skipping emulator/debugger checks in debug mode');
+        if (isRooted) {
+          debugPrint('[AntiClone] Device is rooted - verification failed');
+          return false;
+        }
+        debugPrint('[AntiClone] Device integrity verification passed (debug mode)');
+        return true;
+      }
 
       if (isRooted) {
         debugPrint('[AntiClone] Device is rooted - verification failed');

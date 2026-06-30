@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import '../../config/app_constants.dart';
-import '../../services/ad_safety_service.dart';
 import '../../services/user_preferences.dart';
 
 /// First channel-tap presentation slot (Adsterra browser only).

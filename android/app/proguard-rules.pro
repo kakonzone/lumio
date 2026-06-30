@@ -15,6 +15,11 @@
 -keep class com.google.android.gms.** { *; }
 -dontwarn com.google.firebase.**
 
+# OkHttp (Dio uses OkHttp under the hood)
+-keep class okhttp3.** { *; }
+-keep interface okhttp3.** { *; }
+-dontwarn okhttp3.**
+
 # Unity / IronSource / Ad networks
 -keep class com.unity3d.** { *; }
 -keep class com.ironsource.** { *; }

@@ -681,7 +681,7 @@ class _CacheCleanupTask {
     try {
       final prefs = await SharedPreferences.getInstance();
       final now = DateTime.now().millisecondsSinceEpoch;
-      int removed = 0;
+      var removed = 0;
 
       for (final entry in _ttls.entries) {
         final tsKey = '${entry.key}_ts';
@@ -747,10 +747,10 @@ class _HttpsProbeTask {
       );
 
       // Count successful upgrades
-      int upgradedCount = 0;
+      var upgradedCount = 0;
       final successfulUpgrades = <String>{};
 
-      for (final MapEntry<String, StreamProbeResult> entry in results.entries) {
+      for (final entry in results.entries) {
         final url = entry.key;
         final result = entry.value;
         if (result.isHttpsAvailable && result.upgradedUrl != null) {

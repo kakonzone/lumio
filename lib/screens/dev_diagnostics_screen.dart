@@ -173,15 +173,10 @@ class _DevDiagnosticsScreenState extends State<DevDiagnosticsScreen> {
                 onPressed: AdManager.instance.adsEnabled
                     ? () async {
                         // Unity Ads disabled - no rewarded ad shown
-                        const earned = false;
                         if (!mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text(
-                              earned
-                                  ? 'Rewarded complete — reward earned'
-                                  : 'Rewarded no-fill or dismissed',
-                            ),
+                            content: Text('Rewarded no-fill or dismissed'),
                           ),
                         );
                       }

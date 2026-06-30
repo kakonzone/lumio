@@ -476,6 +476,7 @@ class CategoryFilterBar extends StatelessWidget {
           final cat = categories[i];
           final active = cat == selected;
           return GestureDetector(
+            key: ValueKey(cat),
             onTap: () => onSelect(cat),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),

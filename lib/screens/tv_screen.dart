@@ -124,7 +124,7 @@ class TvScreenState extends State<TvScreen>
 
   @override
   Widget build(BuildContext context) {
-    final appConfig = context.read<AppConfigProvider>().config;
+    final appConfig = context.watch<AppConfigProvider>().config;
 
     return TabAdOverlay(
       showFloatingCard: true,
@@ -309,7 +309,7 @@ class _TvSearchSectionState extends State<_TvSearchSection> {
   @override
   Widget build(BuildContext context) {
     final query = _ctrl.text.trim();
-    final catalog = context.read<ChannelCatalogProvider>();
+    final catalog = context.watch<ChannelCatalogProvider>();
     final results =
         query.isEmpty ? <ChannelModel>[] : catalog.search(query).take(8).toList();
 
@@ -823,7 +823,7 @@ class _TodayTabState extends State<_TodayTab>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final scores = context.read<LiveScoreProvider>();
+    final scores = context.watch<LiveScoreProvider>();
     final matches = scores.todayMatches;
 
     return Builder(
@@ -922,7 +922,7 @@ class _UpcomingTabState extends State<_UpcomingTab>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final scores = context.read<LiveScoreProvider>();
+    final scores = context.watch<LiveScoreProvider>();
     final matches = scores.upcomingMatches;
 
     return Builder(

@@ -1,4 +1,5 @@
-part of lumio_player;
+// ignore_for_file: invalid_use_of_protected_member
+part of 'player_screen.dart';
 
 // Controls UI
 
@@ -160,7 +161,11 @@ extension _PlayerControls on _PlayerScreenState {
 
   void _seek(int seconds) {
     final pos = _player.state.position + Duration(seconds: seconds);
-    _player.seek(pos);
+    final dur = _player.state.duration;
+    final target = dur.inMilliseconds > 0
+        ? (pos.inMilliseconds > dur.inMilliseconds ? dur : pos)
+        : pos;
+    _player.seek(target);
     _startHideTimer();
   }
 
@@ -206,7 +211,8 @@ extension _PlayerControls on _PlayerScreenState {
       if (!mounted) return;
       setState(() => _seekOverlayOpacity = 0.0);
     });
-    Timer(const Duration(milliseconds: 570), () {
+    _hideTimer?.cancel();
+    _hideTimer = Timer(const Duration(milliseconds: 570), () {
       if (mounted) setState(() => _seekOverlayLabel = null);
     });
   }
@@ -236,7 +242,8 @@ extension _PlayerControls on _PlayerScreenState {
         'player_screen.dart:_onHorizontalDragEnd: swipe channel change (H-swipe) vx=$vx fromIdx=$idx toIdx=$nextIdx channel=${next.name}');
     if (!mounted) return;
     setState(() => _channelSwipeOverlay = next.name);
-    Timer(const Duration(milliseconds: 800), () {
+    _hideTimer?.cancel();
+    _hideTimer = Timer(const Duration(milliseconds: 800), () {
       if (mounted) setState(() => _channelSwipeOverlay = null);
     });
     _scheduleChannelSwitch(next);
@@ -292,7 +299,17 @@ extension _PlayerControls on _PlayerScreenState {
     });
   }
 
-  void _onDragEnd(DragEndDetails _) => _isDragging = false;
+  void _onDragEnd(DragEndDetails _) {
+    _isDragging = false;
+    unawaited(_persistBrightness());
+  }
+
+  Future<void> _persistBrightness() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble('player_brightness', _brightness);
+    } catch (_) {}
+  }
   Widget _buildFullPlayerUi(BuildContext context) {
     return PopScope(
       canPop: !_isFullscreen,
@@ -553,7 +570,7 @@ extension _PlayerControls on _PlayerScreenState {
   }
 
   Widget _buildLoadingSkeleton() {
-    final prov = context.read<AppProvider>();
+    final prov = context.watch<AppProvider>();
     final ch = prov.channelForStream(_currentUrl ?? '') ??
         prov.findChannel(name: _currentTitle);
     return Center(
@@ -1616,7 +1633,6 @@ extension _PlayerControls on _PlayerScreenState {
       _applyingQuality = false;
       if (mounted) {
         _updateQualityBadge();
-        if (!mounted) return;
         setState(() {});
         // #region agent log
         _debugSessionLog(

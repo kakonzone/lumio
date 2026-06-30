@@ -34,6 +34,7 @@ class ExitIntentHandler {
     );
 
     // Step 2: confirmation dialog.
+    if (!context.mounted) return false;
     return await _showExitDialog(context);
   }
 
@@ -81,6 +82,7 @@ class ExitIntentHandler {
 
     // Removed popunder step (high ban risk).
     // Return to previous screen.
+    if (!context.mounted) return;
     if (Navigator.canPop(context)) {
       Navigator.of(context).pop();
     }

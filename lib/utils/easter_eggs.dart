@@ -46,7 +46,6 @@ class EasterEggManager {
 
   // New Year confetti state
   bool _newYearShown = false;
-  bool _disposed = false;
 
   /// Initialize and load persisted state
   Future<void> initialize() async {

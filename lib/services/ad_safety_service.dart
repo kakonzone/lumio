@@ -270,13 +270,6 @@ class AdSafetyService {
 
   bool get remoteConfigReady => _remoteReady;
 
-  bool _rcBool(String key) {
-    if (!_remoteReady || _remote == null) {
-      return RemoteConfigKeys.defaults[key] as bool;
-    }
-    return _remote!.getBool(key);
-  }
-
   /// Master kill switch — when false, [AdManager.adsEnabled] is false.
   bool get adsEnabledRemote => AdConfig.remoteAdsEnabled;
 

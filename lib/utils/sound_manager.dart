@@ -116,44 +116,6 @@ class SoundManager {
     }
   }
 
-  /// Play audio asset (placeholder implementation)
-  Future<void> _playAsset(SoundType type) async {
-    final assetPath = _getAssetPath(type);
-
-    if (assetPath == null) return;
-
-    await _audioPlayer.play(AssetSource(assetPath));
-  }
-
-  /// Get asset path for sound type
-  ///
-  /// Assets should be placed in assets/audio/ directory:
-  /// - tab_switch.mp3 (300ms)
-  /// - success.mp3 (400ms)
-  /// - error.mp3 (200ms)
-  /// - modal_open.mp3 (300ms)
-  /// - press.mp3 (100ms)
-  /// - dismiss.mp3 (100ms)
-  /// - achievement.mp3 (500ms)
-  String? _getAssetPath(SoundType type) {
-    switch (type) {
-      case SoundType.tabSwitch:
-        return 'audio/tab_switch.mp3';
-      case SoundType.success:
-        return 'audio/success.mp3';
-      case SoundType.error:
-        return 'audio/error.mp3';
-      case SoundType.modalOpen:
-        return 'audio/modal_open.mp3';
-      case SoundType.press:
-        return 'audio/press.mp3';
-      case SoundType.dismiss:
-        return 'audio/dismiss.mp3';
-      case SoundType.achievement:
-        return 'audio/achievement.mp3';
-    }
-  }
-
   /// Dispose resources
   void dispose() {
     _audioPlayer.dispose();

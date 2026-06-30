@@ -21,7 +21,6 @@ class ChannelChangeInterstitialController {
   static const _lastShownKey = 'channel_change_interstitial_last_shown';
   static const _chainCountKey = 'channel_change_chain_count';
 
-  DateTime? _lastShownTime;
   bool _isShowing = false;
 
   /// Check if interstitial can be shown (respects 5-minute cooldown)
@@ -54,6 +53,7 @@ class ChannelChangeInterstitialController {
     if (!await canShow()) {
       return false;
     }
+    if (!context.mounted) return false;
 
     return show(context);
   }

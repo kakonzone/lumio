@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import '../../config/app_constants.dart';
 import '../../services/user_preferences.dart';
 
@@ -25,8 +23,6 @@ extension ChannelTapAdNetworkX on ChannelTapAdNetwork {
 /// Session-wide rotation for per-channel first tap.
 class ChannelTapAdRotator {
   ChannelTapAdRotator._();
-
-  static final _rng = Random();
 
   /// Always return Adsterra (Unity and Monetag removed)
   static ChannelTapAdNetwork selectFirstTapNetwork() {

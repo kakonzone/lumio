@@ -84,6 +84,7 @@ class _HomeCategoryGridState extends State<HomeCategoryGrid>
         .where((ch) => ch.streamUrl.isNotEmpty)
         .toList();
     if (list.isEmpty) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('No live channels in $label right now'),

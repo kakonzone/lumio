@@ -54,4 +54,9 @@ class BannerRefreshController {
     start(onRefresh);
     SafeLogger.debug('ads', '[BannerRefresh] resumed');
   }
+
+  /// Cleanup timer on app exit.
+  void dispose() {
+    stop();
+  }
 }

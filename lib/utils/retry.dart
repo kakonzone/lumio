@@ -34,13 +34,11 @@ class RetryHelper {
   }) async {
     var attempt = 0;
     var delayMs = initialDelayMs;
-    Object? lastError;
 
     while (true) {
       try {
         return await fn();
       } catch (e) {
-        lastError = e;
         attempt++;
         
         // Check if we should retry

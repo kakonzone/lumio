@@ -160,11 +160,6 @@ class M3uMergeParser {
   static String _nameKey(String name) =>
       ChannelPlaybackLinks.mergeKeyForName(name);
 
-  static bool _isStreamLine(String line) =>
-      line.startsWith('http') ||
-      line.startsWith('rtmp') ||
-      line.startsWith('rtsp');
-
   static String _afterComma(String l) {
     final i = l.lastIndexOf(',');
     return i == -1 ? '' : l.substring(i + 1).trim();

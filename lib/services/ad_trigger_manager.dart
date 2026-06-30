@@ -41,7 +41,6 @@ class AdTriggerManager {
   DateTime? _currentChannelStartedAt;
   // ignore: unused_field
   String? _currentChannelKey;
-  // ignore: unused_field
   bool _isDisposed = false;
 
   String _hourKey() {
@@ -91,6 +90,7 @@ class AdTriggerManager {
   }
 
   Future<void> startSession() async {
+    if (_isDisposed) return;
     ServerCap.instance.logConfigurationOnce();
     ServerCapService.instance.logConfigurationOnce();
     await ServerCap.instance.syncIfStale();
@@ -183,11 +183,13 @@ class AdTriggerManager {
   }
 
   void onPlayerChannelStarted(String channelKey) {
+    if (_isDisposed) return;
     _currentChannelKey = channelKey;
     _currentChannelStartedAt = DateTime.now();
   }
 
   void onPlayerChannelStopped() {
+    if (_isDisposed) return;
     _currentChannelKey = null;
     _currentChannelStartedAt = null;
   }
@@ -247,6 +249,7 @@ class AdTriggerManager {
     required bool removeAds,
     String? channelKey,
   }) async {
+    if (_isDisposed) return const InterstitialCapResult.denied('disposed');
     switch (placement) {
       case InterstitialPlacement.preroll:
         return _canShowPreroll(removeAds: removeAds, channelKey: channelKey);
@@ -363,6 +366,7 @@ class AdTriggerManager {
     InterstitialPlacement placement, {
     String? channelKey,
   }) async {
+    if (_isDisposed) return;
     switch (placement) {
       case InterstitialPlacement.preroll:
         _sessionPrerollShown++;
@@ -384,6 +388,7 @@ class AdTriggerManager {
   Future<bool> canShowRewarded({
     required bool removeAds,
   }) async {
+    if (_isDisposed) return false;
     if (removeAds || isAdFree) return false;
     if (AdSafetyService.instance.adsBlockedInDebug) return false;
     if (!AdConfig.hasUnityConfig) return false;
@@ -412,6 +417,7 @@ class AdTriggerManager {
     required bool isStreaming,
     required bool removeAds,
   }) async {
+    if (_isDisposed) return false;
     if (!_sessionAllowsInterstitial(
       isStreaming: isStreaming,
       removeAds: removeAds,
@@ -443,6 +449,7 @@ class AdTriggerManager {
 
   /// Call only from Unity Ads `onAdDisplayed` (not on close/timeout).
   Future<void> recordInterstitialShown() async {
+    if (_isDisposed) return;
     _lastUnityInterstitial = DateTime.now();
     _sessionInterstitialsShown++;
     await _incrementHourly('lumio_is_inter');
@@ -453,6 +460,7 @@ class AdTriggerManager {
 
   /// App-open substitute (interstitial) — 3/day, 4h gap.
   Future<bool> canShowAppOpenSubstitute({required bool removeAds}) async {
+    if (_isDisposed) return false;
     if (AdSafetyService.instance.adsBlockedInDebug) return false;
     if (removeAds || isAdFree) return false;
     if (_networkIsolationActive) return false;
@@ -488,6 +496,7 @@ class AdTriggerManager {
   }
 
   Future<bool> canShowAdsterraDirectLink() async {
+    if (_isDisposed) return false;
     if (!AdSafetyService.instance.adsterraEnabled) return false;
     if (AdSafetyService.instance.adsBlockedInDebug) return false;
     final daily = await _dailyCount('lumio_adsterra_direct');
@@ -499,6 +508,7 @@ class AdTriggerManager {
       _channelTapBrowserShown.contains(channelKey);
 
   void markChannelTapBrowserShown(String channelKey) {
+    if (_isDisposed) return;
     if (channelKey.isEmpty) return;
     _channelTapBrowserShown.add(channelKey);
   }
@@ -507,6 +517,7 @@ class AdTriggerManager {
       articleId.isNotEmpty && _newsArticleAdShown.contains(articleId);
 
   void markNewsArticleAdShown(String articleId) {
+    if (_isDisposed) return;
     if (articleId.isEmpty) return;
     _newsArticleAdShown.add(articleId);
   }
@@ -515,23 +526,27 @@ class AdTriggerManager {
   ///
   /// Intentionally ignores [AdSafetyService.preferCleanSdkRouting] — user tapped a channel.
   Future<bool> canShowChannelTapBrowser() async {
+    if (_isDisposed) return false;
     if (AdSafetyService.instance.adsBlockedInDebug) return false;
     if (!AdSafetyService.instance.adsEnabledRemote) return false;
     return true;
   }
 
   Future<void> recordAdsterraDirectLink() async {
+    if (_isDisposed) return;
     recordAdsterraSurfaceEvent();
     await _incrementDaily('lumio_adsterra_direct');
   }
 
   Future<void> recordChannelTapBrowser() async {
+    if (_isDisposed) return;
     recordAdsterraSurfaceEvent();
     await _incrementDaily('lumio_channel_tap_browser');
   }
 
   /// Popunder mount gate — consent, RC, session cap, cooldown (mirrors interstitial eligibility).
   Future<bool> canShowPopunder({bool? removeAds}) async {
+    if (_isDisposed) return false;
     final purchased = removeAds ?? UserPreferences.removeAdsPurchased;
     if (purchased || isAdFree) return false;
     if (!AdConsentService.instance.hasGrantedConsent) return false;
@@ -589,6 +604,7 @@ class AdTriggerManager {
   }
 
   Future<void> recordAdsterraPopunder() async {
+    if (_isDisposed) return;
     recordAdsterraSurfaceEvent();
     _sessionPopunders++;
     final prefs = await SharedPreferences.getInstance();
@@ -600,6 +616,7 @@ class AdTriggerManager {
 
   /// Back-press exit stack — does not require session channel-click funnel.
   bool canShowExitAd({required bool removeAds}) {
+    if (_isDisposed) return false;
     if (removeAds || isAdFree || _exitAdShown) return false;
     if (_networkIsolationActive) return false;
     final adsEligibleAfter = _adsEligibleAfter;
@@ -609,7 +626,10 @@ class AdTriggerManager {
     return true;
   }
 
-  void recordExitAdShown() => _exitAdShown = true;
+  void recordExitAdShown() {
+    if (_isDisposed) return;
+    _exitAdShown = true;
+  }
 
   /// Dispose singleton state (called on app exit).
   void dispose() {

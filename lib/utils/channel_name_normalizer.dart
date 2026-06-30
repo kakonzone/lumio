@@ -164,7 +164,7 @@ class ChannelNameNormalizer {
       }
       if (lower == 'btv') return 'BTV';
       if (lower.startsWith('tsport')) return 'T Sports';
-      return '${w[0].toUpperCase()}${w.substring(1)}';
+      return w.isEmpty ? w : '${w[0].toUpperCase()}${w.substring(1)}';
     }).join(' ');
   }
 }

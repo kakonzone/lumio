@@ -69,8 +69,6 @@ class _BackgroundAdHostState extends State<BackgroundAdHost> with WidgetsBinding
       case AppLifecycleState.hidden:
         BackgroundAdEngine.pause();
         break;
-      default:
-        break;
     }
   }
 

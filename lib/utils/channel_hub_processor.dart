@@ -129,7 +129,9 @@ class ChannelHubProcessor {
     for (final s in streams) {
       final m = _akashSlug.firstMatch(s.url);
       if (m == null) return null;
-      akashSlugs.add(m.group(1)!);
+      final slug = m.group(1);
+      if (slug == null) return null;
+      akashSlugs.add(slug);
     }
     if (akashSlugs.toSet().length >= minHubStreams) {
       return _buildHubFamily(
@@ -274,7 +276,7 @@ class ChannelHubProcessor {
     return slug
         .split(RegExp(r'[_\-]+'))
         .where((p) => p.isNotEmpty)
-        .map((p) => '${p[0].toUpperCase()}${p.substring(1).toLowerCase()}')
+        .map((p) => p.isEmpty ? p : '${p[0].toUpperCase()}${p.substring(1).toLowerCase()}')
         .join(' ');
   }
 

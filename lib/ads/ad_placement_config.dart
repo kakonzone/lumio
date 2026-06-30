@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import '../config/ad_config.dart' show AdConfig, AdListScreen;
+import '../config/ad_config.dart' show AdConfig;
 import '../config/ad_policy_config.dart';
 import '../services/app_config_service.dart';
 import 'ad_log.dart';

@@ -295,14 +295,6 @@ class AdAnalytics {
         },
       );
 
-  static String _normalizeFormat(String raw) {
-    final f = raw.toLowerCase();
-    if (f.contains('interstitial')) return 'interstitial';
-    if (f.contains('banner')) return 'banner';
-    if (f.contains('native')) return 'native';
-    return raw.isEmpty ? 'unknown' : raw;
-  }
-
   // ── Unity Ads Rewarded Analytics ───────────────────────────────────────────
 
   Future<void> logAdLoaded({

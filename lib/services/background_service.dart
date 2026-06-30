@@ -822,19 +822,6 @@ class _HttpsProbeTask {
       return [];
     }
   }
-
-  /// Gets the last probe results for the foreground to use.
-  static Future<Map<String, dynamic>?> getProbeResults() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final resultsJson = prefs.getString(_probeResultsKey);
-      if (resultsJson == null) return null;
-
-      return jsonDecode(resultsJson) as Map<String, dynamic>;
-    } catch (_) {
-      return null;
-    }
-  }
 }
 
 // =============================================================================

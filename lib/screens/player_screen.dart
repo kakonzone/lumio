@@ -1,1 +1,1 @@
-export 'player/lumio_player.dart' show PlayerScreen;
+export 'player/player_screen.dart' show PlayerScreen;

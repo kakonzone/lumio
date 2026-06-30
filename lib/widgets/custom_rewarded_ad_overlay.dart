@@ -67,13 +67,8 @@ class _CustomRewardedAdOverlayState extends State<CustomRewardedAdOverlay> {
   Future<void> _showAd() async {
     setState(() => _adShowing = true);
     // Unity Ads disabled - no rewarded ad shown
-    const earned = false;
     if (!mounted) return;
     setState(() => _adShowing = false);
-    
-    if (earned) {
-      widget.onRewardEarned?.call();
-    }
   }
 
   void _dismiss() {

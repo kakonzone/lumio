@@ -1,4 +1,5 @@
-part of lumio_player;
+// ignore_for_file: invalid_use_of_protected_member
+part of 'player_screen.dart';
 
 // State + lifecycle helpers
 
@@ -807,7 +808,7 @@ extension _PlayerState on _PlayerScreenState {
 
   Future<void> _loadBrightness() async {
     try {
-      final b = await ScreenBrightness().current;
+      final b = await ScreenBrightness().application;
       if (mounted) setState(() => _brightness = b);
     } catch (_) {}
   }
@@ -946,6 +947,7 @@ extension _PlayerState on _PlayerScreenState {
       return;
     }
     
+    if (!mounted) return;
     final links = context.read<AppProvider>().playbackLinksFor(ch);
     if (links.isEmpty) return;
     final first = links.first;

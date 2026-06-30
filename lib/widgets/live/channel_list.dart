@@ -160,6 +160,7 @@ class _ChannelListState extends State<ChannelList> {
                 final isSelected = channel.id == widget.selectedChannelId;
 
                 return Pressable(
+                  key: ValueKey(channel.id),
                   onTap: () {
                     HapticFeedback.lightImpact();
                     widget.onChannelTap(channel.id);

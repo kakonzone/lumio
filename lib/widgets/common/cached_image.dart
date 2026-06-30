@@ -172,7 +172,7 @@ class CachedLogo extends StatelessWidget {
       height: height,
       fit: fit,
       borderRadius: BorderRadius.circular(8),
-      errorWidget: name != null && name.isNotEmpty
+      errorWidget: (name?.isNotEmpty ?? false)
           ? Container(
               width: width,
               height: height,

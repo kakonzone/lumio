@@ -49,6 +49,7 @@ class CategoryRail extends StatelessWidget {
           final isSelected = category.id == selectedCategoryId;
 
           return Pressable(
+            key: ValueKey(category.id),
             onTap: () {
               HapticFeedback.selectionClick();
               onCategoryTap(category.id);

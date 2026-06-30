@@ -22,6 +22,7 @@ class AdWaterfall {
 
   final Map<String, int> _sessionFailures = {};
   bool _isRunning = false;
+  bool _disposed = false;
 
   void attach({
     required UnityAdsService unityAds,
@@ -60,6 +61,10 @@ class AdWaterfall {
 
   /// Unity Ads rewarded only — returns true when user earns reward.
   Future<bool> showRewarded({required String trigger}) async {
+    if (_disposed) {
+      adLog('[AdWaterfall] disposed, skipping rewarded');
+      return false;
+    }
     final analytics = _analytics;
     final ua = _unityAds;
     if (ua == null || !ua.isInitialized || _isSkipped('unity_rewarded')) {
@@ -125,6 +130,10 @@ class AdWaterfall {
     BuildContext? context, {
     required String trigger,
   }) async {
+    if (_disposed) {
+      adLog('[AdWaterfall] disposed, skipping interstitial');
+      return false;
+    }
     if (_isRunning) {
       adLog('[AdWaterfall] already running, skipping concurrent call');
       return false;
@@ -299,6 +308,7 @@ class AdWaterfall {
 
   /// Cancel any ongoing waterfall operation (called on app exit).
   void dispose() {
+    _disposed = true;
     _isRunning = false;
     _sessionFailures.clear();
   }

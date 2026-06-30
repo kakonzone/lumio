@@ -97,7 +97,6 @@ class _AppOpenPromoScreenState extends State<AppOpenPromoScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery.paddingOf(context).bottom;
     final adHeight = MediaQuery.sizeOf(context).height * 0.62;
 
     return PopScope(

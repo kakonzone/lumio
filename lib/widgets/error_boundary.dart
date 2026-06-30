@@ -121,14 +121,6 @@ class NetworkErrorBoundary extends StatefulWidget {
 class _NetworkErrorBoundaryState extends State<NetworkErrorBoundary> {
   NetworkError? _error;
 
-  void _handleError(NetworkError error) {
-    if (mounted) {
-      setState(() {
-        _error = error;
-      });
-    }
-  }
-
   void _retry() async {
     setState(() {
       _error = null;

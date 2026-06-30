@@ -1,4 +1,5 @@
-part of lumio_player;
+// ignore_for_file: invalid_use_of_protected_member
+part of 'player_screen.dart';
 
 // Retry + backup URL logic
 

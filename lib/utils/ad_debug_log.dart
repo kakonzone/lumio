@@ -40,7 +40,7 @@ class AdDebugLog {
     debugPrint(line);
     if (kReleaseMode) {
       // ignore: avoid_print
-      print(line);
+      debugPrint(line);
     }
     _appendFile('level=ERROR location=$location message=$message$extra');
   }

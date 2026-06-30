@@ -213,7 +213,7 @@ class _SportsScreenState extends State<SportsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final prov = context.read<AppProvider>();
+    final prov = context.watch<AppProvider>();
 
     return TabAdOverlay(
       showFloatingCard: true,
@@ -529,7 +529,7 @@ class _LiveScreenState extends State<LiveScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final prov = context.read<AppProvider>();
+    final prov = context.watch<AppProvider>();
     final pool = prov.liveTabChannels;
     final topSports = prov
         .liveNavTopSportsChannels()
@@ -1034,120 +1034,24 @@ class _GenreCategoryCard extends StatelessWidget {
   }
 }
 
-class _WideGenreCard extends StatelessWidget {
-  final String emoji;
-  final IconData? icon;
-  final String title;
-  final String subtitle;
-  final String badge;
-  final bool isLive;
-  final Color accent;
-  final VoidCallback onTap;
-
-  const _WideGenreCard({
-    required this.emoji,
-    required this.title,
-    required this.subtitle,
-    required this.badge,
-    required this.isLive,
-    required this.accent,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final gradient = _genreNavGradient(title);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Ink(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            gradient: LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              colors: gradient,
-            ),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.22),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: gradient.first.withValues(alpha: 0.38),
-                blurRadius: 14,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              _GenreIconBox(
-                emoji: emoji,
-                icon: icon,
-                accent: accent,
-                size: 48,
-                onGradient: true,
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: GF.body(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.white.withValues(alpha: 0.82),
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              _GenreBadge(label: badge, isLive: isLive, onGradient: true),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _GenreIconBox extends StatelessWidget {
   final String emoji;
   final IconData? icon;
   final Color accent;
-  final double size;
   final bool onGradient;
 
   const _GenreIconBox({
     required this.emoji,
     required this.icon,
     required this.accent,
-    this.size = 42,
     this.onGradient = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: size,
-      height: size,
+      width: 42,
+      height: 42,
       decoration: BoxDecoration(
         color: onGradient
             ? Colors.white.withValues(alpha: 0.2)
@@ -1172,10 +1076,10 @@ class _GenreIconBox extends StatelessWidget {
       child: icon != null
           ? Icon(
               icon,
-              size: size * 0.52,
+              size: 42 * 0.52,
               color: onGradient ? Colors.white : accent,
             )
-          : Text(emoji, style: TextStyle(fontSize: size * 0.52)),
+          : Text(emoji, style: TextStyle(fontSize: 42 * 0.52)),
     );
   }
 }
@@ -1261,7 +1165,7 @@ class CategoriesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final prov = context.read<AppProvider>();
+    final prov = context.watch<AppProvider>();
     final genreRows = prov.categoriesGenreRows.isNotEmpty
         ? prov.categoriesGenreRows
         : const [
@@ -1510,125 +1414,6 @@ class CategoriesScreen extends StatelessWidget {
           categoryName: catName,
           categoryIcon: icon,
         ),
-      ),
-    );
-  }
-}
-
-// =============================================================================
-// SHARED CARD WIDGETS
-// =============================================================================
-
-class _ChannelCard extends StatelessWidget {
-  final ChannelModel channel;
-  final VoidCallback? onPlay;
-  final VoidCallback? onLongPress;
-
-  const _ChannelCard({
-    required this.channel,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final prov = context.read<AppProvider>();
-    final showLive = prov.isStreamLive(channel);
-    final checking = prov.isStreamHealthPending(channel);
-    return GestureDetector(
-      onTap: onPlay,
-      onLongPress: onLongPress,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: context.bg2,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: context.brd),
-        ),
-        child: Row(children: [
-          ChannelAvatar(
-            channel: channel,
-            emojiFallback: channel.categoryIcon,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  channel.name,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: context.txt,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  channel.currentShow.isEmpty
-                      ? channel.category
-                      : channel.currentShow,
-                  style: TextStyle(fontSize: 11, color: context.txt3),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (checking)
-                const SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppTokens.accent,
-                  ),
-                )
-              else if (showLive)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppTokens.accentDim,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Text(
-                    '● LIVE',
-                    style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
-                      color: AppTokens.accent,
-                    ),
-                  ),
-                ),
-              if (showLive) const SizedBox(height: 4),
-              if (channel.formattedViewers.isNotEmpty)
-                Text(
-                  channel.formattedViewers,
-                  style: TextStyle(fontSize: 10, color: context.txt3),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.end,
-                ),
-            ],
-          ),
-          const SizedBox(width: 8),
-          Container(
-            width: 28,
-            height: 28,
-            decoration: const BoxDecoration(
-              color: AppTokens.accent,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.play_arrow, color: Colors.white, size: 16),
-          ),
-        ]),
       ),
     );
   }

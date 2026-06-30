@@ -45,8 +45,8 @@ class PlayerRelatedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final showLive = context.read<AppProvider>().isStreamLive(channel);
-    final checking = context.read<AppProvider>().isStreamHealthPending(channel);
+    final showLive = context.watch<AppProvider>().isStreamLive(channel);
+    final checking = context.watch<AppProvider>().isStreamHealthPending(channel);
 
     return Material(
       color: Colors.transparent,

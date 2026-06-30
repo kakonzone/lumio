@@ -48,7 +48,7 @@ class AgentDebugLog {
     final line = jsonEncode(payload);
     // Logcat-visible fallback for release APK on device.
     // ignore: avoid_print
-    print('[AgentDebugLog] $line');
+    debugPrint('[AgentDebugLog] $line');
     unawaited(_post(line));
     unawaited(_appendHost(line));
     unawaited(_appendMobile(line));

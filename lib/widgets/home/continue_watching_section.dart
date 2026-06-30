@@ -76,6 +76,7 @@ class ContinueWatchingSection extends StatelessWidget {
             itemBuilder: (context, index) {
               final item = items[index];
               return SizedBox(
+                key: ValueKey(index),
                 width: 200,
                 child: _ContinueWatchingTile(
                   item: item,

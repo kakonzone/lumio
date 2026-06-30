@@ -191,10 +191,6 @@ class _SearchScreenState extends State<SearchScreen>
     HapticFeedback.lightImpact();
   }
 
-  void _onCancel() {
-    Navigator.pop(context);
-  }
-
   void _onTabChange(int index) {
     setState(() {
       _selectedTab = index;

@@ -1,13 +1,4 @@
-library;
-
-import 'package:flutter/foundation.dart' show kDebugMode;
-import '../../utils/ad_debug_log.dart';
-
-part 'player_screen.dart';
-part 'player_state_manager.dart';
-part 'player_failover.dart';
-part 'player_controls_bar.dart';
-part 'player_overlay.dart';
+part of 'player_screen.dart';
 
 // #region agent log
 void _debugSessionLog({

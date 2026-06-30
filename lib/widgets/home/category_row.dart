@@ -82,6 +82,7 @@ class CategoryRow extends StatelessWidget {
             itemBuilder: (context, index) {
               final tile = tiles[index];
               return SizedBox(
+                key: ValueKey(index),
                 width: tileWidth,
                 child: _CategoryTile(
                   tile: tile,

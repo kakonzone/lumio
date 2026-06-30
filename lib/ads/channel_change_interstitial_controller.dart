@@ -22,6 +22,7 @@ class ChannelChangeInterstitialController {
   static const _chainCountKey = 'channel_change_chain_count';
 
   bool _isShowing = false;
+  DateTime? _lastShownTime;
 
   /// Check if interstitial can be shown (respects 5-minute cooldown)
   Future<bool> canShow() async {

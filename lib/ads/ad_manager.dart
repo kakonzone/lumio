@@ -17,7 +17,7 @@ import 'ad_cold_start_eligibility.dart';
 import 'cmp_tier1_gate.dart';
 import 'interstitial_placement.dart';
 import '../services/user_preferences.dart';
-import '../utils/channel_tap_key.dart';
+import '../utils/session_debug_log.dart';
 import '../utils/ad_debug_log.dart';
 // import 'ad_waterfall.dart'; // REMOVED: Waterfall system disabled
 import 'background_ad_engine.dart';
@@ -95,6 +95,16 @@ class AdManager {
       adsEnabled && AdConfig.hasAdsterraWebViewZones;
 
   bool get isUserAdFree => UserPreferences.removeAdsPurchased || _caps.isAdFree;
+
+  /// Channel-tap browser ad — works when direct links are compiled in, even if
+  /// full WebView ad stack did not finish init.
+  bool get canMonetizeChannelTap =>
+      !UserPreferences.removeAdsPurchased &&
+      !_caps.isAdFree &&
+      !ServerCap.instance.blocksAdsInRelease &&
+      AdConfig.hasValidAdsterraDirectLink &&
+      AdSafetyService.instance.adsEnabledRemote &&
+      !AdSafetyService.instance.adsBlockedInDebug;
 
   /// Retry after consent dialog when first init was blocked or privacy flags updated.
   Future<void> retryInitAfterConsent() async {
@@ -386,9 +396,24 @@ class AdManager {
     final key = channelTapKey(channel);
 
     // Second tap (or ads off): go straight to playback — no interstitial delay.
-    if (!adsEnabled ||
+    if (!canMonetizeChannelTap ||
         AdTriggerManager.instance.hasChannelTapBrowserShown(key)) {
-      if (adsEnabled) {
+      // #region agent log
+      sessionDebugLog(
+        location: 'ad_manager.dart:handleChannelTap',
+        message: 'Skip browser — play directly',
+        hypothesisId: 'H3-channel-tap-ads',
+        data: {
+          'canMonetize': canMonetizeChannelTap,
+          'adsEnabled': adsEnabled,
+          'isReady': isReady,
+          'hasDirectLinks': AdConfig.hasValidAdsterraDirectLink,
+          'browserShown': AdTriggerManager.instance.hasChannelTapBrowserShown(key),
+          'directLinkCount': AdConfig.adsterraDirectLinksReleaseSafe.length,
+        },
+      );
+      // #endregion
+      if (canMonetizeChannelTap || adsEnabled) {
         _caps.recordChannelClick();
         await _safeAnalytics(
           analytics.logChannelClick(count: _caps.sessionChannelClicks),
@@ -423,6 +448,18 @@ class AdManager {
         channelKey: key,
         context: context,
       );
+
+      // #region agent log
+      sessionDebugLog(
+        location: 'ad_manager.dart:handleChannelTap',
+        message: 'First tap browser result',
+        hypothesisId: 'H3-channel-tap-ads',
+        data: {
+          'monetized': monetized,
+          'channelKey': key,
+        },
+      );
+      // #endregion
 
       // BUG FIX: Check mounted after browser operation
       if (!context.mounted) {

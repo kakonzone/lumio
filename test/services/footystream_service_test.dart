@@ -17,5 +17,7 @@ void main() {
     expect(matches.first.teamB, 'Montenegro');
     expect(matches.first.channel, 'Friendly');
     expect(matches.first.scoreSource, 'FootyStream');
+    expect(matches.first.streamUrl,
+        'https://footystream.pk/events/bulgaria-vs-montenegro');
   });
 }

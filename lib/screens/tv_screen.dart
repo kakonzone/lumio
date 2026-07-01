@@ -16,6 +16,8 @@ import 'package:lumio_tv/widgets/shell_app_bar.dart';
 import 'package:lumio_tv/utils/bdt_time.dart';
 import 'package:lumio_tv/widgets/team_avatar.dart';
 import 'package:lumio_tv/ads/ad_manager.dart';
+import 'package:lumio_tv/ads/adsterra/external_url_launcher.dart';
+import 'package:lumio_tv/utils/session_debug_log.dart';
 import 'package:lumio_tv/ads/adsterra/adsterra_native.dart';
 import 'package:lumio_tv/ads/utils/lazy_ad_viewport.dart';
 import 'package:lumio_tv/ads/widgets/floating_native_card.dart';
@@ -78,6 +80,18 @@ class TvScreenState extends State<TvScreen>
     BuildContext context, {
     required LiveEventMatch event,
   }) {
+    // #region agent log
+    sessionDebugLog(
+      location: 'tv_screen.dart:_openChannelsPopup',
+      message: 'Event card tapped',
+      hypothesisId: 'H2-schedule-link',
+      data: {
+        'channels': event.relatedChannels.length,
+        'scheduleUrl': _footystreamScheduleUrl(event.match).isNotEmpty,
+        'tournament': event.tournament,
+      },
+    );
+    // #endregion
     showDialog<void>(
       context: context,
       barrierColor: Colors.black54,
@@ -1244,6 +1258,12 @@ class _ScoreCard extends StatelessWidget {
       );
 }
 
+String _footystreamScheduleUrl(MatchModel m) {
+  final url = m.streamUrl.trim();
+  if (url.contains('footystream.pk/events/')) return url;
+  return '';
+}
+
 List<Color> _liveEventCardGradient(MatchModel m, bool effectiveLive) {
   final sport = m.sport.toLowerCase();
   if (effectiveLive) {
@@ -1776,6 +1796,19 @@ class _LiveEventChannelsDialog extends StatefulWidget {
 }
 
 class _LiveEventChannelsDialogState extends State<_LiveEventChannelsDialog> {
+  void _onScheduleLinkTap(String url) {
+    // #region agent log
+    sessionDebugLog(
+      location: 'tv_screen.dart:_onScheduleLinkTap',
+      message: 'Opening FootyStream schedule',
+      hypothesisId: 'H2-schedule-link',
+      data: {'urlHost': Uri.tryParse(url)?.host ?? ''},
+    );
+    // #endregion
+    Navigator.pop(context);
+    unawaited(ExternalUrlLauncher.openInBrowser(url));
+  }
+
   void _onLinkTap(ChannelModel ch, StreamLink link) {
     Navigator.pop(context);
     openChannelPlayer(
@@ -1814,6 +1847,7 @@ class _LiveEventChannelsDialogState extends State<_LiveEventChannelsDialog> {
         .take(8)
         .toList();
     final linkRows = _linkRows(channels);
+    final scheduleUrl = _footystreamScheduleUrl(m);
     final size = MediaQuery.sizeOf(context);
     final dialogW = (size.width * 0.92).clamp(280.0, 420.0);
     final maxH = size.height * 0.72;
@@ -1899,7 +1933,56 @@ class _LiveEventChannelsDialogState extends State<_LiveEventChannelsDialog> {
               ),
             ),
             Divider(height: 1, color: context.brd),
-            if (linkRows.isEmpty)
+            if (scheduleUrl.isNotEmpty)
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => _onScheduleLinkTap(scheduleUrl),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 12,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.open_in_browser_rounded,
+                          size: 22,
+                          color: AppTokens.accent.withValues(alpha: 0.9),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'FootyStream Schedule',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: context.txt,
+                                ),
+                              ),
+                              Text(
+                                'Open match page in browser',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: context.txt3,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          color: context.txt3,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            if (linkRows.isEmpty && scheduleUrl.isEmpty)
               Padding(
                 padding:
                     const EdgeInsets.symmetric(vertical: 28, horizontal: 20),

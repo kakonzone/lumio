@@ -6,7 +6,7 @@ class SpecialLinkConfig {
   static const gitunTitle = 'GITUN';
 
   /// Main channel catalog is **Appwrite** ([AppwriteService]) — not GitHub.
-  /// Home featured cards (World Cup 2026) — **Appwrite** `app_config` / `featured_live_events`.
+  /// Home featured cards (World Cup 2026) — GitHub `kakon122/my-media-notes` JSON.
 
   /// GITUN GitHub sources live in Appwrite `special_links` (see `data/special_links.json`).
   /// Deploy syncs them; the app reads URLs from Appwrite then fetches M3U.

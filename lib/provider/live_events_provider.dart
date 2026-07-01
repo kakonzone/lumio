@@ -53,8 +53,12 @@ class LiveEventsProvider extends ChangeNotifier {
   FeaturedLiveEventsSource get featuredLiveEventsSource => _featuredLiveEventsSource;
   String? get featuredLiveEventsRemoteUpdatedAt => _featuredLiveEventsRemoteUpdatedAt;
   String? get featuredLiveEventsError => _featuredLiveEventsError;
-  bool get featuredLiveEventsFromAppwrite =>
-      _featuredLiveEventsSource == FeaturedLiveEventsSource.appwrite;
+  bool get featuredLiveEventsFromRemote =>
+      _featuredLiveEventsSource == FeaturedLiveEventsSource.appwrite ||
+      _featuredLiveEventsSource == FeaturedLiveEventsSource.github;
+
+  @Deprecated('Use featuredLiveEventsFromRemote')
+  bool get featuredLiveEventsFromAppwrite => featuredLiveEventsFromRemote;
 
   /// Status line shown when featured events failed to load.
   String get featuredLiveEventsStatusLine {

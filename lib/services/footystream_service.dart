@@ -169,6 +169,7 @@ class FootyStreamService {
           status: status,
           time: timeLabel,
           channel: league,
+          streamUrl: url,
           matchDate: start?.toLocal() ?? DateTime.now(),
           scoreSource: 'FootyStream',
           teamALogo: logos.isNotEmpty ? logos[0] : '',

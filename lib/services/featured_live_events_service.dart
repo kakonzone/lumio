@@ -8,10 +8,12 @@ import '../config/appwrite_config.dart';
 import '../models/live_event_match.dart';
 import '../models/model.dart';
 import 'appwrite_app_config.dart';
+import '../utils/session_debug_log.dart';
 import 'featured_live_events_cache.dart';
 
 /// Where home World Cup / featured cards were loaded from.
 enum FeaturedLiveEventsSource {
+  github,
   appwrite,
   cache,
   bundledAsset,
@@ -55,7 +57,7 @@ class FeaturedLiveEventsService {
   );
 
   static const _githubEventsUrl =
-      'https://raw.githubusercontent.com/kakonzone/lumio-config/main/featured_live_events.json';
+      'https://raw.githubusercontent.com/kakon122/my-media-notes/main/featured_live_events.json';
   static const _assetPath = 'assets/data/featured_live_events.json';
 
   /// True when Appwrite row changed or cache missing / [forceRefresh].
@@ -74,19 +76,63 @@ class FeaturedLiveEventsService {
     return remote != cached;
   }
 
+  Map<String, dynamic>? _decodeJsonMap(dynamic data) {
+    if (data is Map<String, dynamic>) return data;
+    if (data is Map) return Map<String, dynamic>.from(data);
+    if (data is String && data.trim().isNotEmpty) {
+      final decoded = jsonDecode(data);
+      if (decoded is Map) return Map<String, dynamic>.from(decoded);
+    }
+    return null;
+  }
+
   Future<FeaturedLiveEventsPayload?> _fetchFromGitHub() async {
     try {
-      final response = await _dio.get(_githubEventsUrl);
+      final response = await _dio.get(
+        _githubEventsUrl,
+        options: Options(responseType: ResponseType.plain),
+      );
+      // #region agent log
+      sessionDebugLog(
+        location: 'featured_live_events_service.dart:_fetchFromGitHub',
+        message: 'GitHub HTTP response',
+        hypothesisId: 'H1-github-url',
+        data: {
+          'status': response.statusCode,
+          'url': _githubEventsUrl,
+        },
+      );
+      // #endregion
       if (response.statusCode != 200) return null;
-      final map = response.data as Map<String, dynamic>;
+      final map = _decodeJsonMap(response.data);
+      if (map == null) return null;
       final payload = FeaturedLiveEventsPayload.fromJson(map);
       if (payload.events.isEmpty) return null;
+      // #region agent log
+      sessionDebugLog(
+        location: 'featured_live_events_service.dart:_fetchFromGitHub',
+        message: 'GitHub payload parsed',
+        hypothesisId: 'H1-github-url',
+        data: {
+          'events': payload.events.length,
+          'sectionTitle': payload.sectionTitle,
+        },
+      );
+      // #endregion
       if (kDebugMode) {
         debugPrint('[FeaturedLiveEvents] GitHub fetch ok '
             'events=${payload.events.length}');
       }
       return payload;
     } catch (e) {
+      // #region agent log
+      sessionDebugLog(
+        location: 'featured_live_events_service.dart:_fetchFromGitHub',
+        message: 'GitHub fetch failed',
+        hypothesisId: 'H1-github-url',
+        data: {'error': e.toString()},
+      );
+      // #endregion
       if (kDebugMode) {
         debugPrint('[FeaturedLiveEvents] GitHub fetch failed: $e');
       }
@@ -95,29 +141,43 @@ class FeaturedLiveEventsService {
   }
 
   Future<FeaturedLiveEventsLoadResult> load({bool forceRefresh = false}) async {
-    // 1. Check disk cache first (fastest)
+    // 1. Try GitHub raw JSON (primary source — kakon122/my-media-notes)
+    final githubPayload = await _fetchFromGitHub();
+    if (githubPayload != null) {
+      await FeaturedLiveEventsCache.instance.write(
+        githubPayload,
+        remoteUpdatedAt: DateTime.now().toIso8601String(),
+      );
+      // #region agent log
+      sessionDebugLog(
+        location: 'featured_live_events_service.dart:load',
+        message: 'Using GitHub featured events',
+        hypothesisId: 'H2-cache-stale',
+        data: {'events': githubPayload.events.length, 'force': forceRefresh},
+      );
+      // #endregion
+      return FeaturedLiveEventsLoadResult(
+        payload: githubPayload,
+        source: FeaturedLiveEventsSource.github,
+        remoteUpdatedAt: DateTime.now().toIso8601String(),
+      );
+    }
+
+    // 2. Disk cache (offline / GitHub unreachable)
     if (!forceRefresh) {
       final cached = await FeaturedLiveEventsCache.instance.read();
       if (cached != null && cached.events.isNotEmpty) {
+        // #region agent log
+        sessionDebugLog(
+          location: 'featured_live_events_service.dart:load',
+          message: 'GitHub miss — using cache',
+          hypothesisId: 'H2-cache-stale',
+          data: {'events': cached.events.length},
+        );
+        // #endregion
         return FeaturedLiveEventsLoadResult(
           payload: cached,
           source: FeaturedLiveEventsSource.cache,
-        );
-      }
-    }
-
-    // 2. Try GitHub raw JSON (primary source)
-    if (forceRefresh || true) {
-      final githubPayload = await _fetchFromGitHub();
-      if (githubPayload != null) {
-        await FeaturedLiveEventsCache.instance.write(
-          githubPayload,
-          remoteUpdatedAt: DateTime.now().toIso8601String(),
-        );
-        return FeaturedLiveEventsLoadResult(
-          payload: githubPayload,
-          source: FeaturedLiveEventsSource.appwrite, // reuse enum value for GitHub
-          remoteUpdatedAt: DateTime.now().toIso8601String(),
         );
       }
     }
@@ -481,7 +541,13 @@ LiveEventMatch? _parseEvent(Map<String, dynamic> j) {
             : 'FIFA World Cup 2026'),
     streamUrl: '',
     matchDate: DateTime.tryParse(j['matchDate'] as String? ?? '') ??
-        DateTime.now().toUtc(),
+        (() {
+          final timeHint = (j['time'] as String?)?.trim() ?? '';
+          if (timeHint.isNotEmpty) {
+            return DateTime.now().toUtc().add(const Duration(days: 1));
+          }
+          return DateTime.now().toUtc();
+        })(),
     teamALogo: (j['teamALogo'] as String?)?.trim() ?? '',
     teamBLogo: (j['teamBLogo'] as String?)?.trim() ?? '',
   );

@@ -113,6 +113,20 @@ class _PremiumSportsCardState extends State<PremiumSportsCard> {
                         if (isLive) const _LiveBadge(),
                       ],
                     ),
+                    if (m.channel.trim().isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        m.channel.toUpperCase(),
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.55),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.1,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                     
                     const Spacer(),
                     

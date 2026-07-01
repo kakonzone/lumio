@@ -198,7 +198,6 @@ class _PlayerScreenState extends State<PlayerScreen>
   Timer? _hideTimer;
   Timer? _indicatorTimer;
   Timer? _autoQualityTimer;
-  Timer? _midRollTimer;
   Timer? _channelSwitchDebounce;
   bool _showVideoAdOverlay = false;
   Completer<void>? _videoAdCompleter;
@@ -206,14 +205,16 @@ class _PlayerScreenState extends State<PlayerScreen>
   bool _isPlaying = false;
   bool _pauseAdVisible = false;
   bool _pauseAdShown = false;
-  bool _midRoll20Shown = false;
-  bool _midRoll50Shown = false;
   DateTime? _playbackStartedAt;
   late final PlaybackTimeTracker _playbackTimeTracker;
 
   void _dismissPlayerVideoAd() {
     if (!mounted) return;
     setState(() => _showVideoAdOverlay = false);
+    final completer = _videoAdCompleter;
+    if (completer != null && !completer.isCompleted) {
+      completer.complete();
+    }
   }
 
   // ── Vertical drag (volume / brightness) ───────────────
@@ -347,7 +348,6 @@ class _PlayerScreenState extends State<PlayerScreen>
     SafeLogger.debug('player', 'player_screen.dart:dispose: player screen disposing');
     AdTriggerManager.instance.onPlayerChannelStopped();
     AdManager.instance.setStreaming(false);
-    _midRollTimer?.cancel();
     _videoAdCompleter?.complete();
     WidgetsBinding.instance.removeObserver(this);
     lumioAudioHandlerOrNull?.detachPlayer();
@@ -404,7 +404,7 @@ class _PlayerScreenState extends State<PlayerScreen>
       name: 'T Sports',
       category: 'Sports',
       country: 'BD',
-      streamUrl: 'https://198.195.239.50:8095/Tsports/tracks-v1a1/mono.m3u8',
+      streamUrl: 'http://198.195.239.50:8095/Tsports/tracks-v1a1/mono.m3u8',
       isLive: true,
       viewers: 22000,
       currentShow: 'Live Cricket',
@@ -414,7 +414,7 @@ class _PlayerScreenState extends State<PlayerScreen>
       name: 'Willow HD',
       category: 'Sports',
       country: 'US',
-      streamUrl: 'https://198.195.239.50:8095/WiLLow/index.m3u8',
+      streamUrl: 'http://198.195.239.50:8095/WiLLow/index.m3u8',
       isLive: true,
       viewers: 18500,
       currentShow: 'Cricket Live',
@@ -424,7 +424,7 @@ class _PlayerScreenState extends State<PlayerScreen>
       name: 'PTV Sports',
       category: 'Sports',
       country: 'PK',
-      streamUrl: 'https://198.195.239.50:8095/PTV-kutta/video.m3u8',
+      streamUrl: 'http://198.195.239.50:8095/PTV-kutta/video.m3u8',
       isLive: true,
       viewers: 9200,
       currentShow: 'PSL Live',
@@ -437,7 +437,7 @@ class _PlayerScreenState extends State<PlayerScreen>
       name: 'Nagorik TV',
       category: 'Bangladesh',
       country: 'BD',
-      streamUrl: 'https://198.195.239.50:8095/nagorik/tracks-v1a1/mono.m3u8',
+      streamUrl: 'http://198.195.239.50:8095/nagorik/tracks-v1a1/mono.m3u8',
       isLive: true,
       viewers: 4100,
       currentShow: 'Bangla Program',
@@ -447,7 +447,7 @@ class _PlayerScreenState extends State<PlayerScreen>
       name: 'News24 Bangladesh',
       category: 'Bangladesh',
       country: 'BD',
-      streamUrl: 'https://198.195.239.50:8095/News24/tracks-v1a1/mono.m3u8',
+      streamUrl: 'http://198.195.239.50:8095/News24/tracks-v1a1/mono.m3u8',
       isLive: true,
       viewers: 6300,
       currentShow: 'News Live',

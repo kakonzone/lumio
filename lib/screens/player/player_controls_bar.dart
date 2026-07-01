@@ -392,13 +392,13 @@ extension _PlayerControls on _PlayerScreenState {
           // ── Drag indicator ──
           if (_indicatorOpacity > 0) _buildDragIndicator(),
 
-          // ── In-player video ad (YouTube-style skip after 5s, auto 5s) ──
+          // ── In-player video ad (skip + auto-dismiss from AdConfig) ──
           if (_showVideoAdOverlay)
             Positioned.fill(
               child: PlayerVideoAdOverlay(
                 onDismiss: _dismissPlayerVideoAd,
-                skipAfterSeconds: 15,
-                maxDurationSeconds: 15,
+                skipAfterSeconds: AdConfig.playerVideoAdSkipSeconds,
+                maxDurationSeconds: AdConfig.playerVideoAdMaxSeconds,
               ),
             ),
 

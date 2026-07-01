@@ -63,34 +63,27 @@ class CatalogService {
 
     debugPrint('[Catalog] Remote returned ${channels.length} channels from ${RemoteChannelsService.channelsUrl}');
 
-    // TEMP: disable fallback while debugging GitHub source
-    // if (channels.isEmpty) {
-    //   channels = await AppwriteService.instance.fetchChannels(
-    //     forceRefresh: forceRefresh,
-    //   );
-    // }
-
-    if (channels.isEmpty && kDebugMode) {
-      debugPrint('[Catalog] Remote returned 0 channels. Fallback disabled for debugging.');
+    // Fallback to Appwrite if GitHub returns empty or invalid channels
+    if (channels.isEmpty) {
+      channels = await AppwriteService.instance.fetchChannels(
+        forceRefresh: forceRefresh,
+      );
+      debugPrint('[Catalog] Fallback to Appwrite: ${channels.length} channels');
     }
 
-    // TEMP: disable stale cache fallback while debugging GitHub source
-    // if (channels.isEmpty) {
-    //   final stale = await SpecialLinkCache.instance.readAppCatalogChannels(
-    //     ignoreTtl: true,
-    //   );
-    //   if (stale != null && stale.isNotEmpty) {
-    //     channels = stale;
-    //     fromStaleCache = true;
-    //     error = 'Using cached channel list. Pull to refresh when online.';
-    //   } else {
-    //     error = AppwriteService.instance.lastFetchError ??
-    //         'Could not load channels. Check connection and pull to refresh.';
-    //   }
-    // }
-
-    if (channels.isEmpty && kDebugMode) {
-      error = 'GitHub source returned 0 channels. All fallbacks disabled for debugging.';
+    // Fallback to stale cache if both GitHub and Appwrite fail
+    if (channels.isEmpty) {
+      final stale = await SpecialLinkCache.instance.readAppCatalogChannels(
+        ignoreTtl: true,
+      );
+      if (stale != null && stale.isNotEmpty) {
+        channels = stale;
+        fromStaleCache = true;
+        error = 'Using cached channel list. Pull to refresh when online.';
+      } else {
+        error = AppwriteService.instance.lastFetchError ??
+            'Could not load channels. Check connection and pull to refresh.';
+      }
     }
 
     // 4. Save to disk cache on success

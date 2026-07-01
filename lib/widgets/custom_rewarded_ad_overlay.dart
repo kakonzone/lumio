@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../config/ad_config.dart';
 import '../theme/tokens/colors.dart';
 
 /// Custom rewarded ad overlay with 15s skip button and 30s auto-close.
@@ -22,7 +23,7 @@ class CustomRewardedAdOverlay extends StatefulWidget {
 }
 
 class _CustomRewardedAdOverlayState extends State<CustomRewardedAdOverlay> {
-  static const _skipDelaySeconds = 15;
+  static const _skipDelaySeconds = AdConfig.skipDelaySeconds;
   static const _autoCloseSeconds = 30;
 
   Timer? _skipTimer;

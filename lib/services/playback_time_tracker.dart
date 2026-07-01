@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-/// Tracks playback time and triggers rewarded ads at specific intervals.
-/// Triggers: 0s (start), 20min, 50min, then every 40min (90min, 130min, etc.)
+/// Tracks playback time and triggers in-player ads at specific intervals.
+/// Triggers: 20min, 50min, then every 40min (90min, 130min, etc.) — no start ad.
 class PlaybackTimeTracker {
   Timer? _timer;
   Duration _totalPlaybackTime = Duration.zero;
@@ -12,7 +12,7 @@ class PlaybackTimeTracker {
   final Set<int> _triggeredMinutes = {};
 
   // Trigger points in minutes
-  static const List<int> _triggerMinutes = [0, 20, 50];
+  static const List<int> _triggerMinutes = [20, 50];
   static const int _repeatIntervalMinutes = 40;
 
   /// Callback when a trigger point is reached.

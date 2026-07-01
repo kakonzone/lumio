@@ -320,7 +320,7 @@ class AdConfig {
   /// In-player mid-roll interstitial caps.
   static const int midRollMaxPerSession = 4;
   static const int midRollMinChannelSeconds = 90;
-  static const bool prerollEnabled = true;
+  static const bool prerollEnabled = false;
   static int get channelClicksBeforeInterstitial =>
       AppConfigService.instance.cachedConfig.channelTapsBeforeAd;
 
@@ -424,11 +424,11 @@ class AdConfig {
   static const int interstitialDelayMaxMs = 800;
 
   /// Skip button unlocks after this many seconds (YouTube-style).
-  static const int playerVideoAdSkipSeconds = 5;
+  static const int playerVideoAdSkipSeconds = 3;
 
   /// Auto-dismiss this many seconds after skip unlocks (no tap required).
-  static const int playerVideoAdAutoSkipSeconds = 5;
-  static const int playerVideoAdMaxSeconds = 30;
+  static const int playerVideoAdAutoSkipSeconds = 3;
+  static const int playerVideoAdMaxSeconds = 3;
 
   /// In-player mid-roll every N minutes (first fire after N min — not on first play).
   static const int playerMidRollIntervalMinutes = 20;
@@ -527,7 +527,7 @@ class AdConfig {
   static const String unityRewardedPlacement = 'Rewarded_Android';
 
   /// Skip button unlock delay in seconds
-  static const int skipDelaySeconds = 15;
+  static const int skipDelaySeconds = 3;
 
   /// Number of ads per pod (mid-roll)
   static const int adsPerPod = 2;

@@ -18,6 +18,7 @@ import 'package:lumio_tv/widgets/team_avatar.dart';
 import 'package:lumio_tv/ads/ad_manager.dart';
 import 'package:lumio_tv/ads/adsterra/external_url_launcher.dart';
 import 'package:lumio_tv/utils/session_debug_log.dart';
+import 'package:lumio_tv/utils/agent_debug_log.dart';
 import 'package:lumio_tv/ads/adsterra/adsterra_native.dart';
 import 'package:lumio_tv/ads/utils/lazy_ad_viewport.dart';
 import 'package:lumio_tv/ads/widgets/floating_native_card.dart';
@@ -49,6 +50,18 @@ class TvScreenState extends State<TvScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final catalog = context.read<ChannelCatalogProvider>();
       final events = context.read<LiveEventsProvider>();
+      // #region agent log
+      AgentDebugLog.log(
+        location: 'tv_screen.dart:initState',
+        message: 'Home init — loading events',
+        hypothesisId: 'H2-empty-channels',
+        data: {
+          'channelCount': catalog.channels.length,
+          'hasFeatured': events.hasFeaturedLiveEventsData,
+          'hasLiveEvents': events.hasLiveEventsData,
+        },
+      );
+      // #endregion
       if (catalog.channels.isEmpty) {
         catalog.loadChannels();
       }
@@ -473,10 +486,24 @@ class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final events = context.read<LiveEventsProvider>();
-    final catalog = context.read<ChannelCatalogProvider>();
+    final events = context.watch<LiveEventsProvider>();
+    final catalog = context.watch<ChannelCatalogProvider>();
     final liveEvents = events.sortedLiveEvents;
     final featuredEvents = events.featuredLiveEvents;
+    // #region agent log
+    AgentDebugLog.log(
+      location: 'tv_screen.dart:_HomeTab.build',
+      message: 'Home tab build snapshot',
+      hypothesisId: 'H1-no-watch',
+      data: {
+        'featuredCount': featuredEvents.length,
+        'featuredLoading': events.featuredLiveEventsLoading,
+        'liveCount': liveEvents.length,
+        'liveLoading': events.liveEventsLoading,
+        'featuredSource': events.featuredLiveEventsSource.name,
+      },
+    );
+    // #endregion
     final showFeaturedSection =
         events.featuredLiveEventsLoading || featuredEvents.isNotEmpty;
     final showLiveEventsSection =

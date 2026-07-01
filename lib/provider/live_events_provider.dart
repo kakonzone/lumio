@@ -6,6 +6,7 @@ import '../services/live_events_service.dart';
 import '../services/featured_live_events_service.dart';
 import '../services/featured_live_events_cache.dart';
 import '../utils/live_event_sort.dart';
+import '../utils/agent_debug_log.dart';
 import '../../utils/app_logger.dart';
 
 /// Live events provider.
@@ -121,6 +122,19 @@ class LiveEventsProvider extends ChangeNotifier {
       AppLogger.severe('Failed to load live events', subsystem: _loggerName, error: e, stackTrace: st);
     } finally {
       _liveEventsLoading = false;
+      // #region agent log
+      AgentDebugLog.log(
+        location: 'live_events_provider.dart:loadLiveEvents',
+        message: 'Live events load finished',
+        hypothesisId: 'H2-empty-channels',
+        data: {
+          'allCount': _liveEventAll.length,
+          'footballCount': _liveEventFootball.length,
+          'cricketCount': _liveEventCricket.length,
+          'loading': _liveEventsLoading,
+        },
+      );
+      // #endregion
       notifyListeners();
     }
   }
@@ -157,6 +171,19 @@ class LiveEventsProvider extends ChangeNotifier {
       AppLogger.severe('Failed to load featured events', subsystem: _loggerName, error: e, stackTrace: st);
     } finally {
       _featuredLiveEventsLoading = false;
+      // #region agent log
+      AgentDebugLog.log(
+        location: 'live_events_provider.dart:loadFeaturedLiveEvents',
+        message: 'Featured events load finished',
+        hypothesisId: 'H1-no-watch',
+        data: {
+          'featuredCount': _featuredLiveEvents.length,
+          'source': _featuredLiveEventsSource.name,
+          'loading': _featuredLiveEventsLoading,
+          'error': _featuredLiveEventsError ?? '',
+        },
+      );
+      // #endregion
       notifyListeners();
     }
   }

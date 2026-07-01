@@ -568,28 +568,9 @@ class AdConfig {
   /// Release builds must ship real zones via dart-define (no placeholders).
   /// Disabled for sideload APK builds where dart-defines may not be passed.
   static void assertReleaseMonetization() {
-    return; // Disabled for sideload builds - monetization config optional
-    if (!kReleaseMode) return;
-    MonetagConfig.assertReleaseConfiguration();
-    // Monetag disabled (MonetagConfig.isConfigured=false) — leftover MONETAG_*
-    // keys in secrets.json must not abort release startup.
-    if (usesPlaceholderAdUrls) {
-      throw StateError(
-        'Release build cannot use placeholder Adsterra URLs (example.com). '
-        'Set real ADSTERRA_DIRECT_LINKS in secrets.json.',
-      );
-    }
-    if (kReleaseMode && adsterraDirectLinkRotation.isEmpty) {
-      throw StateError(
-        'Release build missing ADSTERRA_DL_* defines',
-      );
-    }
-    if (!hasMonetizationConfig) {
-      throw StateError(
-        'Release build requires real monetization keys in secrets.json '
-        '(Unity Ads and/or Adsterra). See docs/SECRETS.md.',
-      );
-    }
+    // Disabled for sideload builds - monetization config optional.
+    // (Validation logic intentionally left out; re-add here if this
+    // assertion is ever re-enabled.)
   }
 
   // Re-export for ad_config consumers

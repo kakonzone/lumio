@@ -27,7 +27,6 @@ class EasterEggManager {
   Timer? _versionTapResetTimer;
   final int _requiredTaps = 7;
   bool _developerModeUnlocked = false;
-  bool _disposed = false;
 
   // Konami code state
   final List<LogicalKeyboardKey> _konamiCode = [
@@ -192,7 +191,6 @@ class EasterEggManager {
 
   /// Dispose singleton state (called on app exit)
   void dispose() {
-    _disposed = true;
     _versionTapResetTimer?.cancel();
   }
 

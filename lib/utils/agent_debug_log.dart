@@ -9,11 +9,11 @@ import 'package:path_provider/path_provider.dart';
 class AgentDebugLog {
   AgentDebugLog._();
 
-  static const _sessionId = '290c83';
+  static const _sessionId = '1c0189';
   static const _endpoint =
-      'http://127.0.0.1:7374/ingest/60c5be44-ad06-4b3d-b19e-40e8d15a5747';
+      'http://127.0.0.1:7846/ingest/74a40be9-41fc-4ffd-a9fa-0c539a8dbf25';
   static const _hostLogPath =
-      '/home/kakonzone/Downloads/FlutterProject/lumio/.cursor/debug-290c83.log';
+      '/home/kakonzone/Downloads/FlutterProject/lumio/.cursor/debug-1c0189.log';
 
   static String? _mobileLogPath;
   static bool _initStarted = false;
@@ -25,7 +25,7 @@ class AgentDebugLog {
     if (kIsWeb) return;
     try {
       final dir = await getTemporaryDirectory();
-      _mobileLogPath = '${dir.path}/debug-290c83.log';
+      _mobileLogPath = '${dir.path}/debug-1c0189.log';
     } catch (_) {}
   }
 
@@ -46,9 +46,7 @@ class AgentDebugLog {
       'data': data,
     };
     final line = jsonEncode(payload);
-    // Logcat-visible fallback for release APK on device.
-    // ignore: avoid_print
-    debugPrint('[AgentDebugLog] $line');
+    debugPrint('[debug-1c0189] $location: $message $data');
     unawaited(_post(line));
     unawaited(_appendHost(line));
     unawaited(_appendMobile(line));

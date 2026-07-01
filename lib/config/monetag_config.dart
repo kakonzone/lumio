@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 /// Monetag (PropellerAds-family) zone IDs — **CI dart-define only** (no defaults in release).
 class MonetagConfig {
   MonetagConfig._();
@@ -100,27 +98,8 @@ class MonetagConfig {
 
   /// Release: if any Monetag key is set, all must be set (no hardcoded fallbacks).
   static void assertReleaseConfiguration() {
-    return; // Direct link not used — assertion disabled
-    if (!kReleaseMode || !anyDefineProvided) return;
-    final required = <String, String>{
-      'MONETAG_ZONE_POPUNDER': zonePopunder,
-      'MONETAG_ZONE_VIGNETTE': zoneVignette,
-      'MONETAG_ZONE_PUSH': zonePush,
-      'MONETAG_ZONE_INPAGE_PUSH': zoneInPagePush,
-      'MONETAG_SCRIPT_POPUNDER': scriptPopunder,
-      'MONETAG_SCRIPT_VIGNETTE': scriptVignette,
-      'MONETAG_SCRIPT_PUSH': scriptPush,
-      'MONETAG_SCRIPT_INPAGE_PUSH': scriptInPagePush,
-    };
-    final missing = required.entries
-        .where((e) => !_isSet(e.value))
-        .map((e) => e.key)
-        .toList();
-    if (missing.isNotEmpty) {
-      throw StateError(
-        'Release requires Monetag dart-defines: ${missing.join(', ')}. '
-        'See secrets.json.template',
-      );
-    }
+    // Direct link not used — assertion disabled.
+    // (Validation logic intentionally left out; re-add here if this
+    // assertion is ever re-enabled.)
   }
 }

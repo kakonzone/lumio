@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:lumio_tv/screens/category_channels_screen.dart';
 import 'package:lumio_tv/theme/app_theme.dart';
+import 'package:lumio_tv/utils/session_debug_log.dart';
 
 enum _PromoTapAction { sports, liveEvents, entertainment }
 
@@ -113,6 +114,14 @@ class _HomePromoCarouselState extends State<HomePromoCarousel> {
         );
         return;
       case _PromoTapAction.liveEvents:
+        // #region agent log
+        sessionDebugLog(
+          location: 'home_promo_carousel.dart:_onSlideTap',
+          message: 'Promo liveEvents tap',
+          hypothesisId: 'H4-gesture-block',
+          data: {'hasCallback': widget.onLiveTabTap != null},
+        );
+        // #endregion
         widget.onLiveTabTap?.call();
         return;
       case _PromoTapAction.entertainment:

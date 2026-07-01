@@ -1,6 +1,6 @@
 import '../../config/ad_config.dart';
 import '../ad_log.dart';
-import '../utils/session_debug_log.dart';
+import '../../utils/session_debug_log.dart';
 import 'direct_link_rotator.dart';
 import 'external_url_launcher.dart';
 
